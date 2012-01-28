@@ -26,6 +26,7 @@ EncodeThread::EncodeThread(void)
 :
 	m_jobId(QUuid::createUuid())
 {
+	m_abort = false;
 }
 
 EncodeThread::~EncodeThread(void)
@@ -60,8 +61,20 @@ void EncodeThread::encode(void)
 	{
 		emit progressChanged(m_jobId, i);
 		emit statusChanged(m_jobId, (i % 2) ? JobStatus_Indexing : JobStatus_Running);
-		Sleep(200);
 		emit messageLogged(m_jobId, QUuid::createUuid().toString());
+	
+		for(int i = 0; i < 5; i++)
+		{
+			emit detailsChanged(m_jobId, QUuid::createUuid().toString());
+			Sleep(200);
+		}
+
+		if(m_abort)
+		{
+			Sleep(1500);
+			emit statusChanged(m_jobId, JobStatus_Aborted);
+			return;
+		}
 	}
 
 	Sleep(1500);

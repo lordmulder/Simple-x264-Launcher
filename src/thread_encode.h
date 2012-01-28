@@ -37,16 +37,19 @@ public:
 		JobStatus_Running = 3,
 		JobStatus_Completed = 4,
 		JobStatus_Failed = 5,
-		JobStatus_Aborted = 6
+		JobStatus_Aborting = 6,
+		JobStatus_Aborted = 7
 	};
 	
 	EncodeThread(void);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
+	void abortJob(void) { m_abort = true; }
 
 protected:
 	const QUuid m_jobId;
+	volatile bool m_abort;
 
 	virtual void run(void);
 	void encode(void);
@@ -55,5 +58,6 @@ signals:
 	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);
 	void progressChanged(const QUuid &jobId, unsigned int newProgress);
 	void messageLogged(const QUuid &jobId, const QString &text);
+	void detailsChanged(const QUuid &jobId, const QString &details);
 };
 

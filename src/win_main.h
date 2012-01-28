@@ -22,6 +22,7 @@
 #pragma once
 
 #include "uic_win_main.h"
+#include "thread_encode.h"
 
 class JobListModel;
 
@@ -33,10 +34,20 @@ public:
 	MainWindow();
 	~MainWindow(void);
 
+protected:
+	virtual void closeEvent(QCloseEvent *e);
+
 private:
 	JobListModel *m_jobList;
 
+	void updateButtons(EncodeThread::JobStatus status);
+
 private slots:
 	void addButtonPressed(void);
+	void startButtonPressed(void);
+	void abortButtonPressed(void);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
+	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
+	void jobLogExtended(const QModelIndex & parent, int start, int end);
+	void showAbout(void);
 };

@@ -26,6 +26,8 @@
 
 #include <QDate>
 #include <QTimer>
+#include <QCloseEvent>
+#include <QMessageBox>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -49,9 +51,11 @@ MainWindow::MainWindow(void)
 
 	//Create model
 	m_jobList = new JobListModel();
+	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
 	jobsView->setModel(m_jobList);
 
 	//Setup view
+	jobsView->horizontalHeader()->setSectionHidden(3, true);
 	jobsView->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
 	jobsView->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
 	jobsView->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
@@ -62,10 +66,16 @@ MainWindow::MainWindow(void)
 
 	//Enable buttons
 	connect(buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
+	connect(buttonStartJob, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
+	connect(buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
+
+	//Enable menu
+	connect(actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
 }
 
 MainWindow::~MainWindow(void)
 {
+	X264_DELETE(m_jobList);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -75,14 +85,126 @@ MainWindow::~MainWindow(void)
 void MainWindow::addButtonPressed(void)
 {
 	EncodeThread *thrd = new EncodeThread();
-	m_jobList->insertJob(thrd);
-
-	QTimer::singleShot(2500, thrd, SLOT(start()));
+	QModelIndex newIndex = m_jobList->insertJob(thrd);
+	jobsView->selectionModel()->setCurrentIndex(newIndex, QItemSelectionModel::ClearAndSelect);
 }
 
+void MainWindow::startButtonPressed(void)
+{
+	m_jobList->startJob(jobsView->currentIndex());
+}
+
+void MainWindow::abortButtonPressed(void)
+{
+	m_jobList->abortJob(jobsView->currentIndex());
+}
 void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & previous)
 {
 	qDebug("Job selected: %d", current.row());
+	
+	if(logView->model())
+	{
+		disconnect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
+	}
+	
 	logView->setModel(m_jobList->getLogFile(current));
-	logView->scrollToBottom();
+	connect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
+	QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
+	
+	progressBar->setValue(m_jobList->getJobProgress(current));
+	editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
+	updateButtons(m_jobList->getJobStatus(current));
+}
+
+void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &bottomRight)
+{
+	int selected = jobsView->currentIndex().row();
+	
+	if(topLeft.column() <= 1 && bottomRight.column() >= 1)
+	{
+		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
+		{
+			if(i == selected)
+			{
+				qDebug("Current job changed status!");
+				updateButtons(m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex())));
+				break;
+			}
+		}
+	}
+	else if(topLeft.column() <= 2 && bottomRight.column() >= 2)
+	{
+		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
+		{
+			if(i == selected)
+			{
+				progressBar->setValue(m_jobList->getJobProgress(m_jobList->index(i, 0, QModelIndex())));
+				break;
+			}
+		}
+	}
+	else if(topLeft.column() <= 3 && bottomRight.column() >= 3)
+	{
+		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
+		{
+			if(i == selected)
+			{
+				editDetails->setText(m_jobList->data(m_jobList->index(i, 3, QModelIndex()), Qt::DisplayRole).toString());
+				break;
+			}
+		}
+	}
+}
+
+void MainWindow::jobLogExtended(const QModelIndex & parent, int start, int end)
+{
+	QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
+}
+
+void MainWindow::showAbout(void)
+{
+	QString text;
+	const char *url = "http://mulder.brhack.net/";
+
+	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u &minus; use 64&minus;Bit x264 with 32&minus;Bit Avisynth<br>", x264_version_major(), x264_version_minor());
+	text += QString().sprintf("Copyright (c) 2004&minus;%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
+	text += QString().sprintf("Built on %s at %s with %s for Win&minus;%s.<br><br>", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
+	text += QString().sprintf("This program is free software: you can redistribute it and/or modify<br>");
+	text += QString().sprintf("it under the terms of the GNU General Public License &lt;http://www.gnu.org/&gt;.<br>");
+	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
+	text += QString().sprintf("Please check the web&minus;site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", url, url);
+
+	QMessageBox::information(this, tr("About..."), text);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Event functions
+///////////////////////////////////////////////////////////////////////////////
+
+void MainWindow::closeEvent(QCloseEvent *e)
+{
+	const int rows = m_jobList->rowCount(QModelIndex());
+	
+	for(int i = 0; i < rows; i++)
+	{
+		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed)
+		{
+			e->ignore();
+			MessageBeep(MB_ICONWARNING);
+			break;
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Private functions
+///////////////////////////////////////////////////////////////////////////////
+
+void MainWindow::updateButtons(EncodeThread::JobStatus status)
+{
+	qDebug("MainWindow::updateButtons(void)");
+
+	buttonStartJob->setEnabled(status == EncodeThread::JobStatus_Enqueued);
+	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running);
 }

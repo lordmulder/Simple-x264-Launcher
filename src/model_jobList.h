@@ -44,8 +44,13 @@ public:
 	virtual QModelIndex parent (const QModelIndex &index) const;
 	virtual QVariant data(const QModelIndex &index, int role) const;
 
-	bool JobListModel::insertJob(EncodeThread *thread);
+	QModelIndex insertJob(EncodeThread *thread);
+	bool startJob(const QModelIndex &index);
+	bool abortJob(const QModelIndex &index);
 	LogFileModel *getLogFile(const QModelIndex &index);
+	EncodeThread::JobStatus getJobStatus(const QModelIndex &index);
+	unsigned int getJobProgress(const QModelIndex &index);
+	QModelIndex getJobIndexById(const QUuid &id);
 
 protected:
 	QList<QUuid> m_jobs;
@@ -53,8 +58,10 @@ protected:
 	QMap<QUuid, EncodeThread::JobStatus> m_status;
 	QMap<QUuid, unsigned int> m_progress;
 	QMap<QUuid, LogFileModel*> m_logFile;
+	QMap<QUuid, QString> m_details;
 
 public slots:
 	void updateStatus(const QUuid &jobId, EncodeThread::JobStatus newStatus);
 	void updateProgress(const QUuid &jobId, unsigned int newProgress);
+	void updateDetails(const QUuid &jobId, const QString &details);
 };

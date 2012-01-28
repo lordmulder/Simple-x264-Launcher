@@ -68,7 +68,7 @@ QVariant JobListModel::headerData(int section, Qt::Orientation orientation, int 
 			return QVariant::fromValue<QString>(tr("Progress"));
 			break;
 		case 3:
-			return QVariant::fromValue<QString>(tr("Progress Details"));
+			return QVariant::fromValue<QString>(tr("Details"));
 			break;
 		default:
 			return QVariant();
@@ -115,6 +115,12 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 				case EncodeThread::JobStatus_Running:
 					return QVariant::fromValue<QString>(tr("Running..."));
 					break;
+				case EncodeThread::JobStatus_Running_Pass1:
+					return QVariant::fromValue<QString>(tr("Running... (Pass 1)"));
+					break;
+				case EncodeThread::JobStatus_Running_Pass2:
+					return QVariant::fromValue<QString>(tr("Running... (Pass 2)"));
+					break;
 				case EncodeThread::JobStatus_Completed:
 					return QVariant::fromValue<QString>(tr("Completed."));
 					break;
@@ -160,6 +166,8 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 				return QIcon(":/buttons/find.png");
 				break;
 			case EncodeThread::JobStatus_Running:
+			case EncodeThread::JobStatus_Running_Pass1:
+			case EncodeThread::JobStatus_Running_Pass2:
 				return QIcon(":/buttons/play.png");
 				break;
 			case EncodeThread::JobStatus_Completed:

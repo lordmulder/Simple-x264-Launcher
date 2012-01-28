@@ -57,27 +57,49 @@ void EncodeThread::encode(void)
 {
 	Sleep(1500);
 
-	for(int i = 0; i <= 100; i++)
+	for(int i = 0; i <= 100; i += 5)
 	{
 		emit progressChanged(m_jobId, i);
-		emit statusChanged(m_jobId, (i % 2) ? JobStatus_Indexing : JobStatus_Running);
+		emit statusChanged(m_jobId, (i % 2) ? JobStatus_Indexing : JobStatus_Running_Pass1);
 		emit messageLogged(m_jobId, QUuid::createUuid().toString());
 	
-		for(int i = 0; i < 5; i++)
+		for(int j = 0; j < 3; j++)
 		{
 			emit detailsChanged(m_jobId, QUuid::createUuid().toString());
-			Sleep(200);
+			Sleep(120);
 		}
 
 		if(m_abort)
 		{
-			Sleep(1500);
+			Sleep(500);
 			emit statusChanged(m_jobId, JobStatus_Aborted);
 			return;
 		}
 	}
 
 	Sleep(1500);
+
+	for(int i = 0; i <= 100; i += 5)
+	{
+		emit progressChanged(m_jobId, i);
+		emit statusChanged(m_jobId, (i % 2) ? JobStatus_Indexing : JobStatus_Running_Pass2);
+		emit messageLogged(m_jobId, QUuid::createUuid().toString());
+	
+		for(int j = 0; j < 3; j++)
+		{
+			emit detailsChanged(m_jobId, QUuid::createUuid().toString());
+			Sleep(120);
+		}
+
+		if(m_abort)
+		{
+			Sleep(500);
+			emit statusChanged(m_jobId, JobStatus_Aborted);
+			return;
+		}
+	}
+
+	Sleep(250);
 
 	emit statusChanged(m_jobId, JobStatus_Completed);
 }

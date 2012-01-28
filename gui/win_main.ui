@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>512</height>
+    <width>720</width>
+    <height>640</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,29 +16,12 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QProgressBar" name="progressBar">
-      <property name="value">
-       <number>0</number>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QFrame" name="frame_2">
-      <property name="frameShape">
-       <enum>QFrame::HLine</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Sunken</enum>
-      </property>
-     </widget>
-    </item>
-    <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
+      </property>
+      <property name="handleWidth">
+       <number>8</number>
       </property>
       <property name="childrenCollapsible">
        <bool>false</bool>
@@ -69,26 +52,70 @@
         <bool>false</bool>
        </attribute>
       </widget>
-      <widget class="QListView" name="logView">
-       <property name="font">
-        <font>
-         <family>Lucida Console</family>
-        </font>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string> Job Details </string>
        </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+        <item>
+         <widget class="QProgressBar" name="progressBar">
+          <property name="value">
+           <number>0</number>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>3</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QListView" name="logView">
+          <property name="font">
+           <font>
+            <family>Lucida Console</family>
+           </font>
+          </property>
+          <property name="selectionMode">
+           <enum>QAbstractItemView::NoSelection</enum>
+          </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="editDetails">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="editDetails">
-      <property name="font">
-       <font>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
      </widget>
     </item>
     <item>
@@ -182,7 +209,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>640</width>
+     <width>720</width>
      <height>21</height>
     </rect>
    </property>
@@ -220,6 +247,14 @@
    </property>
   </action>
  </widget>
+ <tabstops>
+  <tabstop>buttonAddJob</tabstop>
+  <tabstop>buttonStartJob</tabstop>
+  <tabstop>buttonAbortJob</tabstop>
+  <tabstop>jobsView</tabstop>
+  <tabstop>logView</tabstop>
+  <tabstop>editDetails</tabstop>
+ </tabstops>
  <resources>
   <include location="../res/resources.qrc"/>
  </resources>

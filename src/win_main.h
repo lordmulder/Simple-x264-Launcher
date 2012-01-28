@@ -50,4 +50,5 @@ private slots:
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
 	void showAbout(void);
+	void launchNextJob(void);
 };

@@ -35,10 +35,12 @@ public:
 		JobStatus_Starting = 1,
 		JobStatus_Indexing = 2,
 		JobStatus_Running = 3,
-		JobStatus_Completed = 4,
-		JobStatus_Failed = 5,
-		JobStatus_Aborting = 6,
-		JobStatus_Aborted = 7
+		JobStatus_Running_Pass1 = 4,
+		JobStatus_Running_Pass2 = 5,
+		JobStatus_Completed = 6,
+		JobStatus_Failed = 7,
+		JobStatus_Aborting = 8,
+		JobStatus_Aborted = 9
 	};
 	
 	EncodeThread(void);

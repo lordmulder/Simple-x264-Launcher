@@ -86,7 +86,7 @@ void MainWindow::addButtonPressed(void)
 {
 	EncodeThread *thrd = new EncodeThread();
 	QModelIndex newIndex = m_jobList->insertJob(thrd);
-	jobsView->selectionModel()->setCurrentIndex(newIndex, QItemSelectionModel::ClearAndSelect);
+	jobsView->selectRow(newIndex.row());
 }
 
 void MainWindow::startButtonPressed(void)
@@ -98,6 +98,7 @@ void MainWindow::abortButtonPressed(void)
 {
 	m_jobList->abortJob(jobsView->currentIndex());
 }
+
 void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & previous)
 {
 	qDebug("Job selected: %d", current.row());
@@ -124,11 +125,15 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
+			EncodeThread::JobStatus status =  m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
 			if(i == selected)
 			{
 				qDebug("Current job changed status!");
-				updateButtons(m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex())));
-				break;
+				updateButtons(status);
+			}
+			if(status == EncodeThread::JobStatus_Completed)
+			{
+				QTimer::singleShot(0, this, SLOT(launchNextJob()));
 			}
 		}
 	}
@@ -166,15 +171,42 @@ void MainWindow::showAbout(void)
 	QString text;
 	const char *url = "http://mulder.brhack.net/";
 
-	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u &minus; use 64&minus;Bit x264 with 32&minus;Bit Avisynth<br>", x264_version_major(), x264_version_minor());
-	text += QString().sprintf("Copyright (c) 2004&minus;%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
-	text += QString().sprintf("Built on %s at %s with %s for Win&minus;%s.<br><br>", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
+	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor());
+	text += QString().sprintf("Copyright (c) 2004-%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
+	text += QString().sprintf("Built on %s at %s with %s for Win-%s.<br><br>", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
 	text += QString().sprintf("This program is free software: you can redistribute it and/or modify<br>");
 	text += QString().sprintf("it under the terms of the GNU General Public License &lt;http://www.gnu.org/&gt;.<br>");
 	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
-	text += QString().sprintf("Please check the web&minus;site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", url, url);
+	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", url, url);
 
-	QMessageBox::information(this, tr("About..."), text);
+	QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"));
+}
+
+void MainWindow::launchNextJob(void)
+{
+	const int rows = m_jobList->rowCount(QModelIndex());
+
+	for(int i = 0; i < rows; i++)
+	{
+		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2)
+		{
+			qWarning("Still have a job running, won't launch next yet!");
+			return;
+		}
+	}
+
+	for(int i = 0; i < rows; i++)
+	{
+		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status == EncodeThread::JobStatus_Enqueued)
+		{
+			m_jobList->startJob(m_jobList->index(i, 0, QModelIndex()));
+			return;
+		}
+	}
+
+	qWarning("No enqueued jobs left!");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -206,5 +238,6 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	qDebug("MainWindow::updateButtons(void)");
 
 	buttonStartJob->setEnabled(status == EncodeThread::JobStatus_Enqueued);
-	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running);
+	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running ||
+		status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2 );
 }

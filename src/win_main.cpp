@@ -25,6 +25,7 @@
 #include "model_jobList.h"
 
 #include <QDate>
+#include <QTimer>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -57,6 +58,7 @@ MainWindow::MainWindow(void)
 	jobsView->horizontalHeader()->resizeSection(1, 150);
 	jobsView->horizontalHeader()->resizeSection(2, 90);
 	jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+	connect(jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
 
 	//Enable buttons
 	connect(buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
@@ -72,8 +74,15 @@ MainWindow::~MainWindow(void)
 
 void MainWindow::addButtonPressed(void)
 {
-	qWarning("Yeah!");
-
 	EncodeThread *thrd = new EncodeThread();
 	m_jobList->insertJob(thrd);
+
+	QTimer::singleShot(2500, thrd, SLOT(start()));
+}
+
+void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & previous)
+{
+	qDebug("Job selected: %d", current.row());
+	logView->setModel(m_jobList->getLogFile(current));
+	logView->scrollToBottom();
 }

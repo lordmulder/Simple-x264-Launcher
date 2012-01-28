@@ -2,7 +2,14 @@
 <RCC version="1.0">
   <qresource>
     <file>icons/movie.ico</file>
+    <file>buttons/accept.png</file>
     <file>buttons/add.png</file>
+    <file>buttons/clock_pause.png</file>
     <file>buttons/door_in.png</file>
+    <file>buttons/error.png</file>
+    <file>buttons/exclamation.png</file>
+    <file>buttons/find.png</file>
+    <file>buttons/lightning.png</file>
+    <file>buttons/play.png</file>
   </qresource>
 </RCC>

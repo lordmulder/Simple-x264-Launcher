@@ -22,6 +22,7 @@
 #pragma once
 
 #include "thread_encode.h"
+#include "model_logFile.h"
 
 #include "QAbstractItemModel"
 #include <QUuid>
@@ -44,15 +45,16 @@ public:
 	virtual QVariant data(const QModelIndex &index, int role) const;
 
 	bool JobListModel::insertJob(EncodeThread *thread);
+	LogFileModel *getLogFile(const QModelIndex &index);
 
 protected:
 	QList<QUuid> m_jobs;
 	QMap<QUuid, EncodeThread*> m_threads;
 	QMap<QUuid, EncodeThread::JobStatus> m_status;
 	QMap<QUuid, unsigned int> m_progress;
+	QMap<QUuid, LogFileModel*> m_logFile;
 
 public slots:
 	void updateStatus(const QUuid &jobId, EncodeThread::JobStatus newStatus);
 	void updateProgress(const QUuid &jobId, unsigned int newProgress);
-	void addLogMessage(const QUuid &jobId, const QString &text);
 };

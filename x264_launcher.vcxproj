@@ -129,6 +129,14 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <CustomBuild Include="src\model_logFile.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\MOC_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\MOC_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\version.h" />
     <CustomBuild Include="src\win_main.h">
@@ -142,11 +150,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\model_jobList.cpp" />
+    <ClCompile Include="src\model_logFile.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
     <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\win_main.cpp" />
     <ClCompile Include="tmp\moc\moc_model_jobList.cpp" />
+    <ClCompile Include="tmp\moc\moc_model_logFile.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_encode.cpp" />
     <ClCompile Include="tmp\moc\moc_win_main.cpp" />
     <ClCompile Include="tmp\qrc\qrc_resources.cpp" />

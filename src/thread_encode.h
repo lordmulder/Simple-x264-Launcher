@@ -31,12 +31,13 @@ class EncodeThread : public QThread
 public:
 	enum JobStatus
 	{
-		JobStatus_Starting = 0,
-		JobStatus_Indexing = 1,
-		JobStatus_Running = 2,
-		JobStatus_Completed = 3,
-		JobStatus_Failed = 4,
-		JobStatus_Aborted = 5
+		JobStatus_Enqueued = 0,
+		JobStatus_Starting = 1,
+		JobStatus_Indexing = 2,
+		JobStatus_Running = 3,
+		JobStatus_Completed = 4,
+		JobStatus_Failed = 5,
+		JobStatus_Aborted = 6
 	};
 	
 	EncodeThread(void);
@@ -48,6 +49,7 @@ protected:
 	const QUuid m_jobId;
 
 	virtual void run(void);
+	void encode(void);
 
 signals:
 	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);

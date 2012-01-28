@@ -21,22 +21,31 @@
 
 #pragma once
 
-#include "uic_win_main.h"
+#include "thread_encode.h"
 
-class JobListModel;
+#include "QAbstractItemModel"
+#include <QUuid>
+#include <QStringList>
+#include <QMap>
 
-class MainWindow: public QMainWindow, private Ui::MainWindow
+class LogFileModel : public QAbstractItemModel
 {
 	Q_OBJECT
-
+		
 public:
-	MainWindow();
-	~MainWindow(void);
+	LogFileModel(void);
+	~LogFileModel(void);
 
-private:
-	JobListModel *m_jobList;
+	virtual int columnCount(const QModelIndex &parent) const;
+	virtual int rowCount(const QModelIndex &parent) const;
+	virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+	virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
+	virtual QModelIndex parent (const QModelIndex &index) const;
+	virtual QVariant data(const QModelIndex &index, int role) const;
 
-private slots:
-	void addButtonPressed(void);
-	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
+protected:
+	QStringList m_lines;
+
+public slots:
+	void addLogMessage(const QUuid &jobId, const QString &text);
 };

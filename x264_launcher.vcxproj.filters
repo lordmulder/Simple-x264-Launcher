@@ -62,6 +62,12 @@
     <ClCompile Include="tmp\moc\moc_model_jobList.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\model_logFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_model_logFile.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="gui\win_main.ui">
@@ -77,6 +83,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\model_jobList.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\model_logFile.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

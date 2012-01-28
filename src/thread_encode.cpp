@@ -20,6 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "thread_encode.h"
+#include "global.h"
 
 EncodeThread::EncodeThread(void)
 :
@@ -37,4 +38,33 @@ EncodeThread::~EncodeThread(void)
 
 void EncodeThread::run(void)
 {
+	try
+	{
+		encode();
+	}
+	catch(char *msg)
+	{
+		emit messageLogged(m_jobId, QString("EXCEPTION ERROR: ").append(QString::fromLatin1(msg)));
+	}
+	catch(...)
+	{
+		emit messageLogged(m_jobId, QString("EXCEPTION ERROR !!!"));
+	}
+}
+
+void EncodeThread::encode(void)
+{
+	Sleep(1500);
+
+	for(int i = 0; i <= 100; i++)
+	{
+		emit progressChanged(m_jobId, i);
+		emit statusChanged(m_jobId, (i % 2) ? JobStatus_Indexing : JobStatus_Running);
+		Sleep(200);
+		emit messageLogged(m_jobId, QUuid::createUuid().toString());
+	}
+
+	Sleep(1500);
+
+	emit statusChanged(m_jobId, JobStatus_Completed);
 }

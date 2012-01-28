@@ -20,7 +20,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_main.h"
+
 #include "global.h"
+#include "model_jobList.h"
+
+#include <QDate>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -31,8 +35,45 @@ MainWindow::MainWindow(void)
 	//Init the dialog, from the .ui file
 	setupUi(this);
 	setWindowFlags(windowFlags() ^ Qt::WindowMaximizeButtonHint);
+
+	//Register meta types
+	qRegisterMetaType<QUuid>("QUuid");
+	qRegisterMetaType<EncodeThread::JobStatus>("EncodeThread::JobStatus");
+
+	//Freeze minimum size
+	setMinimumSize(size());
+
+	//Show version
+	setWindowTitle(QString("%1 [%2]").arg(windowTitle(), x264_version_date().toString(Qt::ISODate)));
+
+	//Create model
+	m_jobList = new JobListModel();
+	jobsView->setModel(m_jobList);
+
+	//Setup view
+	jobsView->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
+	jobsView->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
+	jobsView->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
+	jobsView->horizontalHeader()->resizeSection(1, 150);
+	jobsView->horizontalHeader()->resizeSection(2, 90);
+	jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+
+	//Enable buttons
+	connect(buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
 }
 
 MainWindow::~MainWindow(void)
 {
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Slots
+///////////////////////////////////////////////////////////////////////////////
+
+void MainWindow::addButtonPressed(void)
+{
+	qWarning("Yeah!");
+
+	EncodeThread *thrd = new EncodeThread();
+	m_jobList->insertJob(thrd);
 }

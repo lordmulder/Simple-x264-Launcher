@@ -25,6 +25,7 @@
 //Qt includes
 #include <QCoreApplication>
 #include <QDate>
+#include <QPlastiqueStyle>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
@@ -67,10 +68,16 @@ static int x264_main(int argc, char* argv[])
 		return -1;
 	}
 
-	//Run application
+	//Set style
+	qApp->setStyle(new QPlastiqueStyle());
+
+	//Create Main Window
 	MainWindow *mainWin = new MainWindow;
 	mainWin->show();
+
+	//Run application
 	int ret = qApp->exec();
+	
 	X264_DELETE(mainWin);
 	return ret;
 }

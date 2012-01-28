@@ -19,23 +19,22 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "thread_encode.h"
 
-#include "uic_win_main.h"
-
-class JobListModel;
-
-class MainWindow: public QMainWindow, private Ui::MainWindow
+EncodeThread::EncodeThread(void)
+:
+	m_jobId(QUuid::createUuid())
 {
-	Q_OBJECT
+}
 
-public:
-	MainWindow();
-	~MainWindow(void);
+EncodeThread::~EncodeThread(void)
+{
+}
 
-private:
-	JobListModel *m_jobList;
+///////////////////////////////////////////////////////////////////////////////
+// Thread entry point
+///////////////////////////////////////////////////////////////////////////////
 
-private slots:
-	void addButtonPressed(void);
-};
+void EncodeThread::run(void)
+{
+}

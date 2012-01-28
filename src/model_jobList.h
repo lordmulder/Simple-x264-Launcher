@@ -21,21 +21,38 @@
 
 #pragma once
 
-#include "uic_win_main.h"
+#include "thread_encode.h"
 
-class JobListModel;
+#include "QAbstractItemModel"
+#include <QUuid>
+#include <QList>
+#include <QMap>
 
-class MainWindow: public QMainWindow, private Ui::MainWindow
+class JobListModel : public QAbstractItemModel
 {
 	Q_OBJECT
-
+		
 public:
-	MainWindow();
-	~MainWindow(void);
+	JobListModel(void);
+	~JobListModel(void);
 
-private:
-	JobListModel *m_jobList;
+	virtual int columnCount(const QModelIndex &parent) const;
+	virtual int rowCount(const QModelIndex &parent) const;
+	virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+	virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
+	virtual QModelIndex parent (const QModelIndex &index) const;
+	virtual QVariant data(const QModelIndex &index, int role) const;
 
-private slots:
-	void addButtonPressed(void);
+	bool JobListModel::insertJob(EncodeThread *thread);
+
+protected:
+	QList<QUuid> m_jobs;
+	QMap<QUuid, EncodeThread*> m_threads;
+	QMap<QUuid, EncodeThread::JobStatus> m_status;
+	QMap<QUuid, unsigned int> m_progress;
+
+public slots:
+	void updateStatus(const QUuid &jobId, EncodeThread::JobStatus newStatus);
+	void updateProgress(const QUuid &jobId, unsigned int newProgress);
+	void addLogMessage(const QUuid &jobId, const QString &text);
 };

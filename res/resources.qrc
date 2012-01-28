@@ -2,5 +2,7 @@
 <RCC version="1.0">
   <qresource>
     <file>icons/movie.ico</file>
+    <file>buttons/add.png</file>
+    <file>buttons/door_in.png</file>
   </qresource>
 </RCC>

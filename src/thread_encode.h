@@ -21,21 +21,37 @@
 
 #pragma once
 
-#include "uic_win_main.h"
+#include <QThread>
+#include <QUuid>
 
-class JobListModel;
-
-class MainWindow: public QMainWindow, private Ui::MainWindow
+class EncodeThread : public QThread
 {
 	Q_OBJECT
 
 public:
-	MainWindow();
-	~MainWindow(void);
+	enum JobStatus
+	{
+		JobStatus_Starting = 0,
+		JobStatus_Indexing = 1,
+		JobStatus_Running = 2,
+		JobStatus_Completed = 3,
+		JobStatus_Failed = 4,
+		JobStatus_Aborted = 5
+	};
+	
+	EncodeThread(void);
+	~EncodeThread(void);
 
-private:
-	JobListModel *m_jobList;
+	QUuid getId(void) { return this->m_jobId; };
 
-private slots:
-	void addButtonPressed(void);
+protected:
+	const QUuid m_jobId;
+
+	virtual void run(void);
+
+signals:
+	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);
+	void progressChanged(const QUuid &jobId, unsigned int newProgress);
+	void messageLogged(const QUuid &jobId, const QString &text);
 };
+

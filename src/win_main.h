@@ -31,7 +31,7 @@ class MainWindow: public QMainWindow, private Ui::MainWindow
 	Q_OBJECT
 
 public:
-	MainWindow();
+	MainWindow(bool x64supported);
 	~MainWindow(void);
 
 protected:
@@ -39,7 +39,8 @@ protected:
 
 private:
 	JobListModel *m_jobList;
-
+	const bool m_x64supported;
+	
 	void updateButtons(EncodeThread::JobStatus status);
 
 private slots:

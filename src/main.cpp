@@ -72,7 +72,7 @@ static int x264_main(int argc, char* argv[])
 	qApp->setStyle(new QPlastiqueStyle());
 
 	//Create Main Window
-	MainWindow *mainWin = new MainWindow;
+	MainWindow *mainWin = new MainWindow(cpuFeatures.x64);
 	mainWin->show();
 
 	//Run application

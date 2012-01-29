@@ -33,7 +33,9 @@
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-MainWindow::MainWindow(void)
+MainWindow::MainWindow(bool x64supported)
+:
+	m_x64supported(x64supported)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
@@ -46,8 +48,9 @@ MainWindow::MainWindow(void)
 	//Freeze minimum size
 	setMinimumSize(size());
 
-	//Show version
+	//Update title
 	setWindowTitle(QString("%1 [%2]").arg(windowTitle(), x264_version_date().toString(Qt::ISODate)));
+	if(m_x64supported) setWindowTitle(QString("%1 (x64)").arg(windowTitle()));
 
 	//Create model
 	m_jobList = new JobListModel();

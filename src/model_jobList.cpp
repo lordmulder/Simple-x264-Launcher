@@ -33,8 +33,11 @@ JobListModel::~JobListModel(void)
 {
 	while(!m_jobs.isEmpty())
 	{
-		EncodeThread *thrd = m_threads.value(m_jobs.takeFirst(), NULL);
-		X264_DELETE(thrd);
+		QUuid id = m_jobs.takeFirst();
+		EncodeThread *thread = m_threads.value(id, NULL);
+		LogFileModel *logFile = m_logFile.value(id, NULL);
+		X264_DELETE(thread);
+		X264_DELETE(logFile);
 	}
 }
 

@@ -43,14 +43,20 @@ public:
 		JobStatus_Aborted = 9
 	};
 	
-	EncodeThread(void);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
+	const QString &sourceFileName(void) { return this->m_sourceFileName; };
+	const QString &outputFileName(void) { return this->m_outputFileName; };
+
 	void abortJob(void) { m_abort = true; }
 
 protected:
 	const QUuid m_jobId;
+	const QString m_sourceFileName;
+	const QString m_outputFileName;
+
 	volatile bool m_abort;
 
 	virtual void run(void);

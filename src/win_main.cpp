@@ -29,6 +29,10 @@
 #include <QTimer>
 #include <QCloseEvent>
 #include <QMessageBox>
+#include <QDesktopServices>
+#include <QUrl>
+
+const char *home_url = "http://mulder.brhack.net/";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -75,6 +79,11 @@ MainWindow::MainWindow(bool x64supported)
 
 	//Enable menu
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
+	connect(actionWebMulder, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebJarod, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 }
 
 MainWindow::~MainWindow(void)
@@ -89,13 +98,25 @@ MainWindow::~MainWindow(void)
 void MainWindow::addButtonPressed(void)
 {
 	AddJobDialog *addDialog = new AddJobDialog(this);
+	addDialog->setRunImmediately(!havePendingJobs());
 	int result = addDialog->exec();
 	
 	if(result == QDialog::Accepted)
 	{
-		EncodeThread *thrd = new EncodeThread();
+		EncodeThread *thrd = new EncodeThread
+		(
+			addDialog->sourceFile(),
+			addDialog->outputFile()
+		);
+
 		QModelIndex newIndex = m_jobList->insertJob(thrd);
-		jobsView->selectRow(newIndex.row());
+
+		if(addDialog->runImmediately())
+		{
+			jobsView->selectRow(newIndex.row());
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+			m_jobList->startJob(newIndex);
+		}
 	}
 
 	X264_DELETE(addDialog);
@@ -181,7 +202,6 @@ void MainWindow::jobLogExtended(const QModelIndex & parent, int start, int end)
 void MainWindow::showAbout(void)
 {
 	QString text;
-	const char *url = "http://mulder.brhack.net/";
 
 	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor());
 	text += QString().sprintf("Copyright (c) 2004-%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
@@ -189,9 +209,18 @@ void MainWindow::showAbout(void)
 	text += QString().sprintf("This program is free software: you can redistribute it and/or modify<br>");
 	text += QString().sprintf("it under the terms of the GNU General Public License &lt;http://www.gnu.org/&gt;.<br>");
 	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
-	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", url, url);
+	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", home_url, home_url);
 
 	QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"));
+}
+
+void MainWindow::showWebLink(void)
+{
+	if(QObject::sender() == actionWebMulder) QDesktopServices::openUrl(QUrl(home_url));
+	if(QObject::sender() == actionWebX264) QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
+	if(QObject::sender() == actionWebKomisar) QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
+	if(QObject::sender() == actionWebJarod) QDesktopServices::openUrl(QUrl("http://www.x264.nl/"));
+	if(QObject::sender() == actionWebWiki) QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
 }
 
 void MainWindow::launchNextJob(void)
@@ -227,23 +256,35 @@ void MainWindow::launchNextJob(void)
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	const int rows = m_jobList->rowCount(QModelIndex());
-	
-	for(int i = 0; i < rows; i++)
+	if(havePendingJobs())
 	{
-		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
-		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed)
-		{
-			e->ignore();
-			MessageBeep(MB_ICONWARNING);
-			break;
-		}
+		e->ignore();
+		MessageBeep(MB_ICONWARNING);
+		return;
 	}
+
+	QMainWindow::closeEvent(e);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private functions
 ///////////////////////////////////////////////////////////////////////////////
+
+bool MainWindow::havePendingJobs(void)
+{
+	const int rows = m_jobList->rowCount(QModelIndex());
+
+	for(int i = 0; i < rows; i++)
+	{
+		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
 
 void MainWindow::updateButtons(EncodeThread::JobStatus status)
 {

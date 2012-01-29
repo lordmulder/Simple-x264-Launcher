@@ -223,6 +223,12 @@
     <property name="title">
      <string>?</string>
     </property>
+    <addaction name="actionWebMulder"/>
+    <addaction name="actionWebX264"/>
+    <addaction name="actionWebKomisar"/>
+    <addaction name="actionWebJarod"/>
+    <addaction name="actionWebWiki"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
@@ -243,7 +249,52 @@
      <normaloff>:/buttons/information.png</normaloff>:/buttons/information.png</iconset>
    </property>
    <property name="text">
-    <string>About</string>
+    <string>About...</string>
+   </property>
+  </action>
+  <action name="actionWebMulder">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>MuldeR's Web-Site</string>
+   </property>
+  </action>
+  <action name="actionWebX264">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>Official x264 Web-Site</string>
+   </property>
+  </action>
+  <action name="actionWebKomisar">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>Komisar's Web-Site</string>
+   </property>
+  </action>
+  <action name="actionWebJarod">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>Jarod's Web-Site</string>
+   </property>
+  </action>
+  <action name="actionWebWiki">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
+   </property>
+   <property name="text">
+    <string>MeWiki - x264 Settings</string>
    </property>
   </action>
  </widget>

@@ -42,6 +42,7 @@ private:
 	const bool m_x64supported;
 	
 	void updateButtons(EncodeThread::JobStatus status);
+	bool havePendingJobs(void);
 
 private slots:
 	void addButtonPressed(void);
@@ -51,5 +52,6 @@ private slots:
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
 	void showAbout(void);
+	void showWebLink(void);
 	void launchNextJob(void);
 };

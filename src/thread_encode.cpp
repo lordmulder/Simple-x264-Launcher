@@ -22,9 +22,11 @@
 #include "thread_encode.h"
 #include "global.h"
 
-EncodeThread::EncodeThread(void)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName)
 :
-	m_jobId(QUuid::createUuid())
+	m_jobId(QUuid::createUuid()),
+	m_sourceFileName(sourceFileName),
+	m_outputFileName(outputFileName)
 {
 	m_abort = false;
 }

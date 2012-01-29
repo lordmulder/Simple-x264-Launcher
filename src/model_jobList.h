@@ -54,6 +54,7 @@ public:
 
 protected:
 	QList<QUuid> m_jobs;
+	QMap<QUuid, QString> m_name;
 	QMap<QUuid, EncodeThread*> m_threads;
 	QMap<QUuid, EncodeThread::JobStatus> m_status;
 	QMap<QUuid, unsigned int> m_progress;

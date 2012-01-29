@@ -24,6 +24,7 @@
 #include "thread_encode.h"
 
 #include <QIcon>
+#include <QFileInfo>
 
 JobListModel::JobListModel(void)
 {
@@ -101,7 +102,7 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 			switch(index.column())
 			{
 			case 0:
-				return m_jobs.at(index.row()).toString();
+				return m_name.value(m_jobs.at(index.row()));
 				break;
 			case 1:
 				switch(m_status.value(m_jobs.at(index.row())))
@@ -211,6 +212,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		
 	beginInsertRows(QModelIndex(), m_jobs.count(), m_jobs.count());
 	m_jobs.append(id);
+	m_name.insert(id, QFileInfo(thread->sourceFileName()).completeBaseName());
 	m_status.insert(id, EncodeThread::JobStatus_Enqueued);
 	m_progress.insert(id, 0);
 	m_threads.insert(id, thread);

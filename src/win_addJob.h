@@ -23,7 +23,7 @@
 
 #include "uic_win_addJob.h"
 
-class AddJobDialog: public QDialog, private Ui::AddJobDialog
+class AddJobDialog : public QDialog, private Ui::AddJobDialog
 {
 	Q_OBJECT
 
@@ -31,9 +31,21 @@ public:
 	AddJobDialog(QWidget *parent);
 	~AddJobDialog(void);
 
+	QString sourceFile(void) { return editSource->text(); }
+	QString outputFile(void) { return editOutput->text(); }
+	QString preset(void) { return cbxPreset->itemText(cbxPreset->currentIndex()); }
+	QString tuning(void) { return cbxTuning->itemText(cbxTuning->currentIndex()); }
+	QString profile(void) { return cbxProfile->itemText(cbxProfile->currentIndex()); }
+	QString params(void) { return cbxCustomParams->currentText().simplified(); }
+	bool runImmediately(void) { return checkBoxRun->isChecked(); }
+	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
+
 protected:
 	virtual void AddJobDialog::showEvent(QShowEvent *event);
 
 private slots:
 	void modeIndexChanged(int index);
+	void browseButtonClicked(void);
+	
+	virtual void accept(void);
 };

@@ -23,6 +23,7 @@
 
 #include "global.h"
 #include "model_jobList.h"
+#include "win_addJob.h"
 
 #include <QDate>
 #include <QTimer>
@@ -87,9 +88,17 @@ MainWindow::~MainWindow(void)
 
 void MainWindow::addButtonPressed(void)
 {
-	EncodeThread *thrd = new EncodeThread();
-	QModelIndex newIndex = m_jobList->insertJob(thrd);
-	jobsView->selectRow(newIndex.row());
+	AddJobDialog *addDialog = new AddJobDialog(this);
+	int result = addDialog->exec();
+	
+	if(result == QDialog::Accepted)
+	{
+		EncodeThread *thrd = new EncodeThread();
+		QModelIndex newIndex = m_jobList->insertJob(thrd);
+		jobsView->selectRow(newIndex.row());
+	}
+
+	X264_DELETE(addDialog);
 }
 
 void MainWindow::startButtonPressed(void)

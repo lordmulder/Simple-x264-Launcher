@@ -26,6 +26,8 @@
 
 LogFileModel::LogFileModel(void)
 {
+	m_lines << "Job not started yet.";
+	m_firstLine = true;
 }
 
 LogFileModel::~LogFileModel(void)
@@ -81,10 +83,18 @@ QVariant LogFileModel::data(const QModelIndex &index, int role) const
 void LogFileModel::addLogMessage(const QUuid &jobId, const QString &text)
 {
 	beginInsertRows(QModelIndex(), m_lines.count(), m_lines.count());
+
+	if(m_firstLine)
+	{
+		m_firstLine = false;
+		m_lines.clear();
+	}
+
 	QStringList lines = text.split("\n");
 	for(int i = 0; i < lines.count(); i++)
 	{
 		m_lines.append(lines.at(i));
 	}
+
 	endInsertRows();
 }

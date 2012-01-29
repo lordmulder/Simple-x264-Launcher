@@ -32,6 +32,7 @@
 #include <QMessageBox>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QDir>
 
 const char *home_url = "http://mulder.brhack.net/";
 
@@ -41,7 +42,9 @@ const char *home_url = "http://mulder.brhack.net/";
 
 MainWindow::MainWindow(bool x64supported)
 :
-	m_x64supported(x64supported)
+	m_x64supported(x64supported),
+	m_appDir(QApplication::applicationDirPath()),
+	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
@@ -55,7 +58,7 @@ MainWindow::MainWindow(bool x64supported)
 	setMinimumSize(size());
 
 	//Update title
-	setWindowTitle(QString("%1 [%2]").arg(windowTitle(), x264_version_date().toString(Qt::ISODate)));
+	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	if(m_x64supported) setWindowTitle(QString("%1 (x64)").arg(windowTitle()));
 
 	//Create model
@@ -94,6 +97,12 @@ MainWindow::~MainWindow(void)
 {
 	X264_DELETE(m_jobList);
 	X264_DELETE(m_options);
+
+	while(!m_toolsList.isEmpty())
+	{
+		QFile *temp = m_toolsList.takeFirst();
+		X264_DELETE(temp);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -112,7 +121,8 @@ void MainWindow::addButtonPressed(void)
 		(
 			addDialog->sourceFile(),
 			addDialog->outputFile(),
-			m_options
+			m_options,
+			QString("%1/toolset").arg(m_appDir)
 		);
 
 		QModelIndex newIndex = m_jobList->insertJob(thrd);
@@ -256,9 +266,47 @@ void MainWindow::launchNextJob(void)
 	qWarning("No enqueued jobs left!");
 }
 
+void MainWindow::init(void)
+{
+	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:pipebuf.exe";
+	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
+	
+	while(!binaries.isEmpty())
+	{
+		QString current = binaries.takeFirst();
+		QFile *file = new QFile(QString("%1/toolset/%2").arg(m_appDir, current));
+		if(file->open(QIODevice::ReadOnly))
+		{
+			m_toolsList << file;
+		}
+		else
+		{
+			X264_DELETE(file);
+			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
+			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
+			return;
+		}
+	}
+
+	qsrand(time(NULL)); int rnd = qrand() % 3;
+	int val = QMessageBox::warning(this, tr("Pre-Release Version"), tr("Note: This is a pre-release version. Please do NOT use for production!<br><br>Click the button #%1 in order to continue...").arg(QString::number(rnd + 1)), tr("(1)"), tr("(2)"), tr("(3)"), qrand() % 3);
+	if(rnd != val) { close(); }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Event functions
 ///////////////////////////////////////////////////////////////////////////////
+
+void MainWindow::showEvent(QShowEvent *e)
+{
+	QMainWindow::showEvent(e);
+
+	if(m_firstShow)
+	{
+		m_firstShow = false;
+		QTimer::singleShot(0, this, SLOT(init()));
+	}
+}
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {

@@ -33,8 +33,8 @@ public:
 	AddJobDialog(QWidget *parent, OptionsModel *options);
 	~AddJobDialog(void);
 
-	QString sourceFile(void) { return editSource->text(); }
-	QString outputFile(void) { return editOutput->text(); }
+	QString sourceFile(void);
+	QString outputFile(void);
 	QString preset(void) { return cbxPreset->itemText(cbxPreset->currentIndex()); }
 	QString tuning(void) { return cbxTuning->itemText(cbxTuning->currentIndex()); }
 	QString profile(void) { return cbxProfile->itemText(cbxProfile->currentIndex()); }

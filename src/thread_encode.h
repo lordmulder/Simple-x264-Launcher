@@ -23,8 +23,11 @@
 
 #include <QThread>
 #include <QUuid>
+#include <QMutex>
+#include <QStringList>
 
 class OptionsModel;
+class QProcess;
 
 class EncodeThread : public QThread
 {
@@ -45,7 +48,7 @@ public:
 		JobStatus_Aborted = 9
 	};
 	
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -55,19 +58,29 @@ public:
 	void abortJob(void) { m_abort = true; }
 
 protected:
+	static QMutex m_mutex_startProcess;
+	static void *m_handle_jobObject;
+
+	static const int m_processTimeoutInterval = 600000;
+
 	const QUuid m_jobId;
 	const QString m_sourceFileName;
 	const QString m_outputFileName;
 	const OptionsModel *m_options;
+	const QString m_binDir;
 
 	volatile bool m_abort;
 	virtual void run(void);
 	
 	//Encode functions
 	void encode(void);
-	
+	QStringList buildCommandLine(void);
+
 	//Auxiallary Stuff
 	void log(const QString &text) { emit messageLogged(m_jobId, text); }
+	bool startProcess(QProcess &process, const QString &program, const QStringList &args);
+	
+	static QString commandline2string(const QString &program, const QStringList &arguments);
 
 signals:
 	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);

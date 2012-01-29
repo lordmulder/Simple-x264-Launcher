@@ -26,6 +26,7 @@
 
 class JobListModel;
 class OptionsModel;
+class QFile;
 
 class MainWindow: public QMainWindow, private Ui::MainWindow
 {
@@ -37,11 +38,17 @@ public:
 
 protected:
 	virtual void closeEvent(QCloseEvent *e);
+	virtual void showEvent(QShowEvent *e);
 
 private:
+	bool m_firstShow;
+
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
+	QList<QFile*> m_toolsList;
+
 	const bool m_x64supported;
+	const QString m_appDir;
 	
 	void updateButtons(EncodeThread::JobStatus status);
 	bool havePendingJobs(void);
@@ -50,6 +57,7 @@ private slots:
 	void addButtonPressed(void);
 	void startButtonPressed(void);
 	void abortButtonPressed(void);
+	void init(void);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);

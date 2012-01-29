@@ -322,7 +322,7 @@ void JobListModel::updateProgress(const QUuid &jobId, unsigned int newProgress)
 
 	if((index = m_jobs.indexOf(jobId)) >= 0)
 	{
-		m_progress.insert(jobId, newProgress);
+		m_progress.insert(jobId, qBound(0U, newProgress, 100U));
 		emit dataChanged(createIndex(index, 2), createIndex(index, 2));
 	}
 }

@@ -45,6 +45,7 @@ public:
 
 protected:
 	QStringList m_lines;
+	bool m_firstLine;
 
 public slots:
 	void addLogMessage(const QUuid &jobId, const QString &text);

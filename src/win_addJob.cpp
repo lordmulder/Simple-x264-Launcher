@@ -31,6 +31,7 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QValidator>
+#include <QDir>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
@@ -175,7 +176,7 @@ void AddJobDialog::browseButtonClicked(void)
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			editSource->setText(filePath);
+			editSource->setText(QDir::toNativeSeparators(filePath));
 
 			QString path = QFileInfo(filePath).path();
 			QString name = QFileInfo(filePath).completeBaseName();
@@ -191,7 +192,7 @@ void AddJobDialog::browseButtonClicked(void)
 				}
 			}
 
-			editOutput->setText(outPath);
+			editOutput->setText(QDir::toNativeSeparators(outPath));
 		}
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
@@ -205,9 +206,23 @@ void AddJobDialog::browseButtonClicked(void)
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			editOutput->setText(filePath);
+			editOutput->setText(QDir::toNativeSeparators(filePath));
 		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public functions
+///////////////////////////////////////////////////////////////////////////////
+
+QString AddJobDialog::sourceFile(void)
+{
+	return QDir::fromNativeSeparators(editSource->text());
+}
+
+QString AddJobDialog::outputFile(void)
+{
+	return QDir::fromNativeSeparators(editOutput->text());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -159,6 +159,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <ClInclude Include="src\model_options.h" />
     <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\version.h" />
     <CustomBuild Include="src\win_main.h">
@@ -173,6 +174,7 @@
   <ItemGroup>
     <ClCompile Include="src\model_jobList.cpp" />
     <ClCompile Include="src\model_logFile.cpp" />
+    <ClCompile Include="src\model_options.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
     <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\main.cpp" />

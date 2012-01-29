@@ -23,12 +23,14 @@
 
 #include "uic_win_addJob.h"
 
+class OptionsModel;
+
 class AddJobDialog : public QDialog, private Ui::AddJobDialog
 {
 	Q_OBJECT
 
 public:
-	AddJobDialog(QWidget *parent);
+	AddJobDialog(QWidget *parent, OptionsModel *options);
 	~AddJobDialog(void);
 
 	QString sourceFile(void) { return editSource->text(); }
@@ -41,6 +43,8 @@ public:
 	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
 
 protected:
+	OptionsModel *m_options;
+	
 	virtual void AddJobDialog::showEvent(QShowEvent *event);
 
 private slots:
@@ -48,4 +52,9 @@ private slots:
 	void browseButtonClicked(void);
 	
 	virtual void accept(void);
+
+private:
+	void restoreOptions(OptionsModel *options);
+	void saveOptions(OptionsModel *options);
+	void updateComboBox(QComboBox *cbox, const QString &text);
 };

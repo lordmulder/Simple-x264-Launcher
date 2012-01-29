@@ -22,6 +22,7 @@
 #include "win_addJob.h"
 
 #include "global.h"
+#include "model_options.h"
 
 #include <QDate>
 #include <QTimer>
@@ -65,12 +66,14 @@ class StringValidator : public QValidator
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-AddJobDialog::AddJobDialog(QWidget *parent)
+AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 :
-	QDialog(parent)
+	QDialog(parent),
+	m_options(options)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
+	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	
 	//Fix dialog size
 	resize(width(), minimumHeight());
@@ -101,6 +104,7 @@ AddJobDialog::~AddJobDialog(void)
 void AddJobDialog::showEvent(QShowEvent *event)
 {
 	QDialog::showEvent(event);
+	restoreOptions(m_options);
 	modeIndexChanged(cbxRateControlMode->currentIndex());
 }
 
@@ -150,6 +154,7 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
+	saveOptions(m_options);
 	QDialog::accept();
 }
 
@@ -203,4 +208,42 @@ void AddJobDialog::browseButtonClicked(void)
 			editOutput->setText(filePath);
 		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Private functions
+///////////////////////////////////////////////////////////////////////////////
+
+void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
+{
+	for(int i = 0; i < cbox->model()->rowCount(); i++)
+	{
+		if(cbox->model()->data(cbox->model()->index(i, 0, QModelIndex())).toString().compare(text, Qt::CaseInsensitive) == 0)
+		{
+			cbox->setCurrentIndex(i);
+			break;
+		}
+	}
+}
+
+void AddJobDialog::restoreOptions(OptionsModel *options)
+{
+	cbxRateControlMode->setCurrentIndex(options->rcMode());
+	spinQuantizer->setValue(options->quantizer());
+	spinBitrate->setValue(options->bitrate());
+	updateComboBox(cbxPreset, options->preset());
+	updateComboBox(cbxTuning, options->tune());
+	updateComboBox(cbxProfile, options->profile());
+	cbxCustomParams->setEditText(options->custom());
+}
+
+void AddJobDialog::saveOptions(OptionsModel *options)
+{
+	options->setRCMode(static_cast<OptionsModel::RCMode>(cbxRateControlMode->currentIndex()));
+	options->setQuantizer(spinQuantizer->value());
+	options->setBitrate(spinBitrate->value());
+	options->setPreset(cbxPreset->model()->data(cbxPreset->model()->index(cbxPreset->currentIndex(), 0)).toString());
+	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
+	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
+	options->setCustom(cbxCustomParams->currentText());
 }

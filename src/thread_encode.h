@@ -24,6 +24,8 @@
 #include <QThread>
 #include <QUuid>
 
+class OptionsModel;
+
 class EncodeThread : public QThread
 {
 	Q_OBJECT
@@ -43,7 +45,7 @@ public:
 		JobStatus_Aborted = 9
 	};
 	
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -56,11 +58,16 @@ protected:
 	const QUuid m_jobId;
 	const QString m_sourceFileName;
 	const QString m_outputFileName;
+	const OptionsModel *m_options;
 
 	volatile bool m_abort;
-
 	virtual void run(void);
+	
+	//Encode functions
 	void encode(void);
+	
+	//Auxiallary Stuff
+	void log(const QString &text) { emit messageLogged(m_jobId, text); }
 
 signals:
 	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);

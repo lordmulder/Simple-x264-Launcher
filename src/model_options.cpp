@@ -19,41 +19,41 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include "model_options.h"
 
-#include "uic_win_main.h"
-#include "thread_encode.h"
-
-class JobListModel;
-class OptionsModel;
-
-class MainWindow: public QMainWindow, private Ui::MainWindow
+OptionsModel::OptionsModel(void)
 {
-	Q_OBJECT
+	m_rcMode = RCMode_CRF;
+	m_bitrate = 1200;
+	m_quantizer = 22;
+	m_preset = "Medium";
+	m_tune = "None";
+	m_profile = "High";
+	m_custom = "";
+}
 
-public:
-	MainWindow(bool x64supported);
-	~MainWindow(void);
+OptionsModel::~OptionsModel(void)
+{
+}
 
-protected:
-	virtual void closeEvent(QCloseEvent *e);
-
-private:
-	JobListModel *m_jobList;
-	OptionsModel *m_options;
-	const bool m_x64supported;
-	
-	void updateButtons(EncodeThread::JobStatus status);
-	bool havePendingJobs(void);
-
-private slots:
-	void addButtonPressed(void);
-	void startButtonPressed(void);
-	void abortButtonPressed(void);
-	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
-	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
-	void jobLogExtended(const QModelIndex & parent, int start, int end);
-	void showAbout(void);
-	void showWebLink(void);
-	void launchNextJob(void);
-};
+QString OptionsModel::rcMode2String(RCMode mode)
+{
+	switch(mode)
+	{
+	case RCMode_CRF:
+		return QObject::tr("CRF");
+		break;
+	case RCMode_CQ:
+		return QObject::tr("CQ");
+		break;
+	case RCMode_2Pass:
+		return QObject::tr("2-Pass");
+		break;
+	case RCMode_ABR:
+		return QObject::tr("ABR");
+		break;
+	default:
+		return QString();
+		break;
+	}
+}

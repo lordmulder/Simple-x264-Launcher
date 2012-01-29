@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>560</width>
+    <width>640</width>
     <height>494</height>
    </rect>
   </property>
@@ -238,7 +238,14 @@
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="spinQuantizer"/>
+           <widget class="QSpinBox" name="spinQuantizer">
+            <property name="maximum">
+             <number>52</number>
+            </property>
+            <property name="value">
+             <number>22</number>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -268,7 +275,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="spinBitrate"/>
+           <widget class="QSpinBox" name="spinBitrate">
+            <property name="minimum">
+             <number>100</number>
+            </property>
+            <property name="maximum">
+             <number>250000</number>
+            </property>
+            <property name="value">
+             <number>1200</number>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -329,7 +346,7 @@
           <item>
            <widget class="QComboBox" name="cbxPreset">
             <property name="currentIndex">
-             <number>0</number>
+             <number>5</number>
             </property>
             <item>
              <property name="text">
@@ -413,7 +430,7 @@
           <item>
            <widget class="QComboBox" name="cbxTuning">
             <property name="currentIndex">
-             <number>0</number>
+             <number>1</number>
             </property>
             <item>
              <property name="text">

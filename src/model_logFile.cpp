@@ -63,7 +63,7 @@ QModelIndex LogFileModel::parent(const QModelIndex &index) const
 
 QVariant LogFileModel::data(const QModelIndex &index, int role) const
 {
-	if(role == Qt::DisplayRole)
+	if((role == Qt::DisplayRole) || (role == Qt::ToolTipRole))
 	{
 		if(index.row() >= 0 && index.row() < m_lines.count() && index.column() == 0)
 		{
@@ -81,6 +81,10 @@ QVariant LogFileModel::data(const QModelIndex &index, int role) const
 void LogFileModel::addLogMessage(const QUuid &jobId, const QString &text)
 {
 	beginInsertRows(QModelIndex(), m_lines.count(), m_lines.count());
-	m_lines.append(text);
+	QStringList lines = text.split("\n");
+	for(int i = 0; i < lines.count(); i++)
+	{
+		m_lines.append(lines.at(i));
+	}
 	endInsertRows();
 }

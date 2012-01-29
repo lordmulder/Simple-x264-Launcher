@@ -20,19 +20,26 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "thread_encode.h"
-#include "global.h"
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName)
+#include "global.h"
+#include "model_options.h"
+
+#include <QDate>
+#include <QTime>
+
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
-	m_outputFileName(outputFileName)
+	m_outputFileName(outputFileName),
+	m_options(new OptionsModel(*options))
 {
 	m_abort = false;
 }
 
 EncodeThread::~EncodeThread(void)
 {
+	X264_DELETE(m_options);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,6 +65,18 @@ void EncodeThread::run(void)
 void EncodeThread::encode(void)
 {
 	Sleep(1500);
+
+	//Print some basic info
+	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
+	log(tr("Source file: %1").arg(m_sourceFileName));
+	log(tr("Output file: %1").arg(m_outputFileName));
+	log(tr("\n[Encoder Options]"));
+	log(tr("RC Mode: %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));
+	log(tr("Preset: %1").arg(m_options->preset()));
+	log(tr("Tuning: %1").arg(m_options->tune()));
+	log(tr("Profile: %1").arg(m_options->profile()));
+	log(tr("Custom: %1").arg(m_options->custom().isEmpty() ? tr("(None)") : m_options->custom()));
+	log(tr("\n[Input Properties]"));
 
 	for(int i = 0; i <= 100; i += 5)
 	{

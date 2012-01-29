@@ -23,6 +23,7 @@
 
 #include "global.h"
 #include "model_jobList.h"
+#include "model_options.h"
 #include "win_addJob.h"
 
 #include <QDate>
@@ -44,7 +45,7 @@ MainWindow::MainWindow(bool x64supported)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
-	setWindowFlags(windowFlags() ^ Qt::WindowMaximizeButtonHint);
+	setWindowFlags(windowFlags() & (~Qt::WindowMaximizeButtonHint));
 
 	//Register meta types
 	qRegisterMetaType<QUuid>("QUuid");
@@ -84,11 +85,15 @@ MainWindow::MainWindow(bool x64supported)
 	connect(actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebJarod, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
+
+	//Create options object
+	m_options = new OptionsModel();
 }
 
 MainWindow::~MainWindow(void)
 {
 	X264_DELETE(m_jobList);
+	X264_DELETE(m_options);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -97,7 +102,7 @@ MainWindow::~MainWindow(void)
 
 void MainWindow::addButtonPressed(void)
 {
-	AddJobDialog *addDialog = new AddJobDialog(this);
+	AddJobDialog *addDialog = new AddJobDialog(this, m_options);
 	addDialog->setRunImmediately(!havePendingJobs());
 	int result = addDialog->exec();
 	
@@ -106,7 +111,8 @@ void MainWindow::addButtonPressed(void)
 		EncodeThread *thrd = new EncodeThread
 		(
 			addDialog->sourceFile(),
-			addDialog->outputFile()
+			addDialog->outputFile(),
+			m_options
 		);
 
 		QModelIndex newIndex = m_jobList->insertJob(thrd);

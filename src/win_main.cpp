@@ -39,6 +39,9 @@ const char *home_url = "http://mulder.brhack.net/";
 
 #define PRE_RELEASE (1)
 
+#define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
+#define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
+
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,7 +62,7 @@ MainWindow::MainWindow(bool x64supported)
 
 	//Freeze minimum size
 	setMinimumSize(size());
-	splitter->setSizes(QList<int>() << 200 << SHRT_MAX);
+	splitter->setSizes(QList<int>() << 16 << 196);
 
 	//Update title
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
@@ -70,7 +73,7 @@ MainWindow::MainWindow(bool x64supported)
 	m_jobList = new JobListModel();
 	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
 	jobsView->setModel(m_jobList);
-
+	
 	//Setup view
 	jobsView->horizontalHeader()->setSectionHidden(3, true);
 	jobsView->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
@@ -80,6 +83,12 @@ MainWindow::MainWindow(bool x64supported)
 	jobsView->horizontalHeader()->resizeSection(2, 90);
 	jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
 	connect(jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
+
+	//Create context menu
+	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), logView);
+	logView->addAction(actionClipboard);
+	connect(actionClipboard, SIGNAL(triggered(bool)), this, SLOT(copyLogToClipboard(bool)));
+	jobsView->addActions(menuJob->actions());
 
 	//Enable buttons
 	connect(buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
@@ -95,6 +104,18 @@ MainWindow::MainWindow(bool x64supported)
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
 
+	//Create floating label
+	m_label = new QLabel(jobsView);
+	m_label->setText(tr("No job created yet. Please click the 'Add New Job' button!"));
+	m_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+	SET_TEXT_COLOR(m_label, Qt::darkGray);
+	SET_FONT_BOLD(m_label, true);
+	m_label->setVisible(true);
+	m_label->setContextMenuPolicy(Qt::ActionsContextMenu);
+	m_label->addActions(jobsView->actions());
+	connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabel()));
+	updateLabel();
+
 	//Create options object
 	m_options = new OptionsModel();
 }
@@ -103,6 +124,7 @@ MainWindow::~MainWindow(void)
 {
 	X264_DELETE(m_jobList);
 	X264_DELETE(m_options);
+	X264_DELETE(m_label);
 
 	while(!m_toolsList.isEmpty())
 	{
@@ -123,7 +145,6 @@ void MainWindow::addButtonPressed(void)
 	
 	if(result == QDialog::Accepted)
 	{
-		qDebug("RC Mode: %d", m_options->rcMode());
 		
 		EncodeThread *thrd = new EncodeThread
 		(
@@ -142,6 +163,8 @@ void MainWindow::addButtonPressed(void)
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 			m_jobList->startJob(newIndex);
 		}
+
+		m_label->setVisible(false);
 	}
 
 	X264_DELETE(addDialog);
@@ -173,6 +196,8 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 	progressBar->setValue(m_jobList->getJobProgress(current));
 	editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
 	updateButtons(m_jobList->getJobStatus(current));
+
+	progressBar->repaint();
 }
 
 void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &bottomRight)
@@ -280,7 +305,9 @@ void MainWindow::init(void)
 {
 	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:pipebuf.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
-	
+
+	updateLabel();
+
 	//Check all binaries
 	while(!binaries.isEmpty())
 	{
@@ -322,6 +349,22 @@ void MainWindow::init(void)
 	}
 }
 
+void MainWindow::updateLabel(void)
+{
+	m_label->setGeometry(0, 0, jobsView->width(), jobsView->height());
+}
+
+void MainWindow::copyLogToClipboard(bool checked)
+{
+	qDebug("copyLogToClipboard");
+	
+	if(LogFileModel *log = dynamic_cast<LogFileModel*>(logView->model()))
+	{
+		log->copyToClipboard();
+		MessageBeep(MB_ICONINFORMATION);
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Event functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -347,6 +390,12 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	}
 
 	QMainWindow::closeEvent(e);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *e)
+{
+	QMainWindow::resizeEvent(e);
+	updateLabel();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -376,4 +425,7 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	buttonStartJob->setEnabled(status == EncodeThread::JobStatus_Enqueued);
 	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running ||
 		status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2 );
+
+	actionJob_Start->setEnabled(buttonStartJob->isEnabled());
+	actionJob_Abort->setEnabled(buttonAbortJob->isEnabled());
 }

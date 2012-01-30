@@ -45,7 +45,8 @@ public:
 protected:
 	OptionsModel *m_options;
 	
-	virtual void AddJobDialog::showEvent(QShowEvent *event);
+	virtual void showEvent(QShowEvent *event);
+	virtual bool eventFilter(QObject *o, QEvent *e);
 
 private slots:
 	void modeIndexChanged(int index);

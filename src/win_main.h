@@ -39,9 +39,11 @@ public:
 protected:
 	virtual void closeEvent(QCloseEvent *e);
 	virtual void showEvent(QShowEvent *e);
+	virtual void resizeEvent(QResizeEvent *e);
 
 private:
 	bool m_firstShow;
+	QLabel *m_label;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
@@ -55,13 +57,15 @@ private:
 
 private slots:
 	void addButtonPressed(void);
-	void startButtonPressed(void);
 	void abortButtonPressed(void);
+	void copyLogToClipboard(bool checked);
 	void init(void);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
+	void launchNextJob(void);
 	void showAbout(void);
 	void showWebLink(void);
-	void launchNextJob(void);
+	void startButtonPressed(void);
+	void updateLabel(void);
 };

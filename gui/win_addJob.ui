@@ -233,7 +233,7 @@
           <item>
            <widget class="QLabel" name="label_4">
             <property name="text">
-             <string>Quantiter/CRF:</string>
+             <string>Quantizer/CRF:</string>
             </property>
            </widget>
           </item>
@@ -606,7 +606,7 @@
            </spacer>
           </item>
           <item>
-           <widget class="QLabel" name="label_9">
+           <widget class="QLabel" name="labelHelpScreen">
             <property name="palette">
              <palette>
               <active>

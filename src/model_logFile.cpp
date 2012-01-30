@@ -23,6 +23,8 @@
 #include "thread_encode.h"
 
 #include <QIcon>
+#include <QApplication>
+#include <QClipboard>
 
 LogFileModel::LogFileModel(void)
 {
@@ -74,6 +76,16 @@ QVariant LogFileModel::data(const QModelIndex &index, int role) const
 	}
 
 	return QVariant();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public API
+///////////////////////////////////////////////////////////////////////////////
+
+void LogFileModel::copyToClipboard(void)
+{
+	QClipboard *clipboard = QApplication::clipboard();
+	clipboard->setText(m_lines.join("\r\n"));
 }
 
 ///////////////////////////////////////////////////////////////////////////////

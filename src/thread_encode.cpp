@@ -27,6 +27,7 @@
 
 #include <QDate>
 #include <QTime>
+#include <QDateTime>
 #include <QFileInfo>
 #include <QDir>
 #include <QProcess>
@@ -44,7 +45,6 @@ typedef BOOL (WINAPI *AssignProcessToJobObjectFun)(__in HANDLE hJob, __in HANDLE
  * Static vars
  */
 QMutex EncodeThread::m_mutex_startProcess;
-HANDLE EncodeThread::m_handle_jobObject = NULL;
 
 /*
  * Macros
@@ -80,7 +80,8 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_outputFileName(outputFileName),
 	m_options(new OptionsModel(*options)),
 	m_binDir(binDir),
-	m_x64(x64)
+	m_x64(x64),
+	m_handle_jobObject(NULL)
 {
 	m_abort = false;
 }
@@ -88,6 +89,12 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 EncodeThread::~EncodeThread(void)
 {
 	X264_DELETE(m_options);
+	
+	if(m_handle_jobObject)
+	{
+		CloseHandle(m_handle_jobObject);
+		m_handle_jobObject = NULL;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,10 +103,11 @@ EncodeThread::~EncodeThread(void)
 
 void EncodeThread::run(void)
 {
+	m_progress = 0;
+	m_status = JobStatus_Starting;
+
 	try
 	{
-		m_progress = 0;
-		m_status = JobStatus_Starting;
 		encode();
 	}
 	catch(char *msg)
@@ -110,6 +118,12 @@ void EncodeThread::run(void)
 	{
 		log(tr("EXCEPTION ERROR !!!"));
 	}
+
+	if(m_handle_jobObject)
+	{
+		CloseHandle(m_handle_jobObject);
+		m_handle_jobObject = NULL;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,27 +132,35 @@ void EncodeThread::run(void)
 
 void EncodeThread::encode(void)
 {
-	Sleep(500);
-
+	QDateTime startTime = QDateTime::currentDateTime();
+	
 	//Print some basic info
 	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 	log(tr("Source file: %1").arg(m_sourceFileName));
 	log(tr("Output file: %1").arg(m_outputFileName));
-	log(tr("\n[Encoder Options]"));
-	log(tr("RC Mode: %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));
-	log(tr("Preset: %1").arg(m_options->preset()));
-	log(tr("Tuning: %1").arg(m_options->tune()));
-	log(tr("Profile: %1").arg(m_options->profile()));
-	log(tr("Custom: %1").arg(m_options->custom().isEmpty() ? tr("(None)") : m_options->custom()));
 	
-	//Detect source info
-	log(tr("\n[Input Properties]"));
-	log(tr("Not implemented yet, sorry ;-)\n"));
-
+	//Print encoder settings
+	log(tr("\n--- SETTINGS ---\n"));
+	log(tr("RC Mode: %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));
+	log(tr("Preset:  %1").arg(m_options->preset()));
+	log(tr("Tuning:  %1").arg(m_options->tune()));
+	log(tr("Profile: %1").arg(m_options->profile()));
+	log(tr("Custom:  %1").arg(m_options->custom().isEmpty() ? tr("(None)") : m_options->custom()));
+	
 	bool ok = false;
+	unsigned int frames = 0;
+
+	//Detect source info
+	bool usePipe = m_x64 && (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
+	if(usePipe)
+	{
+		log(tr("\n--- AVS INFO ---\n"));
+		ok = checkProperties(frames);
+		CHECK_STATUS(m_abort, ok);
+	}
 
 	//Checking version
-	log(tr("--- VERSION ---\n"));
+	log(tr("\n--- X264 VERSION ---\n"));
 	unsigned int revision;
 	ok = ((revision = checkVersion(m_x64)) != UINT_MAX);
 	CHECK_STATUS(m_abort, ok);
@@ -156,7 +178,7 @@ void EncodeThread::encode(void)
 		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
 		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
 	}
-
+	
 	//Run encoding passes
 	if(m_options->rcMode() == OptionsModel::RCMode_2Pass)
 	{
@@ -173,38 +195,50 @@ void EncodeThread::encode(void)
 		}
 		
 		log(tr("\n--- PASS 1 ---\n"));
-		ok = runEncodingPass(m_x64, 1, passLogFile);
+		ok = runEncodingPass(m_x64, usePipe, frames, 1, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 
 		log(tr("\n--- PASS 2 ---\n"));
-		ok = runEncodingPass(m_x64,2, passLogFile);
+		ok = runEncodingPass(m_x64, usePipe, frames, 2, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 	else
 	{
 		log(tr("\n--- ENCODING ---\n"));
-		ok = runEncodingPass(m_x64);
+		ok = runEncodingPass(m_x64, usePipe, frames);
 		CHECK_STATUS(m_abort, ok);
 	}
 
 	log(tr("\n--- DONE ---\n"));
-	log(tr("Job finished at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
+	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
+	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
 }
 
-bool EncodeThread::runEncodingPass(bool x64, int pass, const QString &passLogFile)
+bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, int pass, const QString &passLogFile)
 {
 	QProcess process;
-	QStringList cmdLine = buildCommandLine(pass, passLogFile);
+	QStringList cmdLine;
+
+	if(usePipe)
+	{
+		cmdLine << QString("%1/avs2yuv.exe").arg(m_binDir);
+		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
+		cmdLine << "-" << ":";
+		cmdLine << QString("%1/%2.exe").arg(m_binDir,(x64 ? "x264_x64" : "x264"));
+	}
+
+	cmdLine << buildCommandLine(usePipe, frames, pass, passLogFile);
 
 	log("Creating process:");
-	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "x264_x64" : "x264"), cmdLine))
+	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, usePipe ? "pipebuf" : (x64 ? "x264_x64" : "x264")), cmdLine))
 	{
 		return false;;
 	}
 
 	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.\\d+%\\]");
 	QRegExp regExpProgress("\\[(\\d+)\\.\\d+%\\].+frames");
+	QRegExp regExpFrameCnt("^(\\d+) frames:");
 	
 	bool bTimeout = false;
 	bool bAborted = false;
@@ -251,6 +285,11 @@ bool EncodeThread::runEncodingPass(bool x64, int pass, const QString &passLogFil
 					setDetails(text.mid(offset).trimmed());
 					if(ok) setProgress(progress);
 				}
+				else if((offset = regExpFrameCnt.lastIndexIn(text)) >= 0)
+				{
+					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
+					setDetails(text.mid(offset).trimmed());
+				}
 				else if(!text.isEmpty())
 				{
 					log(text);
@@ -268,6 +307,10 @@ bool EncodeThread::runEncodingPass(bool x64, int pass, const QString &passLogFil
 
 	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
 	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
 		return false;
 	}
 	
@@ -276,7 +319,7 @@ bool EncodeThread::runEncodingPass(bool x64, int pass, const QString &passLogFil
 	return true;
 }
 
-QStringList EncodeThread::buildCommandLine(int pass, const QString &passLogFile)
+QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, int pass, const QString &passLogFile)
 {
 	QStringList cmdLine;
 
@@ -317,7 +360,17 @@ QStringList EncodeThread::buildCommandLine(int pass, const QString &passLogFile)
 	}
 
 	cmdLine << "--output" << QDir::toNativeSeparators(m_outputFileName);
-	cmdLine << m_sourceFileName;
+	
+	if(usePipe)
+	{
+		cmdLine << "--frames" << QString::number(frames);
+		cmdLine << "--demuxer" << "y4m";
+		cmdLine << "--stdin" << "y4m" << "-";
+	}
+	else
+	{
+		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
+	}
 
 	return cmdLine;
 }
@@ -392,6 +445,10 @@ unsigned int EncodeThread::checkVersion(bool x64)
 
 	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
 	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
 		return UINT_MAX;
 	}
 
@@ -402,6 +459,138 @@ unsigned int EncodeThread::checkVersion(bool x64)
 	}
 	
 	return (coreVers * REV_MULT) + revision;
+}
+
+bool EncodeThread::checkProperties(unsigned int &frames)
+{
+	QProcess process;
+	
+	QStringList cmdLine = QStringList() << "-frames" << "1";
+	cmdLine << QDir::toNativeSeparators(m_sourceFileName) << "NUL";
+
+	log("Creating process:");
+	if(!startProcess(process, QString("%1/avs2yuv.exe").arg(m_binDir), cmdLine))
+	{
+		return false;;
+	}
+
+	QRegExp regExpInt(": (\\d+)x(\\d+), (\\d+) fps, (\\d+) frames");
+	QRegExp regExpFrc(": (\\d+)x(\\d+), (\\d+)/(\\d+) fps, (\\d+) frames");
+	
+	bool bTimeout = false;
+	bool bAborted = false;
+
+	frames = 0;
+	
+	unsigned int fpsNom = 0;
+	unsigned int fpsDen = 0;
+	unsigned int fSizeW = 0;
+	unsigned int fSizeH = 0;
+	
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(m_abort)
+		{
+			process.kill();
+			bAborted = true;
+			break;
+		}
+		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		{
+			if(process.state() == QProcess::Running)
+			{
+				process.kill();
+				qWarning("x264 process timed out <-- killing!");
+				log("\nPROCESS TIMEOUT !!!");
+				bTimeout = true;
+				break;
+			}
+		}
+		while(process.bytesAvailable() > 0)
+		{
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
+			{
+				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				int offset = -1;
+				if((offset = regExpInt.lastIndexIn(text)) >= 0)
+				{
+					bool ok1 = false, ok2 = false;
+					bool ok3 = false, ok4 = false;
+					unsigned int temp1 = regExpInt.cap(1).toUInt(&ok1);
+					unsigned int temp2 = regExpInt.cap(2).toUInt(&ok2);
+					unsigned int temp3 = regExpInt.cap(3).toUInt(&ok3);
+					unsigned int temp4 = regExpInt.cap(4).toUInt(&ok4);
+					if(ok1) fSizeW = temp1;
+					if(ok2) fSizeH = temp2;
+					if(ok3) fpsNom = temp3;
+					if(ok4) frames = temp4;
+				}
+				else if((offset = regExpFrc.lastIndexIn(text)) >= 0)
+				{
+					bool ok1 = false, ok2 = false;
+					bool ok3 = false, ok4 = false, ok5 = false;
+					unsigned int temp1 = regExpFrc.cap(1).toUInt(&ok1);
+					unsigned int temp2 = regExpFrc.cap(2).toUInt(&ok2);
+					unsigned int temp3 = regExpFrc.cap(3).toUInt(&ok3);
+					unsigned int temp4 = regExpFrc.cap(4).toUInt(&ok4);
+					unsigned int temp5 = regExpFrc.cap(5).toUInt(&ok5);
+					if(ok1) fSizeW = temp1;
+					if(ok2) fSizeH = temp2;
+					if(ok3) fpsNom = temp3;
+					if(ok4) fpsDen = temp4;
+					if(ok5) frames = temp5;
+				}
+				if(!text.isEmpty())
+				{
+					log(text);
+				}
+			}
+		}
+	}
+
+	process.waitForFinished();
+	if(process.state() != QProcess::NotRunning)
+	{
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
+	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
+		return false;
+	}
+
+	if(frames == 0)
+	{
+		log(tr("\nFAILED TO DETERMINE AVS PROPERTIES !!!"));
+		return false;
+	}
+	
+	log("");
+
+	if((fSizeW > 0) && (fSizeH > 0))
+	{
+		log(tr("Resolution: %1x%2").arg(QString::number(fSizeW), QString::number(fSizeH)));
+	}
+	if((fpsNom > 0) && (fpsDen > 0))
+	{
+		log(tr("Frame Rate: %1/%2").arg(QString::number(fpsNom), QString::number(fpsDen)));
+	}
+	if((fpsNom > 0) && (fpsDen == 0))
+	{
+		log(tr("Frame Rate: %1").arg(QString::number(fpsNom)));
+	}
+	if(frames > 0)
+	{
+		log(tr("No. Frames: %1").arg(QString::number(frames)));
+	}
+
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -446,10 +635,39 @@ void EncodeThread::setDetails(const QString &text)
 bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args)
 {
 	static AssignProcessToJobObjectFun AssignProcessToJobObjectPtr = NULL;
+	static CreateJobObjectFun CreateJobObjectPtr = NULL;
+	static SetInformationJobObjectFun SetInformationJobObjectPtr = NULL;
 	
 	QMutexLocker lock(&m_mutex_startProcess);
 	log(commandline2string(program, args) + "\n");
-	
+
+	//Create a new job object, if not done yet
+	if(!m_handle_jobObject)
+	{
+		if(!CreateJobObjectPtr || !SetInformationJobObjectPtr)
+		{
+			QLibrary Kernel32Lib("kernel32.dll");
+			CreateJobObjectPtr = (CreateJobObjectFun) Kernel32Lib.resolve("CreateJobObjectA");
+			SetInformationJobObjectPtr = (SetInformationJobObjectFun) Kernel32Lib.resolve("SetInformationJobObject");
+		}
+		if(CreateJobObjectPtr && SetInformationJobObjectPtr)
+		{
+			m_handle_jobObject = CreateJobObjectPtr(NULL, NULL);
+			if(m_handle_jobObject == INVALID_HANDLE_VALUE)
+			{
+				m_handle_jobObject = NULL;
+			}
+			if(m_handle_jobObject)
+			{
+				JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedLimitInfo;
+				memset(&jobExtendedLimitInfo, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+				jobExtendedLimitInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION;
+				SetInformationJobObjectPtr(m_handle_jobObject, JobObjectExtendedLimitInformation, &jobExtendedLimitInfo, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+			}
+		}
+	}
+
+	//Initialize AssignProcessToJobObject function
 	if(!AssignProcessToJobObjectPtr)
 	{
 		QLibrary Kernel32Lib("kernel32.dll");
@@ -462,7 +680,6 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 	
 	if(process.waitForStarted())
 	{
-		
 		if(AssignProcessToJobObjectPtr)
 		{
 			AssignProcessToJobObjectPtr(m_handle_jobObject, process.pid()->hProcess);

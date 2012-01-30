@@ -43,6 +43,8 @@ public:
 	virtual QModelIndex parent (const QModelIndex &index) const;
 	virtual QVariant data(const QModelIndex &index, int role) const;
 
+	void copyToClipboard(void);
+
 protected:
 	QStringList m_lines;
 	bool m_firstLine;

@@ -107,6 +107,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	cbxCustomParams->setValidator(new StringValidator());
 	cbxCustomParams->addItem("--bluray-compat --vbv-maxrate 40000 --vbv-bufsize 30000 --level 4.1 --keyint 25 --open-gop --slices 4");
 	cbxCustomParams->clearEditText();
+
+	//Install event filter
+	labelHelpScreen->installEventFilter(this);
 }
 
 AddJobDialog::~AddJobDialog(void)
@@ -122,6 +125,16 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	QDialog::showEvent(event);
 	restoreOptions(m_options);
 	modeIndexChanged(cbxRateControlMode->currentIndex());
+}
+
+bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
+{
+	if((o == labelHelpScreen) && (e->type() == QEvent::MouseButtonPress))
+	{
+		QMessageBox::information(this, tr("Not yet"), tr("Not implemented yet. Please use the '?' menu for now!"));
+		return true;
+	}
+	return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -262,7 +275,6 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 
 void AddJobDialog::saveOptions(OptionsModel *options)
 {
-	qWarning("Current index: %d", cbxRateControlMode->currentIndex());
 	options->setRCMode(static_cast<OptionsModel::RCMode>(cbxRateControlMode->currentIndex()));
 	options->setQuantizer(spinQuantizer->value());
 	options->setBitrate(spinBitrate->value());

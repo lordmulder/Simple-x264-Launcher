@@ -30,6 +30,9 @@
        <bool>false</bool>
       </property>
       <widget class="QTableView" name="jobsView">
+       <property name="contextMenuPolicy">
+        <enum>Qt::ActionsContextMenu</enum>
+       </property>
        <property name="alternatingRowColors">
         <bool>true</bool>
        </property>
@@ -95,6 +98,9 @@
            <font>
             <family>Lucida Console</family>
            </font>
+          </property>
+          <property name="contextMenuPolicy">
+           <enum>Qt::ActionsContextMenu</enum>
           </property>
           <property name="horizontalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -296,7 +302,17 @@
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuJob">
+    <property name="title">
+     <string>Job</string>
+    </property>
+    <addaction name="actionJob_New"/>
+    <addaction name="separator"/>
+    <addaction name="actionJob_Start"/>
+    <addaction name="actionJob_Abort"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuJob"/>
    <addaction name="menu"/>
   </widget>
   <action name="actionExit">
@@ -371,6 +387,39 @@
     <string>x264 BluRay Authoring</string>
    </property>
   </action>
+  <action name="actionJob_New">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/add.png</normaloff>:/buttons/add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Add New Job</string>
+   </property>
+  </action>
+  <action name="actionJob_Start">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/play_big.png</normaloff>:/buttons/play_big.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start Job</string>
+   </property>
+  </action>
+  <action name="actionJob_Abort">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/cancel.png</normaloff>:/buttons/cancel.png</iconset>
+   </property>
+   <property name="text">
+    <string>Abort Job</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>buttonAddJob</tabstop>
@@ -397,6 +446,54 @@
     <hint type="destinationlabel">
      <x>399</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionJob_New</sender>
+   <signal>triggered()</signal>
+   <receiver>buttonAddJob</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>73</x>
+     <y>617</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionJob_Start</sender>
+   <signal>triggered()</signal>
+   <receiver>buttonStartJob</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>547</x>
+     <y>617</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionJob_Abort</sender>
+   <signal>triggered()</signal>
+   <receiver>buttonAbortJob</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>657</x>
+     <y>617</y>
     </hint>
    </hints>
   </connection>

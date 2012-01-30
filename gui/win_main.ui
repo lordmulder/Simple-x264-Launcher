@@ -20,6 +20,9 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
+      <property name="opaqueResize">
+       <bool>false</bool>
+      </property>
       <property name="handleWidth">
        <number>8</number>
       </property>

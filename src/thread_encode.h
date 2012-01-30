@@ -61,23 +61,35 @@ protected:
 	static QMutex m_mutex_startProcess;
 	static void *m_handle_jobObject;
 
-	static const int m_processTimeoutInterval = 600000;
+	static const int m_processTimeoutInterval = 60000;
 
+	//Constants
 	const QUuid m_jobId;
 	const QString m_sourceFileName;
 	const QString m_outputFileName;
 	const OptionsModel *m_options;
 	const QString m_binDir;
 
+	//Flags
 	volatile bool m_abort;
+	
+	//Internal status values
+	JobStatus m_status;
+	unsigned int m_progress;
+
+	//Entry point
 	virtual void run(void);
 	
 	//Encode functions
 	void encode(void);
-	QStringList buildCommandLine(void);
+	bool runEncodingPass(int pass = 0, const QString &passLogFile = QString());
+	QStringList buildCommandLine(int pass = 0, const QString &passLogFile = QString());
 
 	//Auxiallary Stuff
 	void log(const QString &text) { emit messageLogged(m_jobId, text); }
+	inline void setStatus(JobStatus newStatus);
+	inline void setProgress(unsigned int newProgress);
+	inline void setDetails(const QString &text);
 	bool startProcess(QProcess &process, const QString &program, const QStringList &args);
 	
 	static QString commandline2string(const QString &program, const QStringList &arguments);

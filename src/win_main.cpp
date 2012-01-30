@@ -56,6 +56,7 @@ MainWindow::MainWindow(bool x64supported)
 
 	//Freeze minimum size
 	setMinimumSize(size());
+	splitter->setSizes(QList<int>() << 200 << SHRT_MAX);
 
 	//Update title
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));

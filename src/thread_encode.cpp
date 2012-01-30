@@ -26,6 +26,8 @@
 
 #include <QDate>
 #include <QTime>
+#include <QFileInfo>
+#include <QDir>
 #include <QProcess>
 #include <QMutex>
 #include <QLibrary>
@@ -71,15 +73,17 @@ void EncodeThread::run(void)
 {
 	try
 	{
+		m_progress = 0;
+		m_status = JobStatus_Starting;
 		encode();
 	}
 	catch(char *msg)
 	{
-		emit messageLogged(m_jobId, QString("EXCEPTION ERROR: ").append(QString::fromLatin1(msg)));
+		log(tr("EXCEPTION ERROR: ").append(QString::fromLatin1(msg)));
 	}
 	catch(...)
 	{
-		emit messageLogged(m_jobId, QString("EXCEPTION ERROR !!!"));
+		log(tr("EXCEPTION ERROR !!!"));
 	}
 }
 
@@ -106,20 +110,88 @@ void EncodeThread::encode(void)
 	log(tr("\n[Input Properties]"));
 	log(tr("Not implemented yet, sorry ;-)\n"));
 
-	QStringList cmdLine;
-	QProcess process;
+	bool ok = false;
 
-	cmdLine = buildCommandLine();
+	//Run encoding passes
+	if(m_options->rcMode() == OptionsModel::RCMode_2Pass)
+	{
+		QFileInfo info(m_outputFileName);
+		QString passLogFile = QString("%1/%2.stats").arg(info.path(), info.completeBaseName());
+
+		if(QFileInfo(passLogFile).exists())
+		{
+			int n = 2;
+			while(QFileInfo(passLogFile).exists())
+			{
+				passLogFile = QString("%1/%2.%3.stats").arg(info.path(), info.completeBaseName(), QString::number(n++));
+			}
+		}
+		
+		log("--- PASS 1 ---\n");
+		ok = runEncodingPass(1, passLogFile);
+
+		if(m_abort)
+		{
+			log("\nPROCESS ABORTED BY USER !!!");
+			setStatus(JobStatus_Aborted);
+			return;
+		}
+		else if(!ok)
+		{
+			setStatus(JobStatus_Failed);
+			return;
+		}
+
+		log("\n--- PASS 2 ---\n");
+		ok = runEncodingPass(2, passLogFile);
+
+		if(m_abort)
+		{
+			log("\nPROCESS ABORTED BY USER !!!");
+			setStatus(JobStatus_Aborted);
+			return;
+		}
+		else if(!ok)
+		{
+			setStatus(JobStatus_Failed);
+			return;
+		}
+	}
+	else
+	{
+		log("--- ENCODING ---\n");
+		ok = runEncodingPass();
+
+		if(m_abort)
+		{
+			log("\nPROCESS ABORTED BY USER !!!");
+			setStatus(JobStatus_Aborted);
+			return;
+		}
+		else if(!ok)
+		{
+			setStatus(JobStatus_Failed);
+			return;
+		}
+	}
+
+	log(tr("\nJob finished at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
+	setStatus(JobStatus_Completed);
+}
+
+bool EncodeThread::runEncodingPass(int pass, const QString &passLogFile)
+{
+	QProcess process;
+	QStringList cmdLine = buildCommandLine(pass, passLogFile);
 
 	log("Creating process:");
 	if(!startProcess(process, QString("%1/x264.exe").arg(m_binDir), cmdLine))
 	{
-		emit statusChanged(m_jobId, JobStatus_Failed);
-		return;
+		return false;;
 	}
 
-	emit statusChanged(m_jobId, JobStatus_Running);
-	QRegExp regExp("\\[(\\d+)\\.\\d+%\\].+frames");
+	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.\\d+%\\]");
+	QRegExp regExpProgress("\\[(\\d+)\\.\\d+%\\].+frames");
 	
 	bool bTimeout = false;
 	bool bAborted = false;
@@ -130,35 +202,46 @@ void EncodeThread::encode(void)
 		{
 			process.kill();
 			bAborted = true;
-			log("\nABORTED BY USER !!!");
 			break;
 		}
-		process.waitForReadyRead(m_processTimeoutInterval);
-		if(!process.bytesAvailable() && process.state() == QProcess::Running)
+		if(!process.waitForReadyRead(m_processTimeoutInterval))
 		{
-			process.kill();
-			qWarning("x264 process timed out <-- killing!");
-			log("\nPROCESS TIMEOUT !!!");
-			bTimeout = true;
-			break;
+			if(process.state() == QProcess::Running)
+			{
+				process.kill();
+				qWarning("x264 process timed out <-- killing!");
+				log("\nPROCESS TIMEOUT !!!");
+				bTimeout = true;
+				break;
+			}
 		}
 		while(process.bytesAvailable() > 0)
 		{
-			QByteArray line = process.readLine();
-			QString text = QString::fromUtf8(line.constData()).simplified();
-			if(regExp.lastIndexIn(text) >= 0)
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
 			{
-				bool ok = false;
-				unsigned int progress = regExp.cap(1).toUInt(&ok);
-				if(ok)
+				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				int offset = -1;
+				if((offset = regExpProgress.lastIndexIn(text)) >= 0)
 				{
-					emit progressChanged(m_jobId, progress);
-					emit detailsChanged(m_jobId, line);
+					bool ok = false;
+					unsigned int progress = regExpProgress.cap(1).toUInt(&ok);
+					if(ok) setProgress(progress);
+					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
+					setDetails(text.mid(offset).trimmed());
 				}
-			}
-			else if(!text.isEmpty())
-			{
-				log(text);
+				else if((offset = regExpIndexing.lastIndexIn(text)) >= 0)
+				{
+					bool ok = false;
+					unsigned int progress = regExpIndexing.cap(1).toUInt(&ok);
+					if(ok) setProgress(progress);
+					setStatus(JobStatus_Indexing);
+					setDetails(text.mid(offset).trimmed());
+				}
+				else if(!text.isEmpty())
+				{
+					log(text);
+				}
 			}
 		}
 	}
@@ -172,27 +255,55 @@ void EncodeThread::encode(void)
 
 	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
 	{
-		emit statusChanged(m_jobId, JobStatus_Failed);
-		return;
+		return false;
 	}
 	
-	emit progressChanged(m_jobId, 100);
-	emit statusChanged(m_jobId, JobStatus_Completed);
+	setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
+	setProgress(100);
+	return true;
 }
 
-QStringList EncodeThread::buildCommandLine(void)
+QStringList EncodeThread::buildCommandLine(int pass, const QString &passLogFile)
 {
 	QStringList cmdLine;
 
-	cmdLine << "--crf" << QString::number(m_options->quantizer());
+	switch(m_options->rcMode())
+	{
+	case OptionsModel::RCMode_CRF:
+		cmdLine << "--crf" << QString::number(m_options->quantizer());
+		break;
+	case OptionsModel::RCMode_CQ:
+		cmdLine << "--qp" << QString::number(m_options->quantizer());
+		break;
+	case OptionsModel::RCMode_2Pass:
+	case OptionsModel::RCMode_ABR:
+		cmdLine << "--bitrate" << QString::number(m_options->bitrate());
+		break;
+	default:
+		throw "Bad rate-control mode !!!";
+		break;
+	}
 	
+	if((pass == 1) || (pass == 2))
+	{
+		cmdLine << "--pass" << QString::number(pass);
+		cmdLine << "--stats" << QDir::toNativeSeparators(passLogFile);
+	}
+
 	if(m_options->tune().compare("none", Qt::CaseInsensitive))
 	{
 		cmdLine << "--tune" << m_options->tune().toLower();
 	}
 	
 	cmdLine << "--preset" << m_options->preset().toLower();
-	cmdLine << "--output" << m_outputFileName;
+
+	if(!m_options->custom().isEmpty())
+	{
+		//FIXME: Handle custom parameters that contain spaces!
+		cmdLine.append(m_options->custom().split(" "));
+	}
+
+	cmdLine << "--output" << QDir::toNativeSeparators(m_outputFileName);
 	cmdLine << m_sourceFileName;
 
 	return cmdLine;
@@ -201,6 +312,30 @@ QStringList EncodeThread::buildCommandLine(void)
 ///////////////////////////////////////////////////////////////////////////////
 // Misc functions
 ///////////////////////////////////////////////////////////////////////////////
+
+void EncodeThread::setStatus(JobStatus newStatus)
+{
+	if(m_status != newStatus)
+	{
+		m_status = newStatus;
+		emit statusChanged(m_jobId, newStatus);
+		setProgress(0);
+	}
+}
+
+void EncodeThread::setProgress(unsigned int newProgress)
+{
+	if(m_progress != newProgress)
+	{
+		m_progress = newProgress;
+		emit progressChanged(m_jobId, m_progress);
+	}
+}
+
+void EncodeThread::setDetails(const QString &text)
+{
+	emit detailsChanged(m_jobId, text);
+}
 
 bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args)
 {

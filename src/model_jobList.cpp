@@ -250,7 +250,8 @@ bool JobListModel::abortJob(const QModelIndex &index)
 	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
 	{
 		QUuid id = m_jobs.at(index.row());
-		if(m_status.value(id) == EncodeThread::JobStatus_Indexing || m_status.value(id) == EncodeThread::JobStatus_Running)
+		if(m_status.value(id) == EncodeThread::JobStatus_Indexing || m_status.value(id) == EncodeThread::JobStatus_Running ||
+			m_status.value(id) == EncodeThread::JobStatus_Running_Pass1 || EncodeThread::JobStatus_Running_Pass2)
 		{
 			updateStatus(id, EncodeThread::JobStatus_Aborting);
 			m_threads.value(id)->abortJob();

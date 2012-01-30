@@ -33,6 +33,21 @@
 #include <QValidator>
 #include <QDir>
 
+static const struct
+{
+	const char *name;
+	const char *fext;
+}
+g_filters[] =
+{
+	{"Avisynth Scripts", "avs"},
+	{"Matroska Files", "mkv"},
+	{"MPEG-4 Part 14 Container", "mp4"},
+	{"Audio Video Interleaved", "avi"},
+	{"Flash Video", "flv"},
+	{NULL, NULL}
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,15 +180,8 @@ void AddJobDialog::browseButtonClicked(void)
 
 	if(QObject::sender() == buttonBrowseSource)
 	{
-		QString filters;
-		filters += tr("Avisynth Scripts (*.avs)").append(";;");
-		filters += tr("Matroska Files (*.mkv)").append(";;");
-		filters += tr("MPEG-4 Part 14 Container (*.mp4)").append(";;");
-		filters += tr("Audio Video Interleaved (*.avi)").append(";;");
-		filters += tr("Flash Video (*.flv)").append(";;");
-
-		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initialDir, filters);
-
+		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initialDir, makeFileFilter());
+		
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
 			editSource->setText(QDir::toNativeSeparators(filePath));
@@ -200,7 +208,7 @@ void AddJobDialog::browseButtonClicked(void)
 		QString filters;
 		filters += tr("Matroska Files (*.mkv)").append(";;");
 		filters += tr("MPEG-4 Part 14 Container (*.mp4)").append(";;");
-		filters += tr("H.264 Elementary Stream (*.264)").append(";;");
+		filters += tr("H.264 Elementary Stream (*.264)");
 
 		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initialDir, filters);
 
@@ -254,6 +262,7 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 
 void AddJobDialog::saveOptions(OptionsModel *options)
 {
+	qWarning("Current index: %d", cbxRateControlMode->currentIndex());
 	options->setRCMode(static_cast<OptionsModel::RCMode>(cbxRateControlMode->currentIndex()));
 	options->setQuantizer(spinQuantizer->value());
 	options->setBitrate(spinBitrate->value());
@@ -261,4 +270,24 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
 	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
 	options->setCustom(cbxCustomParams->currentText());
+}
+
+QString AddJobDialog::makeFileFilter(void)
+{
+	QString filters("All supported files (");
+
+	for(size_t index = 0; g_filters[index].name && g_filters[index].fext; index++)
+	{
+		filters += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(g_filters[index].fext));
+	}
+
+	filters += QString(");;");
+
+	for(size_t index = 0; g_filters[index].name && g_filters[index].fext; index++)
+	{
+		filters += QString("%1 (*.%2);;").arg(QString::fromLatin1(g_filters[index].name), QString::fromLatin1(g_filters[index].fext));
+	}
+		
+	filters += QString("All files (*.*)");
+	return filters;
 }

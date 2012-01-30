@@ -33,8 +33,11 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QDir>
+#include <QLibrary>
 
 const char *home_url = "http://mulder.brhack.net/";
+
+#define PRE_RELEASE (1)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -60,7 +63,8 @@ MainWindow::MainWindow(bool x64supported)
 
 	//Update title
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
-	if(m_x64supported) setWindowTitle(QString("%1 (x64)").arg(windowTitle()));
+	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_x64supported ? "64-Bit" : "32-Bit"));
+	if(PRE_RELEASE) setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
 
 	//Create model
 	m_jobList = new JobListModel();
@@ -89,6 +93,7 @@ MainWindow::MainWindow(bool x64supported)
 	connect(actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebJarod, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
 
 	//Create options object
 	m_options = new OptionsModel();
@@ -118,12 +123,15 @@ void MainWindow::addButtonPressed(void)
 	
 	if(result == QDialog::Accepted)
 	{
+		qDebug("RC Mode: %d", m_options->rcMode());
+		
 		EncodeThread *thrd = new EncodeThread
 		(
 			addDialog->sourceFile(),
 			addDialog->outputFile(),
 			m_options,
-			QString("%1/toolset").arg(m_appDir)
+			QString("%1/toolset").arg(m_appDir),
+			m_x64supported
 		);
 
 		QModelIndex newIndex = m_jobList->insertJob(thrd);
@@ -238,6 +246,7 @@ void MainWindow::showWebLink(void)
 	if(QObject::sender() == actionWebKomisar) QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
 	if(QObject::sender() == actionWebJarod) QDesktopServices::openUrl(QUrl("http://www.x264.nl/"));
 	if(QObject::sender() == actionWebWiki) QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
+	if(QObject::sender() == actionWebBluRay) QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
 }
 
 void MainWindow::launchNextJob(void)
@@ -272,6 +281,7 @@ void MainWindow::init(void)
 	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:pipebuf.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 	
+	//Check all binaries
 	while(!binaries.isEmpty())
 	{
 		QString current = binaries.takeFirst();
@@ -285,13 +295,31 @@ void MainWindow::init(void)
 			X264_DELETE(file);
 			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
 			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
-			return;
+			close(); qApp->exit(-1); return;
 		}
 	}
 
-	qsrand(time(NULL)); int rnd = qrand() % 3;
-	int val = QMessageBox::warning(this, tr("Pre-Release Version"), tr("Note: This is a pre-release version. Please do NOT use for production!<br><br>Click the button #%1 in order to continue...").arg(QString::number(rnd + 1)), tr("(1)"), tr("(2)"), tr("(3)"), qrand() % 3);
-	if(rnd != val) { close(); }
+	//Pre-release popup
+	if(PRE_RELEASE)
+	{
+		qsrand(time(NULL)); int rnd = qrand() % 3;
+		int val = QMessageBox::information(this, tr("Pre-Release Version"), tr("Note: This is a pre-release version. Please do NOT use for production!<br>Click the button #%1 in order to continue...<br><br>(There will be no such message box in the final version of this application)").arg(QString::number(rnd + 1)), tr("(1)"), tr("(2)"), tr("(3)"), qrand() % 3);
+		if(rnd != val) { close(); qApp->exit(-1); return; }
+	}
+
+	//Check for Avisynth support
+	bool avsAvailable = false;
+	QLibrary *avsLib = new QLibrary("avisynth.dll");
+	if(avsLib->load())
+	{
+		avsAvailable = (avsLib->resolve("avs_create_script_environment") != NULL);
+	}
+	if(!avsAvailable)
+	{
+		avsLib->unload(); X264_DELETE(avsLib);
+		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is not currently installed on your computer.<br>Thus Avisynth input will not be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+		if(val != 1) { close(); qApp->exit(-1); return; }
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

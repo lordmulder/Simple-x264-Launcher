@@ -48,7 +48,7 @@ public:
 	QString custom(void) const { return m_custom; }
 
 	//Setter
-	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CQ, mode, RCMode_ABR); }
+	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
 	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(100U, bitrate, 250000U); }
 	void setQuantizer(unsigned int quantizer) { m_quantizer = qBound(0U, quantizer, 52U); }
 	void setPreset(const QString &preset) { m_preset = preset.trimmed(); }

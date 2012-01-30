@@ -230,7 +230,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
 	}
 	else
 	{
-		QString temp("[LameXP][%1] %2");
+		QString temp("[x264][%1] %2");
 		
 		switch(type)
 		{
@@ -253,7 +253,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
 	if(type == QtCriticalMsg || type == QtFatalMsg)
 	{
 		lock.unlock();
-		MessageBoxW(NULL, QWCHAR(QString::fromUtf8(msg)), L"LameXP - GURU MEDITATION", MB_ICONERROR | MB_TOPMOST | MB_TASKMODAL);
+		MessageBoxW(NULL, QWCHAR(QString::fromUtf8(msg)), L"Simple x264 Launcher - GURU MEDITATION", MB_ICONERROR | MB_TOPMOST | MB_TASKMODAL);
 		FatalAppExit(0, L"The application has encountered a critical error and will exit now!");
 		TerminateProcess(GetCurrentProcess(), -1);
 	}
@@ -698,7 +698,7 @@ bool x264_init_qt(int argc, char* argv[])
 
 	//Create Qt application instance and setup version info
 	QApplication *application = new QApplication(argc, argv);
-	application->setApplicationName("LameXP - Audio Encoder Front-End");
+	application->setApplicationName("Simple x264 Launcher");
 	application->setApplicationVersion(QString().sprintf("%d.%02d", x264_version_major(), x264_version_minor())); 
 	application->setOrganizationName("LoRd_MuldeR");
 	application->setOrganizationDomain("mulder.at.gg");
@@ -731,7 +731,7 @@ bool x264_init_qt(int argc, char* argv[])
 	//Check for process elevation
 	if(!x264_check_elevation())
 	{
-		if(QMessageBox::warning(NULL, "LameXP", "<nobr>LameXP was started with elevated rights. This is a potential security risk!</nobr>", "Quit Program (Recommended)", "Ignore") == 0)
+		if(QMessageBox::warning(NULL, "Simple x264 Launcher", "<nobr>Program was started with elevated rights. This is a potential security risk!</nobr>", "Quit Program (Recommended)", "Ignore") == 0)
 		{
 			return false;
 		}

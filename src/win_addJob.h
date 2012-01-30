@@ -57,4 +57,5 @@ private:
 	void restoreOptions(OptionsModel *options);
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *cbox, const QString &text);
+	QString makeFileFilter(void);
 };

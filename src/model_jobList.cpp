@@ -210,9 +210,31 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		return QModelIndex();
 	}
 		
+	int n = 2;
+	QString jobName = QFileInfo(thread->sourceFileName()).completeBaseName();
+
+	forever
+	{
+		bool unique = true;
+		for(int i = 0; i < m_jobs.count(); i++)
+		{
+			if(m_name.value(m_jobs.at(i)).compare(jobName, Qt::CaseInsensitive) == 0)
+			{
+				unique = false;
+				break;
+			}
+		}
+		if(!unique)
+		{
+			jobName = QString("%1 (%2)").arg(QFileInfo(thread->sourceFileName()).completeBaseName(), QString::number(n++));
+			continue;
+		}
+		break;
+	}
+
 	beginInsertRows(QModelIndex(), m_jobs.count(), m_jobs.count());
 	m_jobs.append(id);
-	m_name.insert(id, QFileInfo(thread->sourceFileName()).completeBaseName());
+	m_name.insert(id, jobName);
 	m_status.insert(id, EncodeThread::JobStatus_Enqueued);
 	m_progress.insert(id, 0);
 	m_threads.insert(id, thread);

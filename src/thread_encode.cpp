@@ -23,6 +23,7 @@
 
 #include "global.h"
 #include "model_options.h"
+#include "version.h"
 
 #include <QDate>
 #include <QTime>
@@ -45,17 +46,41 @@ typedef BOOL (WINAPI *AssignProcessToJobObjectFun)(__in HANDLE hJob, __in HANDLE
 QMutex EncodeThread::m_mutex_startProcess;
 HANDLE EncodeThread::m_handle_jobObject = NULL;
 
+/*
+ * Macros
+ */
+#define CHECK_STATUS(ABORT_FLAG, OK_FLAG) \
+{ \
+	if(ABORT_FLAG) \
+	{ \
+		log("\nPROCESS ABORTED BY USER !!!"); \
+		setStatus(JobStatus_Aborted); \
+		return; \
+	} \
+	else if(!(OK_FLAG)) \
+	{ \
+		setStatus(JobStatus_Failed); \
+		return; \
+	} \
+}
+
+/*
+ * Static vars
+ */
+static const unsigned int REV_MULT = 10000;
+
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x64)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
 	m_outputFileName(outputFileName),
 	m_options(new OptionsModel(*options)),
-	m_binDir(binDir)
+	m_binDir(binDir),
+	m_x64(x64)
 {
 	m_abort = false;
 }
@@ -112,6 +137,26 @@ void EncodeThread::encode(void)
 
 	bool ok = false;
 
+	//Checking version
+	log(tr("--- VERSION ---\n"));
+	unsigned int revision;
+	ok = ((revision = checkVersion(m_x64)) != UINT_MAX);
+	CHECK_STATUS(m_abort, ok);
+
+	//Is revision supported?
+	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)));
+	if((revision % REV_MULT) < VER_X264_MINIMUM_REV)
+	{
+		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(VER_X264_MINIMUM_REV)));
+		setStatus(JobStatus_Failed);
+		return;
+	}
+	if((revision / REV_MULT) != VER_X264_CURRENT_API)
+	{
+		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
+		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
+	}
+
 	//Run encoding passes
 	if(m_options->rcMode() == OptionsModel::RCMode_2Pass)
 	{
@@ -127,65 +172,33 @@ void EncodeThread::encode(void)
 			}
 		}
 		
-		log("--- PASS 1 ---\n");
-		ok = runEncodingPass(1, passLogFile);
+		log(tr("\n--- PASS 1 ---\n"));
+		ok = runEncodingPass(m_x64, 1, passLogFile);
+		CHECK_STATUS(m_abort, ok);
 
-		if(m_abort)
-		{
-			log("\nPROCESS ABORTED BY USER !!!");
-			setStatus(JobStatus_Aborted);
-			return;
-		}
-		else if(!ok)
-		{
-			setStatus(JobStatus_Failed);
-			return;
-		}
-
-		log("\n--- PASS 2 ---\n");
-		ok = runEncodingPass(2, passLogFile);
-
-		if(m_abort)
-		{
-			log("\nPROCESS ABORTED BY USER !!!");
-			setStatus(JobStatus_Aborted);
-			return;
-		}
-		else if(!ok)
-		{
-			setStatus(JobStatus_Failed);
-			return;
-		}
+		log(tr("\n--- PASS 2 ---\n"));
+		ok = runEncodingPass(m_x64,2, passLogFile);
+		CHECK_STATUS(m_abort, ok);
 	}
 	else
 	{
-		log("--- ENCODING ---\n");
-		ok = runEncodingPass();
-
-		if(m_abort)
-		{
-			log("\nPROCESS ABORTED BY USER !!!");
-			setStatus(JobStatus_Aborted);
-			return;
-		}
-		else if(!ok)
-		{
-			setStatus(JobStatus_Failed);
-			return;
-		}
+		log(tr("\n--- ENCODING ---\n"));
+		ok = runEncodingPass(m_x64);
+		CHECK_STATUS(m_abort, ok);
 	}
 
-	log(tr("\nJob finished at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
+	log(tr("\n--- DONE ---\n"));
+	log(tr("Job finished at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 	setStatus(JobStatus_Completed);
 }
 
-bool EncodeThread::runEncodingPass(int pass, const QString &passLogFile)
+bool EncodeThread::runEncodingPass(bool x64, int pass, const QString &passLogFile)
 {
 	QProcess process;
 	QStringList cmdLine = buildCommandLine(pass, passLogFile);
 
 	log("Creating process:");
-	if(!startProcess(process, QString("%1/x264.exe").arg(m_binDir), cmdLine))
+	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "x264_x64" : "x264"), cmdLine))
 	{
 		return false;;
 	}
@@ -226,17 +239,17 @@ bool EncodeThread::runEncodingPass(int pass, const QString &passLogFile)
 				{
 					bool ok = false;
 					unsigned int progress = regExpProgress.cap(1).toUInt(&ok);
-					if(ok) setProgress(progress);
 					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
 					setDetails(text.mid(offset).trimmed());
+					if(ok) setProgress(progress);
 				}
 				else if((offset = regExpIndexing.lastIndexIn(text)) >= 0)
 				{
 					bool ok = false;
 					unsigned int progress = regExpIndexing.cap(1).toUInt(&ok);
-					if(ok) setProgress(progress);
 					setStatus(JobStatus_Indexing);
 					setDetails(text.mid(offset).trimmed());
+					if(ok) setProgress(progress);
 				}
 				else if(!text.isEmpty())
 				{
@@ -309,6 +322,88 @@ QStringList EncodeThread::buildCommandLine(int pass, const QString &passLogFile)
 	return cmdLine;
 }
 
+unsigned int EncodeThread::checkVersion(bool x64)
+{
+	QProcess process;
+	QStringList cmdLine = QStringList() << "--version";
+
+	log("Creating process:");
+	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "x264_x64" : "x264"), cmdLine))
+	{
+		return false;;
+	}
+
+	QRegExp regExpVersion("x264 (\\d)\\.(\\d+)\\.(\\d+) ([0-9A-Fa-f]{7})");
+	
+	bool bTimeout = false;
+	bool bAborted = false;
+
+	unsigned int revision = UINT_MAX;
+	unsigned int coreVers = UINT_MAX;
+
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(m_abort)
+		{
+			process.kill();
+			bAborted = true;
+			break;
+		}
+		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		{
+			if(process.state() == QProcess::Running)
+			{
+				process.kill();
+				qWarning("x264 process timed out <-- killing!");
+				log("\nPROCESS TIMEOUT !!!");
+				bTimeout = true;
+				break;
+			}
+		}
+		while(process.bytesAvailable() > 0)
+		{
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
+			{
+				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				int offset = -1;
+				if((offset = regExpVersion.lastIndexIn(text)) >= 0)
+				{
+					bool ok1 = false, ok2 = false;
+					unsigned int temp1 = regExpVersion.cap(2).toUInt(&ok1);
+					unsigned int temp2 = regExpVersion.cap(3).toUInt(&ok2);
+					if(ok1) coreVers = temp1;
+					if(ok2) revision = temp2;
+				}
+				if(!text.isEmpty())
+				{
+					log(text);
+				}
+			}
+		}
+	}
+
+	process.waitForFinished();
+	if(process.state() != QProcess::NotRunning)
+	{
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
+	{
+		return UINT_MAX;
+	}
+
+	if((revision == UINT_MAX) || (coreVers == UINT_MAX))
+	{
+		log(tr("\nFAILED TO DETERMINE X264 VERSION !!!"));
+		return UINT_MAX;
+	}
+	
+	return (coreVers * REV_MULT) + revision;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Misc functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -318,8 +413,19 @@ void EncodeThread::setStatus(JobStatus newStatus)
 	if(m_status != newStatus)
 	{
 		m_status = newStatus;
+		if((newStatus != JobStatus_Completed) && (newStatus != JobStatus_Failed) && (newStatus != JobStatus_Aborted))
+		{
+			setProgress(0);
+		}
+		if(newStatus == JobStatus_Failed)
+		{
+			setDetails("The job has failed. See log for details!");
+		}
+		if(newStatus == JobStatus_Aborted)
+		{
+			setDetails("The job was aborted by the user!");
+		}
 		emit statusChanged(m_jobId, newStatus);
-		setProgress(0);
 	}
 }
 

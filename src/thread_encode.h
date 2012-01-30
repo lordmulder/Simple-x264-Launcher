@@ -48,7 +48,7 @@ public:
 		JobStatus_Aborted = 9
 	};
 	
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x64);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -69,6 +69,7 @@ protected:
 	const QString m_outputFileName;
 	const OptionsModel *m_options;
 	const QString m_binDir;
+	const bool m_x64;
 
 	//Flags
 	volatile bool m_abort;
@@ -82,8 +83,9 @@ protected:
 	
 	//Encode functions
 	void encode(void);
-	bool runEncodingPass(int pass = 0, const QString &passLogFile = QString());
+	bool runEncodingPass(bool x64, int pass = 0, const QString &passLogFile = QString());
 	QStringList buildCommandLine(int pass = 0, const QString &passLogFile = QString());
+	unsigned int checkVersion(bool x64);
 
 	//Auxiallary Stuff
 	void log(const QString &text) { emit messageLogged(m_jobId, text); }

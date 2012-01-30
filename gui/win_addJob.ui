@@ -758,8 +758,6 @@
   </layout>
  </widget>
  <tabstops>
-  <tabstop>buttonAccept</tabstop>
-  <tabstop>buttonCancel</tabstop>
   <tabstop>editSource</tabstop>
   <tabstop>buttonBrowseSource</tabstop>
   <tabstop>editOutput</tabstop>
@@ -770,6 +768,10 @@
   <tabstop>cbxPreset</tabstop>
   <tabstop>cbxTuning</tabstop>
   <tabstop>cbxProfile</tabstop>
+  <tabstop>cbxCustomParams</tabstop>
+  <tabstop>checkBoxRun</tabstop>
+  <tabstop>buttonAccept</tabstop>
+  <tabstop>buttonCancel</tabstop>
  </tabstops>
  <resources>
   <include location="../res/resources.qrc"/>

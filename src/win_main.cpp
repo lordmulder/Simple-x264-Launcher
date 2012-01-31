@@ -303,7 +303,7 @@ void MainWindow::launchNextJob(void)
 
 void MainWindow::init(void)
 {
-	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:pipebuf.exe";
+	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
 	updateLabel();

@@ -151,7 +151,7 @@ void EncodeThread::encode(void)
 	unsigned int frames = 0;
 
 	//Detect source info
-	bool usePipe = m_x64 && (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
+	bool usePipe = true; //m_x64 && (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
 	if(usePipe)
 	{
 		log(tr("\n--- AVS INFO ---\n"));
@@ -217,23 +217,28 @@ void EncodeThread::encode(void)
 
 bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, int pass, const QString &passLogFile)
 {
-	QProcess process;
-	QStringList cmdLine;
-
+	QProcess processEncode, processAvisynth;
+	
 	if(usePipe)
 	{
-		cmdLine << QString("%1/avs2yuv.exe").arg(m_binDir);
-		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
-		cmdLine << "-" << ":";
-		cmdLine << QString("%1/%2.exe").arg(m_binDir,(x64 ? "x264_x64" : "x264"));
+		QStringList cmdLine_Avisynth;
+		cmdLine_Avisynth << QDir::toNativeSeparators(m_sourceFileName);
+		cmdLine_Avisynth << "-";
+		processAvisynth.setStandardOutputProcess(&processEncode);
+
+		log("Creating Avisynth process:");
+		if(!startProcess(processAvisynth, QString("%1/avs2yuv.exe").arg(m_binDir), cmdLine_Avisynth, false))
+		{
+			return false;
+		}
 	}
 
-	cmdLine << buildCommandLine(usePipe, frames, pass, passLogFile);
+	QStringList cmdLine_Encode = buildCommandLine(usePipe, frames, pass, passLogFile);
 
-	log("Creating process:");
-	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, usePipe ? "pipebuf" : (x64 ? "x264_x64" : "x264")), cmdLine))
+	log("Creating x264 process:");
+	if(!startProcess(processEncode, QString("%1/%2.exe").arg(m_binDir, x64 ? "x264_x64" : "x264"), cmdLine_Encode))
 	{
-		return false;;
+		return false;
 	}
 
 	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.\\d+%\\]");
@@ -243,28 +248,29 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 	bool bTimeout = false;
 	bool bAborted = false;
 
-	while(process.state() != QProcess::NotRunning)
+	while(processEncode.state() != QProcess::NotRunning)
 	{
 		if(m_abort)
 		{
-			process.kill();
+			processEncode.kill();
+			processAvisynth.kill();
 			bAborted = true;
 			break;
 		}
-		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		if(!processEncode.waitForReadyRead(m_processTimeoutInterval))
 		{
-			if(process.state() == QProcess::Running)
+			if(processEncode.state() == QProcess::Running)
 			{
-				process.kill();
+				processEncode.kill();
 				qWarning("x264 process timed out <-- killing!");
 				log("\nPROCESS TIMEOUT !!!");
 				bTimeout = true;
 				break;
 			}
 		}
-		while(process.bytesAvailable() > 0)
+		while(processEncode.bytesAvailable() > 0)
 		{
-			QList<QByteArray> lines = process.readLine().split('\r');
+			QList<QByteArray> lines = processEncode.readLine().split('\r');
 			while(!lines.isEmpty())
 			{
 				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
@@ -298,24 +304,50 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 		}
 	}
 
-	process.waitForFinished();
-	if(process.state() != QProcess::NotRunning)
+	processEncode.waitForFinished(5000);
+	if(processEncode.state() != QProcess::NotRunning)
 	{
-		process.kill();
-		process.waitForFinished(-1);
+		qWarning("x264 process still running, going to kill it!");
+		processEncode.kill();
+		processEncode.waitForFinished(-1);
+	}
+	
+	processAvisynth.waitForFinished(5000);
+	if(processAvisynth.state() != QProcess::NotRunning)
+	{
+		qWarning("Avisynth process still running, going to kill it!");
+		processAvisynth.kill();
+		processAvisynth.waitForFinished(-1);
 	}
 
-	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
+	while(processAvisynth.bytesAvailable() > 0)
+	{
+		log(tr("av2y [info]: %1").arg(QString::fromUtf8(processAvisynth.readLine()).simplified()));
+	}
+
+	if(usePipe && (processAvisynth.exitCode() != EXIT_SUCCESS))
 	{
 		if(!(bTimeout || bAborted))
 		{
-			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+			log(tr("\nWARNING: Avisynth process exited with error code: %1").arg(QString::number(processAvisynth.exitCode())));
 		}
+	}
+
+	if(bTimeout || bAborted || processEncode.exitCode() != EXIT_SUCCESS)
+	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(processEncode.exitCode())));
+		}
+		processEncode.close();
+		processAvisynth.close();
 		return false;
 	}
-	
+
 	setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
 	setProgress(100);
+	processEncode.close();
+	processAvisynth.close();
 	return true;
 }
 
@@ -363,6 +395,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 	
 	if(usePipe)
 	{
+		if(frames < 1) throw "Frames not set!";
 		cmdLine << "--frames" << QString::number(frames);
 		cmdLine << "--demuxer" << "y4m";
 		cmdLine << "--stdin" << "y4m" << "-";
@@ -632,7 +665,7 @@ void EncodeThread::setDetails(const QString &text)
 	emit detailsChanged(m_jobId, text);
 }
 
-bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args)
+bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)
 {
 	static AssignProcessToJobObjectFun AssignProcessToJobObjectPtr = NULL;
 	static CreateJobObjectFun CreateJobObjectPtr = NULL;
@@ -674,8 +707,17 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 		AssignProcessToJobObjectPtr = (AssignProcessToJobObjectFun) Kernel32Lib.resolve("AssignProcessToJobObject");
 	}
 	
-	process.setProcessChannelMode(QProcess::MergedChannels);
-	process.setReadChannel(QProcess::StandardOutput);
+	if(mergeChannels)
+	{
+		process.setProcessChannelMode(QProcess::MergedChannels);
+		process.setReadChannel(QProcess::StandardOutput);
+	}
+	else
+	{
+		process.setProcessChannelMode(QProcess::SeparateChannels);
+		process.setReadChannel(QProcess::StandardError);
+	}
+
 	process.start(program, args);
 	
 	if(process.waitForStarted())

@@ -211,6 +211,9 @@
           </disabled>
          </palette>
         </property>
+        <property name="cursor">
+         <cursorShape>WhatsThisCursor</cursorShape>
+        </property>
         <property name="text">
          <string>(Version)</string>
         </property>

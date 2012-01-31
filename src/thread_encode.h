@@ -86,7 +86,8 @@ protected:
 	void encode(void);
 	bool runEncodingPass(bool x64, bool usePipe, unsigned int frames, int pass = 0, const QString &passLogFile = QString());
 	QStringList buildCommandLine(bool usePipe, unsigned int frames, int pass = 0, const QString &passLogFile = QString());
-	unsigned int checkVersion(bool x64);
+	unsigned int checkVersionX264(bool x64);
+	unsigned int checkVersionAvs2yuv(void);
 	bool checkProperties(unsigned int &frames);
 
 	//Auxiallary Stuff

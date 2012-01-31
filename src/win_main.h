@@ -40,6 +40,7 @@ protected:
 	virtual void closeEvent(QCloseEvent *e);
 	virtual void showEvent(QShowEvent *e);
 	virtual void resizeEvent(QResizeEvent *e);
+	virtual bool eventFilter(QObject *o, QEvent *e);
 
 private:
 	bool m_firstShow;

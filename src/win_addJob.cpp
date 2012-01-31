@@ -54,21 +54,42 @@ g_filters[] =
 
 class StringValidator : public QValidator
 {
+public:
+	StringValidator(QLabel *notifier) : m_notifier(notifier) { m_notifier->hide(); }
+	
 	virtual State validate(QString &input, int &pos) const
 	{
-		bool invalid = input.simplified().compare(input) && input.simplified().append(" ").compare(input) &&
-			input.simplified().prepend(" ").compare(input) && input.simplified().append(" ").prepend(" ").compare(input);
+		bool invalid = false;
+		
+		invalid = invalid || (input.contains(" -B") || input.startsWith("-B"));
+		invalid = invalid || (input.contains(" -o") || input.startsWith("-o"));
+		invalid = invalid || (input.contains(" -h") || input.startsWith("-h"));
+		invalid = invalid || (input.contains(" -p") || input.startsWith("-p"));
 
-		if(!invalid)
+		invalid = invalid || input.contains("--fps", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--frames", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--preset", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--tune", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--profile", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--stdin", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--crf", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--bitrate", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--qp", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--pass", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--stats", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--output", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--help", Qt::CaseInsensitive);
+
+		if(invalid)
 		{
-			invalid = invalid || input.contains("--fps");
-			invalid = invalid || input.contains("--frames");
-			invalid = invalid || input.contains("--preset");
-			invalid = invalid || input.contains("--tune");
-			invalid = invalid || input.contains("--profile");
+			MessageBeep(MB_ICONWARNING);
+			if(m_notifier->isHidden())
+			{
+				m_notifier->show();
+				QTimer::singleShot(1000, m_notifier, SLOT(hide()));
+			}
 		}
 
-		if(invalid) MessageBeep(MB_ICONWARNING);
 		return invalid ? QValidator::Invalid : QValidator::Acceptable;
 	}
 
@@ -76,6 +97,9 @@ class StringValidator : public QValidator
 	{
 		input = input.simplified();
 	}
+
+protected:
+	QLabel *const m_notifier;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -107,7 +131,8 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	connect(buttonBrowseOutput, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
 
 	//Setup validator
-	editCustomParams->setValidator(new StringValidator());
+	editCustomParams->installEventFilter(this);
+	editCustomParams->setValidator(new StringValidator(labelNotification));
 	editCustomParams->clear();
 
 	//Install event filter
@@ -153,7 +178,10 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 	if((o == labelHelpScreen) && (e->type() == QEvent::MouseButtonPress))
 	{
 		QMessageBox::information(this, tr("Not yet"), tr("Not implemented yet. Please use the '?' menu for now!"));
-		return true;
+	}
+	else if((o == editCustomParams) && (e->type() == QEvent::FocusOut))
+	{
+		editCustomParams->setText(editCustomParams->text().simplified());
 	}
 	return false;
 }

@@ -107,6 +107,13 @@
       <Message>
       </Message>
     </PreLinkEvent>
+    <PostBuildEvent>
+      <Command>rmdir /S /Q "$(SolutionDir)bin\$(Configuration)\toolset"
+mkdir "$(SolutionDir)bin\$(Configuration)\toolset"
+copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\toolset"
+</Command>
+      <Message>Copy Toolset</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <CustomBuild Include="gui\win_main.ui">

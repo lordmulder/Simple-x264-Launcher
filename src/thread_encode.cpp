@@ -150,8 +150,47 @@ void EncodeThread::encode(void)
 	bool ok = false;
 	unsigned int frames = 0;
 
+	//Use Avisynth?
+	const bool usePipe = (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
+
+	//Checking x264 version
+	log(tr("\n--- CHECK VERSION ---\n"));
+	unsigned int revision_x264 = UINT_MAX;
+	ok = ((revision_x264 = checkVersionX264(m_x64)) != UINT_MAX);
+	CHECK_STATUS(m_abort, ok);
+	
+	//Checking avs2yuv version
+	unsigned int revision_avs2yuv = UINT_MAX;
+	if(usePipe)
+	{
+		ok = ((revision_avs2yuv = checkVersionAvs2yuv()) != UINT_MAX);
+		CHECK_STATUS(m_abort, ok);
+	}
+
+	//Print versions
+	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision_x264 % REV_MULT), QString::number(revision_x264 / REV_MULT)));
+	if(revision_avs2yuv != UINT_MAX) log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
+
+	//Is x264 revision supported?
+	if((revision_x264 % REV_MULT) < VER_X264_MINIMUM_REV)
+	{
+		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(VER_X264_MINIMUM_REV)));
+		setStatus(JobStatus_Failed);
+		return;
+	}
+	if((revision_x264 / REV_MULT) != VER_X264_CURRENT_API)
+	{
+		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
+		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
+	}
+	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != 242))
+	{
+		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version is v0.24bm2)"));
+		setStatus(JobStatus_Failed);
+		return;
+	}
+
 	//Detect source info
-	bool usePipe = (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
 	if(usePipe)
 	{
 		log(tr("\n--- AVS INFO ---\n"));
@@ -159,26 +198,6 @@ void EncodeThread::encode(void)
 		CHECK_STATUS(m_abort, ok);
 	}
 
-	//Checking version
-	log(tr("\n--- X264 VERSION ---\n"));
-	unsigned int revision;
-	ok = ((revision = checkVersion(m_x64)) != UINT_MAX);
-	CHECK_STATUS(m_abort, ok);
-
-	//Is revision supported?
-	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)));
-	if((revision % REV_MULT) < VER_X264_MINIMUM_REV)
-	{
-		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(VER_X264_MINIMUM_REV)));
-		setStatus(JobStatus_Failed);
-		return;
-	}
-	if((revision / REV_MULT) != VER_X264_CURRENT_API)
-	{
-		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
-		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
-	}
-	
 	//Run encoding passes
 	if(m_options->rcMode() == OptionsModel::RCMode_2Pass)
 	{
@@ -423,7 +442,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 	return cmdLine;
 }
 
-unsigned int EncodeThread::checkVersion(bool x64)
+unsigned int EncodeThread::checkVersionX264(bool x64)
 {
 	QProcess process;
 	QStringList cmdLine = QStringList() << "--version";
@@ -506,7 +525,98 @@ unsigned int EncodeThread::checkVersion(bool x64)
 		return UINT_MAX;
 	}
 	
-	return (coreVers * REV_MULT) + revision;
+	return (coreVers * REV_MULT) + (revision % REV_MULT);
+}
+
+unsigned int EncodeThread::checkVersionAvs2yuv(void)
+{
+	QProcess process;
+
+	log("\nCreating process:");
+	if(!startProcess(process, QString("%1/avs2yuv.exe").arg(m_binDir), QStringList()))
+	{
+		return false;;
+	}
+
+	QRegExp regExpVersion("Avs2YUV (\\d+).(\\d+)bm(\\d)");
+	
+	bool bTimeout = false;
+	bool bAborted = false;
+
+	unsigned int ver_maj = UINT_MAX;
+	unsigned int ver_min = UINT_MAX;
+	unsigned int ver_bld = UINT_MAX;
+
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(m_abort)
+		{
+			process.kill();
+			bAborted = true;
+			break;
+		}
+		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		{
+			if(process.state() == QProcess::Running)
+			{
+				process.kill();
+				qWarning("Avs2YUV process timed out <-- killing!");
+				log("\nPROCESS TIMEOUT !!!");
+				bTimeout = true;
+				break;
+			}
+		}
+		while(process.bytesAvailable() > 0)
+		{
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
+			{
+				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				int offset = -1;
+				if((ver_maj == UINT_MAX) || (ver_min == UINT_MAX) || (ver_bld == UINT_MAX))
+				{
+					if(!text.isEmpty())
+					{
+						log(text);
+					}
+				}
+				if((offset = regExpVersion.lastIndexIn(text)) >= 0)
+				{
+					bool ok1 = false, ok2 = false, ok3 = false;
+					unsigned int temp1 = regExpVersion.cap(1).toUInt(&ok1);
+					unsigned int temp2 = regExpVersion.cap(2).toUInt(&ok2);
+					unsigned int temp3 = regExpVersion.cap(3).toUInt(&ok3);
+					if(ok1) ver_maj = temp1;
+					if(ok2) ver_min = temp2;
+					if(ok3) ver_bld = temp3;
+				}
+			}
+		}
+	}
+
+	process.waitForFinished();
+	if(process.state() != QProcess::NotRunning)
+	{
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	if(bTimeout || bAborted || ((process.exitCode() != EXIT_SUCCESS) && (process.exitCode() != 2)))
+	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
+		return UINT_MAX;
+	}
+
+	if((ver_maj == UINT_MAX) || (ver_min == UINT_MAX) || (ver_bld == UINT_MAX))
+	{
+		log(tr("\nFAILED TO DETERMINE AVS2YUV VERSION !!!"));
+		return UINT_MAX;
+	}
+	
+	return (ver_maj * REV_MULT) + ((ver_min % REV_MULT) * 10) + (ver_bld % 10);
 }
 
 bool EncodeThread::checkProperties(unsigned int &frames)

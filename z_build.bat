@@ -55,7 +55,7 @@ echo !insertmacro SECTION_END >> "%NSIS_FILE%"
 "%NSIS_PATH%\makensis.exe" "%NSIS_FILE%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 del "%NSIS_FILE%"
-del /Q /S "%PACK_PATH%\*.*"
+rmdir /Q /S "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 echo.
 echo Build completed.

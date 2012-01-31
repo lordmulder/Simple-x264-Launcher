@@ -66,8 +66,10 @@ MainWindow::MainWindow(bool x64supported)
 
 	//Update title
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
+	labelBuildDate->installEventFilter(this);
 	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_x64supported ? "64-Bit" : "32-Bit"));
 	if(PRE_RELEASE) setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
+
 
 	//Create model
 	m_jobList = new JobListModel();
@@ -396,6 +398,16 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 {
 	QMainWindow::resizeEvent(e);
 	updateLabel();
+}
+
+bool MainWindow::eventFilter(QObject *o, QEvent *e)
+{
+	if((o == labelBuildDate) && (e->type() == QEvent::MouseButtonPress))
+	{
+		QTimer::singleShot(0, this, SLOT(showAbout()));
+		return true;
+	}
+	return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

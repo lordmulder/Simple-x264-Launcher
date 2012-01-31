@@ -38,12 +38,13 @@ public:
 	QString preset(void) { return cbxPreset->itemText(cbxPreset->currentIndex()); }
 	QString tuning(void) { return cbxTuning->itemText(cbxTuning->currentIndex()); }
 	QString profile(void) { return cbxProfile->itemText(cbxProfile->currentIndex()); }
-	QString params(void) { return cbxCustomParams->currentText().simplified(); }
+	QString params(void) { return editCustomParams->text().simplified(); }
 	bool runImmediately(void) { return checkBoxRun->isChecked(); }
 	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
 
 protected:
 	OptionsModel *m_options;
+	OptionsModel *m_defaults;
 	
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
@@ -51,6 +52,8 @@ protected:
 private slots:
 	void modeIndexChanged(int index);
 	void browseButtonClicked(void);
+	void configurationChanged(void);
+	void templateSelected(void);
 	
 	virtual void accept(void);
 

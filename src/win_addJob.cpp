@@ -85,6 +85,7 @@ class StringValidator : public QValidator
 AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 :
 	QDialog(parent),
+	m_defaults(new OptionsModel()),
 	m_options(options)
 {
 	//Init the dialog, from the .ui file
@@ -92,11 +93,13 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	
 	//Fix dialog size
+	buttonSaveTemplate->setMaximumHeight(20);
+	buttonDeleteTemplate->setMaximumHeight(20);
 	resize(width(), minimumHeight());
 	setMinimumSize(size());
 	setMaximumHeight(height());
 
-	//Activate combobox
+	//Monitor RC mode combobox
 	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
 
 	//Activate buttons
@@ -104,16 +107,35 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	connect(buttonBrowseOutput, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
 
 	//Setup validator
-	cbxCustomParams->setValidator(new StringValidator());
-	cbxCustomParams->addItem("--bluray-compat --vbv-maxrate 40000 --vbv-bufsize 30000 --level 4.1 --keyint 25 --open-gop --slices 4");
-	cbxCustomParams->clearEditText();
+	editCustomParams->setValidator(new StringValidator());
+	editCustomParams->clear();
 
 	//Install event filter
 	labelHelpScreen->installEventFilter(this);
+
+	//Monitor for options changes
+	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(spinQuantizer, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
+	connect(spinBitrate, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
+	connect(cbxPreset, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(cbxTuning, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(cbxProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(editCustomParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
+
+	//Monitor template
+	cbxTemplate->insertItem(0, tr("<Default>"), QVariant::fromValue<void*>(m_defaults));
+	cbxTemplate->setCurrentIndex(0);
+	if(!m_options->equals(m_defaults))
+	{
+		cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
+		cbxTemplate->setCurrentIndex(1);
+	}
+	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
 }
 
 AddJobDialog::~AddJobDialog(void)
 {
+	X264_DELETE(m_defaults);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,8 +145,7 @@ AddJobDialog::~AddJobDialog(void)
 void AddJobDialog::showEvent(QShowEvent *event)
 {
 	QDialog::showEvent(event);
-	restoreOptions(m_options);
-	modeIndexChanged(cbxRateControlMode->currentIndex());
+	templateSelected();
 }
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
@@ -232,6 +253,41 @@ void AddJobDialog::browseButtonClicked(void)
 	}
 }
 
+void AddJobDialog::configurationChanged(void)
+{
+	OptionsModel* options = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(cbxTemplate->currentIndex()).value<void*>());
+	if(options)
+	{
+		cbxTemplate->blockSignals(true);
+		cbxTemplate->insertItem(0, tr("<Unsaved Configuration>"), QVariant::fromValue<void*>(NULL));
+		cbxTemplate->setCurrentIndex(0);
+		cbxTemplate->blockSignals(false);
+	}
+}
+
+void AddJobDialog::templateSelected(void)
+{
+	OptionsModel* options = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(cbxTemplate->currentIndex()).value<void*>());
+	if(options)
+	{
+		qDebug("Loading options!");
+		for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
+		{
+			OptionsModel* temp = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
+			if(temp == NULL)
+			{
+				cbxTemplate->blockSignals(true);
+				cbxTemplate->removeItem(i);
+				cbxTemplate->blockSignals(false);
+				break;
+			}
+		}
+		restoreOptions(options);
+	}
+
+	modeIndexChanged(cbxRateControlMode->currentIndex());
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Public functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -264,13 +320,29 @@ void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 
 void AddJobDialog::restoreOptions(OptionsModel *options)
 {
+	cbxRateControlMode->blockSignals(true);
+	spinQuantizer->blockSignals(true);
+	spinBitrate->blockSignals(true);
+	cbxPreset->blockSignals(true);
+	cbxTuning->blockSignals(true);
+	cbxProfile->blockSignals(true);
+	editCustomParams->blockSignals(true);
+
 	cbxRateControlMode->setCurrentIndex(options->rcMode());
 	spinQuantizer->setValue(options->quantizer());
 	spinBitrate->setValue(options->bitrate());
 	updateComboBox(cbxPreset, options->preset());
 	updateComboBox(cbxTuning, options->tune());
 	updateComboBox(cbxProfile, options->profile());
-	cbxCustomParams->setEditText(options->custom());
+	editCustomParams->setText(options->custom());
+
+	cbxRateControlMode->blockSignals(false);
+	spinQuantizer->blockSignals(false);
+	spinBitrate->blockSignals(false);
+	cbxPreset->blockSignals(false);
+	cbxTuning->blockSignals(false);
+	cbxProfile->blockSignals(false);
+	editCustomParams->blockSignals(false);
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)
@@ -281,7 +353,7 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setPreset(cbxPreset->model()->data(cbxPreset->model()->index(cbxPreset->currentIndex(), 0)).toString());
 	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
 	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
-	options->setCustom(cbxCustomParams->currentText());
+	options->setCustom(editCustomParams->text().simplified());
 }
 
 QString AddJobDialog::makeFileFilter(void)

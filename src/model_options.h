@@ -56,6 +56,9 @@ public:
 	void setProfile(const QString &profile) { m_profile = profile.trimmed(); }
 	void setCustom(const QString &custom) { m_custom = custom.trimmed(); }
 
+	//Stuff
+	bool equals(OptionsModel *model);
+
 	//Helper
 	static QString rcMode2String(RCMode mode);
 

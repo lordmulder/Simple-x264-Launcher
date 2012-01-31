@@ -57,3 +57,18 @@ QString OptionsModel::rcMode2String(RCMode mode)
 		break;
 	}
 }
+
+bool OptionsModel::equals(OptionsModel *model)
+{
+	bool equal = true;
+	
+	if(this->m_rcMode != model->m_rcMode) equal = false;
+	if(this->m_bitrate!= model->m_bitrate) equal = false;
+	if(this->m_quantizer != model->m_quantizer) equal = false;
+	if(this->m_preset.compare(model->m_preset, Qt::CaseInsensitive)) equal = false;
+	if(this->m_tune.compare(model->m_tune, Qt::CaseInsensitive)) equal = false;
+	if(this->m_profile.compare(model->m_profile, Qt::CaseInsensitive)) equal = false;
+	if(this->m_custom.compare(model->m_custom, Qt::CaseInsensitive)) equal = false;
+
+	return equal;
+}

@@ -151,7 +151,7 @@ void EncodeThread::encode(void)
 	unsigned int frames = 0;
 
 	//Detect source info
-	bool usePipe = true; //m_x64 && (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
+	bool usePipe = (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
 	if(usePipe)
 	{
 		log(tr("\n--- AVS INFO ---\n"));
@@ -344,7 +344,22 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 		return false;
 	}
 
-	setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
+	switch(pass)
+	{
+	case 1:
+		setStatus(JobStatus_Running_Pass1);
+		setDetails(tr("First pass completed. Preparing for second pass..."));
+		break;
+	case 2:
+		setStatus(JobStatus_Running_Pass2);
+		setDetails(tr("Second pass completed successfully."));
+		break;
+	default:
+		setStatus(JobStatus_Running);
+		setDetails(tr("Encode completed successfully."));
+		break;
+	}
+
 	setProgress(100);
 	processEncode.close();
 	processAvisynth.close();

@@ -21,6 +21,10 @@
 
 #include "model_options.h"
 
+#include <QDesktopServices>
+#include <QSettings>
+#include <QStringList>
+
 OptionsModel::OptionsModel(void)
 {
 	m_rcMode = RCMode_CRF;
@@ -71,4 +75,92 @@ bool OptionsModel::equals(OptionsModel *model)
 	if(this->m_custom.compare(model->m_custom, Qt::CaseInsensitive)) equal = false;
 
 	return equal;
+}
+
+bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
+{
+	const QString templateName = name.simplified();
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+
+	if(templateName.startsWith("<") || templateName.endsWith(">") || templateName.contains("\\") || templateName.contains("/"))
+	{
+		return false;
+	}
+
+	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
+	settings.beginGroup(templateName);
+	
+	settings.setValue("rate_control_mode", model->m_rcMode);
+	settings.setValue("target_bitrate", model->m_bitrate);
+	settings.setValue("target_quantizer", model->m_quantizer);
+	settings.setValue("preset_name", model->m_preset);
+	settings.setValue("tuning_name", model->m_tune);
+	settings.setValue("profile_name", model->m_profile);
+	settings.setValue("custom_params", model->m_custom);
+	
+	settings.endGroup();
+	settings.sync();
+	
+	return true;
+}
+
+QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
+{
+	QMap<QString, OptionsModel*> list;
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
+	QStringList allTemplates = settings.childGroups();
+
+	while(!allTemplates.isEmpty())
+	{
+		settings.beginGroup(allTemplates.takeFirst());
+
+		bool complete = true;
+		if(!settings.contains("rate_control_mode")) complete = false;
+		if(!settings.contains("target_bitrate")) complete = false;
+		if(!settings.contains("target_quantizer")) complete = false;
+		if(!settings.contains("preset_name")) complete = false;
+		if(!settings.contains("tuning_name")) complete = false;
+		if(!settings.contains("profile_name")) complete = false;
+		if(!settings.contains("custom_params")) complete = false;
+
+		if(complete)
+		{
+			OptionsModel *options = new OptionsModel();
+			options->setRCMode(static_cast<OptionsModel::RCMode>(settings.value("rate_control_mode", options->m_rcMode).toInt()));
+			options->setBitrate(settings.value("target_bitrate", options->m_bitrate).toUInt());
+			options->setQuantizer(settings.value("target_quantizer", options->m_quantizer).toUInt());
+			options->setPreset(settings.value("preset_name", options->m_preset).toString());
+			options->setTune(settings.value("tuning_name", options->m_tune).toString());
+			options->setProfile(settings.value("profile_name", options->m_profile).toString());
+			options->setCustom(settings.value("custom_params", options->m_custom).toString());
+			list.insert(settings.group(), options);
+		}
+
+		settings.endGroup();
+	}
+
+	return list;
+}
+
+bool OptionsModel::templateExists(const QString &name)
+{
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
+	QStringList allGroups = settings.childGroups();
+	return allGroups.contains(name, Qt::CaseInsensitive);
+}
+
+bool OptionsModel::deleteTemplate(const QString &name)
+{
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
+
+	if(settings.childGroups().contains(name, Qt::CaseInsensitive))
+	{
+		settings.remove(name);
+		return true;
+	}
+
+	return false;
 }

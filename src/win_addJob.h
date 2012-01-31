@@ -54,10 +54,13 @@ private slots:
 	void browseButtonClicked(void);
 	void configurationChanged(void);
 	void templateSelected(void);
+	void saveTemplateButtonClicked(void);
+	void deleteTemplateButtonClicked(void);
 	
 	virtual void accept(void);
 
 private:
+	void loadTemplateList(void);
 	void restoreOptions(OptionsModel *options);
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *cbox, const QString &text);

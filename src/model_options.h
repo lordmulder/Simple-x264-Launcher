@@ -23,6 +23,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QMap>
 
 class OptionsModel
 {
@@ -59,8 +60,12 @@ public:
 	//Stuff
 	bool equals(OptionsModel *model);
 
-	//Helper
+	//Static functions
 	static QString rcMode2String(RCMode mode);
+	static bool saveTemplate(OptionsModel *model, const QString &name);
+	static QMap<QString, OptionsModel*> loadAllTemplates(void);
+	static bool templateExists(const QString &name);
+	static bool deleteTemplate(const QString &name);
 
 protected:
 	RCMode m_rcMode;

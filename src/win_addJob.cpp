@@ -32,6 +32,7 @@
 #include <QDesktopServices>
 #include <QValidator>
 #include <QDir>
+#include <QInputDialog>
 
 static const struct
 {
@@ -129,6 +130,8 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	//Activate buttons
 	connect(buttonBrowseSource, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
 	connect(buttonBrowseOutput, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
+	connect(buttonSaveTemplate, SIGNAL(clicked()), this, SLOT(saveTemplateButtonClicked()));
+	connect(buttonDeleteTemplate, SIGNAL(clicked()), this, SLOT(deleteTemplateButtonClicked()));
 
 	//Setup validator
 	editCustomParams->installEventFilter(this);
@@ -147,19 +150,24 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	connect(cbxProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(editCustomParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
 
-	//Monitor template
-	cbxTemplate->insertItem(0, tr("<Default>"), QVariant::fromValue<void*>(m_defaults));
-	cbxTemplate->setCurrentIndex(0);
-	if(!m_options->equals(m_defaults))
-	{
-		cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
-		cbxTemplate->setCurrentIndex(1);
-	}
+	//Setup template selector
+	loadTemplateList();
 	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
 }
 
 AddJobDialog::~AddJobDialog(void)
 {
+	for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
+	{
+		if(cbxTemplate->itemText(i).startsWith("<") || cbxTemplate->itemText(i).endsWith(">"))
+		{
+			continue;
+		}
+		OptionsModel *item = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
+		cbxTemplate->setItemData(i, QVariant::fromValue<void*>(NULL));
+		X264_DELETE(item);
+	}
+	
 	X264_DELETE(m_defaults);
 }
 
@@ -316,6 +324,80 @@ void AddJobDialog::templateSelected(void)
 	modeIndexChanged(cbxRateControlMode->currentIndex());
 }
 
+void AddJobDialog::saveTemplateButtonClicked(void)
+{
+	qDebug("Saving template");
+	QString name = tr("New Template");
+
+	forever
+	{
+		bool ok = false;
+		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:"), QLineEdit::Normal, name, &ok).simplified();
+		if(!ok) return;
+		if(name.startsWith("<") || name.endsWith(">"))
+		{
+			QMessageBox::warning (this, tr("Invalid Name"), tr("Sorry, the name you have entered is invalid!"));
+			while(name.startsWith("<")) name = name.mid(1).trimmed();
+			while(name.endsWith(">")) name = name.left(name.size() - 1).trimmed();
+			continue;
+		}
+		if(OptionsModel::templateExists(name))
+		{
+			QMessageBox::warning (this, tr("Already Exists"), tr("Sorry, a template of that name already exists!"));
+			continue;
+		}
+		break;
+	}
+
+	OptionsModel *options = new OptionsModel();
+	saveOptions(options);
+	
+	if(options->equals(m_defaults))
+	{
+		QMessageBox::warning (this, tr("Default"), tr("It makes no sense to save the defaults!"));
+		X264_DELETE(options);
+		return;
+	}
+	if(!OptionsModel::saveTemplate(options, name))
+	{
+		QMessageBox::warning (this, tr("Save Failed"), tr("Sorry, the template could not be used!"));
+		X264_DELETE(options);
+		return;
+	}
+	
+	int index = cbxTemplate->model()->rowCount();
+	cbxTemplate->blockSignals(true);
+	cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
+	cbxTemplate->setCurrentIndex(index);
+	for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
+	{
+		OptionsModel* temp = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
+		if(temp == NULL)
+		{
+			cbxTemplate->removeItem(i);
+			break;
+		}
+	}
+	cbxTemplate->blockSignals(false);
+}
+
+void AddJobDialog::deleteTemplateButtonClicked(void)
+{
+	const int index = cbxTemplate->currentIndex();
+	QString name = cbxTemplate->itemText(index);
+
+	if(name.startsWith("<") || name.endsWith(">"))
+	{
+		QMessageBox::warning (this, tr("Invalid Item"), tr("Sorry, the selected item cannot be deleted!"));
+		return;
+	}
+
+	OptionsModel::deleteTemplate(name);
+	OptionsModel *item = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(index).value<void*>());
+	cbxTemplate->removeItem(index);
+	X264_DELETE(item);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Public functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -333,6 +415,33 @@ QString AddJobDialog::outputFile(void)
 ///////////////////////////////////////////////////////////////////////////////
 // Private functions
 ///////////////////////////////////////////////////////////////////////////////
+
+void AddJobDialog::loadTemplateList(void)
+{
+	cbxTemplate->addItem(tr("<Default>"), QVariant::fromValue<void*>(m_defaults));
+	cbxTemplate->setCurrentIndex(0);
+
+	QMap<QString, OptionsModel*> templates = OptionsModel::loadAllTemplates();
+	QStringList templateNames = templates.keys();
+	templateNames.sort();
+
+	while(!templateNames.isEmpty())
+	{
+		QString current = templateNames.takeFirst();
+		cbxTemplate->addItem(current, QVariant::fromValue<void*>(templates.value(current)));
+
+		if(templates.value(current)->equals(m_options))
+		{
+			cbxTemplate->setCurrentIndex(cbxTemplate->count() - 1);
+		}
+	}
+
+	if((cbxTemplate->currentIndex() == 0) && (!m_options->equals(m_defaults)))
+	{
+		cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
+		cbxTemplate->setCurrentIndex(1);
+	}
+}
 
 void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 {

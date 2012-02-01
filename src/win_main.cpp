@@ -263,7 +263,7 @@ void MainWindow::showAbout(void)
 	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
 	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", home_url, home_url);
 
-	QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"));
+	QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("Close"));
 }
 
 void MainWindow::showWebLink(void)

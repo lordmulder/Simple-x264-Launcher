@@ -23,6 +23,7 @@
 
 #include "global.h"
 #include "model_options.h"
+#include "win_help.h"
 
 #include <QDate>
 #include <QTimer>
@@ -185,7 +186,9 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 {
 	if((o == labelHelpScreen) && (e->type() == QEvent::MouseButtonPress))
 	{
-		QMessageBox::information(this, tr("Not yet"), tr("Not implemented yet. Please use the '?' menu for now!"));
+		HelpDialog *helpScreen = new HelpDialog(this);
+		helpScreen->exec();
+		X264_DELETE(helpScreen);
 	}
 	else if((o == editCustomParams) && (e->type() == QEvent::FocusOut))
 	{

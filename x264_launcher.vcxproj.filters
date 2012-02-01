@@ -86,6 +86,12 @@
     <ClCompile Include="src\model_options.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\win_help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_win_help.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="gui\win_main.ui">
@@ -110,6 +116,12 @@
       <Filter>Dialogs</Filter>
     </CustomBuild>
     <CustomBuild Include="src\win_addJob.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_help.ui">
+      <Filter>Dialogs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_help.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

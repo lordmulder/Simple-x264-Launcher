@@ -330,6 +330,18 @@ void MainWindow::init(void)
 		QFile *file = new QFile(QString("%1/toolset/%2").arg(m_appDir, current));
 		if(file->open(QIODevice::ReadOnly))
 		{
+			bool binaryTypeOkay = false;
+			DWORD binaryType;
+			if(GetBinaryType(QWCHAR(file->fileName()), &binaryType))
+			{
+				binaryTypeOkay = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
+			}
+			if(!binaryTypeOkay)
+			{
+				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 binary:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
+				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
+				close(); qApp->exit(-1); return;
+			}
 			m_toolsList << file;
 		}
 		else

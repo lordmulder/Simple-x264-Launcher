@@ -49,7 +49,8 @@ public:
 		JobStatus_Paused = 9,
 		JobStatus_Resuming = 10,
 		JobStatus_Aborting = 11,
-		JobStatus_Aborted = 12
+		JobStatus_Aborted = 12,
+		JobStatus_Undefined = 666
 	};
 	
 	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x64);

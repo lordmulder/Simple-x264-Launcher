@@ -16,6 +16,7 @@
     <file>buttons/error.png</file>
     <file>buttons/exclamation.png</file>
     <file>buttons/find.png</file>
+    <file>buttons/folder_magnify.png</file>
     <file>buttons/hourglass.png</file>
     <file>buttons/information.png</file>
     <file>buttons/lightning.png</file>
@@ -24,6 +25,7 @@
     <file>buttons/play.png</file>
     <file>buttons/play_big.png</file>
     <file>buttons/suspended.png</file>
+    <file>buttons/trash.png</file>
     <file>buttons/world_link.png</file>
     <file>buttons/wrench.png</file>
     <file>images/x264.png</file>

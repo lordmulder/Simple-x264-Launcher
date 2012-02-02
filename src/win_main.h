@@ -57,10 +57,13 @@ private:
 	
 	void updateButtons(EncodeThread::JobStatus status);
 	bool havePendingJobs(void);
+	bool haveRunningJobs(void);
 
 private slots:
 	void addButtonPressed(const QString &filePath = QString(), bool *ok = NULL);
 	void abortButtonPressed(void);
+	void browseButtonPressed(void);
+	void deleteButtonPressed(void);
 	void copyLogToClipboard(bool checked);
 	void init(void);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);

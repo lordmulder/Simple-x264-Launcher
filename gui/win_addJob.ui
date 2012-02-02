@@ -951,12 +951,16 @@
   <tabstop>buttonBrowseSource</tabstop>
   <tabstop>editOutput</tabstop>
   <tabstop>buttonBrowseOutput</tabstop>
+  <tabstop>cbxTemplate</tabstop>
+  <tabstop>buttonSaveTemplate</tabstop>
+  <tabstop>buttonDeleteTemplate</tabstop>
   <tabstop>cbxRateControlMode</tabstop>
   <tabstop>spinQuantizer</tabstop>
   <tabstop>spinBitrate</tabstop>
   <tabstop>cbxPreset</tabstop>
   <tabstop>cbxTuning</tabstop>
   <tabstop>cbxProfile</tabstop>
+  <tabstop>editCustomParams</tabstop>
   <tabstop>checkBoxRun</tabstop>
   <tabstop>buttonAccept</tabstop>
   <tabstop>buttonCancel</tabstop>
@@ -972,8 +976,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>587</x>
-     <y>406</y>
+     <x>495</x>
+     <y>558</y>
     </hint>
     <hint type="destinationlabel">
      <x>397</x>
@@ -988,8 +992,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>721</x>
-     <y>406</y>
+     <x>629</x>
+     <y>558</y>
     </hint>
     <hint type="destinationlabel">
      <x>397</x>

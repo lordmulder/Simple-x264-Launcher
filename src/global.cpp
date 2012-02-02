@@ -264,7 +264,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
  */
 void x264_init_console(int argc, char* argv[])
 {
-	bool enableConsole = true; //x264_version_demo();
+	bool enableConsole = x264_is_prerelease();
 
 	if(_environ)
 	{
@@ -405,6 +405,11 @@ const QDate &x264_version_date(void)
 const char *x264_version_time(void)
 {
 	return g_x264_version.ver_time;
+}
+
+bool x264_is_prerelease(void)
+{
+	return (VER_x264_PRE_RELEASE);
 }
 
 /*

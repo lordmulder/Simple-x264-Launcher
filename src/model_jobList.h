@@ -49,7 +49,9 @@ public:
 	bool pauseJob(const QModelIndex &index);
 	bool resumeJob(const QModelIndex &index);
 	bool abortJob(const QModelIndex &index);
+	bool deleteJob(const QModelIndex &index);
 	LogFileModel *getLogFile(const QModelIndex &index);
+	const QString &getJobOutputFile(const QModelIndex &index);
 	EncodeThread::JobStatus getJobStatus(const QModelIndex &index);
 	unsigned int getJobProgress(const QModelIndex &index);
 	QModelIndex getJobIndexById(const QUuid &id);

@@ -34,10 +34,11 @@
 #include <QUrl>
 #include <QDir>
 #include <QLibrary>
+#include <QProcess>
+
+//#include <Shellapi.h>
 
 const char *home_url = "http://mulder.brhack.net/";
-
-#define PRE_RELEASE (0)
 
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
@@ -68,7 +69,7 @@ MainWindow::MainWindow(bool x64supported)
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	labelBuildDate->installEventFilter(this);
 	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_x64supported ? "64-Bit" : "32-Bit"));
-	if(PRE_RELEASE) setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
+	if(x264_is_prerelease()) setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
 
 
 	//Create model
@@ -88,6 +89,7 @@ MainWindow::MainWindow(bool x64supported)
 
 	//Create context menu
 	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), logView);
+	actionClipboard->setEnabled(false);
 	logView->addAction(actionClipboard);
 	connect(actionClipboard, SIGNAL(triggered(bool)), this, SLOT(copyLogToClipboard(bool)));
 	jobsView->addActions(menuJob->actions());
@@ -97,6 +99,8 @@ MainWindow::MainWindow(bool x64supported)
 	connect(buttonStartJob, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
 	connect(buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
 	connect(buttonPauseJob, SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
+	connect(actionJob_Delete, SIGNAL(triggered()), this, SLOT(deleteButtonPressed()));
+	connect(actionJob_Browse, SIGNAL(triggered()), this, SLOT(browseButtonPressed()));
 
 	//Enable menu
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
@@ -172,11 +176,11 @@ void MainWindow::addButtonPressed(const QString &filePath, bool *ok)
 				m_jobList->startJob(newIndex);
 			}
 
-			m_label->setVisible(false);
 			if(ok) *ok = true;
 		}
 	}
 
+	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 	X264_DELETE(addDialog);
 }
 
@@ -188,6 +192,25 @@ void MainWindow::startButtonPressed(void)
 void MainWindow::abortButtonPressed(void)
 {
 	m_jobList->abortJob(jobsView->currentIndex());
+}
+
+void MainWindow::deleteButtonPressed(void)
+{
+	m_jobList->deleteJob(jobsView->currentIndex());
+	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+}
+
+void MainWindow::browseButtonPressed(void)
+{
+	QString outputFile = m_jobList->getJobOutputFile(jobsView->currentIndex());
+	if((!outputFile.isEmpty()) && QFileInfo(outputFile).exists() && QFileInfo(outputFile).isFile())
+	{
+		QProcess::startDetached(QString::fromLatin1("explorer.exe"), QStringList() << QString::fromLatin1("/select,") << QDir::toNativeSeparators(outputFile), QFileInfo(outputFile).path());
+	}
+	else
+	{
+		QMessageBox::warning(this, tr("Not Found"), tr("Sorry, the output file could not be found!"));
+	}
 }
 
 void MainWindow::pauseButtonPressed(bool checked)
@@ -211,13 +234,25 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 		disconnect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
 	}
 	
-	logView->setModel(m_jobList->getLogFile(current));
-	connect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
-	QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
+	if(current.isValid())
+	{
+		logView->setModel(m_jobList->getLogFile(current));
+		connect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
+		logView->actions().first()->setEnabled(true);
+		QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
 	
-	progressBar->setValue(m_jobList->getJobProgress(current));
-	editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
-	updateButtons(m_jobList->getJobStatus(current));
+		progressBar->setValue(m_jobList->getJobProgress(current));
+		editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
+		updateButtons(m_jobList->getJobStatus(current));
+	}
+	else
+	{
+		logView->setModel(NULL);
+		logView->actions().first()->setEnabled(false);
+		progressBar->setValue(0);
+		editDetails->clear();
+		updateButtons(EncodeThread::JobStatus_Undefined);
+	}
 
 	progressBar->repaint();
 }
@@ -292,10 +327,10 @@ void MainWindow::showAbout(void)
 		case 0:
 			{
 				QString text2;
-				text2 += tr("<nobr><tt>x264, the best H.264/AVC encoder. Copyright (c) 2003-2011 x264 project.<br>");
+				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (c) 2003-2012 x264 project.<br>");
 				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
-				text2 += tr("Please visit <a href=\"http://x264licensing.com/\">http://x264licensing.com/</a> for obtaining a <u>commercial</u> x264 license!<br></tt></nobr>");
+				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a <u>commercial</u> x264 license!<br></tt></nobr>").arg("http://x264licensing.com/");
 				QMessageBox::information(this, tr("About x264"), text2.replace("-", "&minus;"), tr("Close"));
 			}
 			break;
@@ -384,7 +419,7 @@ void MainWindow::init(void)
 	}
 
 	//Pre-release popup
-	if(PRE_RELEASE)
+	if(x264_is_prerelease())
 	{
 		qsrand(time(NULL)); int rnd = qrand() % 3;
 		int val = QMessageBox::information(this, tr("Pre-Release Version"), tr("Note: This is a pre-release version. Please do NOT use for production!<br>Click the button #%1 in order to continue...<br><br>(There will be no such message box in the final version of this application)").arg(QString::number(rnd + 1)), tr("(1)"), tr("(2)"), tr("(3)"), qrand() % 3);
@@ -456,13 +491,35 @@ void MainWindow::showEvent(QShowEvent *e)
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	if(havePendingJobs())
+	if(haveRunningJobs())
 	{
 		e->ignore();
-		MessageBeep(MB_ICONWARNING);
+		QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not exit while there still are running jobs!"));
 		return;
 	}
+	
+	if(havePendingJobs())
+	{
+		int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("Do you really want to quit and discard the pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+		if(ret != QMessageBox::Yes)
+		{
+			e->ignore();
+			return;
+		}
+	}
 
+	while(m_jobList->rowCount(QModelIndex()) > 0)
+	{
+		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+		if(!m_jobList->deleteJob(m_jobList->index(0, 0, QModelIndex())))
+		{
+			e->ignore();
+			QMessageBox::warning(this, tr("Failed To Exit"), tr("Sorry, at least one job could not be deleted!"));
+			return;
+		}
+	}
+
+	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 	QMainWindow::closeEvent(e);
 }
 
@@ -529,6 +586,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 // Private functions
 ///////////////////////////////////////////////////////////////////////////////
 
+/*Jobs that are not completed (or failed, or aborted) yet*/
 bool MainWindow::havePendingJobs(void)
 {
 	const int rows = m_jobList->rowCount(QModelIndex());
@@ -545,6 +603,23 @@ bool MainWindow::havePendingJobs(void)
 	return false;
 }
 
+/*Jobs that are still active, i.e. not terminated or enqueued*/
+bool MainWindow::haveRunningJobs(void)
+{
+	const int rows = m_jobList->rowCount(QModelIndex());
+
+	for(int i = 0; i < rows; i++)
+	{
+		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed && status != EncodeThread::JobStatus_Enqueued)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void MainWindow::updateButtons(EncodeThread::JobStatus status)
 {
 	qDebug("MainWindow::updateButtons(void)");
@@ -553,6 +628,9 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2 || status == EncodeThread::JobStatus_Paused);
 	buttonPauseJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2);
 	buttonPauseJob->setChecked(status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Pausing);
+
+	actionJob_Delete->setEnabled(status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Aborted || status == EncodeThread::JobStatus_Failed || status == EncodeThread::JobStatus_Enqueued);
+	actionJob_Browse->setEnabled(status == EncodeThread::JobStatus_Completed);
 
 	actionJob_Start->setEnabled(buttonStartJob->isEnabled());
 	actionJob_Abort->setEnabled(buttonAbortJob->isEnabled());

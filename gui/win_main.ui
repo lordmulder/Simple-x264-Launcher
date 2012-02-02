@@ -30,6 +30,9 @@
        <bool>false</bool>
       </property>
       <widget class="QTableView" name="jobsView">
+       <property name="focusPolicy">
+        <enum>Qt::StrongFocus</enum>
+       </property>
        <property name="contextMenuPolicy">
         <enum>Qt::ActionsContextMenu</enum>
        </property>
@@ -345,6 +348,8 @@
     <addaction name="actionJob_Start"/>
     <addaction name="actionJob_Pause"/>
     <addaction name="actionJob_Abort"/>
+    <addaction name="actionJob_Browse"/>
+    <addaction name="actionJob_Delete"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuJob"/>
@@ -480,6 +485,30 @@
    </property>
    <property name="text">
     <string>Preferences</string>
+   </property>
+  </action>
+  <action name="actionJob_Delete">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/trash.png</normaloff>:/buttons/trash.png</iconset>
+   </property>
+   <property name="text">
+    <string>Delete Job</string>
+   </property>
+  </action>
+  <action name="actionJob_Browse">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/folder_magnify.png</normaloff>:/buttons/folder_magnify.png</iconset>
+   </property>
+   <property name="text">
+    <string>Explore Job</string>
    </property>
   </action>
  </widget>

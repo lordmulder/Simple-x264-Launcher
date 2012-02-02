@@ -212,6 +212,7 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	if(!editSource->text().isEmpty())
 	{
 		generateOutputFileName(QDir::fromNativeSeparators(editSource->text()));
+		buttonAccept->setFocus();
 	}
 }
 

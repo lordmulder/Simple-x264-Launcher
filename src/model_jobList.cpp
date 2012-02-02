@@ -337,6 +337,40 @@ bool JobListModel::abortJob(const QModelIndex &index)
 	return false;
 }
 
+bool JobListModel::deleteJob(const QModelIndex &index)
+{
+	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	{
+		QUuid id = m_jobs.at(index.row());
+		if(m_status.value(id) == EncodeThread::JobStatus_Completed || m_status.value(id) == EncodeThread::JobStatus_Failed ||
+			m_status.value(id) == EncodeThread::JobStatus_Aborted || m_status.value(id) == EncodeThread::JobStatus_Enqueued)
+		{
+			int idx = index.row();
+			QUuid id = m_jobs.at(idx);
+			EncodeThread *thread = m_threads.value(id, NULL);
+			LogFileModel *logFile = m_logFile.value(id, NULL);
+			if((thread == NULL) || (!thread->isRunning()))
+			{
+				
+				beginRemoveRows(QModelIndex(), idx, idx);
+				m_jobs.removeAt(index.row());
+				m_name.remove(id);
+				m_threads.remove(id);
+				m_status.remove(id);
+				m_progress.remove(id);
+				m_logFile.remove(id);
+				m_details.remove(id);
+				endRemoveRows();
+				X264_DELETE(thread);
+				X264_DELETE(logFile);
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 LogFileModel *JobListModel::getLogFile(const QModelIndex &index)
 {
 	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
@@ -345,6 +379,19 @@ LogFileModel *JobListModel::getLogFile(const QModelIndex &index)
 	}
 
 	return NULL;
+}
+
+const QString &JobListModel::getJobOutputFile(const QModelIndex &index)
+{
+	static QString nullStr;
+	
+	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	{
+		EncodeThread *thread = m_threads.value(m_jobs.at(index.row()));
+		return (thread != NULL) ? thread->outputFileName() : nullStr;
+	}
+
+	return nullStr;
 }
 
 EncodeThread::JobStatus JobListModel::getJobStatus(const QModelIndex &index)

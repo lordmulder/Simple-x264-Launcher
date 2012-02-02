@@ -32,14 +32,6 @@
 #include <QDir>
 #include <QProcess>
 #include <QMutex>
-#include <QLibrary>
-
-/*
- * Win32 API definitions
- */
-typedef HANDLE (WINAPI *CreateJobObjectFun)(__in_opt LPSECURITY_ATTRIBUTES lpJobAttributes, __in_opt LPCSTR lpName);
-typedef BOOL (WINAPI *SetInformationJobObjectFun)(__in HANDLE hJob, __in JOBOBJECTINFOCLASS JobObjectInformationClass, __in_bcount(cbJobObjectInformationLength) LPVOID lpJobObjectInformation, __in DWORD cbJobObjectInformationLength);
-typedef BOOL (WINAPI *AssignProcessToJobObjectFun)(__in HANDLE hJob, __in HANDLE hProcess);
 
 /*
  * Static vars
@@ -116,7 +108,7 @@ void EncodeThread::run(void)
 
 	if(m_handle_jobObject)
 	{
-		CloseHandle(m_handle_jobObject);
+		TerminateJobObject(m_handle_jobObject, 42);
 		m_handle_jobObject = NULL;
 	}
 }
@@ -898,46 +890,26 @@ void EncodeThread::setDetails(const QString &text)
 
 bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)
 {
-	static AssignProcessToJobObjectFun AssignProcessToJobObjectPtr = NULL;
-	static CreateJobObjectFun CreateJobObjectPtr = NULL;
-	static SetInformationJobObjectFun SetInformationJobObjectPtr = NULL;
-	
 	QMutexLocker lock(&m_mutex_startProcess);
 	log(commandline2string(program, args) + "\n");
 
 	//Create a new job object, if not done yet
 	if(!m_handle_jobObject)
 	{
-		if(!CreateJobObjectPtr || !SetInformationJobObjectPtr)
+		m_handle_jobObject = CreateJobObject(NULL, NULL);
+		if(m_handle_jobObject == INVALID_HANDLE_VALUE)
 		{
-			QLibrary Kernel32Lib("kernel32.dll");
-			CreateJobObjectPtr = (CreateJobObjectFun) Kernel32Lib.resolve("CreateJobObjectA");
-			SetInformationJobObjectPtr = (SetInformationJobObjectFun) Kernel32Lib.resolve("SetInformationJobObject");
+			m_handle_jobObject = NULL;
 		}
-		if(CreateJobObjectPtr && SetInformationJobObjectPtr)
+		if(m_handle_jobObject)
 		{
-			m_handle_jobObject = CreateJobObjectPtr(NULL, NULL);
-			if(m_handle_jobObject == INVALID_HANDLE_VALUE)
-			{
-				m_handle_jobObject = NULL;
-			}
-			if(m_handle_jobObject)
-			{
-				JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedLimitInfo;
-				memset(&jobExtendedLimitInfo, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-				jobExtendedLimitInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION;
-				SetInformationJobObjectPtr(m_handle_jobObject, JobObjectExtendedLimitInformation, &jobExtendedLimitInfo, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-			}
+			JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedLimitInfo;
+			memset(&jobExtendedLimitInfo, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+			jobExtendedLimitInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION;
+			SetInformationJobObject(m_handle_jobObject, JobObjectExtendedLimitInformation, &jobExtendedLimitInfo, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
 		}
 	}
 
-	//Initialize AssignProcessToJobObject function
-	if(!AssignProcessToJobObjectPtr)
-	{
-		QLibrary Kernel32Lib("kernel32.dll");
-		AssignProcessToJobObjectPtr = (AssignProcessToJobObjectFun) Kernel32Lib.resolve("AssignProcessToJobObject");
-	}
-	
 	if(mergeChannels)
 	{
 		process.setProcessChannelMode(QProcess::MergedChannels);
@@ -953,13 +925,14 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 	
 	if(process.waitForStarted())
 	{
-		if(AssignProcessToJobObjectPtr)
+		Q_PID pid = process.pid();
+		AssignProcessToJobObject(m_handle_jobObject, process.pid()->hProcess);
+		if(pid != NULL)
 		{
-			AssignProcessToJobObjectPtr(m_handle_jobObject, process.pid()->hProcess);
-		}
-		if(!SetPriorityClass(process.pid()->hProcess, BELOW_NORMAL_PRIORITY_CLASS))
-		{
-			SetPriorityClass(process.pid()->hProcess, IDLE_PRIORITY_CLASS);
+			if(!SetPriorityClass(process.pid()->hProcess, BELOW_NORMAL_PRIORITY_CLASS))
+			{
+				SetPriorityClass(process.pid()->hProcess, IDLE_PRIORITY_CLASS);
+			}
 		}
 		
 		lock.unlock();

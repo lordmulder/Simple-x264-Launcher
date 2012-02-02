@@ -131,6 +131,15 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 				case EncodeThread::JobStatus_Failed:
 					return QVariant::fromValue<QString>(tr("Failed!"));
 					break;
+				case EncodeThread::JobStatus_Pausing:
+					return QVariant::fromValue<QString>(tr("Pausing..."));
+					break;
+				case EncodeThread::JobStatus_Paused:
+					return QVariant::fromValue<QString>(tr("Paused."));
+					break;
+				case EncodeThread::JobStatus_Resuming:
+					return QVariant::fromValue<QString>(tr("Resuming..."));
+					break;
 				case EncodeThread::JobStatus_Aborting:
 					return QVariant::fromValue<QString>(tr("Aborting..."));
 					break;
@@ -161,7 +170,7 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 			switch(m_status.value(m_jobs.at(index.row())))
 			{
 			case EncodeThread::JobStatus_Enqueued:
-				return QIcon(":/buttons/clock_pause.png");
+				return QIcon(":/buttons/hourglass.png");
 				break;
 			case EncodeThread::JobStatus_Starting:
 				return QIcon(":/buttons/lightning.png");
@@ -179,6 +188,15 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 				break;
 			case EncodeThread::JobStatus_Failed:
 				return QIcon(":/buttons/exclamation.png");
+				break;
+			case EncodeThread::JobStatus_Pausing:
+				return QIcon(":/buttons/clock_pause.png");
+				break;
+			case EncodeThread::JobStatus_Paused:
+				return QIcon(":/buttons/suspended.png");
+				break;
+			case EncodeThread::JobStatus_Resuming:
+				return QIcon(":/buttons/clock_play.png");
 				break;
 			case EncodeThread::JobStatus_Aborting:
 				return QIcon(":/buttons/clock_stop.png");
@@ -260,6 +278,41 @@ bool JobListModel::startJob(const QModelIndex &index)
 			updateStatus(id, EncodeThread::JobStatus_Starting);
 			updateDetails(id, tr("Starting up, please wait..."));
 			m_threads.value(id)->start();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool JobListModel::pauseJob(const QModelIndex &index)
+{
+	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	{
+		QUuid id = m_jobs.at(index.row());
+		EncodeThread::JobStatus status = m_status.value(id);
+		if((status == EncodeThread::JobStatus_Indexing) || (status == EncodeThread::JobStatus_Running) ||
+			(status == EncodeThread::JobStatus_Running_Pass1) || (status == EncodeThread::JobStatus_Running_Pass2))
+		{
+			updateStatus(id, EncodeThread::JobStatus_Pausing);
+			m_threads.value(id)->pauseJob();
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool JobListModel::resumeJob(const QModelIndex &index)
+{
+	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	{
+		QUuid id = m_jobs.at(index.row());
+		EncodeThread::JobStatus status = m_status.value(id);
+		if(status == EncodeThread::JobStatus_Paused)
+		{
+			updateStatus(id, EncodeThread::JobStatus_Resuming);
+			m_threads.value(id)->resumeJob();
 			return true;
 		}
 	}

@@ -65,6 +65,7 @@ private slots:
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
 	void launchNextJob(void);
+	void pauseButtonPressed(bool checked);
 	void showAbout(void);
 	void showWebLink(void);
 	void startButtonPressed(void);

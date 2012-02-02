@@ -25,6 +25,7 @@
 #include <QUuid>
 #include <QMutex>
 #include <QStringList>
+#include <QSemaphore>
 
 class OptionsModel;
 class QProcess;
@@ -44,8 +45,11 @@ public:
 		JobStatus_Running_Pass2 = 5,
 		JobStatus_Completed = 6,
 		JobStatus_Failed = 7,
-		JobStatus_Aborting = 8,
-		JobStatus_Aborted = 9
+		JobStatus_Pausing = 8,
+		JobStatus_Paused = 9,
+		JobStatus_Resuming = 10,
+		JobStatus_Aborting = 11,
+		JobStatus_Aborted = 12
 	};
 	
 	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x64);
@@ -55,11 +59,25 @@ public:
 	const QString &sourceFileName(void) { return this->m_sourceFileName; };
 	const QString &outputFileName(void) { return this->m_outputFileName; };
 
-	void abortJob(void) { m_abort = true; }
+	void pauseJob(void)
+	{
+		m_pause = true;
+	}
+	void resumeJob(void)
+	{
+		m_pause = false;
+		m_semaphorePaused.release();
+	}
+	void abortJob(void)
+	{
+		m_abort = true;
+		m_pause = false;
+		m_semaphorePaused.release();
+	}
 
 protected:
 	static QMutex m_mutex_startProcess;
-	static const int m_processTimeoutInterval = 60000;
+	static const int m_processTimeoutCounter = 24;
 
 	//Constants
 	const QUuid m_jobId;
@@ -71,7 +89,11 @@ protected:
 
 	//Flags
 	volatile bool m_abort;
+	volatile bool m_pause;
 	
+	//Synchronization
+	QSemaphore m_semaphorePaused;
+
 	//Job handle
 	void *m_handle_jobObject;
 
@@ -81,6 +103,7 @@ protected:
 
 	//Entry point
 	virtual void run(void);
+	virtual void checkedRun(void);
 	
 	//Encode functions
 	void encode(void);
@@ -104,5 +127,8 @@ signals:
 	void progressChanged(const QUuid &jobId, unsigned int newProgress);
 	void messageLogged(const QUuid &jobId, const QString &text);
 	void detailsChanged(const QUuid &jobId, const QString &details);
+
+public slots:
+	void start(Priority priority = InheritPriority);
 };
 

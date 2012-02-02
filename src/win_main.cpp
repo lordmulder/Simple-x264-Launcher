@@ -37,7 +37,7 @@
 
 const char *home_url = "http://mulder.brhack.net/";
 
-#define PRE_RELEASE (1)
+#define PRE_RELEASE (0)
 
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
@@ -96,6 +96,7 @@ MainWindow::MainWindow(bool x64supported)
 	connect(buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
 	connect(buttonStartJob, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
 	connect(buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
+	connect(buttonPauseJob, SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
 
 	//Enable menu
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
@@ -180,6 +181,18 @@ void MainWindow::startButtonPressed(void)
 void MainWindow::abortButtonPressed(void)
 {
 	m_jobList->abortJob(jobsView->currentIndex());
+}
+
+void MainWindow::pauseButtonPressed(bool checked)
+{
+	if(checked)
+	{
+		m_jobList->pauseJob(jobsView->currentIndex());
+	}
+	else
+	{
+		m_jobList->resumeJob(jobsView->currentIndex());
+	}
 }
 
 void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & previous)
@@ -349,6 +362,23 @@ void MainWindow::init(void)
 		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is not currently installed on your computer.<br>Thus Avisynth input will not be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 		if(val != 1) { close(); qApp->exit(-1); return; }
 	}
+
+	//Check for expiration
+	if(x264_version_date().addMonths(6) < QDate::currentDate())
+	{
+		QMessageBox msgBox(this);
+		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setWindowTitle(tr("Update Notification"));
+		msgBox.setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
+		msgBox.setText(tr("<nobr><tt>Oups, this version of 'Simple x264 Launcher' is more than 6 months old.<br><br>Please check the official web-site at <a href=\"%1\">%1</a> for updates!<br></tt></nobr>").replace("-", "&minus;").arg(home_url));
+		QPushButton *btn1 = msgBox.addButton(tr("Discard"), QMessageBox::NoRole);
+		QPushButton *btn2 = msgBox.addButton(tr("Discard"), QMessageBox::AcceptRole);
+		btn1->setEnabled(false);
+		btn2->setVisible(false);
+		QTimer::singleShot(5000, btn1, SLOT(hide()));
+		QTimer::singleShot(5000, btn2, SLOT(show()));
+		msgBox.exec();
+	}
 }
 
 void MainWindow::updateLabel(void)
@@ -435,9 +465,14 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	qDebug("MainWindow::updateButtons(void)");
 
 	buttonStartJob->setEnabled(status == EncodeThread::JobStatus_Enqueued);
-	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running ||
-		status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2 );
+	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2 || status == EncodeThread::JobStatus_Paused);
+	buttonPauseJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2);
+	buttonPauseJob->setChecked(status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Pausing);
 
 	actionJob_Start->setEnabled(buttonStartJob->isEnabled());
 	actionJob_Abort->setEnabled(buttonAbortJob->isEnabled());
+	actionJob_Pause->setEnabled(buttonPauseJob->isEnabled());
+	actionJob_Pause->setChecked(buttonPauseJob->isChecked());
+
+	editDetails->setEnabled(status != EncodeThread::JobStatus_Paused);
 }

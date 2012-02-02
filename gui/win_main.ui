@@ -68,6 +68,12 @@
         </property>
         <item>
          <widget class="QProgressBar" name="progressBar">
+          <property name="mouseTracking">
+           <bool>false</bool>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::StrongFocus</enum>
+          </property>
           <property name="value">
            <number>0</number>
           </property>
@@ -253,6 +259,29 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="buttonPauseJob">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>104</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Pause Job</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../res/resources.qrc">
+          <normaloff>:/buttons/pause.png</normaloff>:/buttons/pause.png</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="buttonAbortJob">
         <property name="enabled">
          <bool>false</bool>
@@ -289,6 +318,8 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menu">
@@ -312,6 +343,7 @@
     <addaction name="actionJob_New"/>
     <addaction name="separator"/>
     <addaction name="actionJob_Start"/>
+    <addaction name="actionJob_Pause"/>
     <addaction name="actionJob_Abort"/>
    </widget>
    <addaction name="menuFile"/>
@@ -423,6 +455,33 @@
     <string>Abort Job</string>
    </property>
   </action>
+  <action name="actionJob_Pause">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/pause.png</normaloff>:/buttons/pause.png</iconset>
+   </property>
+   <property name="text">
+    <string>Pause Job</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/wrench.png</normaloff>:/buttons/wrench.png</iconset>
+   </property>
+   <property name="text">
+    <string>Preferences</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>buttonAddJob</tabstop>
@@ -496,6 +555,22 @@
     </hint>
     <hint type="destinationlabel">
      <x>657</x>
+     <y>617</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionJob_Pause</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>buttonPauseJob</receiver>
+   <slot>setChecked(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>547</x>
      <y>617</y>
     </hint>
    </hints>

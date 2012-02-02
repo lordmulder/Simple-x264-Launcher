@@ -621,7 +621,12 @@
                </property>
                <item>
                 <property name="text">
-                 <string>High</string>
+                 <string>Auto</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Baseline</string>
                 </property>
                </item>
                <item>
@@ -631,7 +636,22 @@
                </item>
                <item>
                 <property name="text">
-                 <string>Baseline</string>
+                 <string>High</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>High10</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>High422</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>High444</string>
                 </property>
                </item>
               </widget>

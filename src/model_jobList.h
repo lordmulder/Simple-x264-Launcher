@@ -46,6 +46,8 @@ public:
 
 	QModelIndex insertJob(EncodeThread *thread);
 	bool startJob(const QModelIndex &index);
+	bool pauseJob(const QModelIndex &index);
+	bool resumeJob(const QModelIndex &index);
 	bool abortJob(const QModelIndex &index);
 	LogFileModel *getLogFile(const QModelIndex &index);
 	EncodeThread::JobStatus getJobStatus(const QModelIndex &index);

@@ -32,7 +32,7 @@ OptionsModel::OptionsModel(void)
 	m_quantizer = 22;
 	m_preset = "Medium";
 	m_tune = "None";
-	m_profile = "High";
+	m_profile = "Auto";
 	m_custom = "";
 }
 

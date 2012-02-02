@@ -81,9 +81,11 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_options(new OptionsModel(*options)),
 	m_binDir(binDir),
 	m_x64(x64),
-	m_handle_jobObject(NULL)
+	m_handle_jobObject(NULL),
+	m_semaphorePaused(0)
 {
 	m_abort = false;
+	m_pause = false;
 }
 
 EncodeThread::~EncodeThread(void)
@@ -103,20 +105,13 @@ EncodeThread::~EncodeThread(void)
 
 void EncodeThread::run(void)
 {
-	m_progress = 0;
-	m_status = JobStatus_Starting;
-
-	try
+	__try
 	{
-		encode();
+		checkedRun();
 	}
-	catch(char *msg)
+	__except(1)
 	{
-		log(tr("EXCEPTION ERROR: ").append(QString::fromLatin1(msg)));
-	}
-	catch(...)
-	{
-		log(tr("EXCEPTION ERROR !!!"));
+		qWarning("STRUCTURED EXCEPTION ERROR IN ENCODE THREAD !!!");
 	}
 
 	if(m_handle_jobObject)
@@ -126,6 +121,45 @@ void EncodeThread::run(void)
 	}
 }
 
+void EncodeThread::checkedRun(void)
+{
+	m_progress = 0;
+	m_status = JobStatus_Starting;
+
+	try
+	{
+		try
+		{
+			encode();
+		}
+		catch(char *msg)
+		{
+			log(tr("EXCEPTION ERROR IN THREAD: ").append(QString::fromLatin1(msg)));
+			setStatus(JobStatus_Failed);
+		}
+		catch(...)
+		{
+			log(tr("UNHANDLED EXCEPTION ERROR IN THREAD !!!"));
+			setStatus(JobStatus_Failed);
+		}
+	}
+	catch(...)
+	{
+		RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, NULL);
+	}
+}
+
+void EncodeThread::start(Priority priority)
+{
+	qDebug("Thread starting...");
+
+	m_abort = false;
+	m_pause = false;
+
+	while(m_semaphorePaused.tryAcquire(1, 0));
+	QThread::start(priority);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Encode functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -133,7 +167,7 @@ void EncodeThread::run(void)
 void EncodeThread::encode(void)
 {
 	QDateTime startTime = QDateTime::currentDateTime();
-	
+
 	//Print some basic info
 	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 	log(tr("Source file: %1").arg(m_sourceFileName));
@@ -183,9 +217,10 @@ void EncodeThread::encode(void)
 		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
 		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
 	}
-	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != 242))
+	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != VER_x264_AVS2YUV_VER))
 	{
-		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version is v0.24bm2)"));
+		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
+		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));
 		setStatus(JobStatus_Failed);
 		return;
 	}
@@ -267,26 +302,68 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 	bool bTimeout = false;
 	bool bAborted = false;
 
+	//Main processing loop
 	while(processEncode.state() != QProcess::NotRunning)
 	{
-		if(m_abort)
+		unsigned int waitCounter = 0;
+
+		//Wait until new output is available
+		forever
 		{
-			processEncode.kill();
-			processAvisynth.kill();
-			bAborted = true;
-			break;
-		}
-		if(!processEncode.waitForReadyRead(m_processTimeoutInterval))
-		{
-			if(processEncode.state() == QProcess::Running)
+			if(m_abort)
 			{
 				processEncode.kill();
-				qWarning("x264 process timed out <-- killing!");
-				log("\nPROCESS TIMEOUT !!!");
-				bTimeout = true;
+				processAvisynth.kill();
+				bAborted = true;
 				break;
 			}
+			if(m_pause && (processEncode.state() == QProcess::Running))
+			{
+				JobStatus previousStatus = m_status;
+				setStatus(JobStatus_Paused);
+				log(tr("Job paused by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
+				bool ok[2] = {false, false};
+				Q_PID pid[2] = {processEncode.pid(), processAvisynth.pid()};
+				if(pid[0]) { ok[0] = (SuspendThread(pid[0]->hThread) != (DWORD)(-1)); }
+				if(pid[1]) { ok[1] = (SuspendThread(pid[1]->hThread) != (DWORD)(-1)); }
+				while(m_pause) m_semaphorePaused.acquire();
+				while(m_semaphorePaused.tryAcquire(1, 0));
+				if(pid[0]) { if(ok[0]) ResumeThread(pid[0]->hThread); }
+				if(pid[1]) { if(ok[1]) ResumeThread(pid[1]->hThread); }
+				if(!m_abort) setStatus(previousStatus);
+				log(tr("Job resumed by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
+				waitCounter = 0;
+				continue;
+			}
+			if(!processEncode.waitForReadyRead(2500))
+			{
+				if(processEncode.state() == QProcess::Running)
+				{
+					if(waitCounter++ > m_processTimeoutCounter)
+					{
+						processEncode.kill();
+						qWarning("x264 process timed out <-- killing!");
+						log("\nPROCESS TIMEOUT !!!");
+						bTimeout = true;
+						break;
+					}
+					continue;
+				}
+			}
+			if(m_abort || (m_pause && (processEncode.state() == QProcess::Running)))
+			{
+				continue;
+			}
+			break;
 		}
+		
+		//Exit main processing loop now?
+		if(bAborted || bTimeout)
+		{
+			break;
+		}
+
+		//Process all output
 		while(processEncode.bytesAvailable() > 0)
 		{
 			QList<QByteArray> lines = processEncode.readLine().split('\r');
@@ -339,9 +416,12 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 		processAvisynth.waitForFinished(-1);
 	}
 
-	while(processAvisynth.bytesAvailable() > 0)
+	if(!(bTimeout || bAborted))
 	{
-		log(tr("av2y [info]: %1").arg(QString::fromUtf8(processAvisynth.readLine()).simplified()));
+		while(processAvisynth.bytesAvailable() > 0)
+		{
+			log(tr("av2y [info]: %1").arg(QString::fromUtf8(processAvisynth.readLine()).simplified()));
+		}
 	}
 
 	if(usePipe && (processAvisynth.exitCode() != EXIT_SUCCESS))
@@ -412,12 +492,17 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 		cmdLine << "--stats" << QDir::toNativeSeparators(passLogFile);
 	}
 
+	cmdLine << "--preset" << m_options->preset().toLower();
+
 	if(m_options->tune().compare("none", Qt::CaseInsensitive))
 	{
 		cmdLine << "--tune" << m_options->tune().toLower();
 	}
-	
-	cmdLine << "--preset" << m_options->preset().toLower();
+
+	if(m_options->profile().compare("auto", Qt::CaseInsensitive))
+	{
+		cmdLine << "--profile" << m_options->profile().toLower();
+	}
 
 	if(!m_options->custom().isEmpty())
 	{
@@ -453,7 +538,7 @@ unsigned int EncodeThread::checkVersionX264(bool x64)
 		return false;;
 	}
 
-	QRegExp regExpVersion("x264 (\\d)\\.(\\d+)\\.(\\d+) ([0-9A-Fa-f]{7})");
+	QRegExp regExpVersion("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)\\b");
 	
 	bool bTimeout = false;
 	bool bAborted = false;
@@ -469,7 +554,7 @@ unsigned int EncodeThread::checkVersionX264(bool x64)
 			bAborted = true;
 			break;
 		}
-		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		if(!process.waitForReadyRead())
 		{
 			if(process.state() == QProcess::Running)
 			{
@@ -538,14 +623,15 @@ unsigned int EncodeThread::checkVersionAvs2yuv(void)
 		return false;;
 	}
 
-	QRegExp regExpVersion("Avs2YUV (\\d+).(\\d+)bm(\\d)");
+	QRegExp regExpVersionMod("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b");
+	QRegExp regExpVersionOld("\\bAvs2YUV (\\d+).(\\d+)\\b");
 	
 	bool bTimeout = false;
 	bool bAborted = false;
 
 	unsigned int ver_maj = UINT_MAX;
 	unsigned int ver_min = UINT_MAX;
-	unsigned int ver_bld = UINT_MAX;
+	unsigned int ver_mod = 0;
 
 	while(process.state() != QProcess::NotRunning)
 	{
@@ -555,7 +641,7 @@ unsigned int EncodeThread::checkVersionAvs2yuv(void)
 			bAborted = true;
 			break;
 		}
-		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		if(!process.waitForReadyRead())
 		{
 			if(process.state() == QProcess::Running)
 			{
@@ -573,22 +659,30 @@ unsigned int EncodeThread::checkVersionAvs2yuv(void)
 			{
 				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
 				int offset = -1;
-				if((ver_maj == UINT_MAX) || (ver_min == UINT_MAX) || (ver_bld == UINT_MAX))
+				if((ver_maj == UINT_MAX) || (ver_min == UINT_MAX) || (ver_mod == UINT_MAX))
 				{
 					if(!text.isEmpty())
 					{
 						log(text);
 					}
 				}
-				if((offset = regExpVersion.lastIndexIn(text)) >= 0)
+				if((offset = regExpVersionMod.lastIndexIn(text)) >= 0)
 				{
 					bool ok1 = false, ok2 = false, ok3 = false;
-					unsigned int temp1 = regExpVersion.cap(1).toUInt(&ok1);
-					unsigned int temp2 = regExpVersion.cap(2).toUInt(&ok2);
-					unsigned int temp3 = regExpVersion.cap(3).toUInt(&ok3);
+					unsigned int temp1 = regExpVersionMod.cap(1).toUInt(&ok1);
+					unsigned int temp2 = regExpVersionMod.cap(2).toUInt(&ok2);
+					unsigned int temp3 = regExpVersionMod.cap(3).toUInt(&ok3);
 					if(ok1) ver_maj = temp1;
 					if(ok2) ver_min = temp2;
-					if(ok3) ver_bld = temp3;
+					if(ok3) ver_mod = temp3;
+				}
+				else if((offset = regExpVersionOld.lastIndexIn(text)) >= 0)
+				{
+					bool ok1 = false, ok2 = false;
+					unsigned int temp1 = regExpVersionOld.cap(1).toUInt(&ok1);
+					unsigned int temp2 = regExpVersionOld.cap(2).toUInt(&ok2);
+					if(ok1) ver_maj = temp1;
+					if(ok2) ver_min = temp2;
 				}
 			}
 		}
@@ -610,13 +704,13 @@ unsigned int EncodeThread::checkVersionAvs2yuv(void)
 		return UINT_MAX;
 	}
 
-	if((ver_maj == UINT_MAX) || (ver_min == UINT_MAX) || (ver_bld == UINT_MAX))
+	if((ver_maj == UINT_MAX) || (ver_min == UINT_MAX))
 	{
 		log(tr("\nFAILED TO DETERMINE AVS2YUV VERSION !!!"));
 		return UINT_MAX;
 	}
 	
-	return (ver_maj * REV_MULT) + ((ver_min % REV_MULT) * 10) + (ver_bld % 10);
+	return (ver_maj * REV_MULT) + ((ver_min % REV_MULT) * 10) + (ver_mod % 10);
 }
 
 bool EncodeThread::checkProperties(unsigned int &frames)
@@ -653,12 +747,12 @@ bool EncodeThread::checkProperties(unsigned int &frames)
 			bAborted = true;
 			break;
 		}
-		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		if(!process.waitForReadyRead())
 		{
 			if(process.state() == QProcess::Running)
 			{
 				process.kill();
-				qWarning("x264 process timed out <-- killing!");
+				qWarning("Avs2YUV process timed out <-- killing!");
 				log("\nPROCESS TIMEOUT !!!");
 				bTimeout = true;
 				break;
@@ -760,7 +854,7 @@ void EncodeThread::setStatus(JobStatus newStatus)
 	if(m_status != newStatus)
 	{
 		m_status = newStatus;
-		if((newStatus != JobStatus_Completed) && (newStatus != JobStatus_Failed) && (newStatus != JobStatus_Aborted))
+		if((newStatus != JobStatus_Completed) && (newStatus != JobStatus_Failed) && (newStatus != JobStatus_Aborted) && (newStatus != JobStatus_Paused))
 		{
 			setProgress(0);
 		}

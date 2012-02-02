@@ -190,7 +190,8 @@ void EncodeThread::encode(void)
 	//Checking x264 version
 	log(tr("\n--- CHECK VERSION ---\n"));
 	unsigned int revision_x264 = UINT_MAX;
-	ok = ((revision_x264 = checkVersionX264(m_x64)) != UINT_MAX);
+	bool x264_modified = false;
+	ok = ((revision_x264 = checkVersionX264(m_x64, x264_modified)) != UINT_MAX);
 	CHECK_STATUS(m_abort, ok);
 	
 	//Checking avs2yuv version
@@ -202,7 +203,7 @@ void EncodeThread::encode(void)
 	}
 
 	//Print versions
-	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision_x264 % REV_MULT), QString::number(revision_x264 / REV_MULT)));
+	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision_x264 % REV_MULT), QString::number(revision_x264 / REV_MULT)).append(x264_modified ? tr(" - with custom patches!") : QString()));
 	if(revision_avs2yuv != UINT_MAX) log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
 
 	//Is x264 revision supported?
@@ -527,7 +528,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 	return cmdLine;
 }
 
-unsigned int EncodeThread::checkVersionX264(bool x64)
+unsigned int EncodeThread::checkVersionX264(bool x64, bool &modified)
 {
 	QProcess process;
 	QStringList cmdLine = QStringList() << "--version";
@@ -538,13 +539,15 @@ unsigned int EncodeThread::checkVersionX264(bool x64)
 		return false;;
 	}
 
-	QRegExp regExpVersion("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)\\b");
+	QRegExp regExpVersion("\\bx264\\s(\\d)\\.(\\d+)\\.(\\d+)\\s([a-f0-9]{7})", Qt::CaseInsensitive);
+	QRegExp regExpVersionMod("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)", Qt::CaseInsensitive);
 	
 	bool bTimeout = false;
 	bool bAborted = false;
 
 	unsigned int revision = UINT_MAX;
 	unsigned int coreVers = UINT_MAX;
+	modified = false;
 
 	while(process.state() != QProcess::NotRunning)
 	{
@@ -579,6 +582,15 @@ unsigned int EncodeThread::checkVersionX264(bool x64)
 					unsigned int temp2 = regExpVersion.cap(3).toUInt(&ok2);
 					if(ok1) coreVers = temp1;
 					if(ok2) revision = temp2;
+				}
+				else if((offset = regExpVersionMod.lastIndexIn(text)) >= 0)
+				{
+					bool ok1 = false, ok2 = false;
+					unsigned int temp1 = regExpVersionMod.cap(2).toUInt(&ok1);
+					unsigned int temp2 = regExpVersionMod.cap(3).toUInt(&ok2);
+					if(ok1) coreVers = temp1;
+					if(ok2) revision = temp2;
+					modified = true;
 				}
 				if(!text.isEmpty())
 				{
@@ -623,8 +635,8 @@ unsigned int EncodeThread::checkVersionAvs2yuv(void)
 		return false;;
 	}
 
-	QRegExp regExpVersionMod("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b");
-	QRegExp regExpVersionOld("\\bAvs2YUV (\\d+).(\\d+)\\b");
+	QRegExp regExpVersionMod("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
+	QRegExp regExpVersionOld("\\bAvs2YUV (\\d+).(\\d+)\\b", Qt::CaseInsensitive);
 	
 	bool bTimeout = false;
 	bool bAborted = false;

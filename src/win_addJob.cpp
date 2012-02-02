@@ -53,6 +53,21 @@ g_filters[] =
 
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
+#define REMOVE_USAFED_ITEM \
+{ \
+	for(int i = 0; i < cbxTemplate->count(); i++) \
+	{ \
+		OptionsModel* temp = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>()); \
+		if(temp == NULL) \
+		{ \
+			cbxTemplate->blockSignals(true); \
+			cbxTemplate->removeItem(i); \
+			cbxTemplate->blockSignals(false); \
+			break; \
+		} \
+	} \
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
 ///////////////////////////////////////////////////////////////////////////////
@@ -333,17 +348,7 @@ void AddJobDialog::templateSelected(void)
 	if(options)
 	{
 		qDebug("Loading options!");
-		for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
-		{
-			OptionsModel* temp = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
-			if(temp == NULL)
-			{
-				cbxTemplate->blockSignals(true);
-				cbxTemplate->removeItem(i);
-				cbxTemplate->blockSignals(false);
-				break;
-			}
-		}
+		REMOVE_USAFED_ITEM;
 		restoreOptions(options);
 	}
 
@@ -355,16 +360,56 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	qDebug("Saving template");
 	QString name = tr("New Template");
 
+	OptionsModel *options = new OptionsModel();
+	saveOptions(options);
+
+	if(options->equals(m_defaults))
+	{
+		QMessageBox::warning (this, tr("Default"), tr("It makes no sense to save the defaults!"));
+		cbxTemplate->blockSignals(true);
+		cbxTemplate->setCurrentIndex(0);
+		cbxTemplate->blockSignals(false);
+		REMOVE_USAFED_ITEM;
+		X264_DELETE(options);
+		return;
+	}
+
+	for(int i = 0; i < cbxTemplate->count(); i++)
+	{
+		OptionsModel* test = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
+		if(test != NULL)
+		{
+			if(options->equals(test))
+			{
+				QMessageBox::warning (this, tr("Oups"), tr("<nobr>There already is a template for the current settings!"));
+				cbxTemplate->blockSignals(true);
+				cbxTemplate->setCurrentIndex(i);
+				cbxTemplate->blockSignals(false);
+				REMOVE_USAFED_ITEM;
+				X264_DELETE(options);
+				return;
+			}
+		}
+	}
+
 	forever
 	{
 		bool ok = false;
 		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(160, ' '), QLineEdit::Normal, name, &ok).simplified();
-		if(!ok) return;
-		if(name.startsWith("<") || name.endsWith(">"))
+		if(!ok)
+		{
+			X264_DELETE(options);
+			return;
+		}
+		if(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/') || name.contains('"'))
 		{
 			QMessageBox::warning (this, tr("Invalid Name"), tr("Sorry, the name you have entered is invalid!"));
-			while(name.startsWith("<")) name = name.mid(1).trimmed();
-			while(name.endsWith(">")) name = name.left(name.size() - 1).trimmed();
+			while(name.contains('<')) name.remove('<');
+			while(name.contains('>')) name.remove('>');
+			while(name.contains('\\')) name.remove('\\');
+			while(name.contains('/')) name.remove('/');
+			while(name.contains('"')) name.remove('"');
+			name = name.simplified();
 			continue;
 		}
 		if(OptionsModel::templateExists(name))
@@ -374,19 +419,10 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		}
 		break;
 	}
-
-	OptionsModel *options = new OptionsModel();
-	saveOptions(options);
 	
-	if(options->equals(m_defaults))
-	{
-		QMessageBox::warning (this, tr("Default"), tr("It makes no sense to save the defaults!"));
-		X264_DELETE(options);
-		return;
-	}
 	if(!OptionsModel::saveTemplate(options, name))
 	{
-		QMessageBox::warning (this, tr("Save Failed"), tr("Sorry, the template could not be used!"));
+		QMessageBox::critical(this, tr("Save Failed"), tr("Sorry, the template could not be saved!"));
 		X264_DELETE(options);
 		return;
 	}
@@ -395,16 +431,9 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	cbxTemplate->blockSignals(true);
 	cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
 	cbxTemplate->setCurrentIndex(index);
-	for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
-	{
-		OptionsModel* temp = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
-		if(temp == NULL)
-		{
-			cbxTemplate->removeItem(i);
-			break;
-		}
-	}
 	cbxTemplate->blockSignals(false);
+
+	REMOVE_USAFED_ITEM;
 }
 
 void AddJobDialog::deleteTemplateButtonClicked(void)
@@ -412,7 +441,7 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 	const int index = cbxTemplate->currentIndex();
 	QString name = cbxTemplate->itemText(index);
 
-	if(name.startsWith("<") || name.endsWith(">"))
+	if(name.contains('<') || name.contains('>'))
 	{
 		QMessageBox::warning (this, tr("Invalid Item"), tr("Sorry, the selected item cannot be deleted!"));
 		return;

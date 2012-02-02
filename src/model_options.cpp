@@ -82,7 +82,7 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 	const QString templateName = name.simplified();
 	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 
-	if(templateName.startsWith("<") || templateName.endsWith(">") || templateName.contains("\\") || templateName.contains("/"))
+	if(templateName.contains('<') || templateName.contains('>') || templateName.contains('\\') || templateName.contains('/'))
 	{
 		return false;
 	}

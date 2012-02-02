@@ -140,8 +140,10 @@ MainWindow::~MainWindow(void)
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
 
-void MainWindow::addButtonPressed(const QString &filePath)
+void MainWindow::addButtonPressed(const QString &filePath, bool *ok)
 {
+	if(ok) *ok = false;
+	
 	AddJobDialog *addDialog = new AddJobDialog(this, m_options);
 	addDialog->setRunImmediately(!havePendingJobs());
 	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
@@ -161,14 +163,18 @@ void MainWindow::addButtonPressed(const QString &filePath)
 
 		QModelIndex newIndex = m_jobList->insertJob(thrd);
 
-		if(addDialog->runImmediately())
+		if(newIndex.isValid())
 		{
-			jobsView->selectRow(newIndex.row());
-			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-			m_jobList->startJob(newIndex);
-		}
+			if(addDialog->runImmediately())
+			{
+				jobsView->selectRow(newIndex.row());
+				QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+				m_jobList->startJob(newIndex);
+			}
 
-		m_label->setVisible(false);
+			m_label->setVisible(false);
+			if(ok) *ok = true;
+		}
 	}
 
 	X264_DELETE(addDialog);
@@ -279,7 +285,7 @@ void MainWindow::showAbout(void)
 
 	forever
 	{
-		int ret = QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("Abou x264"), tr("About Qt"), tr("Close"));
+		int ret = QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("About x264"), tr("About Qt"), tr("Close"));
 
 		switch(ret)
 		{
@@ -289,7 +295,7 @@ void MainWindow::showAbout(void)
 				text2 += tr("<nobr><tt>x264, the best H.264/AVC encoder. Copyright (c) 2003-2011 x264 project.<br>");
 				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
-				text2 += tr("Please visit <a href=\"http://x264licensing.com/\">http://x264licensing.com/</a> for obtaining a commercial x264 license!<br></tt></nobr>");
+				text2 += tr("Please visit <a href=\"http://x264licensing.com/\">http://x264licensing.com/</a> for obtaining a <u>commercial</u> x264 license!<br></tt></nobr>");
 				QMessageBox::information(this, tr("About x264"), text2.replace("-", "&minus;"), tr("Close"));
 			}
 			break;
@@ -349,6 +355,7 @@ void MainWindow::init(void)
 	//Check all binaries
 	while(!binaries.isEmpty())
 	{
+		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 		QString current = binaries.takeFirst();
 		QFile *file = new QFile(QString("%1/toolset/%2").arg(m_appDir, current));
 		if(file->open(QIODevice::ReadOnly))
@@ -508,12 +515,13 @@ void MainWindow::dropEvent(QDropEvent *event)
 	}
 	
 	droppedFiles.sort();
-
-	while(!droppedFiles.isEmpty())
+	
+	bool ok = true;
+	while((!droppedFiles.isEmpty()) && ok)
 	{
 		QString currentFile = droppedFiles.takeFirst();
 		qDebug("Adding file: %s", currentFile.toUtf8().constData());
-		addButtonPressed(currentFile);
+		addButtonPressed(currentFile, &ok);
 	}
 }
 

@@ -59,7 +59,7 @@ private:
 	bool havePendingJobs(void);
 
 private slots:
-	void addButtonPressed(const QString &filePath = QString());
+	void addButtonPressed(const QString &filePath = QString(), bool *ok = NULL);
 	void abortButtonPressed(void);
 	void copyLogToClipboard(bool checked);
 	void init(void);

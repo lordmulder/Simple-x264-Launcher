@@ -23,6 +23,7 @@
 
 #include "uic_win_main.h"
 #include "thread_encode.h"
+#include "win_preferences.h"
 
 class JobListModel;
 class OptionsModel;
@@ -51,6 +52,8 @@ private:
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
 	QList<QFile*> m_toolsList;
+	
+	PreferencesDialog::Preferences m_preferences;
 
 	const bool m_x64supported;
 	const QString m_appDir;
@@ -72,6 +75,7 @@ private slots:
 	void launchNextJob(void);
 	void pauseButtonPressed(bool checked);
 	void showAbout(void);
+	void showPreferences(void);
 	void showWebLink(void);
 	void startButtonPressed(void);
 	void updateLabel(void);

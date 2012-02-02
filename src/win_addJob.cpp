@@ -209,7 +209,10 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	QDialog::showEvent(event);
 	templateSelected();
 
-	if(!editSource->text().isEmpty())
+	if(!editSource->text().isEmpty()) initialDir_src = QFileInfo(QDir::fromNativeSeparators(editSource->text())).path();
+	if(!editOutput->text().isEmpty()) initialDir_out = QFileInfo(QDir::fromNativeSeparators(editOutput->text())).path();
+
+	if((!editSource->text().isEmpty()) && editOutput->text().isEmpty())
 	{
 		generateOutputFileName(QDir::fromNativeSeparators(editSource->text()));
 		buttonAccept->setFocus();

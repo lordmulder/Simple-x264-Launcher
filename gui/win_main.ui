@@ -476,9 +476,6 @@
    </property>
   </action>
   <action name="actionPreferences">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
    <property name="icon">
     <iconset resource="../res/resources.qrc">
      <normaloff>:/buttons/wrench.png</normaloff>:/buttons/wrench.png</iconset>

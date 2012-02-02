@@ -52,7 +52,6 @@ protected:
 	QString initialDir_src;
 	QString initialDir_out;
 
-
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
 

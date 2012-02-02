@@ -25,6 +25,7 @@
 #include "model_jobList.h"
 #include "model_options.h"
 #include "win_addJob.h"
+#include "win_preferences.h"
 
 #include <QDate>
 #include <QTimer>
@@ -61,6 +62,10 @@ MainWindow::MainWindow(bool x64supported)
 	qRegisterMetaType<QUuid>("QUuid");
 	qRegisterMetaType<EncodeThread::JobStatus>("EncodeThread::JobStatus");
 
+	//Load preferences
+	memset(&m_preferences, 0, sizeof(PreferencesDialog::Preferences));
+	PreferencesDialog::loadPreferences(&m_preferences);
+
 	//Freeze minimum size
 	setMinimumSize(size());
 	splitter->setSizes(QList<int>() << 16 << 196);
@@ -70,8 +75,7 @@ MainWindow::MainWindow(bool x64supported)
 	labelBuildDate->installEventFilter(this);
 	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_x64supported ? "64-Bit" : "32-Bit"));
 	if(x264_is_prerelease()) setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
-
-
+	
 	//Create model
 	m_jobList = new JobListModel();
 	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
@@ -110,6 +114,7 @@ MainWindow::MainWindow(bool x64supported)
 	connect(actionWebJarod, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 	//Create floating label
 	m_label = new QLabel(jobsView);
@@ -271,7 +276,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 				qDebug("Current job changed status!");
 				updateButtons(status);
 			}
-			if(status == EncodeThread::JobStatus_Completed)
+			if((status == EncodeThread::JobStatus_Completed) && m_preferences.autoRunNextJob)
 			{
 				QTimer::singleShot(0, this, SLOT(launchNextJob()));
 			}
@@ -353,18 +358,21 @@ void MainWindow::showWebLink(void)
 	if(QObject::sender() == actionWebBluRay) QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
 }
 
+void MainWindow::showPreferences(void)
+{
+	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences);
+	preferences->exec();
+	X264_DELETE(preferences);
+}
+
 void MainWindow::launchNextJob(void)
 {
 	const int rows = m_jobList->rowCount(QModelIndex());
 
-	for(int i = 0; i < rows; i++)
+	if(haveRunningJobs())
 	{
-		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
-		if(status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2)
-		{
-			qWarning("Still have a job running, won't launch next yet!");
-			return;
-		}
+		qWarning("Still have a job running, won't launch next yet!");
+		return;
 	}
 
 	for(int i = 0; i < rows; i++)
@@ -372,7 +380,10 @@ void MainWindow::launchNextJob(void)
 		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
 		if(status == EncodeThread::JobStatus_Enqueued)
 		{
-			m_jobList->startJob(m_jobList->index(i, 0, QModelIndex()));
+			if(m_jobList->startJob(m_jobList->index(i, 0, QModelIndex())))
+			{
+				jobsView->selectRow(i);
+			}
 			return;
 		}
 	}

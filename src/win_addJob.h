@@ -23,6 +23,8 @@
 
 #include "uic_win_addJob.h"
 
+#include <QDir>
+
 class OptionsModel;
 
 class AddJobDialog : public QDialog, private Ui::AddJobDialog
@@ -41,6 +43,7 @@ public:
 	QString params(void) { return editCustomParams->text().simplified(); }
 	bool runImmediately(void) { return checkBoxRun->isChecked(); }
 	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
+	void setSourceFile(const QString &path) { editSource->setText(QDir::toNativeSeparators(path)); }
 
 protected:
 	OptionsModel *m_options;

@@ -140,10 +140,11 @@ MainWindow::~MainWindow(void)
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
 
-void MainWindow::addButtonPressed(void)
+void MainWindow::addButtonPressed(const QString &filePath)
 {
 	AddJobDialog *addDialog = new AddJobDialog(this, m_options);
 	addDialog->setRunImmediately(!havePendingJobs());
+	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
 	int result = addDialog->exec();
 	
 	if(result == QDialog::Accepted)
@@ -338,7 +339,7 @@ void MainWindow::init(void)
 			}
 			if(!binaryTypeOkay)
 			{
-				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 binary:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
+				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
 				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
 				close(); qApp->exit(-1); return;
 			}
@@ -450,6 +451,48 @@ bool MainWindow::eventFilter(QObject *o, QEvent *e)
 		return true;
 	}
 	return false;
+}
+
+/*
+ * File dragged over window
+ */
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+	QStringList formats = event->mimeData()->formats();
+	
+	if(formats.contains("application/x-qt-windows-mime;value=\"FileNameW\"", Qt::CaseInsensitive) && formats.contains("text/uri-list", Qt::CaseInsensitive))
+	{
+		event->acceptProposedAction();
+	}
+}
+
+/*
+ * File dropped onto window
+ */
+void MainWindow::dropEvent(QDropEvent *event)
+{
+	QStringList droppedFiles;
+	QList<QUrl> urls = event->mimeData()->urls();
+
+	while(!urls.isEmpty())
+	{
+		QUrl currentUrl = urls.takeFirst();
+		QFileInfo file(currentUrl.toLocalFile());
+		if(file.exists() && file.isFile())
+		{
+			qDebug("Dropped File: %s", file.canonicalFilePath().toUtf8().constData());
+			droppedFiles << file.canonicalFilePath();
+		}
+	}
+	
+	droppedFiles.sort();
+
+	while(!droppedFiles.isEmpty())
+	{
+		QString currentFile = droppedFiles.takeFirst();
+		qDebug("Adding file: %s", currentFile.toUtf8().constData());
+		addButtonPressed(currentFile);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -41,6 +41,8 @@ protected:
 	virtual void showEvent(QShowEvent *e);
 	virtual void resizeEvent(QResizeEvent *e);
 	virtual bool eventFilter(QObject *o, QEvent *e);
+	virtual void dragEnterEvent(QDragEnterEvent *event);
+	virtual void dropEvent(QDropEvent *event);
 
 private:
 	bool m_firstShow;
@@ -57,7 +59,7 @@ private:
 	bool havePendingJobs(void);
 
 private slots:
-	void addButtonPressed(void);
+	void addButtonPressed(const QString &filePath = QString());
 	void abortButtonPressed(void);
 	void copyLogToClipboard(bool checked);
 	void init(void);

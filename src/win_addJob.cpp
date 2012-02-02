@@ -335,7 +335,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	forever
 	{
 		bool ok = false;
-		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:"), QLineEdit::Normal, name, &ok).simplified();
+		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(160, ' '), QLineEdit::Normal, name, &ok).simplified();
 		if(!ok) return;
 		if(name.startsWith("<") || name.endsWith(">"))
 		{

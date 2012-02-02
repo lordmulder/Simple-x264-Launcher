@@ -277,7 +277,29 @@ void MainWindow::showAbout(void)
 	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
 	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", home_url, home_url);
 
-	QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("Close"));
+	forever
+	{
+		int ret = QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("Abou x264"), tr("About Qt"), tr("Close"));
+
+		switch(ret)
+		{
+		case 0:
+			{
+				QString text2;
+				text2 += tr("<nobr><tt>x264, the best H.264/AVC encoder. Copyright (c) 2003-2011 x264 project.<br>");
+				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
+				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
+				text2 += tr("Please visit <a href=\"http://x264licensing.com/\">http://x264licensing.com/</a> for obtaining a commercial x264 license!<br></tt></nobr>");
+				QMessageBox::information(this, tr("About x264"), text2.replace("-", "&minus;"), tr("Close"));
+			}
+			break;
+		case 1:
+			QMessageBox::aboutQt(this);
+			break;
+		default:
+			return;
+		}
+	}
 }
 
 void MainWindow::showWebLink(void)

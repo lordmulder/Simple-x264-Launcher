@@ -48,7 +48,11 @@ public:
 protected:
 	OptionsModel *m_options;
 	OptionsModel *m_defaults;
-	
+
+	QString initialDir_src;
+	QString initialDir_out;
+
+
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
 
@@ -68,4 +72,5 @@ private:
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *cbox, const QString &text);
 	QString makeFileFilter(void);
+	void generateOutputFileName(const QString &filePath);
 };

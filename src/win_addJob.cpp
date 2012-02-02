@@ -34,6 +34,7 @@
 #include <QValidator>
 #include <QDir>
 #include <QInputDialog>
+#include <QSettings>
 
 static const struct
 {
@@ -49,6 +50,8 @@ g_filters[] =
 	{"Flash Video", "flv"},
 	{NULL, NULL}
 };
+
+#define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
@@ -112,7 +115,10 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 :
 	QDialog(parent),
 	m_defaults(new OptionsModel()),
-	m_options(options)
+	m_options(options),
+	initialDir_src(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation)),
+	initialDir_out(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))
+
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
@@ -154,10 +160,17 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
 	//Setup template selector
 	loadTemplateList();
 	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
+
+	//Load directories
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
+	initialDir_src = settings.value("path/directory_openFrom", initialDir_src).toString();
+	initialDir_out = settings.value("path/directory_saveTo", initialDir_out).toString();
 }
 
 AddJobDialog::~AddJobDialog(void)
 {
+	//Free templates
 	for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
 	{
 		if(cbxTemplate->itemText(i).startsWith("<") || cbxTemplate->itemText(i).endsWith(">"))
@@ -180,6 +193,11 @@ void AddJobDialog::showEvent(QShowEvent *event)
 {
 	QDialog::showEvent(event);
 	templateSelected();
+
+	if(!editSource->text().isEmpty())
+	{
+		generateOutputFileName(QDir::fromNativeSeparators(editSource->text()));
+	}
 }
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
@@ -215,6 +233,12 @@ void AddJobDialog::accept(void)
 		return;
 	}
 	
+	if(editOutput->text().trimmed().isEmpty())
+	{
+		QMessageBox::warning(this, tr("Not Selected!"), tr("Please select a valid output file first!"));
+		return;
+	}
+
 	QFileInfo sourceFile = QFileInfo(editSource->text());
 	if(!(sourceFile.exists() && sourceFile.isFile()))
 	{
@@ -243,37 +267,30 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
+	//Save directories
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
+	if(settings.isWritable())
+	{
+		settings.setValue("path/directory_openFrom", initialDir_src);
+		settings.setValue("path/directory_saveTo", initialDir_out);
+		settings.sync();
+	}
+
 	saveOptions(m_options);
 	QDialog::accept();
 }
 
 void AddJobDialog::browseButtonClicked(void)
 {
-	QString initialDir = QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
-
 	if(QObject::sender() == buttonBrowseSource)
 	{
-		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initialDir, makeFileFilter());
-		
+		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), VALID_DIR(initialDir_src) ? initialDir_src : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation), makeFileFilter(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
 			editSource->setText(QDir::toNativeSeparators(filePath));
-
-			QString path = QFileInfo(filePath).path();
-			QString name = QFileInfo(filePath).completeBaseName();
-			
-			QString outPath = QString("%1/%2.mkv").arg(path, name);
-
-			if(QFileInfo(outPath).exists())
-			{
-				int i = 2;
-				while(QFileInfo(outPath).exists())
-				{
-					outPath = QString("%1/%2 (%3).mkv").arg(path, name, QString::number(i++));
-				}
-			}
-
-			editOutput->setText(QDir::toNativeSeparators(outPath));
+			generateOutputFileName(filePath);
+			initialDir_src = QFileInfo(filePath).path();
 		}
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
@@ -283,11 +300,17 @@ void AddJobDialog::browseButtonClicked(void)
 		filters += tr("MPEG-4 Part 14 Container (*.mp4)").append(";;");
 		filters += tr("H.264 Elementary Stream (*.264)");
 
-		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initialDir, filters);
+		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), VALID_DIR(initialDir_out) ? initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation), filters, NULL, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
+			QString suffix = QFileInfo(filePath).suffix();
+			if(suffix.compare("mkv", Qt::CaseInsensitive) && suffix.compare("mp4", Qt::CaseInsensitive) && suffix.compare("264", Qt::CaseInsensitive))
+			{
+				filePath = QString("%1.mkv").arg(filePath);
+			}
 			editOutput->setText(QDir::toNativeSeparators(filePath));
+			initialDir_out = QFileInfo(filePath).path();
 		}
 	}
 }
@@ -514,4 +537,23 @@ QString AddJobDialog::makeFileFilter(void)
 		
 	filters += QString("All files (*.*)");
 	return filters;
+}
+
+void AddJobDialog::generateOutputFileName(const QString &filePath)
+{
+	QString name = QFileInfo(filePath).completeBaseName();
+	QString path = VALID_DIR(initialDir_out) ? initialDir_out : QFileInfo(filePath).path();
+			
+	QString outPath = QString("%1/%2.mkv").arg(path, name);
+
+	if(QFileInfo(outPath).exists())
+	{
+		int i = 2;
+		while(QFileInfo(outPath).exists())
+		{
+			outPath = QString("%1/%2 (%3).mkv").arg(path, name, QString::number(i++));
+		}
+	}
+
+	editOutput->setText(QDir::toNativeSeparators(outPath));
 }

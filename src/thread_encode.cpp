@@ -499,7 +499,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 
 	if(!m_options->custom().isEmpty())
 	{
-		//FIXME: Handle custom parameters that contain spaces!
+		//FIXME: Handle custom parameters that contain withspaces within quotes!
 		cmdLine.append(m_options->custom().split(" "));
 	}
 
@@ -514,6 +514,8 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 	}
 	else
 	{
+		QString indexFile = QString("%1/%2.ffindex").arg(QDir::tempPath(), m_jobId.toString());
+		cmdLine << "--index" << QDir::toNativeSeparators(indexFile);
 		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
 	}
 
@@ -857,10 +859,9 @@ void EncodeThread::setStatus(JobStatus newStatus)
 {
 	if(m_status != newStatus)
 	{
-		m_status = newStatus;
 		if((newStatus != JobStatus_Completed) && (newStatus != JobStatus_Failed) && (newStatus != JobStatus_Aborted) && (newStatus != JobStatus_Paused))
 		{
-			setProgress(0);
+			if(m_status != JobStatus_Paused) setProgress(0);
 		}
 		if(newStatus == JobStatus_Failed)
 		{
@@ -870,6 +871,7 @@ void EncodeThread::setStatus(JobStatus newStatus)
 		{
 			setDetails("The job was aborted by the user!");
 		}
+		m_status = newStatus;
 		emit statusChanged(m_jobId, newStatus);
 	}
 }

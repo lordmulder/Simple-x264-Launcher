@@ -154,7 +154,7 @@ void MainWindow::addButtonPressed(const QString &filePath, bool *ok)
 	if(ok) *ok = false;
 	
 	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_x64supported);
-	addDialog->setRunImmediately(!havePendingJobs());
+	addDialog->setRunImmediately(countPendingJobs() < m_preferences.maxRunningJobCount);
 	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
 	int result = addDialog->exec();
 	
@@ -266,7 +266,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 {
 	int selected = jobsView->currentIndex().row();
 	
-	if(topLeft.column() <= 1 && bottomRight.column() >= 1)
+	if(topLeft.column() <= 1 && bottomRight.column() >= 1) /*STATUS*/
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
@@ -276,13 +276,13 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 				qDebug("Current job changed status!");
 				updateButtons(status);
 			}
-			if((status == EncodeThread::JobStatus_Completed) && m_preferences.autoRunNextJob)
+			if((status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Failed) && m_preferences.autoRunNextJob)
 			{
 				QTimer::singleShot(0, this, SLOT(launchNextJob()));
 			}
 		}
 	}
-	else if(topLeft.column() <= 2 && bottomRight.column() >= 2)
+	else if(topLeft.column() <= 2 && bottomRight.column() >= 2) /*PROGRESS*/
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
@@ -293,7 +293,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			}
 		}
 	}
-	else if(topLeft.column() <= 3 && bottomRight.column() >= 3)
+	else if(topLeft.column() <= 3 && bottomRight.column() >= 3) /*DETAILS*/
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
@@ -368,27 +368,44 @@ void MainWindow::showPreferences(void)
 void MainWindow::launchNextJob(void)
 {
 	const int rows = m_jobList->rowCount(QModelIndex());
+	unsigned int running = countRunningJobs();
 
-	if(haveRunningJobs())
+	if(running >= m_preferences.maxRunningJobCount)
 	{
-		qWarning("Still have a job running, won't launch next yet!");
+		qWarning("Still have too many jobs running, won't launch next one yet!");
 		return;
 	}
 
-	for(int i = 0; i < rows; i++)
+	bool first = true;
+	while(running < m_preferences.maxRunningJobCount)
 	{
-		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
-		if(status == EncodeThread::JobStatus_Enqueued)
+		bool ok = false;
+		for(int i = 0; i < rows; i++)
 		{
-			if(m_jobList->startJob(m_jobList->index(i, 0, QModelIndex())))
+			EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+			if(status == EncodeThread::JobStatus_Enqueued)
 			{
-				jobsView->selectRow(i);
+				if(m_jobList->startJob(m_jobList->index(i, 0, QModelIndex())))
+				{
+					if(first)
+					{
+						first = false;
+						jobsView->selectRow(i);
+					}
+					running++;
+					ok = true;
+					qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+					break;
+				}
 			}
-			return;
+		}
+		
+		if(!ok)
+		{
+			qWarning("No enqueued jobs left!");
+			break;
 		}
 	}
-
-	qWarning("No enqueued jobs left!");
 }
 
 void MainWindow::init(void)
@@ -502,14 +519,14 @@ void MainWindow::showEvent(QShowEvent *e)
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	if(haveRunningJobs())
+	if(countRunningJobs() > 0)
 	{
 		e->ignore();
 		QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not exit while there still are running jobs!"));
 		return;
 	}
 	
-	if(havePendingJobs())
+	if(countPendingJobs() > 0)
 	{
 		int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("Do you really want to quit and discard the pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 		if(ret != QMessageBox::Yes)
@@ -598,8 +615,9 @@ void MainWindow::dropEvent(QDropEvent *event)
 ///////////////////////////////////////////////////////////////////////////////
 
 /*Jobs that are not completed (or failed, or aborted) yet*/
-bool MainWindow::havePendingJobs(void)
+unsigned int MainWindow::countPendingJobs(void)
 {
+	unsigned int count = 0;
 	const int rows = m_jobList->rowCount(QModelIndex());
 
 	for(int i = 0; i < rows; i++)
@@ -607,16 +625,17 @@ bool MainWindow::havePendingJobs(void)
 		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
 		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed)
 		{
-			return true;
+			count++;
 		}
 	}
 
-	return false;
+	return count;
 }
 
 /*Jobs that are still active, i.e. not terminated or enqueued*/
-bool MainWindow::haveRunningJobs(void)
+unsigned int MainWindow::countRunningJobs(void)
 {
+	unsigned int count = 0;
 	const int rows = m_jobList->rowCount(QModelIndex());
 
 	for(int i = 0; i < rows; i++)
@@ -624,11 +643,11 @@ bool MainWindow::haveRunningJobs(void)
 		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
 		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed && status != EncodeThread::JobStatus_Enqueued)
 		{
-			return true;
+			count++;
 		}
 	}
 
-	return false;
+	return count;
 }
 
 void MainWindow::updateButtons(EncodeThread::JobStatus status)

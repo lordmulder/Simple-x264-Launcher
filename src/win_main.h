@@ -59,8 +59,8 @@ private:
 	const QString m_appDir;
 	
 	void updateButtons(EncodeThread::JobStatus status);
-	bool havePendingJobs(void);
-	bool haveRunningJobs(void);
+	unsigned int countPendingJobs(void);
+	unsigned int countRunningJobs(void);
 
 private slots:
 	void addButtonPressed(const QString &filePath = QString(), bool *ok = NULL);

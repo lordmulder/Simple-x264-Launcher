@@ -70,7 +70,7 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 
 	settings.beginGroup("preferences");
 	preferences->autoRunNextJob = settings.value("auto_run_next_job", QVariant(true)).toBool();
-	preferences->maxRunningJobCount = settings.value("max_running_job_count", QVariant(1U)).toUInt();
+	preferences->maxRunningJobCount = qBound(1U, settings.value("max_running_job_count", QVariant(1U)).toUInt(), 16U);
 }
 
 void PreferencesDialog::savePreferences(Preferences *preferences)

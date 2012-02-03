@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>393</width>
-    <height>134</height>
+    <width>375</width>
+    <height>171</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,14 +34,49 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="1">
-         <widget class="QCheckBox" name="checkRunNextJob">
+        <item row="1" column="1" colspan="2">
+         <widget class="QLabel" name="labelJobCount">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
-           <string>Automatically launch next job when a running job completes</string>
+           <string>Maximum number of running jobs:</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
+        <item row="1" column="3">
+         <widget class="QSpinBox" name="spinBoxJobCount">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>80</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>16</number>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="5" rowspan="2">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>1024</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="0" rowspan="2">
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -56,6 +91,26 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item row="1" column="4">
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1" colspan="4">
+         <widget class="QCheckBox" name="checkRunNextJob">
+          <property name="text">
+           <string>Automatically launch next job when a running job completes</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -98,6 +153,11 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>closeButton</tabstop>
+  <tabstop>checkRunNextJob</tabstop>
+  <tabstop>spinBoxJobCount</tabstop>
+ </tabstops>
  <resources>
   <include location="../res/resources.qrc"/>
  </resources>
@@ -115,6 +175,38 @@
     <hint type="destinationlabel">
      <x>199</x>
      <y>89</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkRunNextJob</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>spinBoxJobCount</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>188</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>294</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkRunNextJob</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>labelJobCount</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>188</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>93</y>
     </hint>
    </hints>
   </connection>

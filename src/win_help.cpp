@@ -30,10 +30,11 @@
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-HelpDialog::HelpDialog(QWidget *parent)
+HelpDialog::HelpDialog(QWidget *parent, bool x64supported)
 :
 	QDialog(parent),
 	m_appDir(QApplication::applicationDirPath()),
+	m_x64supported(x64supported),
 	m_process(new QProcess())
 {
 	//Init the dialog, from the .ui file
@@ -66,7 +67,7 @@ void HelpDialog::showEvent(QShowEvent *event)
 	QDialog::showEvent(event);
 
 	m_startAgain = true;
-	m_process->start(QString("%1/toolset/x264.exe").arg(m_appDir), QStringList() << "--version");
+	m_process->start(QString("%1/toolset/%2.exe").arg(m_appDir, m_x64supported ? "x264_x64" : "x264"), QStringList() << "--version");
 
 	if(!m_process->waitForStarted())
 	{

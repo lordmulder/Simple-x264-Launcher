@@ -126,11 +126,12 @@ protected:
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options)
+AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported)
 :
 	QDialog(parent),
 	m_defaults(new OptionsModel()),
 	m_options(options),
+	m_x64supported(x64supported),
 	initialDir_src(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation)),
 	initialDir_out(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))
 
@@ -223,7 +224,7 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 {
 	if((o == labelHelpScreen) && (e->type() == QEvent::MouseButtonPress))
 	{
-		HelpDialog *helpScreen = new HelpDialog(this);
+		HelpDialog *helpScreen = new HelpDialog(this, m_x64supported);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}

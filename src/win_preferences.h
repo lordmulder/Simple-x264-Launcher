@@ -31,6 +31,7 @@ public:
 	typedef struct
 	{
 		bool autoRunNextJob;
+		unsigned int maxRunningJobCount;
 	}
 	Preferences;
 

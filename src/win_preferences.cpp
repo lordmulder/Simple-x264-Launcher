@@ -46,12 +46,19 @@ PreferencesDialog::~PreferencesDialog(void)
 
 void PreferencesDialog::showEvent(QShowEvent *event)
 {
-	checkRunNextJob->setChecked(m_preferences->autoRunNextJob);
+	while(checkRunNextJob->isChecked() != m_preferences->autoRunNextJob)
+	{
+		checkRunNextJob->click();
+	}
+
+	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount);
 }
 
 void PreferencesDialog::accept(void)
 {
 	m_preferences->autoRunNextJob = checkRunNextJob->isChecked();
+	m_preferences->maxRunningJobCount = spinBoxJobCount->value();
+
 	savePreferences(m_preferences);
 	QDialog::accept();
 }
@@ -63,6 +70,7 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 
 	settings.beginGroup("preferences");
 	preferences->autoRunNextJob = settings.value("auto_run_next_job", QVariant(true)).toBool();
+	preferences->maxRunningJobCount = settings.value("max_running_job_count", QVariant(1U)).toUInt();
 }
 
 void PreferencesDialog::savePreferences(Preferences *preferences)
@@ -72,6 +80,7 @@ void PreferencesDialog::savePreferences(Preferences *preferences)
 
 	settings.beginGroup("preferences");
 	settings.setValue("auto_run_next_job", preferences->autoRunNextJob);
+	settings.setValue("max_running_job_count", preferences->maxRunningJobCount);
 	settings.sync();
 }
 

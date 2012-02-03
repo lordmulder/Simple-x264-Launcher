@@ -153,7 +153,7 @@ void MainWindow::addButtonPressed(const QString &filePath, bool *ok)
 {
 	if(ok) *ok = false;
 	
-	AddJobDialog *addDialog = new AddJobDialog(this, m_options);
+	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_x64supported);
 	addDialog->setRunImmediately(!havePendingJobs());
 	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
 	int result = addDialog->exec();

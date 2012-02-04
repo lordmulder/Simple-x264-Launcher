@@ -129,7 +129,7 @@ QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
 			OptionsModel *options = new OptionsModel();
 			options->setRCMode(static_cast<OptionsModel::RCMode>(settings.value("rate_control_mode", options->m_rcMode).toInt()));
 			options->setBitrate(settings.value("target_bitrate", options->m_bitrate).toUInt());
-			options->setQuantizer(settings.value("target_quantizer", options->m_quantizer).toUInt());
+			options->setQuantizer(settings.value("target_quantizer", options->m_quantizer).toDouble());
 			options->setPreset(settings.value("preset_name", options->m_preset).toString());
 			options->setTune(settings.value("tuning_name", options->m_tune).toString());
 			options->setProfile(settings.value("profile_name", options->m_profile).toString());

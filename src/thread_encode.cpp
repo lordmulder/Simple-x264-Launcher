@@ -465,14 +465,16 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, const QString &indexFile, int pass, const QString &passLogFile)
 {
 	QStringList cmdLine;
+	double crf_int = 0.0, crf_frc = 0.0;
 
 	switch(m_options->rcMode())
 	{
-	case OptionsModel::RCMode_CRF:
-		cmdLine << "--crf" << QString::number(m_options->quantizer());
-		break;
 	case OptionsModel::RCMode_CQ:
-		cmdLine << "--qp" << QString::number(m_options->quantizer());
+		cmdLine << "--qp" << QString::number(qRound(m_options->quantizer()));
+		break;
+	case OptionsModel::RCMode_CRF:
+		crf_frc = modf(m_options->quantizer(), &crf_int);
+		cmdLine << "--crf" << QString("%1.%2").arg(QString::number(qRound(crf_int)), QString::number(qRound(crf_frc * 10.0)));
 		break;
 	case OptionsModel::RCMode_2Pass:
 	case OptionsModel::RCMode_ABR:

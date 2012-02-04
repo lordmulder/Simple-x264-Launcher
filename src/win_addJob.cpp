@@ -166,7 +166,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 
 	//Monitor for options changes
 	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
-	connect(spinQuantizer, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
+	connect(spinQuantizer, SIGNAL(valueChanged(double)), this, SLOT(configurationChanged()));
 	connect(spinBitrate, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
 	connect(cbxPreset, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(cbxTuning, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));

@@ -151,12 +151,13 @@ MainWindow::~MainWindow(void)
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
 
-void MainWindow::addButtonPressed(const QString &filePath, bool *ok)
+void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileTotal, bool *ok)
 {
 	if(ok) *ok = false;
 	
 	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_x64supported);
 	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+	if((fileNo >= 0) && (fileTotal > 1)) addDialog->setWindowTitle(addDialog->windowTitle().append(tr(" (File %1 of %2)").arg(QString::number(fileNo+1), QString::number(fileTotal))));
 	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
 
 	int result = addDialog->exec();
@@ -654,13 +655,14 @@ void MainWindow::dropEvent(QDropEvent *event)
 	}
 	
 	droppedFiles.sort();
+	int totalFiles = droppedFiles.count();
 	
-	bool ok = true;
+	bool ok = true; int n = 0;
 	while((!droppedFiles.isEmpty()) && ok)
 	{
 		QString currentFile = droppedFiles.takeFirst();
 		qDebug("Adding file: %s", currentFile.toUtf8().constData());
-		addButtonPressed(currentFile, &ok);
+		addButtonPressed(currentFile, n++, totalFiles, &ok);
 	}
 }
 

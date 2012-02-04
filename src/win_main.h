@@ -63,7 +63,7 @@ private:
 	unsigned int countRunningJobs(void);
 
 private slots:
-	void addButtonPressed(const QString &filePath = QString(), bool *ok = NULL);
+	void addButtonPressed(const QString &filePath = QString(), int fileNo = 0, int fileTotal = 0, bool *ok = NULL);
 	void abortButtonPressed(void);
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);

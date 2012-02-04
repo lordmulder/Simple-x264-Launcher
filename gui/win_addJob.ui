@@ -170,7 +170,7 @@
         <item>
          <widget class="QLabel" name="label_9">
           <property name="toolTip">
-           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save&quot; button to save your current configuration to a new profile.</string>
+           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new profile.</string>
           </property>
           <property name="text">
            <string>Template:</string>
@@ -192,7 +192,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save&quot; button to save your current configuration to a new profile.</string>
+           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new profile.</string>
           </property>
           <property name="currentIndex">
            <number>-1</number>
@@ -368,15 +368,15 @@
               </widget>
              </item>
              <item>
-              <widget class="QSpinBox" name="spinQuantizer">
-               <property name="toolTip">
-                <string>Select the quantizer or CRF value. Smaller value means better quality, but bigger file. Higher value means smaller file, but lower quality. A value of '0' triggers lossless mode.</string>
+              <widget class="QDoubleSpinBox" name="spinQuantizer">
+               <property name="decimals">
+                <number>1</number>
                </property>
                <property name="maximum">
-                <number>52</number>
+                <double>52.000000000000000</double>
                </property>
                <property name="value">
-                <number>22</number>
+                <double>22.000000000000000</double>
                </property>
               </widget>
              </item>
@@ -422,7 +422,7 @@
                 <number>250000</number>
                </property>
                <property name="value">
-                <number>1200</number>
+                <number>100</number>
                </property>
               </widget>
              </item>
@@ -1018,7 +1018,6 @@
   <tabstop>buttonSaveTemplate</tabstop>
   <tabstop>buttonDeleteTemplate</tabstop>
   <tabstop>cbxRateControlMode</tabstop>
-  <tabstop>spinQuantizer</tabstop>
   <tabstop>spinBitrate</tabstop>
   <tabstop>cbxPreset</tabstop>
   <tabstop>cbxTuning</tabstop>

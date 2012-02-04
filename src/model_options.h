@@ -42,7 +42,7 @@ public:
 	//Getter
 	RCMode rcMode(void) const { return m_rcMode; }
 	unsigned int bitrate(void) const { return m_bitrate; }
-	unsigned int quantizer(void) const { return m_quantizer; }
+	double quantizer(void) const { return m_quantizer; }
 	QString preset(void) const { return m_preset; }
 	QString tune(void) const { return m_tune; }
 	QString profile(void) const { return m_profile; }
@@ -51,7 +51,7 @@ public:
 	//Setter
 	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
 	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(100U, bitrate, 250000U); }
-	void setQuantizer(unsigned int quantizer) { m_quantizer = qBound(0U, quantizer, 52U); }
+	void setQuantizer(double quantizer) { m_quantizer = qBound(0.0, quantizer, 52.0); }
 	void setPreset(const QString &preset) { m_preset = preset.trimmed(); }
 	void setTune(const QString &tune) { m_tune = tune.trimmed(); }
 	void setProfile(const QString &profile) { m_profile = profile.trimmed(); }
@@ -70,7 +70,7 @@ public:
 protected:
 	RCMode m_rcMode;
 	unsigned int m_bitrate;
-	unsigned int m_quantizer;
+	double m_quantizer;
 	QString m_preset;
 	QString m_tune;
 	QString m_profile;

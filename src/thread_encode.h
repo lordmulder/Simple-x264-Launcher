@@ -57,9 +57,10 @@ public:
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
-	const QString &sourceFileName(void) { return this->m_sourceFileName; };
-	const QString &outputFileName(void) { return this->m_outputFileName; };
-
+	const QString &sourceFileName(void) { return this->m_sourceFileName; }
+	const QString &outputFileName(void) { return this->m_outputFileName; }
+	const OptionsModel *options(void) { return m_options; }
+	
 	void pauseJob(void)
 	{
 		m_pause = true;
@@ -108,8 +109,8 @@ protected:
 	
 	//Encode functions
 	void encode(void);
-	bool runEncodingPass(bool x64, bool usePipe, unsigned int frames, int pass = 0, const QString &passLogFile = QString());
-	QStringList buildCommandLine(bool usePipe, unsigned int frames, int pass = 0, const QString &passLogFile = QString());
+	bool runEncodingPass(bool x64, bool usePipe, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
+	QStringList buildCommandLine(bool usePipe, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
 	unsigned int checkVersionX264(bool x64, bool &modified);
 	unsigned int checkVersionAvs2yuv(void);
 	bool checkProperties(unsigned int &frames);

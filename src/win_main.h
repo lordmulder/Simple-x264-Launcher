@@ -72,11 +72,12 @@ private slots:
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
-	void launchNextJob(void);
+	void launchNextJob();
 	void pauseButtonPressed(bool checked);
 	void showAbout(void);
 	void showPreferences(void);
 	void showWebLink(void);
+	void shutdownComputer(void);
 	void startButtonPressed(void);
 	void updateLabel(void);
 };

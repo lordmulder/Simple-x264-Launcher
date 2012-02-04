@@ -32,6 +32,7 @@ public:
 	{
 		bool autoRunNextJob;
 		unsigned int maxRunningJobCount;
+		bool shutdownComputer;
 	}
 	Preferences;
 
@@ -44,6 +45,7 @@ public:
 protected:
 	virtual void accept(void);
 	virtual void showEvent(QShowEvent *event);
+	virtual bool eventFilter(QObject *o, QEvent *e);
 
 private:
 	Preferences *m_preferences;

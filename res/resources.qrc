@@ -24,6 +24,8 @@
     <file>buttons/pause.png</file>
     <file>buttons/play.png</file>
     <file>buttons/play_big.png</file>
+    <file>buttons/power_off.png</file>
+    <file>buttons/power_on.png</file>
     <file>buttons/suspended.png</file>
     <file>buttons/trash.png</file>
     <file>buttons/world_link.png</file>

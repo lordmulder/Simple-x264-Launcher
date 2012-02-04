@@ -22,6 +22,7 @@
 #include "model_jobList.h"
 #include "global.h"
 #include "thread_encode.h"
+#include "model_options.h"
 
 #include <QIcon>
 #include <QFileInfo>
@@ -227,9 +228,27 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 	{
 		return QModelIndex();
 	}
-		
+	
+	QString config = "N/A";
+
+	switch(thread->options()->rcMode())
+	{
+	case OptionsModel::RCMode_CQ:
+		config = QString("CQ@%1").arg(QString::number(thread->options()->quantizer()));
+		break;
+	case OptionsModel::RCMode_CRF:
+		config = QString("CRF@%1").arg(QString::number(thread->options()->quantizer()));
+		break;
+	case OptionsModel::RCMode_2Pass:
+		config = QString("2Pass@%1").arg(QString::number(thread->options()->bitrate()));
+		break;
+	case OptionsModel::RCMode_ABR:
+		config = QString("ABR@%1").arg(QString::number(thread->options()->bitrate()));
+		break;
+	}
+
 	int n = 2;
-	QString jobName = QFileInfo(thread->sourceFileName()).completeBaseName();
+	QString jobName = QString("%1 [%2]").arg(QFileInfo(thread->sourceFileName()).completeBaseName(), config);
 
 	forever
 	{
@@ -244,7 +263,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		}
 		if(!unique)
 		{
-			jobName = QString("%1 (%2)").arg(QFileInfo(thread->sourceFileName()).completeBaseName(), QString::number(n++));
+			jobName = QString("%1 (%2) [%3]").arg(QFileInfo(thread->sourceFileName()).completeBaseName(), QString::number(n++), config);
 			continue;
 		}
 		break;

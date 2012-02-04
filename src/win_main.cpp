@@ -26,6 +26,7 @@
 #include "model_options.h"
 #include "win_addJob.h"
 #include "win_preferences.h"
+#include "resource.h"
 
 #include <QDate>
 #include <QTimer>
@@ -36,8 +37,9 @@
 #include <QDir>
 #include <QLibrary>
 #include <QProcess>
+#include <QProgressDialog>
 
-//#include <Shellapi.h>
+#include <Mmsystem.h>
 
 const char *home_url = "http://mulder.brhack.net/";
 
@@ -154,13 +156,12 @@ void MainWindow::addButtonPressed(const QString &filePath, bool *ok)
 	if(ok) *ok = false;
 	
 	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_x64supported);
-	addDialog->setRunImmediately(countPendingJobs() < m_preferences.maxRunningJobCount);
+	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
 	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
+
 	int result = addDialog->exec();
-	
 	if(result == QDialog::Accepted)
 	{
-		
 		EncodeThread *thrd = new EncodeThread
 		(
 			addDialog->sourceFile(),
@@ -270,15 +271,16 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
-			EncodeThread::JobStatus status =  m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+			EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
 			if(i == selected)
 			{
 				qDebug("Current job changed status!");
 				updateButtons(status);
 			}
-			if((status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Failed) && m_preferences.autoRunNextJob)
+			if((status == EncodeThread::JobStatus_Completed) || (status == EncodeThread::JobStatus_Failed))
 			{
-				QTimer::singleShot(0, this, SLOT(launchNextJob()));
+				if(m_preferences.autoRunNextJob) QTimer::singleShot(0, this, SLOT(launchNextJob()));
+				if(m_preferences.shutdownComputer) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
 			}
 		}
 	}
@@ -325,7 +327,7 @@ void MainWindow::showAbout(void)
 
 	forever
 	{
-		int ret = QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("About x264"), tr("About Qt"), tr("Close"));
+		int ret = QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("About x264"), tr("About Qt"), tr("Close"), 0, 2);
 
 		switch(ret)
 		{
@@ -367,44 +369,96 @@ void MainWindow::showPreferences(void)
 
 void MainWindow::launchNextJob(void)
 {
-	const int rows = m_jobList->rowCount(QModelIndex());
-	unsigned int running = countRunningJobs();
+	qDebug("launchNextJob(void)");
 
-	if(running >= m_preferences.maxRunningJobCount)
+	
+	const int rows = m_jobList->rowCount(QModelIndex());
+
+	if(countRunningJobs() >= m_preferences.maxRunningJobCount)
 	{
-		qWarning("Still have too many jobs running, won't launch next one yet!");
+		qDebug("Still have too many jobs running, won't launch next one yet!");
 		return;
 	}
 
-	bool first = true;
-	while(running < m_preferences.maxRunningJobCount)
+	int startIdx= jobsView->currentIndex().isValid() ? qBound(0, jobsView->currentIndex().row(), rows-1) : 0;
+
+	for(int i = 0; i < rows; i++)
 	{
-		bool ok = false;
-		for(int i = 0; i < rows; i++)
+		int currentIdx = (i + startIdx) % rows;
+		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(currentIdx, 0, QModelIndex()));
+		if(status == EncodeThread::JobStatus_Enqueued)
 		{
-			EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
-			if(status == EncodeThread::JobStatus_Enqueued)
+			if(m_jobList->startJob(m_jobList->index(currentIdx, 0, QModelIndex())))
 			{
-				if(m_jobList->startJob(m_jobList->index(i, 0, QModelIndex())))
-				{
-					if(first)
-					{
-						first = false;
-						jobsView->selectRow(i);
-					}
-					running++;
-					ok = true;
-					qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-					break;
-				}
+				jobsView->selectRow(currentIdx);
+				return;
 			}
 		}
+	}
 		
-		if(!ok)
+	qWarning("No enqueued jobs left!");
+}
+
+void MainWindow::shutdownComputer(void)
+{
+	qDebug("shutdownComputer(void)");
+	
+	if(countPendingJobs() > 0)
+	{
+		qDebug("Still have pending jobs, won't shutdown yet!");
+		return;
+	}
+	
+	const int iTimeout = 30;
+	const Qt::WindowFlags flags = Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowSystemMenuHint;
+	const QString text = QString("%1%2%1").arg(QString().fill(' ', 18), tr("Warning: Computer will shutdown in %1 seconds..."));
+	
+	qWarning("Initiating shutdown sequence!");
+	
+	QProgressDialog progressDialog(text.arg(iTimeout), tr("Cancel Shutdown"), 0, iTimeout + 1, this, flags);
+	QPushButton *cancelButton = new QPushButton(tr("Cancel Shutdown"), &progressDialog);
+	cancelButton->setIcon(QIcon(":/buttons/power_on.png"));
+	progressDialog.setModal(true);
+	progressDialog.setAutoClose(false);
+	progressDialog.setAutoReset(false);
+	progressDialog.setWindowIcon(QIcon(":/buttons/power_off.png"));
+	progressDialog.setWindowTitle(windowTitle());
+	progressDialog.setCancelButton(cancelButton);
+	progressDialog.show();
+	
+	QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	PlaySound(MAKEINTRESOURCE(IDR_WAVE1), GetModuleHandle(NULL), SND_RESOURCE | SND_SYNC);
+	QApplication::restoreOverrideCursor();
+	
+	QTimer timer;
+	timer.setInterval(1000);
+	timer.start();
+
+	QEventLoop eventLoop(this);
+	connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+	connect(&progressDialog, SIGNAL(canceled()), &eventLoop, SLOT(quit()));
+
+	for(int i = 1; i <= iTimeout; i++)
+	{
+		eventLoop.exec();
+		if(progressDialog.wasCanceled())
 		{
-			qWarning("No enqueued jobs left!");
-			break;
+			progressDialog.close();
+			return;
 		}
+		progressDialog.setValue(i+1);
+		progressDialog.setLabelText(text.arg(iTimeout-i));
+		if(iTimeout-i == 3) progressDialog.setCancelButton(NULL);
+		QApplication::processEvents();
+		PlaySound(MAKEINTRESOURCE((i < iTimeout) ? IDR_WAVE2 : IDR_WAVE3), GetModuleHandle(NULL), SND_RESOURCE | SND_SYNC);
+	}
+	
+	qWarning("Shutting down !!!");
+
+	if(x264_shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true))
+	{
+		qApp->closeAllWindows();
 	}
 }
 

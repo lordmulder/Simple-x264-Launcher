@@ -761,6 +761,33 @@ bool x264_init_qt(int argc, char* argv[])
 }
 
 /*
+ * Shutdown the computer
+ */
+bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown)
+{
+	HANDLE hToken = NULL;
+
+	if(OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &hToken))
+	{
+		TOKEN_PRIVILEGES privileges;
+		memset(&privileges, 0, sizeof(TOKEN_PRIVILEGES));
+		privileges.PrivilegeCount = 1;
+		privileges.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+		
+		if(LookupPrivilegeValue(NULL, SE_SHUTDOWN_NAME, &privileges.Privileges[0].Luid))
+		{
+			if(AdjustTokenPrivileges(hToken, FALSE, &privileges, NULL, NULL, NULL))
+			{
+				const DWORD reason = SHTDN_REASON_MAJOR_APPLICATION | SHTDN_REASON_FLAG_PLANNED;
+				return InitiateSystemShutdownEx(NULL, const_cast<wchar_t*>(QWCHAR(message)), timeout, forceShutdown ? TRUE : FALSE, FALSE, reason);
+			}
+		}
+	}
+	
+	return false;
+}
+
+/*
  * Check for debugger (detect routine)
  */
 static bool x264_check_for_debugger(void)

@@ -102,5 +102,6 @@ const char *x264_version_arch(void);
 void x264_init_console(int argc, char* argv[]);
 bool x264_init_qt(int argc, char* argv[]);
 x264_cpu_t x264_detect_cpu_features(int argc, char **argv);
+bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown);
 SIZE_T x264_dbg_private_bytes(void);
 void x264_finalization(void);

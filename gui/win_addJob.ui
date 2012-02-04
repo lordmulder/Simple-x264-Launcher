@@ -49,6 +49,9 @@
         </property>
         <item>
          <widget class="QLabel" name="label">
+          <property name="toolTip">
+           <string>Select the source video file. This can be an Avisynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
+          </property>
           <property name="text">
            <string>Source Media/Avisynth File:</string>
           </property>
@@ -58,6 +61,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_5">
           <item>
            <widget class="QLineEdit" name="editSource">
+            <property name="toolTip">
+             <string>Select the source video file. This can be an Avisynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -100,6 +106,9 @@
         </property>
         <item>
          <widget class="QLabel" name="label_2">
+          <property name="toolTip">
+           <string>Select the output H.264/AVC file. This can be a Matroska (MKV,) MPEG-4 Part-14 (MP4) or &quot;raw&quot; H.264 file.</string>
+          </property>
           <property name="text">
            <string>Output AVC/H.264 File:</string>
           </property>
@@ -109,6 +118,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
            <widget class="QLineEdit" name="editOutput">
+            <property name="toolTip">
+             <string>Select the output H.264/AVC file. This can be a Matroska (MKV,) MPEG-4 Part-14 (MP4) or &quot;raw&quot; H.264 file.</string>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
@@ -157,6 +169,9 @@
        <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
          <widget class="QLabel" name="label_9">
+          <property name="toolTip">
+           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save&quot; button to save your current configuration to a new profile.</string>
+          </property>
           <property name="text">
            <string>Template:</string>
           </property>
@@ -175,6 +190,9 @@
             <width>256</width>
             <height>0</height>
            </size>
+          </property>
+          <property name="toolTip">
+           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save&quot; button to save your current configuration to a new profile.</string>
           </property>
           <property name="currentIndex">
            <number>-1</number>
@@ -281,6 +299,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
               <widget class="QLabel" name="label_3">
+               <property name="toolTip">
+                <string>Select the x264 rate-control mode. Use 'CRF' mode to hit a specific level of quality or use '2-Pass' mode to hit a specific file size.</string>
+               </property>
                <property name="text">
                 <string>Mode:</string>
                </property>
@@ -288,6 +309,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxRateControlMode">
+               <property name="toolTip">
+                <string>Select the x264 rate-control mode. Use 'CRF' mode to hit a specific level of quality or use '2-Pass' mode to hit a specific file size.</string>
+               </property>
                <property name="currentIndex">
                 <number>0</number>
                </property>
@@ -335,6 +359,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_7">
              <item>
               <widget class="QLabel" name="label_4">
+               <property name="toolTip">
+                <string>Select the quantizer or CRF value. Smaller value means better quality, but bigger file. Higher value means smaller file, but lower quality. A value of '0' triggers lossless mode.</string>
+               </property>
                <property name="text">
                 <string>Quantizer/CRF:</string>
                </property>
@@ -342,6 +369,9 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spinQuantizer">
+               <property name="toolTip">
+                <string>Select the quantizer or CRF value. Smaller value means better quality, but bigger file. Higher value means smaller file, but lower quality. A value of '0' triggers lossless mode.</string>
+               </property>
                <property name="maximum">
                 <number>52</number>
                </property>
@@ -372,6 +402,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_6">
              <item>
               <widget class="QLabel" name="label_5">
+               <property name="toolTip">
+                <string>Select the target average(!) bitrate, in kilobit/sec. Higher value means better quality, but bigger file. Lower value means smaller file, but lower quality.</string>
+               </property>
                <property name="text">
                 <string>Target Bitrate (kbps):</string>
                </property>
@@ -379,6 +412,9 @@
              </item>
              <item>
               <widget class="QSpinBox" name="spinBitrate">
+               <property name="toolTip">
+                <string>Select the target average(!) bitrate, in kilobit/sec. Higher value means better quality, but bigger file. Lower value means smaller file, but lower quality.</string>
+               </property>
                <property name="minimum">
                 <number>100</number>
                </property>
@@ -441,6 +477,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_11">
              <item>
               <widget class="QLabel" name="label_6">
+               <property name="toolTip">
+                <string>This option controls the &quot;Speed -vs- Quality&quot; trade-off. Use a slower preset to improve the quality at the same bitrate (file size). Use a faster preset to save encoding time, at the cost of reduced quality.</string>
+               </property>
                <property name="text">
                 <string>Preset:</string>
                </property>
@@ -448,6 +487,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxPreset">
+               <property name="toolTip">
+                <string>This option controls the &quot;Speed -vs- Quality&quot; trade-off. Use a slower preset to improve the quality at the same bitrate (file size). Use a faster preset to save encoding time, at the cost of reduced quality.</string>
+               </property>
                <property name="currentIndex">
                 <number>5</number>
                </property>
@@ -525,6 +567,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_10">
              <item>
               <widget class="QLabel" name="label_7">
+               <property name="toolTip">
+                <string>This option tweaks x264 for a specific type of source/content. For real-life footage, CGI and most other stuff, use the &quot;Film&quot; option. For anime/cartoon use the &quot;Animation&quot; option.</string>
+               </property>
                <property name="text">
                 <string>Tuning:</string>
                </property>
@@ -532,6 +577,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxTuning">
+               <property name="toolTip">
+                <string>This option tweaks x264 for a specific type of source/content. For real-life footage, CGI and most other stuff, use the &quot;Film&quot; option. For anime/cartoon use the &quot;Animation&quot; option.</string>
+               </property>
                <property name="currentIndex">
                 <number>1</number>
                </property>
@@ -609,6 +657,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_9">
              <item>
               <widget class="QLabel" name="label_8">
+               <property name="toolTip">
+                <string>This option can be used to enforce the restrictions of a specific H.264/AVC Proifle, though it won't force a higher profile than needed. Use &quot;Auto&quot; for an unrestricted encode.</string>
+               </property>
                <property name="text">
                 <string>Profile:</string>
                </property>
@@ -616,6 +667,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxProfile">
+               <property name="toolTip">
+                <string>This option can be used to enforce the restrictions of a specific H.264/AVC Proifle, though it won't force a higher profile than needed. Use &quot;Auto&quot; for an unrestricted encode.</string>
+               </property>
                <property name="currentIndex">
                 <number>0</number>
                </property>
@@ -710,6 +764,9 @@
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item>
               <widget class="QLabel" name="label_10">
+               <property name="toolTip">
+                <string>All command-line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.</string>
+               </property>
                <property name="text">
                 <string>Custom x264 Parameters:</string>
                </property>
@@ -838,6 +895,9 @@
                <property name="cursor">
                 <cursorShape>PointingHandCursor</cursorShape>
                </property>
+               <property name="toolTip">
+                <string>Click here to show a detailed list of all command-line options available in your build of x264!</string>
+               </property>
                <property name="text">
                 <string>Show Help Screen</string>
                </property>
@@ -847,6 +907,9 @@
            </item>
            <item>
             <widget class="QLineEdit" name="editCustomParams">
+             <property name="toolTip">
+              <string>All command-line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.</string>
+             </property>
              <property name="placeholderText">
               <string>You can enter custom command-line options here...</string>
              </property>

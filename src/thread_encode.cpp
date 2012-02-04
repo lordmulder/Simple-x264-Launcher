@@ -47,11 +47,13 @@ QMutex EncodeThread::m_mutex_startProcess;
 	{ \
 		log("\nPROCESS ABORTED BY USER !!!"); \
 		setStatus(JobStatus_Aborted); \
+		if(QFileInfo(indexFile).exists()) QFile::remove(indexFile); \
 		return; \
 	} \
 	else if(!(OK_FLAG)) \
 	{ \
 		setStatus(JobStatus_Failed); \
+		if(QFileInfo(indexFile).exists()) QFile::remove(indexFile); \
 		return; \
 	} \
 }
@@ -178,6 +180,7 @@ void EncodeThread::encode(void)
 
 	//Use Avisynth?
 	const bool usePipe = (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
+	const QString indexFile = QString("%1/%2.ffindex").arg(QDir::tempPath(), m_jobId.toString());
 
 	//Checking x264 version
 	log(tr("\n--- CHECK VERSION ---\n"));
@@ -242,27 +245,28 @@ void EncodeThread::encode(void)
 		}
 		
 		log(tr("\n--- PASS 1 ---\n"));
-		ok = runEncodingPass(m_x64, usePipe, frames, 1, passLogFile);
+		ok = runEncodingPass(m_x64, usePipe, frames, indexFile, 1, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 
 		log(tr("\n--- PASS 2 ---\n"));
-		ok = runEncodingPass(m_x64, usePipe, frames, 2, passLogFile);
+		ok = runEncodingPass(m_x64, usePipe, frames, indexFile, 2, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 	else
 	{
 		log(tr("\n--- ENCODING ---\n"));
-		ok = runEncodingPass(m_x64, usePipe, frames);
+		ok = runEncodingPass(m_x64, usePipe, frames, indexFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 
 	log(tr("\n--- DONE ---\n"));
+	if(QFileInfo(indexFile).exists()) QFile::remove(indexFile);
 	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
 	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
 }
 
-bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, int pass, const QString &passLogFile)
+bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, const QString &indexFile, int pass, const QString &passLogFile)
 {
 	QProcess processEncode, processAvisynth;
 	
@@ -280,7 +284,7 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 		}
 	}
 
-	QStringList cmdLine_Encode = buildCommandLine(usePipe, frames, pass, passLogFile);
+	QStringList cmdLine_Encode = buildCommandLine(usePipe, frames, indexFile, pass, passLogFile);
 
 	log("Creating x264 process:");
 	if(!startProcess(processEncode, QString("%1/%2.exe").arg(m_binDir, x64 ? "x264_x64" : "x264"), cmdLine_Encode))
@@ -458,7 +462,7 @@ bool EncodeThread::runEncodingPass(bool x64, bool usePipe, unsigned int frames, 
 	return true;
 }
 
-QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, int pass, const QString &passLogFile)
+QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, const QString &indexFile, int pass, const QString &passLogFile)
 {
 	QStringList cmdLine;
 
@@ -514,7 +518,6 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, in
 	}
 	else
 	{
-		QString indexFile = QString("%1/%2.ffindex").arg(QDir::tempPath(), m_jobId.toString());
 		cmdLine << "--index" << QDir::toNativeSeparators(indexFile);
 		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
 	}

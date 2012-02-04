@@ -409,7 +409,7 @@ const char *x264_version_time(void)
 
 bool x264_is_prerelease(void)
 {
-	return (VER_x264_PRE_RELEASE);
+	return (VER_X264_PRE_RELEASE);
 }
 
 /*

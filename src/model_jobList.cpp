@@ -233,11 +233,11 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 
 	switch(thread->options()->rcMode())
 	{
-	case OptionsModel::RCMode_CQ:
-		config = QString("CQ@%1").arg(QString::number(thread->options()->quantizer()));
-		break;
 	case OptionsModel::RCMode_CRF:
 		config = QString("CRF@%1").arg(QString::number(thread->options()->quantizer()));
+		break;
+	case OptionsModel::RCMode_CQ:
+		config = QString("CQ@%1").arg(QString::number(qRound(thread->options()->quantizer())));
 		break;
 	case OptionsModel::RCMode_2Pass:
 		config = QString("2Pass@%1").arg(QString::number(thread->options()->bitrate()));

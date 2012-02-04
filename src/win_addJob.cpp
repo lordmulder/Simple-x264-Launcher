@@ -364,13 +364,19 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 {
 	qDebug("Saving template");
 	QString name = tr("New Template");
+	int n = 2;
+
+	while(OptionsModel::templateExists(name))
+	{
+		name = tr("New Template (%1)").arg(QString::number(n++));
+	}
 
 	OptionsModel *options = new OptionsModel();
 	saveOptions(options);
 
 	if(options->equals(m_defaults))
 	{
-		QMessageBox::warning (this, tr("Default"), tr("It makes no sense to save the defaults!"));
+		QMessageBox::warning (this, tr("Oups"), tr("<nobr>It makes no sense to save the default settings!</nobr>"));
 		cbxTemplate->blockSignals(true);
 		cbxTemplate->setCurrentIndex(0);
 		cbxTemplate->blockSignals(false);
@@ -386,7 +392,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		{
 			if(options->equals(test))
 			{
-				QMessageBox::warning (this, tr("Oups"), tr("<nobr>There already is a template for the current settings!"));
+				QMessageBox::warning (this, tr("Oups"), tr("<nobr>There already is a template for the current settings!</nobr>"));
 				cbxTemplate->blockSignals(true);
 				cbxTemplate->setCurrentIndex(i);
 				cbxTemplate->blockSignals(false);
@@ -400,7 +406,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	forever
 	{
 		bool ok = false;
-		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(160, ' '), QLineEdit::Normal, name, &ok).simplified();
+		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(144, ' '), QLineEdit::Normal, name, &ok).simplified();
 		if(!ok)
 		{
 			X264_DELETE(options);
@@ -408,7 +414,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		}
 		if(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/') || name.contains('"'))
 		{
-			QMessageBox::warning (this, tr("Invalid Name"), tr("Sorry, the name you have entered is invalid!"));
+			QMessageBox::warning (this, tr("Invalid Name"), tr("<nobr>Sorry, the name you have entered is invalid!</nobr>"));
 			while(name.contains('<')) name.remove('<');
 			while(name.contains('>')) name.remove('>');
 			while(name.contains('\\')) name.remove('\\');
@@ -419,8 +425,11 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		}
 		if(OptionsModel::templateExists(name))
 		{
-			QMessageBox::warning (this, tr("Already Exists"), tr("Sorry, a template of that name already exists!"));
-			continue;
+			int ret = QMessageBox::warning (this, tr("Already Exists"), tr("<nobr>A template of that name already exists! Overwrite?</nobr>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+			if(ret != QMessageBox::Yes)
+			{
+				continue;
+			}
 		}
 		break;
 	}
@@ -434,8 +443,22 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	
 	int index = cbxTemplate->model()->rowCount();
 	cbxTemplate->blockSignals(true);
-	cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
-	cbxTemplate->setCurrentIndex(index);
+	for(int i = 0; i < cbxTemplate->count(); i++)
+	{
+		if(cbxTemplate->itemText(i).compare(name, Qt::CaseInsensitive) == 0)
+		{
+			index = -1; //Do not append new template
+			OptionsModel *oldItem = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
+			cbxTemplate->setItemData(i, QVariant::fromValue<void*>(options));
+			cbxTemplate->setCurrentIndex(i);
+			X264_DELETE(oldItem);
+		}
+	}
+	if(index >= 0)
+	{
+		cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
+		cbxTemplate->setCurrentIndex(index);
+	}
 	cbxTemplate->blockSignals(false);
 
 	REMOVE_USAFED_ITEM;
@@ -446,11 +469,18 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 	const int index = cbxTemplate->currentIndex();
 	QString name = cbxTemplate->itemText(index);
 
-	if(name.contains('<') || name.contains('>'))
+	if(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/'))
 	{
 		QMessageBox::warning (this, tr("Invalid Item"), tr("Sorry, the selected item cannot be deleted!"));
 		return;
 	}
+
+	int ret = QMessageBox::question (this, tr("Delete Template"), tr("<nobr>Do you really want to delete the selected template?</nobr>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+	if(ret != QMessageBox::Yes)
+	{
+		return;
+	}
+
 
 	OptionsModel::deleteTemplate(name);
 	OptionsModel *item = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(index).value<void*>());

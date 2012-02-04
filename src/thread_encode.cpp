@@ -213,7 +213,7 @@ void EncodeThread::encode(void)
 		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
 		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
 	}
-	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != VER_x264_AVS2YUV_VER))
+	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != VER_X264_AVS2YUV_VER))
 	{
 		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
 		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));

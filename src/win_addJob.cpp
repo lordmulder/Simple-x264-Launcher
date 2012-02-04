@@ -315,20 +315,25 @@ void AddJobDialog::browseButtonClicked(void)
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
 	{
-		QString filters;
-		filters += tr("Matroska Files (*.mkv)").append(";;");
-		filters += tr("MPEG-4 Part 14 Container (*.mp4)").append(";;");
-		filters += tr("H.264 Elementary Stream (*.264)");
+		QString types, selectedType;
+		types += tr("Matroska Files (*.mkv)").append(";;");
+		types += tr("MPEG-4 Part 14 Container (*.mp4)").append(";;");
+		types += tr("H.264 Elementary Stream (*.264)");
 
-		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), VALID_DIR(initialDir_out) ? initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation), filters, NULL, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
+		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), VALID_DIR(initialDir_out) ? initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation), types, &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			QString suffix = QFileInfo(filePath).suffix();
-			if(suffix.compare("mkv", Qt::CaseInsensitive) && suffix.compare("mp4", Qt::CaseInsensitive) && suffix.compare("264", Qt::CaseInsensitive))
+			QRegExp ext("\\(\\*\\.(.+)\\)");
+			if(ext.lastIndexIn(selectedType) >= 0)
 			{
-				filePath = QString("%1.mkv").arg(filePath);
+				QString suffix = QFileInfo(filePath).suffix();
+				if(suffix.compare(ext.cap(1), Qt::CaseInsensitive))
+				{
+					filePath = QString("%1.%2").arg(filePath, ext.cap(1));
+				}
 			}
+
 			editOutput->setText(QDir::toNativeSeparators(filePath));
 			initialDir_out = QFileInfo(filePath).path();
 		}

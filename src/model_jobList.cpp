@@ -248,7 +248,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 	}
 
 	int n = 2;
-	QString jobName = QString("%1 [%2]").arg(QFileInfo(thread->sourceFileName()).completeBaseName(), config);
+	QString jobName = QString("%1 (%2)").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), config);
 
 	forever
 	{
@@ -263,7 +263,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		}
 		if(!unique)
 		{
-			jobName = QString("%1 (%2) [%3]").arg(QFileInfo(thread->sourceFileName()).completeBaseName(), QString::number(n++), config);
+			jobName = QString("%1 %2 (%3)").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), QString::number(n++), config);
 			continue;
 		}
 		break;

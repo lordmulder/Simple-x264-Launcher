@@ -2,10 +2,11 @@
 REM ///////////////////////////////////////////////////////////////////////////
 set "MSVC_PATH=D:\Microsoft Visual Studio 10.0\VC"
 set "NSIS_PATH=E:\NSIS\_Unicode"
-set "QTVC_PATH=E:\QtSDK\4.8.0\MSVC2010"
+set "QTVC_PATH=E:\QtSDK\Desktop\Qt\4.8.0\msvc2010"
 set "UPX3_PATH=E:\UPX"
 REM ///////////////////////////////////////////////////////////////////////////
-call "%QTVC_PATH%\bin\qtvars.bat"
+if exist "%QTVC_PATH%\bin\qtvars.bat" ( call "%QTVC_PATH%\bin\qtvars.bat" )
+if exist "%QTVC_PATH%\bin\qtenv2.bat" ( call "%QTVC_PATH%\bin\qtenv2.bat" )
 call "%MSVC_PATH%\vcvarsall.bat" x86
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD

@@ -100,9 +100,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="gui\win_main.ui">
-      <Filter>Dialogs</Filter>
-    </CustomBuild>
     <CustomBuild Include="src\win_main.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
@@ -135,6 +132,9 @@
     </CustomBuild>
     <CustomBuild Include="src\win_preferences.h">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_main.ui">
+      <Filter>Dialogs</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

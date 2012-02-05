@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>378</width>
-    <height>193</height>
+    <width>379</width>
+    <height>226</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,6 +47,65 @@
           </property>
          </widget>
         </item>
+        <item row="1" column="0" rowspan="6">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>8</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="6" rowspan="6">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>12</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="2" colspan="4">
+         <widget class="QLabel" name="labelRunNextJob">
+          <property name="text">
+           <string>Automatically launch next job when a running job completes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QCheckBox" name="checkRunNextJob">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="5">
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
         <item row="2" column="4">
          <widget class="QSpinBox" name="spinBoxJobCount">
           <property name="enabled">
@@ -69,64 +128,16 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="5">
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+        <item row="4" column="1">
+         <widget class="QCheckBox" name="checkUse64BitAvs2YUV">
+          <property name="toolTip">
+           <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
+Please be aware that this option does NOT have any effect on 32-Bit systems.</string>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>0</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="1">
-         <widget class="QCheckBox" name="checkRunNextJob">
           <property name="text">
            <string/>
           </property>
          </widget>
-        </item>
-        <item row="1" column="2" colspan="4">
-         <widget class="QLabel" name="labelRunNextJob">
-          <property name="text">
-           <string>Automatically launch next job when a running job completes</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="6" rowspan="4">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>12</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="0" rowspan="4">
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>8</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
         <item row="3" column="1" colspan="5">
          <spacer name="verticalSpacer">
@@ -144,14 +155,14 @@
           </property>
          </spacer>
         </item>
-        <item row="4" column="1">
+        <item row="6" column="1">
          <widget class="QCheckBox" name="checkShutdownComputer">
           <property name="text">
            <string/>
           </property>
          </widget>
         </item>
-        <item row="4" column="2" colspan="4">
+        <item row="6" column="2" colspan="4">
          <widget class="QLabel" name="labelShutdownComputer">
           <property name="text">
            <string>Shutdown computer as soon as the last job has completed</string>
@@ -174,7 +185,7 @@
           </property>
          </spacer>
         </item>
-        <item row="5" column="1" colspan="5">
+        <item row="7" column="1" colspan="5">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -186,6 +197,33 @@
            <size>
             <width>20</width>
             <height>12</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="4" column="2" colspan="4">
+         <widget class="QLabel" name="labelUse64BitAvs2YUV">
+          <property name="toolTip">
+           <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
+Please be aware that this option does NOT have any effect on 32-Bit systems.</string>
+          </property>
+          <property name="text">
+           <string>Use 64-Bit Avisynth/Avs2YUV, if running on a 64-Bit machine</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2" colspan="4">
+         <spacer name="verticalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>8</height>
            </size>
           </property>
          </spacer>
@@ -219,7 +257,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Close</string>
+        <string>Apply</string>
        </property>
        <property name="icon">
         <iconset resource="../res/resources.qrc">

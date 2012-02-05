@@ -33,11 +33,14 @@ public:
 		bool autoRunNextJob;
 		unsigned int maxRunningJobCount;
 		bool shutdownComputer;
+		bool useAvisyth64Bit;
 	}
 	Preferences;
 
-	PreferencesDialog(QWidget *parent, Preferences *preferences);
+	PreferencesDialog(QWidget *parent, Preferences *preferences, bool x64);
 	~PreferencesDialog(void);
+
+	const bool m_x64;
 
 	static void loadPreferences(Preferences *preferences);
 	static void savePreferences(Preferences *preferences);

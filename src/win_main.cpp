@@ -169,7 +169,8 @@ void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileT
 			addDialog->outputFile(),
 			m_options,
 			QString("%1/toolset").arg(m_appDir),
-			m_x64supported
+			m_x64supported,
+			m_x64supported && m_preferences.useAvisyth64Bit
 		);
 
 		QModelIndex newIndex = m_jobList->insertJob(thrd);
@@ -363,7 +364,7 @@ void MainWindow::showWebLink(void)
 
 void MainWindow::showPreferences(void)
 {
-	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences);
+	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences, m_x64supported);
 	preferences->exec();
 	X264_DELETE(preferences);
 }
@@ -465,7 +466,7 @@ void MainWindow::shutdownComputer(void)
 
 void MainWindow::init(void)
 {
-	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe";
+	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:avs2yuv_x64.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
 	updateLabel();

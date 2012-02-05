@@ -36,21 +36,6 @@
 #include <QInputDialog>
 #include <QSettings>
 
-static const struct
-{
-	const char *name;
-	const char *fext;
-}
-g_filters[] =
-{
-	{"Avisynth Scripts", "avs"},
-	{"Matroska Files", "mkv"},
-	{"MPEG-4 Part 14 Container", "mp4"},
-	{"Audio Video Interleaved", "avi"},
-	{"Flash Video", "flv"},
-	{NULL, NULL}
-};
-
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
 #define REMOVE_USAFED_ITEM \
@@ -305,7 +290,10 @@ void AddJobDialog::browseButtonClicked(void)
 {
 	if(QObject::sender() == buttonBrowseSource)
 	{
-		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), VALID_DIR(initialDir_src) ? initialDir_src : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation), makeFileFilter(), NULL, QFileDialog::DontUseNativeDialog);
+		QString initDir = VALID_DIR(initialDir_src) ? initialDir_src : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
+		if(!editSource->text().isEmpty()) initDir = QString("%1/%2").arg(initDir, QFileInfo(QDir::fromNativeSeparators(editSource->text())).fileName());
+
+		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initDir, makeFileFilter(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
 			editSource->setText(QDir::toNativeSeparators(filePath));
@@ -315,25 +303,54 @@ void AddJobDialog::browseButtonClicked(void)
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
 	{
-		QString types, selectedType;
-		types += tr("Matroska Files (*.mkv)").append(";;");
-		types += tr("MPEG-4 Part 14 Container (*.mp4)").append(";;");
-		types += tr("H.264 Elementary Stream (*.264)");
+		QString selectedType; QStringList types;
+		types << tr("Matroska Files (*.mkv)");
+		types << tr("MPEG-4 Part 14 Container (*.mp4)");
+		types << tr("H.264 Elementary Stream (*.264)");
 
-		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), VALID_DIR(initialDir_out) ? initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation), types, &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
+		QString initDir = VALID_DIR(initialDir_out) ? initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
+		if(!editOutput->text().isEmpty()) initDir = QString("%1/%2").arg(initDir, QFileInfo(QDir::fromNativeSeparators(editOutput->text())).completeBaseName());
+
+		QRegExp ext("\\(\\*\\.(.+)\\)");
+		for(int i = 0; i < types.count(); i++)
+		{
+			if(ext.lastIndexIn(types.at(i)) >= 0)
+			{
+				if(QFileInfo(initDir).suffix().compare(ext.cap(1), Qt::CaseInsensitive) == 0)
+				{
+					selectedType = types.at(i);
+					break;
+				}
+			}
+		}
+
+		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initDir, types.join(";;"), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			QRegExp ext("\\(\\*\\.(.+)\\)");
-			if(ext.lastIndexIn(selectedType) >= 0)
+			QString suffix = QFileInfo(filePath).suffix();
+			bool hasProperExt = false;
+			for(int i = 0; i < types.count(); i++)
 			{
-				QString suffix = QFileInfo(filePath).suffix();
-				if(suffix.compare(ext.cap(1), Qt::CaseInsensitive))
+				if(ext.lastIndexIn(types.at(i)) >= 0)
 				{
-					filePath = QString("%1.%2").arg(filePath, ext.cap(1));
+					if(suffix.compare(ext.cap(1), Qt::CaseInsensitive) == 0)
+					{
+						hasProperExt = true;
+						break;
+					}
 				}
 			}
-
+			if(!hasProperExt)
+			{
+				if(ext.lastIndexIn(selectedType) >= 0)
+				{
+					if(suffix.compare(ext.cap(1), Qt::CaseInsensitive))
+					{
+						filePath = QString("%1.%2").arg(filePath, ext.cap(1));
+					}
+				}
+			}
 			editOutput->setText(QDir::toNativeSeparators(filePath));
 			initialDir_out = QFileInfo(filePath).path();
 		}
@@ -590,18 +607,35 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 
 QString AddJobDialog::makeFileFilter(void)
 {
+	static const struct
+	{
+		const char *name;
+		const char *fext;
+	}
+	s_filters[] =
+	{
+		{"Avisynth Scripts", "avs"},
+		{"Matroska Files", "mkv"},
+		{"MPEG-4 Part 14 Container", "mp4"},
+		{"Audio Video Interleaved", "avi"},
+		{"Flash Video", "flv"},
+		{"YUV4MPEG2 Stream", "y4m"},
+		{"Uncompresses YUV Data", "yuv"},
+		{NULL, NULL}
+	};
+
 	QString filters("All supported files (");
 
-	for(size_t index = 0; g_filters[index].name && g_filters[index].fext; index++)
+	for(size_t index = 0; s_filters[index].name && s_filters[index].fext; index++)
 	{
-		filters += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(g_filters[index].fext));
+		filters += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(s_filters[index].fext));
 	}
 
 	filters += QString(");;");
 
-	for(size_t index = 0; g_filters[index].name && g_filters[index].fext; index++)
+	for(size_t index = 0; s_filters[index].name && s_filters[index].fext; index++)
 	{
-		filters += QString("%1 (*.%2);;").arg(QString::fromLatin1(g_filters[index].name), QString::fromLatin1(g_filters[index].fext));
+		filters += QString("%1 (*.%2);;").arg(QString::fromLatin1(s_filters[index].name), QString::fromLatin1(s_filters[index].fext));
 	}
 		
 	filters += QString("All files (*.*)");

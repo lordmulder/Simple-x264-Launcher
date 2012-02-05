@@ -369,6 +369,9 @@
              </item>
              <item>
               <widget class="QDoubleSpinBox" name="spinQuantizer">
+               <property name="toolTip">
+                <string>Select the quantizer or CRF value. Smaller value means better quality, but bigger file. Higher value means smaller file, but lower quality. A value of '0' triggers lossless mode.</string>
+               </property>
                <property name="decimals">
                 <number>1</number>
                </property>

@@ -42,11 +42,12 @@ public:
 
 	const bool m_x64;
 
+	static void initPreferences(Preferences *preferences);
 	static void loadPreferences(Preferences *preferences);
 	static void savePreferences(Preferences *preferences);
 
 protected:
-	virtual void accept(void);
+	virtual void done(int n);
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
 
@@ -54,4 +55,7 @@ protected:
 
 private:
 	Preferences *m_preferences;
+
+private slots:
+	void resetButtonPressed(void);
 };

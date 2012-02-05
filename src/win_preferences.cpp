@@ -40,6 +40,8 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, Preferences *preferences, 
 	labelUse64BitAvs2YUV->installEventFilter(this);
 	labelShutdownComputer->installEventFilter(this);
 
+	connect(resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
+
 	m_preferences = preferences;
 }
 
@@ -49,7 +51,7 @@ PreferencesDialog::~PreferencesDialog(void)
 
 void PreferencesDialog::showEvent(QShowEvent *event)
 {
-	QDialog::showEvent(event);
+	if(event) QDialog::showEvent(event);
 	
 	while(checkRunNextJob->isChecked() != m_preferences->autoRunNextJob)
 	{
@@ -98,7 +100,7 @@ void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidge
 	}
 }
 
-void PreferencesDialog::accept(void)
+void PreferencesDialog::done(int n)
 {
 	m_preferences->autoRunNextJob = checkRunNextJob->isChecked();
 	m_preferences->shutdownComputer = checkShutdownComputer->isChecked();
@@ -106,7 +108,27 @@ void PreferencesDialog::accept(void)
 	m_preferences->maxRunningJobCount = spinBoxJobCount->value();
 
 	savePreferences(m_preferences);
-	QDialog::accept();
+	QDialog::done(n);
+}
+
+void PreferencesDialog::resetButtonPressed(void)
+{
+	initPreferences(m_preferences);
+	showEvent(NULL);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Static Functions
+///////////////////////////////////////////////////////////////////////////////
+
+void PreferencesDialog::initPreferences(Preferences *preferences)
+{
+	memset(preferences, 0, sizeof(Preferences));
+
+	preferences->autoRunNextJob = true;
+	preferences->maxRunningJobCount = 1;
+	preferences->shutdownComputer = false;
+	preferences->useAvisyth64Bit = false;
 }
 
 void PreferencesDialog::loadPreferences(Preferences *preferences)
@@ -114,11 +136,14 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
 
+	Preferences defaults;
+	initPreferences(&defaults);
+
 	settings.beginGroup("preferences");
-	preferences->autoRunNextJob = settings.value("auto_run_next_job", QVariant(true)).toBool();
-	preferences->maxRunningJobCount = qBound(1U, settings.value("max_running_job_count", QVariant(1U)).toUInt(), 16U);
-	preferences->shutdownComputer = settings.value("shutdown_computer_on_completion", QVariant(false)).toBool();
-	preferences->useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(false)).toBool();
+	preferences->autoRunNextJob = settings.value("auto_run_next_job", QVariant(defaults.autoRunNextJob)).toBool();
+	preferences->maxRunningJobCount = qBound(1U, settings.value("max_running_job_count", QVariant(defaults.maxRunningJobCount)).toUInt(), 16U);
+	preferences->shutdownComputer = settings.value("shutdown_computer_on_completion", QVariant(defaults.shutdownComputer)).toBool();
+	preferences->useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(defaults.useAvisyth64Bit)).toBool();
 }
 
 void PreferencesDialog::savePreferences(Preferences *preferences)

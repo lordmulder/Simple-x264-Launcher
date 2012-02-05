@@ -249,6 +249,23 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="resetButton">
+       <property name="minimumSize">
+        <size>
+         <width>100</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Reset</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../res/resources.qrc">
+         <normaloff>:/buttons/bomb.png</normaloff>:/buttons/bomb.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="closeButton">
        <property name="minimumSize">
         <size>
@@ -271,8 +288,11 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
  </widget>
  <tabstops>
   <tabstop>closeButton</tabstop>
+  <tabstop>resetButton</tabstop>
   <tabstop>checkRunNextJob</tabstop>
   <tabstop>spinBoxJobCount</tabstop>
+  <tabstop>checkUse64BitAvs2YUV</tabstop>
+  <tabstop>checkShutdownComputer</tabstop>
  </tabstops>
  <resources>
   <include location="../res/resources.qrc"/>

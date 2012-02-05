@@ -65,7 +65,7 @@ MainWindow::MainWindow(bool x64supported)
 	qRegisterMetaType<EncodeThread::JobStatus>("EncodeThread::JobStatus");
 
 	//Load preferences
-	memset(&m_preferences, 0, sizeof(PreferencesDialog::Preferences));
+	PreferencesDialog::initPreferences(&m_preferences);
 	PreferencesDialog::loadPreferences(&m_preferences);
 
 	//Freeze minimum size
@@ -122,8 +122,12 @@ MainWindow::MainWindow(bool x64supported)
 	connect(actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebJarod, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebJEEB, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebAvisynth32, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 	//Create floating label
@@ -362,12 +366,16 @@ void MainWindow::showAbout(void)
 
 void MainWindow::showWebLink(void)
 {
-	if(QObject::sender() == actionWebMulder) QDesktopServices::openUrl(QUrl(home_url));
-	if(QObject::sender() == actionWebX264) QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
-	if(QObject::sender() == actionWebKomisar) QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
-	if(QObject::sender() == actionWebJarod) QDesktopServices::openUrl(QUrl("http://www.x264.nl/"));
-	if(QObject::sender() == actionWebWiki) QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
-	if(QObject::sender() == actionWebBluRay) QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
+	if(QObject::sender() == actionWebMulder)     QDesktopServices::openUrl(QUrl(home_url));
+	if(QObject::sender() == actionWebX264)       QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
+	if(QObject::sender() == actionWebKomisar)    QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
+	if(QObject::sender() == actionWebJarod)      QDesktopServices::openUrl(QUrl("http://www.x264.nl/"));
+	if(QObject::sender() == actionWebJEEB)       QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
+	if(QObject::sender() == actionWebAvisynth32) QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
+	if(QObject::sender() == actionWebAvisynth64) QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
+	if(QObject::sender() == actionWebWiki)       QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
+	if(QObject::sender() == actionWebBluRay)     QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
+	if(QObject::sender() == actionWebSecret)     QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
 }
 
 void MainWindow::showPreferences(void)

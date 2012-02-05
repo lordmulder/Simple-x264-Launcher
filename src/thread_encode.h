@@ -122,7 +122,9 @@ protected:
 	inline void setProgress(unsigned int newProgress);
 	inline void setDetails(const QString &text);
 	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
-	
+	QString pathToLocal(const QString &longPath, bool create = false, bool keep = true);
+
+	//Static functions
 	static QString commandline2string(const QString &program, const QStringList &arguments);
 
 signals:

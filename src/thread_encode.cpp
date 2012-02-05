@@ -32,6 +32,7 @@
 #include <QDir>
 #include <QProcess>
 #include <QMutex>
+#include <QTextCodec>
 
 /*
  * Static vars
@@ -274,7 +275,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 	if(usePipe)
 	{
 		QStringList cmdLine_Avisynth;
-		cmdLine_Avisynth << QDir::toNativeSeparators(m_sourceFileName);
+		cmdLine_Avisynth << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
 		cmdLine_Avisynth << "-";
 		processAvisynth.setStandardOutputProcess(&processEncode);
 
@@ -297,6 +298,8 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 	QRegExp regExpProgress("\\[(\\d+)\\.\\d+%\\].+frames");
 	QRegExp regExpFrameCnt("^(\\d+) frames:");
 	
+	QTextCodec *localCodec = QTextCodec::codecForName("System");
+
 	bool bTimeout = false;
 	bool bAborted = false;
 
@@ -367,7 +370,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 			QList<QByteArray> lines = processEncode.readLine().split('\r');
 			while(!lines.isEmpty())
 			{
-				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				QString text = localCodec->toUnicode(lines.takeFirst().constData()).simplified();
 				int offset = -1;
 				if((offset = regExpProgress.lastIndexIn(text)) >= 0)
 				{
@@ -489,7 +492,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, co
 	if((pass == 1) || (pass == 2))
 	{
 		cmdLine << "--pass" << QString::number(pass);
-		cmdLine << "--stats" << QDir::toNativeSeparators(passLogFile);
+		cmdLine << "--stats" << pathToLocal(QDir::toNativeSeparators(passLogFile), true);
 	}
 
 	cmdLine << "--preset" << m_options->preset().toLower();
@@ -510,7 +513,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, co
 		cmdLine.append(m_options->custom().split(" "));
 	}
 
-	cmdLine << "--output" << QDir::toNativeSeparators(m_outputFileName);
+	cmdLine << "--output" << pathToLocal(QDir::toNativeSeparators(m_outputFileName), true);
 	
 	if(usePipe)
 	{
@@ -521,8 +524,8 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, co
 	}
 	else
 	{
-		cmdLine << "--index" << QDir::toNativeSeparators(indexFile);
-		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
+		cmdLine << "--index" << pathToLocal(QDir::toNativeSeparators(indexFile), true, false);
+		cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
 	}
 
 	return cmdLine;
@@ -730,7 +733,7 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 	QProcess process;
 	
 	QStringList cmdLine = QStringList() << "-frames" << "1";
-	cmdLine << QDir::toNativeSeparators(m_sourceFileName) << "NUL";
+	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
 
 	log("Creating process:");
 	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv"), cmdLine))
@@ -741,6 +744,8 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 	QRegExp regExpInt(": (\\d+)x(\\d+), (\\d+) fps, (\\d+) frames");
 	QRegExp regExpFrc(": (\\d+)x(\\d+), (\\d+)/(\\d+) fps, (\\d+) frames");
 	
+	QTextCodec *localCodec = QTextCodec::codecForName("System");
+
 	bool bTimeout = false;
 	bool bAborted = false;
 
@@ -775,7 +780,7 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 			QList<QByteArray> lines = process.readLine().split('\r');
 			while(!lines.isEmpty())
 			{
-				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				QString text = localCodec->toUnicode(lines.takeFirst().constData()).simplified();
 				int offset = -1;
 				if((offset = regExpInt.lastIndexIn(text)) >= 0)
 				{
@@ -898,6 +903,56 @@ void EncodeThread::setProgress(unsigned int newProgress)
 void EncodeThread::setDetails(const QString &text)
 {
 	emit detailsChanged(m_jobId, text);
+}
+
+QString EncodeThread::pathToLocal(const QString &longPath, bool create, bool keep)
+{
+	QTextCodec *localCodec = QTextCodec::codecForName("System");
+	
+	//Do NOT convert to short, if path can be represented in local Codepage
+	if(localCodec->toUnicode(localCodec->fromUnicode(longPath)).compare(longPath, Qt::CaseInsensitive) == 0)
+	{
+		return longPath;
+	}
+	
+	//Create dummy file, if required (only existing files can have a short path!)
+	QFile tempFile;
+	if((!QFileInfo(longPath).exists()) && create)
+	{
+		tempFile.setFileName(longPath);
+		tempFile.open(QIODevice::WriteOnly);
+	}
+	
+	QString shortPath;
+	DWORD buffSize = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), NULL, NULL);
+	
+	if(buffSize > 0)
+	{
+		wchar_t *buffer = new wchar_t[buffSize];
+		DWORD result = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), buffer, buffSize);
+
+		if(result > 0 && result < buffSize)
+		{
+			shortPath = QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer));
+		}
+
+		delete[] buffer;
+		buffer = NULL;
+	}
+
+	//Remove the dummy file now (FFMS2 fails, if index file does exist but is empty!)
+	if(tempFile.isOpen())
+	{
+		if(!keep) tempFile.remove();
+		tempFile.close();
+	}
+
+	if(shortPath.isEmpty())
+	{
+		log(tr("Warning: Failed to convert path \"%1\" to short!\n").arg(longPath));
+	}
+
+	return (shortPath.isEmpty() ? longPath : shortPath);
 }
 
 bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)

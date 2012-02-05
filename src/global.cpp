@@ -264,7 +264,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
  */
 void x264_init_console(int argc, char* argv[])
 {
-	bool enableConsole = x264_is_prerelease();
+	bool enableConsole = x264_is_prerelease() || X264_DEBUG;
 
 	if(_environ)
 	{

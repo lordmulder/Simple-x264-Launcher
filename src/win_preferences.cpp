@@ -72,40 +72,30 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 
 bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 {
-	if(o == labelRunNextJob && e->type() == QEvent::MouseButtonRelease)
-	{
-		QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(e);
-		if(mouseEvent)
-		{
-			if(qApp->widgetAt(mouseEvent->globalPos()) == labelRunNextJob)
-			{
-				checkRunNextJob->click();
-			}
-		}
-	}
-	if(o == labelUse64BitAvs2YUV && e->type() == QEvent::MouseButtonRelease)
-	{
-		QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(e);
-		if(mouseEvent)
-		{
-			if(qApp->widgetAt(mouseEvent->globalPos()) == labelUse64BitAvs2YUV)
-			{
-				checkUse64BitAvs2YUV->click();
-			}
-		}
-	}
-	if(o == labelShutdownComputer && e->type() == QEvent::MouseButtonRelease)
-	{
-		QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(e);
-		if(mouseEvent)
-		{
-			if(qApp->widgetAt(mouseEvent->globalPos()) == labelShutdownComputer)
-			{
-				checkShutdownComputer->click();
-			}
-		}
-	}
+	emulateMouseEvent(o, e, labelRunNextJob, checkRunNextJob);
+	emulateMouseEvent(o, e, labelShutdownComputer, checkShutdownComputer);
+	emulateMouseEvent(o, e, labelUse64BitAvs2YUV, checkUse64BitAvs2YUV);
 	return false;
+}
+
+void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidget *source, QWidget *target)
+{
+	if(object == source)
+	{
+		if((event->type() == QEvent::MouseButtonPress) || (event->type() == QEvent::MouseButtonRelease))
+		{
+			if(QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event))
+			{
+				qApp->postEvent(target, new QMouseEvent
+				(
+					event->type(),
+					qApp->widgetAt(mouseEvent->globalPos()) == source ? QPoint(1, 1) : QPoint(INT_MAX, INT_MAX),
+					Qt::LeftButton,
+					0, 0
+				));
+			}
+		}
+	}
 }
 
 void PreferencesDialog::accept(void)

@@ -76,7 +76,15 @@ MainWindow::MainWindow(bool x64supported)
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	labelBuildDate->installEventFilter(this);
 	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_x64supported ? "64-Bit" : "32-Bit"));
-	if(x264_is_prerelease()) setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
+	if(X264_DEBUG)
+	{
+		setWindowTitle(QString("%1 | !!! DEBUG VERSION !!!").arg(windowTitle()));
+		setStyleSheet("QMenuBar, QMainWindow { background-color: yellow }");
+	}
+	else if(x264_is_prerelease())
+	{
+		setWindowTitle(QString("%1 | PRE-RELEASE VERSION").arg(windowTitle()));
+	}
 	
 	//Create model
 	m_jobList = new JobListModel();
@@ -539,6 +547,33 @@ void MainWindow::init(void)
 		QTimer::singleShot(5000, btn1, SLOT(hide()));
 		QTimer::singleShot(5000, btn2, SLOT(show()));
 		msgBox.exec();
+	}
+
+	//Add files from command-line
+	bool bAddFile = false;
+	QStringList files, args = qApp->arguments();
+	while(!args.isEmpty())
+	{
+		QString current = args.takeFirst();
+		if(!bAddFile)
+		{
+			bAddFile = (current.compare("--add", Qt::CaseInsensitive) == 0);
+			continue;
+		}
+		if(QFileInfo(current).exists() && QFileInfo(current).isFile())
+		{
+			files << QFileInfo(current).canonicalFilePath();
+		}
+	}
+	if(int totalFiles = files.count())
+	{
+		bool ok = true; int n = 0;
+		while((!files.isEmpty()) && ok)
+		{
+			QString currentFile = files.takeFirst();
+			qDebug("Adding file: %s", currentFile.toUtf8().constData());
+			addButtonPressed(currentFile, n++, totalFiles, &ok);
+		}
 	}
 }
 

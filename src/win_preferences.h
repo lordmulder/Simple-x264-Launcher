@@ -50,6 +50,8 @@ protected:
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
 
+	void emulateMouseEvent(QObject *object, QEvent *event, QWidget *source, QWidget *target);
+
 private:
 	Preferences *m_preferences;
 };

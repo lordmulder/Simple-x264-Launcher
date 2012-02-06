@@ -27,6 +27,12 @@
 #include <QDesktopServices>
 #include <QMouseEvent>
 
+#define UPDATE_CHECKBOX(CHKBOX, VALUE) \
+{ \
+	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->click(); \
+	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->setChecked(VALUE); \
+}
+
 PreferencesDialog::PreferencesDialog(QWidget *parent, Preferences *preferences, bool x64)
 :
 	QDialog(parent),
@@ -53,18 +59,9 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 {
 	if(event) QDialog::showEvent(event);
 	
-	while(checkRunNextJob->isChecked() != m_preferences->autoRunNextJob)
-	{
-		checkRunNextJob->click();
-	}
-	while(checkUse64BitAvs2YUV->isChecked() != m_preferences->useAvisyth64Bit)
-	{
-		checkUse64BitAvs2YUV->click();
-	}
-	while(checkShutdownComputer->isChecked() != m_preferences->shutdownComputer)
-	{
-		checkShutdownComputer->click();
-	}
+	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob);
+	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer);
+	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit);
 	
 	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount);
 	

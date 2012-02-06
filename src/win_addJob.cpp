@@ -60,43 +60,39 @@
 class StringValidator : public QValidator
 {
 public:
-	StringValidator(QLabel *notifier) : m_notifier(notifier) { m_notifier->hide(); }
+	StringValidator(QLabel *notifier)
+	:
+		m_notifier(notifier)
+	{
+		m_notifier->hide();
+	}
 	
 	virtual State validate(QString &input, int &pos) const
 	{
 		bool invalid = false;
 		
-		invalid = invalid || (input.contains(" -B") || input.startsWith("-B"));
-		invalid = invalid || (input.contains(" -o") || input.startsWith("-o"));
-		invalid = invalid || (input.contains(" -h") || input.startsWith("-h"));
-		invalid = invalid || (input.contains(" -p") || input.startsWith("-p"));
+		invalid = invalid || checkParam(input, "B");
+		invalid = invalid || checkParam(input, "o");
+		invalid = invalid || checkParam(input, "h");
+		invalid = invalid || checkParam(input, "p");
+		invalid = invalid || checkParam(input, "q");
 
-		invalid = invalid || input.contains("--fps", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--frames", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--preset", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--tune", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--profile", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--stdin", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--crf", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--bitrate", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--qp", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--pass", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--stats", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--output", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--help", Qt::CaseInsensitive);
-		invalid = invalid || input.contains("--quiet", Qt::CaseInsensitive);
+		invalid = invalid || checkParam(input, "fps");
+		invalid = invalid || checkParam(input, "frames");
+		invalid = invalid || checkParam(input, "preset");
+		invalid = invalid || checkParam(input, "tune");
+		invalid = invalid || checkParam(input, "profile");
+		invalid = invalid || checkParam(input, "stdin");
+		invalid = invalid || checkParam(input, "crf");
+		invalid = invalid || checkParam(input, "bitrate");
+		invalid = invalid || checkParam(input, "qp");
+		invalid = invalid || checkParam(input, "pass");
+		invalid = invalid || checkParam(input, "stats");
+		invalid = invalid || checkParam(input, "output");
+		invalid = invalid || checkParam(input, "help");
+		invalid = invalid || checkParam(input, "quiet");
 
-		if(invalid)
-		{
-			MessageBeep(MB_ICONWARNING);
-			if(m_notifier->isHidden())
-			{
-				m_notifier->show();
-				QTimer::singleShot(1000, m_notifier, SLOT(hide()));
-			}
-		}
-
-		return invalid ? QValidator::Invalid : QValidator::Acceptable;
+		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 
 	virtual void fixup(QString &input) const
@@ -106,6 +102,46 @@ public:
 
 protected:
 	QLabel *const m_notifier;
+
+	bool checkParam(const QString &input, const QString &param) const
+	{
+		bool flag = false;
+		if(param.length() > 1)
+		{
+			flag = flag || input.contains(QString("--%1 ").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1*").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1?").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1<").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1>").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1/").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1\"").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.contains(QString("--%1\\").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.endsWith(QString("--%1").arg(param), Qt::CaseInsensitive);
+		}
+		else
+		{
+			flag = flag || input.contains(QString(" -%1").arg(param));
+			flag = flag || input.contains(QString("*-%1").arg(param));
+			flag = flag || input.contains(QString("?-%1").arg(param));
+			flag = flag || input.contains(QString("<-%1").arg(param));
+			flag = flag || input.contains(QString(">-%1").arg(param));
+			flag = flag || input.contains(QString("/-%1").arg(param));
+			flag = flag || input.contains(QString("\"-%1").arg(param));
+			flag = flag || input.contains(QString("\\-%1").arg(param));
+			flag = flag || input.startsWith(QString("-%1").arg(param));
+		}
+		if(flag)
+		{
+			MessageBeep(MB_ICONWARNING);
+			m_notifier->setText(tr("Invalid parameter entered: %1").arg((param.length() > 1) ? QString("--%1").arg(param) : QString("-%1").arg(param)));
+			if(m_notifier->isHidden()) m_notifier->show();
+		}
+		else
+		{
+			if(m_notifier->isVisible()) m_notifier->hide();
+		}
+		return flag;
+	}
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -204,6 +240,8 @@ void AddJobDialog::showEvent(QShowEvent *event)
 		generateOutputFileName(QDir::fromNativeSeparators(editSource->text()));
 		buttonAccept->setFocus();
 	}
+
+	labelNotification->hide();
 }
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
@@ -241,36 +279,39 @@ void AddJobDialog::accept(void)
 	
 	if(editOutput->text().trimmed().isEmpty())
 	{
-		QMessageBox::warning(this, tr("Not Selected!"), tr("Please select a valid output file first!"));
+		QMessageBox::warning(this, tr("Not Selected!"), tr("<nobr>Please select a valid output file first!</nobr>"));
 		return;
 	}
 
 	QFileInfo sourceFile = QFileInfo(editSource->text());
 	if(!(sourceFile.exists() && sourceFile.isFile()))
 	{
-		QMessageBox::warning(this, tr("Not Found!"), tr("The selected source file could not be found!"));
+		QMessageBox::warning(this, tr("Not Found!"), tr("<nobr>The selected source file could not be found!</nobr>"));
 		return;
 	}
 
 	QFileInfo outputDir = QFileInfo(QFileInfo(editOutput->text()).path());
 	if(!(outputDir.exists() && outputDir.isDir() && outputDir.isWritable()))
 	{
-		QMessageBox::warning(this, tr("Not Writable!"), tr("Output directory does not exist or is not writable!"));
+		QMessageBox::warning(this, tr("Not Writable!"), tr("<nobr>Output directory does not exist or is not writable!</nobr>"));
 		return;
 	}
 
 	QFileInfo outputFile = QFileInfo(editOutput->text());
 	if(outputFile.exists() && outputFile.isFile())
 	{
-		if(QMessageBox::question(this, tr("Already Exists!"), tr("Output file already exists! Overwrite?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes)
-		{
-			return;
-		}
+		int ret = QMessageBox::question(this, tr("Already Exists!"), tr("<nobr>Output file already exists! Overwrite?</nobr>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+		if(ret != QMessageBox::Yes) return;
 	}
 	if(outputFile.exists() && (!outputFile.isFile()))
 	{
-		QMessageBox::warning(this, tr("Not a File!"), tr("Selected output files does not appear to be a file!"));
+		QMessageBox::warning(this, tr("Not a File!"), tr("<nobr>Selected output files does not appear to be a file!</nobr>"));
 		return;
+	}
+	if(!editCustomParams->hasAcceptableInput())
+	{
+		int ret = QMessageBox::warning(this, tr("Invalid Params"), tr("<nobr>Your custom parameters are invalid and will be discarded!</nobr>"), QMessageBox::Ignore | QMessageBox::Cancel, QMessageBox::Cancel);
+		if(ret != QMessageBox::Ignore) return;
 	}
 
 	//Save directories
@@ -603,7 +644,7 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setPreset(cbxPreset->model()->data(cbxPreset->model()->index(cbxPreset->currentIndex(), 0)).toString());
 	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
 	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
-	options->setCustom(editCustomParams->text().simplified());
+	options->setCustom(editCustomParams->hasAcceptableInput() ? editCustomParams->text().simplified() : QString());
 }
 
 QString AddJobDialog::makeFileFilter(void)

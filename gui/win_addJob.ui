@@ -833,6 +833,9 @@
                  <bold>true</bold>
                 </font>
                </property>
+               <property name="toolTip">
+                <string>Your custom parameters will be ignored entirely, if you don't fix them!</string>
+               </property>
                <property name="text">
                 <string>Invalid parameter entered!</string>
                </property>

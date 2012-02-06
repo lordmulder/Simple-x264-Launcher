@@ -59,6 +59,15 @@ QMutex EncodeThread::m_mutex_startProcess;
 	} \
 }
 
+#define APPEND_AND_CLEAR(LIST, STR) \
+{ \
+	if(!((STR).isEmpty())) \
+	{ \
+		(LIST) << (STR); \
+		(STR).clear(); \
+	} \
+}
+
 /*
  * Static vars
  */
@@ -509,8 +518,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, co
 
 	if(!m_options->custom().isEmpty())
 	{
-		//FIXME: Handle custom parameters that contain withspaces within quotes!
-		cmdLine.append(m_options->custom().split(" "));
+		cmdLine.append(splitParams(m_options->custom()));
 	}
 
 	cmdLine << "--output" << pathToLocal(QDir::toNativeSeparators(m_outputFileName), true);
@@ -1025,4 +1033,33 @@ QString EncodeThread::commandline2string(const QString &program, const QStringLi
 	}
 
 	return commandline;
+}
+
+QStringList EncodeThread::splitParams(const QString &params)
+{
+	QStringList list; 
+	bool isQuoted = false;
+	QString temp;
+
+	for(int i = 0; i < params.length(); i++)
+	{
+		const QChar c = params.at(i);
+
+		if(c == QChar::fromLatin1('"'))
+		{
+			APPEND_AND_CLEAR(list, temp);
+			isQuoted = (!isQuoted);
+			continue;
+		}
+		else if((!isQuoted) && (c == QChar::fromLatin1(' ')))
+		{
+			APPEND_AND_CLEAR(list, temp);
+			continue;
+		}
+		
+		temp.append(c);
+	}
+	
+	APPEND_AND_CLEAR(list, temp);
+	return list;
 }

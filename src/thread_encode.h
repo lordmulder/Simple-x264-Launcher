@@ -126,6 +126,7 @@ protected:
 
 	//Static functions
 	static QString commandline2string(const QString &program, const QStringList &arguments);
+	static QStringList splitParams(const QString &params);
 
 signals:
 	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);

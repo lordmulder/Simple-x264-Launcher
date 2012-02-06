@@ -62,6 +62,12 @@ static int x264_main(int argc, char* argv[])
 	qDebug("CPU capabilities  :  MMX: %s, SSE: %s, SSE2: %s, SSE3: %s, SSSE3: %s, x64: %s", X264_BOOL(cpuFeatures.mmx), X264_BOOL(cpuFeatures.sse), X264_BOOL(cpuFeatures.sse2), X264_BOOL(cpuFeatures.sse3), X264_BOOL(cpuFeatures.ssse3), X264_BOOL(cpuFeatures.x64));
 	qDebug(" Number of CPU's  :  %d\n", cpuFeatures.count);
 	
+	//Make sure this CPU can run x264
+	if(!(cpuFeatures.mmx && cpuFeatures.sse))
+	{
+		qFatal("Sorry, but this machine is not physically capable of running x264. Please get a CPU that supports at least the MMX and ISSE instruction sets!");
+	}
+
 	//Initialize Qt
 	if(!x264_init_qt(argc, argv))
 	{

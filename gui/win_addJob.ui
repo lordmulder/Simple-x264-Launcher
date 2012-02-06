@@ -789,6 +789,35 @@
               </spacer>
              </item>
              <item>
+              <widget class="QLabel" name="iconNotification">
+               <property name="toolTip">
+                <string>Your custom parameters will be ignored entirely, if you don't fix them!</string>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="pixmap">
+                <pixmap resource="../res/resources.qrc">:/buttons/error.png</pixmap>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_10">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Fixed</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>6</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
               <widget class="QLabel" name="labelNotification">
                <property name="palette">
                 <palette>
@@ -913,6 +942,11 @@
            </item>
            <item>
             <widget class="QLineEdit" name="editCustomParams">
+             <property name="font">
+              <font>
+               <family>Lucida Console</family>
+              </font>
+             </property>
              <property name="toolTip">
               <string>All command-line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.</string>
              </property>

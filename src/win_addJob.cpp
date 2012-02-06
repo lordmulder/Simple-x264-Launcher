@@ -60,37 +60,25 @@
 class StringValidator : public QValidator
 {
 public:
-	StringValidator(QLabel *notifier)
+	StringValidator(QLabel *notifier, QLabel *icon)
 	:
-		m_notifier(notifier)
+		m_notifier(notifier), m_icon(icon)
 	{
 		m_notifier->hide();
+		m_icon->hide();
 	}
 	
 	virtual State validate(QString &input, int &pos) const
 	{
-		bool invalid = false;
-		
-		invalid = invalid || checkParam(input, "B");
-		invalid = invalid || checkParam(input, "o");
-		invalid = invalid || checkParam(input, "h");
-		invalid = invalid || checkParam(input, "p");
-		invalid = invalid || checkParam(input, "q");
+		static const char* p[] = {"B", "o", "h", "p", "q", "fps", "frames", "preset", "tune", "profile",
+			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help","quiet", NULL};
 
-		invalid = invalid || checkParam(input, "fps");
-		invalid = invalid || checkParam(input, "frames");
-		invalid = invalid || checkParam(input, "preset");
-		invalid = invalid || checkParam(input, "tune");
-		invalid = invalid || checkParam(input, "profile");
-		invalid = invalid || checkParam(input, "stdin");
-		invalid = invalid || checkParam(input, "crf");
-		invalid = invalid || checkParam(input, "bitrate");
-		invalid = invalid || checkParam(input, "qp");
-		invalid = invalid || checkParam(input, "pass");
-		invalid = invalid || checkParam(input, "stats");
-		invalid = invalid || checkParam(input, "output");
-		invalid = invalid || checkParam(input, "help");
-		invalid = invalid || checkParam(input, "quiet");
+		bool invalid = false;
+
+		for(size_t i = 0; p[i] && (!invalid); i++)
+		{
+			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]));
+		}
 
 		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
 	}
@@ -101,44 +89,45 @@ public:
 	}
 
 protected:
-	QLabel *const m_notifier;
+	QLabel *const m_notifier, *const m_icon;
 
 	bool checkParam(const QString &input, const QString &param) const
 	{
+		static const char c[20] = {' ', '*', '?', '<', '>', '/', '\\', '"', '\'', '!', '+', '#', '&', '%', '=', ',', ';', '.', '´', '`'};
+		
 		bool flag = false;
 		if(param.length() > 1)
 		{
-			flag = flag || input.contains(QString("--%1 ").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1*").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1?").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1<").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1>").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1/").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1\"").arg(param), Qt::CaseInsensitive);
-			flag = flag || input.contains(QString("--%1\\").arg(param), Qt::CaseInsensitive);
 			flag = flag || input.endsWith(QString("--%1").arg(param), Qt::CaseInsensitive);
+			for(size_t i = 0; i < sizeof(c); i++)
+			{
+				flag = flag || input.contains(QString("--%1%2").arg(param, QChar::fromLatin1(c[i])), Qt::CaseInsensitive);
+			}
 		}
 		else
 		{
-			flag = flag || input.contains(QString(" -%1").arg(param));
-			flag = flag || input.contains(QString("*-%1").arg(param));
-			flag = flag || input.contains(QString("?-%1").arg(param));
-			flag = flag || input.contains(QString("<-%1").arg(param));
-			flag = flag || input.contains(QString(">-%1").arg(param));
-			flag = flag || input.contains(QString("/-%1").arg(param));
-			flag = flag || input.contains(QString("\"-%1").arg(param));
-			flag = flag || input.contains(QString("\\-%1").arg(param));
 			flag = flag || input.startsWith(QString("-%1").arg(param));
+			for(size_t i = 0; i < sizeof(c); i++)
+			{
+				flag = flag || input.contains(QString("%1-%2").arg(QChar::fromLatin1(c[i]), param), Qt::CaseSensitive);
+			}
 		}
 		if(flag)
 		{
-			MessageBeep(MB_ICONWARNING);
-			m_notifier->setText(tr("Invalid parameter entered: %1").arg((param.length() > 1) ? QString("--%1").arg(param) : QString("-%1").arg(param)));
-			if(m_notifier->isHidden()) m_notifier->show();
+			if(m_notifier)
+			{
+				m_notifier->setText(tr("Invalid parameter: %1").arg((param.length() > 1) ? QString("--%1").arg(param) : QString("-%1").arg(param)));
+				if(m_notifier->isHidden()) m_notifier->show();
+				if(m_icon) { if(m_icon->isHidden()) m_icon->show(); }
+			}
 		}
 		else
 		{
-			if(m_notifier->isVisible()) m_notifier->hide();
+			if(m_notifier)
+			{
+				if(m_notifier->isVisible()) m_notifier->hide();
+				if(m_icon) { if(m_icon->isVisible()) m_icon->hide(); }
+			}
 		}
 		return flag;
 	}
@@ -180,7 +169,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 
 	//Setup validator
 	editCustomParams->installEventFilter(this);
-	editCustomParams->setValidator(new StringValidator(labelNotification));
+	editCustomParams->setValidator(new StringValidator(labelNotification, iconNotification));
 	editCustomParams->clear();
 
 	//Install event filter
@@ -242,6 +231,7 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	}
 
 	labelNotification->hide();
+	iconNotification->hide();
 }
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)

@@ -516,8 +516,14 @@ x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 		for(int i = 0; i < argc; i++)
 		{
 			if(!_stricmp("--force-cpu-no-64bit", argv[i])) { flag = true; features.x64 = false; }
+			if(!_stricmp("--force-cpu-no-mmx", argv[i])) { flag = true; features.mmx = false; }
 			if(!_stricmp("--force-cpu-no-sse", argv[i])) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
 			if(!_stricmp("--force-cpu-no-intel", argv[i])) { flag = true; features.intel = false; }
+			
+			if(!_stricmp("--force-cpu-have-64bit", argv[i])) { flag = true; features.x64 = true; }
+			if(!_stricmp("--force-cpu-have-mmx", argv[i])) { flag = true; features.mmx = true; }
+			if(!_stricmp("--force-cpu-have-sse", argv[i])) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = true; }
+			if(!_stricmp("--force-cpu-have-intel", argv[i])) { flag = true; features.intel = true; }
 		}
 		if(flag) qWarning("CPU flags overwritten by user-defined parameters. Take care!\n");
 	}

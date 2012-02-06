@@ -84,6 +84,7 @@ public:
 		invalid = invalid || input.contains("--stats", Qt::CaseInsensitive);
 		invalid = invalid || input.contains("--output", Qt::CaseInsensitive);
 		invalid = invalid || input.contains("--help", Qt::CaseInsensitive);
+		invalid = invalid || input.contains("--quiet", Qt::CaseInsensitive);
 
 		if(invalid)
 		{

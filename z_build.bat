@@ -43,19 +43,32 @@ for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\etc\date.exe" +ISODATE:%%Y-%%m-%%d'
 )
 if "%ISO_DATE%"=="" BuildError
 REM ///////////////////////////////////////////////////////////////////////////
-set "NSIS_FILE=%TMP%\~%RANDOM%%RANDOM%.nsi"
-echo !define ZIP2EXE_NAME `Simple x264 Launcher (%ISO_DATE%)` > "%NSIS_FILE%"
-echo !define ZIP2EXE_OUTFILE `%~dp0\bin\x264_x64.%ISO_DATE%.exe` >> "%NSIS_FILE%"
-echo !define ZIP2EXE_COMPRESSOR_LZMA >> "%NSIS_FILE%"
-echo !define ZIP2EXE_INSTALLDIR `$PROGRAMFILES\MuldeR\Simple x264 Launcher v2` >> "%NSIS_FILE%"
-echo !include `${NSISDIR}\Contrib\zip2exe\Base.nsh` >> "%NSIS_FILE%"
-echo !include `${NSISDIR}\Contrib\zip2exe\Modern.nsh` >> "%NSIS_FILE%"
-echo !insertmacro SECTION_BEGIN >> "%NSIS_FILE%"
-echo File /r `%PACK_PATH%\*.*` >> "%NSIS_FILE%"
-echo !insertmacro SECTION_END >> "%NSIS_FILE%"
-"%NSIS_PATH%\makensis.exe" "%NSIS_FILE%"
+set "NSI_FILE=%TMP%\~%RANDOM%%RANDOM%.nsi"
+set "OUT_NAME=x264_x64.%ISO_DATE%"
+set "OUT_PATH=%~dp0\bin"
+set "OUT_FULL=%OUT_PATH%\%OUT_NAME%.exe"
+REM ///////////////////////////////////////////////////////////////////////////
+:GenerateOutfileName
+if exist "%OUT_FULL%" (
+	set "OUT_NAME=%OUT_NAME%.new"
+	set "OUT_FULL=%OUT_PATH%\%OUT_NAME%.exe"
+	goto GenerateOutfileName
+)
+REM ///////////////////////////////////////////////////////////////////////////
+echo !define ZIP2EXE_NAME `Simple x264 Launcher (%ISO_DATE%)` > "%NSI_FILE%"
+echo !define ZIP2EXE_OUTFILE `%OUT_FULL%` >> "%NSI_FILE%"
+echo !define ZIP2EXE_COMPRESSOR_LZMA >> "%NSI_FILE%"
+echo !define ZIP2EXE_INSTALLDIR `$PROGRAMFILES\MuldeR\Simple x264 Launcher v2` >> "%NSI_FILE%"
+echo !include `${NSISDIR}\Contrib\zip2exe\Base.nsh` >> "%NSI_FILE%"
+echo !include `${NSISDIR}\Contrib\zip2exe\Modern.nsh` >> "%NSI_FILE%"
+echo !insertmacro SECTION_BEGIN >> "%NSI_FILE%"
+echo File /r `%PACK_PATH%\*.*` >> "%NSI_FILE%"
+echo !insertmacro SECTION_END >> "%NSI_FILE%"
+REM ///////////////////////////////////////////////////////////////////////////
+"%NSIS_PATH%\makensis.exe" "%NSI_FILE%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-del "%NSIS_FILE%"
+attrib +R "%OUT_FULL%"
+del "%NSI_FILE%"
 rmdir /Q /S "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 echo.

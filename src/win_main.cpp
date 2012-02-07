@@ -21,7 +21,6 @@
 
 #include "win_main.h"
 
-#include "global.h"
 #include "model_jobList.h"
 #include "model_options.h"
 #include "win_addJob.h"
@@ -50,9 +49,9 @@ const char *home_url = "http://mulder.brhack.net/";
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-MainWindow::MainWindow(bool x64supported)
+MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 :
-	m_x64supported(x64supported),
+	m_cpuFeatures(cpuFeatures),
 	m_appDir(QApplication::applicationDirPath()),
 	m_firstShow(true)
 {
@@ -75,7 +74,7 @@ MainWindow::MainWindow(bool x64supported)
 	//Update title
 	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	labelBuildDate->installEventFilter(this);
-	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_x64supported ? "64-Bit" : "32-Bit"));
+	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_cpuFeatures->x64 ? "64-Bit" : "32-Bit"));
 	if(X264_DEBUG)
 	{
 		setWindowTitle(QString("%1 | !!! DEBUG VERSION !!!").arg(windowTitle()));
@@ -131,7 +130,7 @@ MainWindow::MainWindow(bool x64supported)
 	connect(actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 	//Create floating label
-	m_label = new QLabel(jobsView);
+	m_label = new QLabel(jobsView->viewport());
 	m_label->setText(tr("No job created yet. Please click the 'Add New Job' button!"));
 	m_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	SET_TEXT_COLOR(m_label, Qt::darkGray);
@@ -139,8 +138,8 @@ MainWindow::MainWindow(bool x64supported)
 	m_label->setVisible(true);
 	m_label->setContextMenuPolicy(Qt::ActionsContextMenu);
 	m_label->addActions(jobsView->actions());
-	connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabel()));
-	updateLabel();
+	connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
+	updateLabelPos();
 
 	//Create options object
 	m_options = new OptionsModel();
@@ -167,7 +166,7 @@ void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileT
 {
 	if(ok) *ok = false;
 	
-	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_x64supported);
+	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_cpuFeatures->x64);
 	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
 	if((fileNo >= 0) && (fileTotal > 1)) addDialog->setWindowTitle(addDialog->windowTitle().append(tr(" (File %1 of %2)").arg(QString::number(fileNo+1), QString::number(fileTotal))));
 	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
@@ -181,8 +180,8 @@ void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileT
 			addDialog->outputFile(),
 			m_options,
 			QString("%1/toolset").arg(m_appDir),
-			m_x64supported,
-			m_x64supported && m_preferences.useAvisyth64Bit
+			m_cpuFeatures->x64,
+			m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit
 		);
 
 		QModelIndex newIndex = m_jobList->insertJob(thrd);
@@ -380,7 +379,7 @@ void MainWindow::showWebLink(void)
 
 void MainWindow::showPreferences(void)
 {
-	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences, m_x64supported);
+	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences, m_cpuFeatures->x64);
 	preferences->exec();
 	X264_DELETE(preferences);
 }
@@ -485,7 +484,7 @@ void MainWindow::init(void)
 	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:avs2yuv_x64.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
-	updateLabel();
+	updateLabelPos();
 
 	//Check all binaries
 	while(!binaries.isEmpty())
@@ -526,6 +525,20 @@ void MainWindow::init(void)
 		if(rnd != val) { close(); qApp->exit(-1); return; }
 	}
 
+	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
+	if(!(m_cpuFeatures->mmx && m_cpuFeatures->mmx2))
+	{
+		QMessageBox::critical(this, tr("Unsupported CPU"), tr("<nobr>Sorry, but this machine is <b>not</b> physically capable of running x264 (with assembly).<br>Please get a CPU that supports at least the MMX and MMXEXT instruction sets!</nobr>"), tr("Quit"));
+		qFatal("System does not support MMX and MMXEXT, x264 will not work !!!");
+		close(); qApp->exit(-1); return;
+	}
+	else if(!(m_cpuFeatures->mmx && m_cpuFeatures->sse))
+	{
+		qWarning("WARNING: System does not support SSE1, most x264 builds will not work !!!\n");
+		int val = QMessageBox::warning(this, tr("Unsupported CPU"), tr("<nobr>It appears that this machine does <b>not</b> support the SSE1 instruction set.<br>Thus most builds of x264 will <b>not</b> run on this computer at all.<br><br>Please get a CPU that supports the MMX and SSE1 instruction sets!</nobr>"), tr("Quit"), tr("Ignore"));
+		if(val != 1) { close(); qApp->exit(-1); return; }
+	}
+
 	//Check for Avisynth support
 	bool avsAvailable = false;
 	QLibrary *avsLib = new QLibrary("avisynth.dll");
@@ -536,7 +549,7 @@ void MainWindow::init(void)
 	if(!avsAvailable)
 	{
 		avsLib->unload(); X264_DELETE(avsLib);
-		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is not currently installed on your computer.<br>Thus Avisynth input will not be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Thus Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 		if(val != 1) { close(); qApp->exit(-1); return; }
 	}
 
@@ -568,7 +581,7 @@ void MainWindow::init(void)
 			bAddFile = (current.compare("--add", Qt::CaseInsensitive) == 0);
 			continue;
 		}
-		if(QFileInfo(current).exists() && QFileInfo(current).isFile())
+		if((!current.startsWith("--")) && QFileInfo(current).exists() && QFileInfo(current).isFile())
 		{
 			files << QFileInfo(current).canonicalFilePath();
 		}
@@ -585,9 +598,10 @@ void MainWindow::init(void)
 	}
 }
 
-void MainWindow::updateLabel(void)
+void MainWindow::updateLabelPos(void)
 {
-	m_label->setGeometry(0, 0, jobsView->width(), jobsView->height());
+	const QWidget *const viewPort = jobsView->viewport();
+	m_label->setGeometry(0, 0, viewPort->width(), viewPort->height());
 }
 
 void MainWindow::copyLogToClipboard(bool checked)
@@ -653,7 +667,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
 	QMainWindow::resizeEvent(e);
-	updateLabel();
+	updateLabelPos();
 }
 
 bool MainWindow::eventFilter(QObject *o, QEvent *e)

@@ -55,27 +55,12 @@ static int x264_main(int argc, char* argv[])
 	}
 
 	//Detect CPU capabilities
-	x264_cpu_t cpuFeatures = x264_detect_cpu_features(argc, argv);
+	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(argc, argv);
 	qDebug("   CPU vendor id  :  %s (Intel: %s)", cpuFeatures.vendor, X264_BOOL(cpuFeatures.intel));
 	qDebug("CPU brand string  :  %s", cpuFeatures.brand);
 	qDebug("   CPU signature  :  Family: %d, Model: %d, Stepping: %d", cpuFeatures.family, cpuFeatures.model, cpuFeatures.stepping);
 	qDebug("CPU capabilities  :  MMX=%s, MMXEXT=%s, SSE=%s, SSE2=%s, SSE3=%s, SSSE3=%s, X64=%s", X264_BOOL(cpuFeatures.mmx), X264_BOOL(cpuFeatures.mmx2), X264_BOOL(cpuFeatures.sse), X264_BOOL(cpuFeatures.sse2), X264_BOOL(cpuFeatures.sse3), X264_BOOL(cpuFeatures.ssse3), X264_BOOL(cpuFeatures.x64));
 	qDebug(" Number of CPU's  :  %d\n", cpuFeatures.count);
-	
-	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
-	if(!(cpuFeatures.mmx && cpuFeatures.mmx2))
-	{
-		qFatal("Sorry, but this machine is not physically capable of running x264. Please get a CPU that supports at least the MMX and MMXEXT instruction sets!");
-	}
-	else if(!(cpuFeatures.mmx && cpuFeatures.sse))
-	{
-		qWarning("WARNING: System does not support SSE1, most x264 builds will not work !!!\n");
-		for(;;)
-		{
-			int ret = MessageBoxW(NULL, L"BIG FAT WARNING: This machine apparently does NOT support the SSE1 instruction set and thus probably will NOT be able to run x264!", L"Simple x264 Launcher", MB_ABORTRETRYIGNORE|MB_TOPMOST|MB_ICONEXCLAMATION);
-			if(ret == IDIGNORE) break; else if(ret == IDRETRY) continue; else return -1;
-		}
-	}
 
 	//Initialize Qt
 	if(!x264_init_qt(argc, argv))
@@ -87,7 +72,7 @@ static int x264_main(int argc, char* argv[])
 	qApp->setStyle(new QPlastiqueStyle());
 
 	//Create Main Window
-	MainWindow *mainWin = new MainWindow(cpuFeatures.x64);
+	MainWindow *mainWin = new MainWindow(&cpuFeatures);
 	mainWin->show();
 
 	//Run application

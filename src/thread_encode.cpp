@@ -1038,7 +1038,7 @@ QString EncodeThread::commandline2string(const QString &program, const QStringLi
 QStringList EncodeThread::splitParams(const QString &params)
 {
 	QStringList list; 
-	bool isQuoted = false;
+	bool ignoreWhitespaces = false;
 	QString temp;
 
 	for(int i = 0; i < params.length(); i++)
@@ -1047,11 +1047,10 @@ QStringList EncodeThread::splitParams(const QString &params)
 
 		if(c == QChar::fromLatin1('"'))
 		{
-			APPEND_AND_CLEAR(list, temp);
-			isQuoted = (!isQuoted);
+			ignoreWhitespaces = (!ignoreWhitespaces);
 			continue;
 		}
-		else if((!isQuoted) && (c == QChar::fromLatin1(' ')))
+		else if((!ignoreWhitespaces) && (c == QChar::fromLatin1(' ')))
 		{
 			APPEND_AND_CLEAR(list, temp);
 			continue;

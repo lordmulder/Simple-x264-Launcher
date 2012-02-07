@@ -423,7 +423,7 @@ extern "C"
 /*
  * Detect CPU features
  */
-x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
+const x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 {
 	typedef BOOL (WINAPI *IsWow64ProcessFun)(__in HANDLE hProcess, __out PBOOL Wow64Process);
 	typedef VOID (WINAPI *GetNativeSystemInfoFun)(__out LPSYSTEM_INFO lpSystemInfo);

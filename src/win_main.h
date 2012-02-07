@@ -24,6 +24,7 @@
 #include "uic_win_main.h"
 #include "thread_encode.h"
 #include "win_preferences.h"
+#include "global.h"
 
 class JobListModel;
 class OptionsModel;
@@ -34,7 +35,7 @@ class MainWindow: public QMainWindow, private Ui::MainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(bool x64supported);
+	MainWindow(const x264_cpu_t *const cpuFeatures);
 	~MainWindow(void);
 
 protected:
@@ -55,7 +56,7 @@ private:
 	
 	PreferencesDialog::Preferences m_preferences;
 
-	const bool m_x64supported;
+	const x264_cpu_t *const m_cpuFeatures;
 	const QString m_appDir;
 	
 	void updateButtons(EncodeThread::JobStatus status);
@@ -79,5 +80,5 @@ private slots:
 	void showWebLink(void);
 	void shutdownComputer(void);
 	void startButtonPressed(void);
-	void updateLabel(void);
+	void updateLabelPos(void);
 };

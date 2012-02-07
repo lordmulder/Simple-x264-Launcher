@@ -45,6 +45,9 @@
     <ClInclude Include="src\model_options.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\taskbar7.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -100,6 +103,9 @@
     </ClCompile>
     <ClCompile Include="tmp\moc\moc_win_preferences.cpp">
       <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\taskbar7.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

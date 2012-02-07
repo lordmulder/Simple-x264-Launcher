@@ -97,6 +97,7 @@ void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, 
 void x264_message_handler(QtMsgType type, const char *msg);
 unsigned int x264_version_major(void);
 unsigned int x264_version_minor(void);
+unsigned int x264_version_patch(void);
 const QDate &x264_version_date(void);
 bool x264_is_prerelease(void);
 const char *x264_version_time(void);

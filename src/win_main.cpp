@@ -25,6 +25,7 @@
 #include "model_options.h"
 #include "win_addJob.h"
 #include "win_preferences.h"
+#include "taskbar7.h"
 #include "resource.h"
 
 #include <QDate>
@@ -41,6 +42,7 @@
 #include <Mmsystem.h>
 
 const char *home_url = "http://mulder.brhack.net/";
+const char *update_url = "http://code.google.com/p/mulder/downloads/list";
 
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
@@ -259,10 +261,11 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 		connect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
 		logView->actions().first()->setEnabled(true);
 		QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
-	
+
 		progressBar->setValue(m_jobList->getJobProgress(current));
 		editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
 		updateButtons(m_jobList->getJobStatus(current));
+		updateTaskbar(m_jobList->getJobStatus(current), m_jobList->data(m_jobList->index(current.row(), 0, QModelIndex()), Qt::DecorationRole).value<QIcon>());
 	}
 	else
 	{
@@ -271,6 +274,7 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 		progressBar->setValue(0);
 		editDetails->clear();
 		updateButtons(EncodeThread::JobStatus_Undefined);
+		updateTaskbar(EncodeThread::JobStatus_Undefined, QIcon());
 	}
 
 	progressBar->repaint();
@@ -289,6 +293,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			{
 				qDebug("Current job changed status!");
 				updateButtons(status);
+				updateTaskbar(status, m_jobList->data(m_jobList->index(i, 0, QModelIndex()), Qt::DecorationRole).value<QIcon>());
 			}
 			if((status == EncodeThread::JobStatus_Completed) || (status == EncodeThread::JobStatus_Failed))
 			{
@@ -297,18 +302,19 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			}
 		}
 	}
-	else if(topLeft.column() <= 2 && bottomRight.column() >= 2) /*PROGRESS*/
+	if(topLeft.column() <= 2 && bottomRight.column() >= 2) /*PROGRESS*/
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
 			if(i == selected)
 			{
 				progressBar->setValue(m_jobList->getJobProgress(m_jobList->index(i, 0, QModelIndex())));
+				WinSevenTaskbar::setTaskbarProgress(this, progressBar->value(), progressBar->maximum());
 				break;
 			}
 		}
 	}
-	else if(topLeft.column() <= 3 && bottomRight.column() >= 3) /*DETAILS*/
+	if(topLeft.column() <= 3 && bottomRight.column() >= 3) /*DETAILS*/
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
@@ -330,7 +336,7 @@ void MainWindow::showAbout(void)
 {
 	QString text;
 
-	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor());
+	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor(), x264_version_patch());
 	text += QString().sprintf("Copyright (c) 2004-%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
 	text += QString().sprintf("Built on %s at %s with %s for Win-%s.<br><br>", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
 	text += QString().sprintf("This program is free software: you can redistribute it and/or modify<br>");
@@ -338,11 +344,18 @@ void MainWindow::showAbout(void)
 	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
 	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", home_url, home_url);
 
+	QMessageBox aboutBox(this);
+	aboutBox.setIconPixmap(QIcon(":/images/movie.png").pixmap(64,64));
+	aboutBox.setWindowTitle(tr("About..."));
+	aboutBox.setText(text.replace("-", "&minus;"));
+	aboutBox.addButton(tr("About x264"), QMessageBox::NoRole);
+	aboutBox.addButton(tr("About Qt"), QMessageBox::NoRole);
+	aboutBox.setEscapeButton(aboutBox.addButton(tr("Close"), QMessageBox::NoRole));
+		
 	forever
 	{
-		int ret = QMessageBox::information(this, tr("About..."), text.replace("-", "&minus;"), tr("About x264"), tr("About Qt"), tr("Close"), 0, 2);
-
-		switch(ret)
+		MessageBeep(MB_ICONINFORMATION);
+		switch(aboutBox.exec())
 		{
 		case 0:
 			{
@@ -351,7 +364,14 @@ void MainWindow::showAbout(void)
 				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
 				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a <u>commercial</u> x264 license!<br></tt></nobr>").arg("http://x264licensing.com/");
-				QMessageBox::information(this, tr("About x264"), text2.replace("-", "&minus;"), tr("Close"));
+
+				QMessageBox x264Box(this);
+				x264Box.setIconPixmap(QIcon(":/images/x264.png").pixmap(48,48));
+				x264Box.setWindowTitle(tr("About x264"));
+				x264Box.setText(text2.replace("-", "&minus;"));
+				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
+				MessageBeep(MB_ICONINFORMATION);
+				x264Box.exec();
 			}
 			break;
 		case 1:
@@ -557,10 +577,10 @@ void MainWindow::init(void)
 	if(x264_version_date().addMonths(6) < QDate::currentDate())
 	{
 		QMessageBox msgBox(this);
-		msgBox.setIcon(QMessageBox::Information);
+		msgBox.setIconPixmap(QIcon(":/images/update.png").pixmap(56,56));
 		msgBox.setWindowTitle(tr("Update Notification"));
 		msgBox.setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
-		msgBox.setText(tr("<nobr><tt>Oups, this version of 'Simple x264 Launcher' is more than 6 months old.<br><br>Please check the official web-site at <a href=\"%1\">%1</a> for updates!<br></tt></nobr>").replace("-", "&minus;").arg(home_url));
+		msgBox.setText(tr("<nobr><tt>Your version of 'Simple x264 Launcher' is more than 6 months old!<br><br>Please download the most recent version from the official web-site at:<br><a href=\"%1\">%1</a><br></tt></nobr>").replace("-", "&minus;").arg(update_url));
 		QPushButton *btn1 = msgBox.addButton(tr("Discard"), QMessageBox::NoRole);
 		QPushButton *btn2 = msgBox.addButton(tr("Discard"), QMessageBox::AcceptRole);
 		btn1->setEnabled(false);
@@ -670,6 +690,9 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 	updateLabelPos();
 }
 
+/*
+ * Event filter
+ */
 bool MainWindow::eventFilter(QObject *o, QEvent *e)
 {
 	if((o == labelBuildDate) && (e->type() == QEvent::MouseButtonPress))
@@ -678,6 +701,14 @@ bool MainWindow::eventFilter(QObject *o, QEvent *e)
 		return true;
 	}
 	return false;
+}
+
+/*
+ * Win32 message filter
+ */
+bool MainWindow::winEvent(MSG *message, long *result)
+{
+	return WinSevenTaskbar::handleWinEvent(message, result);
 }
 
 /*
@@ -782,4 +813,47 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	actionJob_Pause->setChecked(buttonPauseJob->isChecked());
 
 	editDetails->setEnabled(status != EncodeThread::JobStatus_Paused);
+}
+
+
+void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon)
+{
+	qDebug("MainWindow::updateTaskbar(void)");
+
+	switch(status)
+	{
+	case EncodeThread::JobStatus_Undefined:
+		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarNoState);
+		break;
+	case EncodeThread::JobStatus_Aborting:
+	case EncodeThread::JobStatus_Starting:
+	case EncodeThread::JobStatus_Pausing:
+	case EncodeThread::JobStatus_Resuming:
+		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarIndeterminateState);
+		break;
+	case EncodeThread::JobStatus_Aborted:
+	case EncodeThread::JobStatus_Failed:
+		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarErrorState);
+		break;
+	case EncodeThread::JobStatus_Paused:
+		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarPausedState);
+		break;
+	default:
+		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarNormalState);
+		break;
+	}
+
+	switch(status)
+	{
+	case EncodeThread::JobStatus_Aborting:
+	case EncodeThread::JobStatus_Starting:
+	case EncodeThread::JobStatus_Pausing:
+	case EncodeThread::JobStatus_Resuming:
+		break;
+	default:
+		WinSevenTaskbar::setTaskbarProgress(this, progressBar->value(), progressBar->maximum());
+		break;
+	}
+
+	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
 }

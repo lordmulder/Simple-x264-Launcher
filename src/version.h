@@ -19,11 +19,12 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#define VER_X264_MAJOR (2)
-#define VER_X264_MINOR (0)
+#define VER_X264_MAJOR 2
+#define VER_X264_MINOR 0
+#define VER_X264_PATCH 52
 
-#define VER_X264_MINIMUM_REV (2146)
-#define VER_X264_CURRENT_API (120)
-#define VER_X264_AVS2YUV_VER (242)
+#define VER_X264_MINIMUM_REV 2146
+#define VER_X264_CURRENT_API 120
+#define VER_X264_AVS2YUV_VER 242
 
 #define VER_X264_PRE_RELEASE (0)

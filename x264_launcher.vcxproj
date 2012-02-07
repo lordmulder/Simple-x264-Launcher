@@ -71,6 +71,10 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
     <PostBuildEvent>
       <Message>Copy Toolset</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_PATCH "$(SolutionDir)src\version.h" 5</Command>
+      <Message>Update Build Number</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -101,12 +105,10 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PreBuildEvent>
-      <Command>
-      </Command>
+      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_PATCH "$(SolutionDir)src\version.h" 5</Command>
     </PreBuildEvent>
     <PreBuildEvent>
-      <Message>
-      </Message>
+      <Message>Update Build Number</Message>
     </PreBuildEvent>
     <PreLinkEvent>
       <Command>
@@ -227,6 +229,7 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
     </CustomBuild>
     <ClInclude Include="src\model_options.h" />
     <ClInclude Include="src\targetver.h" />
+    <ClInclude Include="src\taskbar7.h" />
     <ClInclude Include="src\version.h" />
     <CustomBuild Include="src\win_main.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -241,6 +244,7 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
     <ClCompile Include="src\model_jobList.cpp" />
     <ClCompile Include="src\model_logFile.cpp" />
     <ClCompile Include="src\model_options.cpp" />
+    <ClCompile Include="src\taskbar7.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
     <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\main.cpp" />

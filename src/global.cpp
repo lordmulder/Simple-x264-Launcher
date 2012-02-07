@@ -74,13 +74,15 @@ static const struct
 {
 	unsigned int ver_major;
 	unsigned int ver_minor;
+	unsigned int ver_patch;
 	const char* ver_date;
 	const char* ver_time;
 }
 g_x264_version =
 {
-	VER_X264_MAJOR,
-	VER_X264_MINOR,
+	(VER_X264_MAJOR),
+	(VER_X264_MINOR),
+	(VER_X264_PATCH),
 	__DATE__,
 	__TIME__
 };
@@ -264,7 +266,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
  */
 void x264_init_console(int argc, char* argv[])
 {
-	bool enableConsole = x264_is_prerelease() || X264_DEBUG;
+	bool enableConsole = x264_is_prerelease() || (X264_DEBUG);
 
 	if(_environ)
 	{
@@ -353,6 +355,11 @@ unsigned int x264_version_major(void)
 unsigned int x264_version_minor(void)
 {
 	return g_x264_version.ver_minor;
+}
+
+unsigned int x264_version_patch(void)
+{
+	return g_x264_version.ver_patch;
 }
 
 const char *x264_version_compiler(void)

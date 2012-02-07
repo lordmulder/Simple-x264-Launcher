@@ -45,6 +45,7 @@ protected:
 	virtual bool eventFilter(QObject *o, QEvent *e);
 	virtual void dragEnterEvent(QDragEnterEvent *event);
 	virtual void dropEvent(QDropEvent *event);
+	virtual bool winEvent(MSG *message, long *result);
 
 private:
 	bool m_firstShow;
@@ -60,6 +61,7 @@ private:
 	const QString m_appDir;
 	
 	void updateButtons(EncodeThread::JobStatus status);
+	void updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon);
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
 

@@ -19,6 +19,9 @@
     <Filter Include="Generated Files">
       <UniqueIdentifier>{961e9f99-8107-45a2-984d-188819a67e8e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assembly">
+      <UniqueIdentifier>{2c9c8836-2259-4412-894e-7cc32bef99de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -141,5 +144,10 @@
     <ResourceCompile Include="x264_launcher.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="asm\cpu-detect.obj">
+      <Filter>Assembly</Filter>
+    </Object>
   </ItemGroup>
 </Project>

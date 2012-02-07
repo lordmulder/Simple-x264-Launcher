@@ -413,6 +413,14 @@ bool x264_is_prerelease(void)
 }
 
 /*
+ * CPUID prototype (actual function is in ASM code)
+ */
+extern "C"
+{
+	void x264_cpu_cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx);
+}
+
+/*
  * Detect CPU features
  */
 x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
@@ -425,7 +433,7 @@ x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 
 	x264_cpu_t features;
 	SYSTEM_INFO systemInfo;
-	int CPUInfo[4] = {-1};
+	unsigned int CPUInfo[4];
 	char CPUIdentificationString[0x40];
 	char CPUBrandString[0x40];
 
@@ -434,42 +442,49 @@ x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 	memset(CPUIdentificationString, 0, sizeof(CPUIdentificationString));
 	memset(CPUBrandString, 0, sizeof(CPUBrandString));
 	
-	__cpuid(CPUInfo, 0);
-	memcpy(CPUIdentificationString, &CPUInfo[1], sizeof(int));
-	memcpy(CPUIdentificationString + 4, &CPUInfo[3], sizeof(int));
-	memcpy(CPUIdentificationString + 8, &CPUInfo[2], sizeof(int));
+	x264_cpu_cpuid(0, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
+	memcpy(CPUIdentificationString, &CPUInfo[1], 4);
+	memcpy(CPUIdentificationString + 4, &CPUInfo[3], 4);
+	memcpy(CPUIdentificationString + 8, &CPUInfo[2], 4);
 	features.intel = (_stricmp(CPUIdentificationString, "GenuineIntel") == 0);
 	strncpy_s(features.vendor, 0x40, CPUIdentificationString, _TRUNCATE);
 
 	if(CPUInfo[0] >= 1)
 	{
-		__cpuid(CPUInfo, 1);
-		features.mmx = (CPUInfo[3] & 0x800000) || false;
-		features.sse = (CPUInfo[3] & 0x2000000) || false;
-		features.sse2 = (CPUInfo[3] & 0x4000000) || false;
-		features.ssse3 = (CPUInfo[2] & 0x200) || false;
-		features.sse3 = (CPUInfo[2] & 0x1) || false;
-		features.ssse3 = (CPUInfo[2] & 0x200) || false;
+		x264_cpu_cpuid(1, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
+		features.mmx = (CPUInfo[3] & 0x800000U) || false;
+		features.sse = (CPUInfo[3] & 0x2000000U) || false;
+		features.sse2 = (CPUInfo[3] & 0x4000000U) || false;
+		features.ssse3 = (CPUInfo[2] & 0x200U) || false;
+		features.sse3 = (CPUInfo[2] & 0x1U) || false;
+		features.ssse3 = (CPUInfo[2] & 0x200U) || false;
 		features.stepping = CPUInfo[0] & 0xf;
 		features.model = ((CPUInfo[0] >> 4) & 0xf) + (((CPUInfo[0] >> 16) & 0xf) << 4);
 		features.family = ((CPUInfo[0] >> 8) & 0xf) + ((CPUInfo[0] >> 20) & 0xff);
+		if(features.sse) features.mmx2 = true; //MMXEXT is a subset of SSE!
 	}
 
-	__cpuid(CPUInfo, 0x80000000);
-	int nExIds = qMax<int>(qMin<int>(CPUInfo[0], 0x80000004), 0x80000000);
+	x264_cpu_cpuid(0x80000000U, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
+	unsigned int nExIds = qBound(0x80000000U, CPUInfo[0], 0x80000004U);
 
-	for(int i = 0x80000002; i <= nExIds; ++i)
+	if((_stricmp(CPUIdentificationString, "AuthenticAMD") == 0) && (nExIds >= 0x80000001U))
 	{
-		__cpuid(CPUInfo, i);
+		x264_cpu_cpuid(0x80000001U, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
+		features.mmx2 = features.mmx2 || (CPUInfo[3] & 0x00400000U);
+	}
+
+	for(unsigned int i = 0x80000002U; i <= nExIds; ++i)
+	{
+		x264_cpu_cpuid(i, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
 		switch(i)
 		{
-		case 0x80000002:
+		case 0x80000002U:
 			memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
 			break;
-		case 0x80000003:
+		case 0x80000003U:
 			memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
 			break;
-		case 0x80000004:
+		case 0x80000004U:
 			memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
 			break;
 		}
@@ -517,11 +532,13 @@ x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 		{
 			if(!_stricmp("--force-cpu-no-64bit", argv[i])) { flag = true; features.x64 = false; }
 			if(!_stricmp("--force-cpu-no-mmx", argv[i])) { flag = true; features.mmx = false; }
+			if(!_stricmp("--force-cpu-no-mmx2", argv[i])) { flag = true; features.mmx2 = false; }
 			if(!_stricmp("--force-cpu-no-sse", argv[i])) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
 			if(!_stricmp("--force-cpu-no-intel", argv[i])) { flag = true; features.intel = false; }
 			
 			if(!_stricmp("--force-cpu-have-64bit", argv[i])) { flag = true; features.x64 = true; }
 			if(!_stricmp("--force-cpu-have-mmx", argv[i])) { flag = true; features.mmx = true; }
+			if(!_stricmp("--force-cpu-have-mmx2", argv[i])) { flag = true; features.mmx2 = true; }
 			if(!_stricmp("--force-cpu-have-sse", argv[i])) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = true; }
 			if(!_stricmp("--force-cpu-have-intel", argv[i])) { flag = true; features.intel = true; }
 		}

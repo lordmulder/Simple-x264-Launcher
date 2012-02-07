@@ -78,6 +78,7 @@ typedef struct
 	int count;
 	bool x64;
 	bool mmx;
+	bool mmx2;
 	bool sse;
 	bool sse2;
 	bool sse3;

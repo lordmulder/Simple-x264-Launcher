@@ -260,6 +260,9 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
   <ItemGroup>
     <ResourceCompile Include="x264_launcher.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Object Include="asm\cpu-detect.obj" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -73,7 +73,10 @@ static int x264_main(int argc, char* argv[])
 	WinSevenTaskbar::init();
 
 	//Set style
-	qApp->setStyle(new QPlastiqueStyle());
+	if(!qApp->arguments().contains("--no-style", Qt::CaseInsensitive))
+	{
+		qApp->setStyle(new QPlastiqueStyle());
+	}
 
 	//Create Main Window
 	MainWindow *mainWin = new MainWindow(&cpuFeatures);

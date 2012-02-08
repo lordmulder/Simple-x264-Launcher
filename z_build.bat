@@ -24,6 +24,7 @@ mkdir "%PACK_PATH%\imageformats"
 mkdir "%PACK_PATH%\toolset"
 copy "%~dp0\bin\Release\*.exe" "%PACK_PATH%"
 copy "%~dp0\bin\Release\toolset\*.exe" "%PACK_PATH%\toolset"
+copy "%~dp0\*.txt" "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 copy "%MSVC_PATH%\redist\x86\Microsoft.VC100.CRT\*.dll" "%PACK_PATH%"
 copy "%QTVC_PATH%\bin\QtCore4.dll" "%PACK_PATH%"

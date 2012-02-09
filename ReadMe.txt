@@ -23,6 +23,7 @@ parallel. Or you can let them run in sequence - one by one.
 This program runs on Windows XP with Service Pack 2 and later.
 64-Bit Windows is highly recommended, but 32-Bit Windows works as well.
 The CPU should support at least the MMX and SSE1 instruction sets.
+Avisynth 2.5.x must be installed in order to use Avisynth (.avs) input.
 
 
 3. Anti-Virus Warning

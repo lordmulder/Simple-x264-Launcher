@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Simple x264 Launcher
+// LameXP - Audio Encoder Front-End
 // Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
@@ -19,12 +19,41 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 0
-#define VER_X264_PATCH 61
+#pragma once
 
-#define VER_X264_MINIMUM_REV 2146
-#define VER_X264_CURRENT_API 120
-#define VER_X264_AVS2YUV_VER 242
+#include "global.h"
 
-#define VER_X264_PRE_RELEASE (0)
+class QWidget;
+class QIcon;
+struct ITaskbarList3;
+
+class WinSevenTaskbar
+{
+public:
+	WinSevenTaskbar(void);
+	~WinSevenTaskbar(void);
+
+	//Taskbar states
+	enum WinSevenTaskbarState
+	{
+		WinSevenTaskbarNoState = 0,
+		WinSevenTaskbarNormalState = 1,
+		WinSevenTaskbarIndeterminateState = 2,
+		WinSevenTaskbarPausedState = 3,
+		WinSevenTaskbarErrorState = 4
+	};
+	
+	//Public interface
+	static bool handleWinEvent(MSG *message, long *result);
+	static bool setTaskbarState(QWidget *window, WinSevenTaskbarState state);
+	static void setTaskbarProgress(QWidget *window, unsigned __int64 currentValue, unsigned __int64 maximumValue);
+	static void setOverlayIcon(QWidget *window, const QIcon *icon);
+
+	static void init(void);
+	static void uninit(void);
+
+private:
+	static ITaskbarList3 *m_ptbl;
+	static UINT m_winMsg;
+	static void createInterface(void);
+};

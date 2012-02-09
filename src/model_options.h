@@ -63,6 +63,7 @@ public:
 	//Static functions
 	static QString rcMode2String(RCMode mode);
 	static bool saveTemplate(OptionsModel *model, const QString &name);
+	static bool loadTemplate(OptionsModel *model, const QString &name);
 	static QMap<QString, OptionsModel*> loadAllTemplates(void);
 	static bool templateExists(const QString &name);
 	static bool deleteTemplate(const QString &name);

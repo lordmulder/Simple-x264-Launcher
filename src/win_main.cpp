@@ -43,6 +43,7 @@
 
 const char *home_url = "http://mulder.brhack.net/";
 const char *update_url = "http://code.google.com/p/mulder/downloads/list";
+const char *tpl_last = "<LAST_USED>";
 
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
@@ -68,6 +69,10 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Load preferences
 	PreferencesDialog::initPreferences(&m_preferences);
 	PreferencesDialog::loadPreferences(&m_preferences);
+
+	//Create options object
+	m_options = new OptionsModel();
+	OptionsModel::loadTemplate(m_options, QString::fromLatin1(tpl_last));
 
 	//Freeze minimum size
 	setMinimumSize(size());
@@ -142,13 +147,12 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_label->addActions(jobsView->actions());
 	connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
 	updateLabelPos();
-
-	//Create options object
-	m_options = new OptionsModel();
 }
 
 MainWindow::~MainWindow(void)
 {
+	OptionsModel::saveTemplate(m_options, QString::fromLatin1(tpl_last));
+	
 	X264_DELETE(m_jobList);
 	X264_DELETE(m_options);
 	X264_DELETE(m_label);

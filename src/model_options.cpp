@@ -21,6 +21,8 @@
 
 #include "model_options.h"
 
+#include "global.h"
+
 #include <QDesktopServices>
 #include <QSettings>
 #include <QStringList>
@@ -82,7 +84,7 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 	const QString templateName = name.simplified();
 	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 
-	if(templateName.contains('<') || templateName.contains('>') || templateName.contains('\\') || templateName.contains('/'))
+	if(templateName.contains('\\') || templateName.contains('/'))
 	{
 		return false;
 	}
@@ -104,6 +106,42 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 	return true;
 }
 
+bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
+{
+	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	
+	if(name.contains('\\') || name.contains('/'))
+	{
+		return false;
+	}
+	
+	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
+	settings.beginGroup(name);
+
+	bool complete = true;
+	if(!settings.contains("rate_control_mode")) complete = false;
+	if(!settings.contains("target_bitrate")) complete = false;
+	if(!settings.contains("target_quantizer")) complete = false;
+	if(!settings.contains("preset_name")) complete = false;
+	if(!settings.contains("tuning_name")) complete = false;
+	if(!settings.contains("profile_name")) complete = false;
+	if(!settings.contains("custom_params")) complete = false;
+
+	if(complete)
+	{
+		model->setRCMode(static_cast<OptionsModel::RCMode>(settings.value("rate_control_mode", model->m_rcMode).toInt()));
+		model->setBitrate(settings.value("target_bitrate", model->m_bitrate).toUInt());
+		model->setQuantizer(settings.value("target_quantizer", model->m_quantizer).toDouble());
+		model->setPreset(settings.value("preset_name", model->m_preset).toString());
+		model->setTune(settings.value("tuning_name", model->m_tune).toString());
+		model->setProfile(settings.value("profile_name", model->m_profile).toString());
+		model->setCustom(settings.value("custom_params", model->m_custom).toString());
+	}
+
+	settings.endGroup();
+	return complete;
+}
+
 QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
 {
 	QMap<QString, OptionsModel*> list;
@@ -113,31 +151,17 @@ QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
 
 	while(!allTemplates.isEmpty())
 	{
-		settings.beginGroup(allTemplates.takeFirst());
-
-		bool complete = true;
-		if(!settings.contains("rate_control_mode")) complete = false;
-		if(!settings.contains("target_bitrate")) complete = false;
-		if(!settings.contains("target_quantizer")) complete = false;
-		if(!settings.contains("preset_name")) complete = false;
-		if(!settings.contains("tuning_name")) complete = false;
-		if(!settings.contains("profile_name")) complete = false;
-		if(!settings.contains("custom_params")) complete = false;
-
-		if(complete)
+		QString name = allTemplates.takeFirst();
+		if(!(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/')))
 		{
 			OptionsModel *options = new OptionsModel();
-			options->setRCMode(static_cast<OptionsModel::RCMode>(settings.value("rate_control_mode", options->m_rcMode).toInt()));
-			options->setBitrate(settings.value("target_bitrate", options->m_bitrate).toUInt());
-			options->setQuantizer(settings.value("target_quantizer", options->m_quantizer).toDouble());
-			options->setPreset(settings.value("preset_name", options->m_preset).toString());
-			options->setTune(settings.value("tuning_name", options->m_tune).toString());
-			options->setProfile(settings.value("profile_name", options->m_profile).toString());
-			options->setCustom(settings.value("custom_params", options->m_custom).toString());
-			list.insert(settings.group(), options);
+			if(loadTemplate(options, name))
+			{
+				list.insert(name, options);
+				continue;
+			}
+			X264_DELETE(options);
 		}
-
-		settings.endGroup();
 	}
 
 	return list;

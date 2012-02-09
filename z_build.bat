@@ -62,6 +62,7 @@ mkdir "%PACK_PATH%\imageformats"
 mkdir "%PACK_PATH%\toolset"
 copy "%~dp0\bin\Release\*.exe" "%PACK_PATH%"
 copy "%~dp0\bin\Release\toolset\*.exe" "%PACK_PATH%\toolset"
+copy "%~dp0\*.txt" "%PACK_PATH%"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
@@ -112,6 +113,7 @@ echo !define ZIP2EXE_NAME `Simple x264 Launcher (%ISO_DATE%)` >> "%NSI_FILE%"
 echo !define ZIP2EXE_OUTFILE `%OUT_FULL%` >> "%NSI_FILE%"
 echo !define ZIP2EXE_COMPRESSOR_LZMA >> "%NSI_FILE%"
 echo !define ZIP2EXE_INSTALLDIR `$PROGRAMFILES\MuldeR\Simple x264 Launcher v2` >> "%NSI_FILE%"
+echo !define MUI_INSTFILESPAGE_COLORS "C5DEFB 000000" >> "%NSI_FILE%"
 echo ShowInstDetails show >> "%NSI_FILE%"
 echo !include `${NSISDIR}\Contrib\zip2exe\Base.nsh` >> "%NSI_FILE%"
 echo !include `${NSISDIR}\Contrib\zip2exe\Modern.nsh` >> "%NSI_FILE%"
@@ -121,6 +123,8 @@ echo !include `%~dp0\etc\shortcut.nsh` >> "%NSI_FILE%"
 echo !insertmacro SECTION_END >> "%NSI_FILE%"
 echo !include `%~dp0\etc\check_os.nsh` >> "%NSI_FILE%"
 echo !include `%~dp0\etc\finalization.nsh` >> "%NSI_FILE%"
+echo !include `%~dp0\etc\version.nsh` >> "%NSI_FILE%"
+echo !insertmacro X264_VERSIONINFO `%ISO_DATE%` >> "%NSI_FILE%"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer

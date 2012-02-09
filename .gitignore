@@ -3,6 +3,7 @@
 /bin/
 /ipch/
 /res/toolset/
+/src/*.h.bak
 /*.sdf
 /*.suo
 /*.user

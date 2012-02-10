@@ -56,6 +56,8 @@ protected:
 
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
+	virtual void dragEnterEvent(QDragEnterEvent *event);
+	virtual void dropEvent(QDropEvent *event);
 
 private slots:
 	void modeIndexChanged(int index);

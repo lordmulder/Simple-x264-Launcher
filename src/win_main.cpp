@@ -52,10 +52,16 @@ const char *tpl_last = "<LAST_USED>";
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
+/*
+ * Constructor
+ */
 MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 :
 	m_cpuFeatures(cpuFeatures),
 	m_appDir(QApplication::applicationDirPath()),
+	m_options(NULL),
+	m_jobList(NULL),
+	m_droppedFiles(NULL),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -149,12 +155,16 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	updateLabelPos();
 }
 
+/*
+ * Destructor
+ */
 MainWindow::~MainWindow(void)
 {
 	OptionsModel::saveTemplate(m_options, QString::fromLatin1(tpl_last));
 	
 	X264_DELETE(m_jobList);
 	X264_DELETE(m_options);
+	X264_DELETE(m_droppedFiles);
 	X264_DELETE(m_label);
 
 	while(!m_toolsList.isEmpty())
@@ -168,8 +178,13 @@ MainWindow::~MainWindow(void)
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
 
+/*
+ * The "add" button was clicked
+ */
 void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileTotal, bool *ok)
 {
+	qDebug("MainWindow::addButtonPressed");
+	
 	if(ok) *ok = false;
 	
 	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_cpuFeatures->x64);
@@ -209,22 +224,34 @@ void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileT
 	X264_DELETE(addDialog);
 }
 
+/*
+ * The "start" button was clicked
+ */
 void MainWindow::startButtonPressed(void)
 {
 	m_jobList->startJob(jobsView->currentIndex());
 }
 
+/*
+ * The "abort" button was clicked
+ */
 void MainWindow::abortButtonPressed(void)
 {
 	m_jobList->abortJob(jobsView->currentIndex());
 }
 
+/*
+ * The "delete" button was clicked
+ */
 void MainWindow::deleteButtonPressed(void)
 {
 	m_jobList->deleteJob(jobsView->currentIndex());
 	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 }
 
+/*
+ * The "browse" button was clicked
+ */
 void MainWindow::browseButtonPressed(void)
 {
 	QString outputFile = m_jobList->getJobOutputFile(jobsView->currentIndex());
@@ -238,6 +265,9 @@ void MainWindow::browseButtonPressed(void)
 	}
 }
 
+/*
+ * The "pause" button was clicked
+ */
 void MainWindow::pauseButtonPressed(bool checked)
 {
 	if(checked)
@@ -250,6 +280,9 @@ void MainWindow::pauseButtonPressed(bool checked)
 	}
 }
 
+/*
+ * Job item selected by user
+ */
 void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & previous)
 {
 	qDebug("Job selected: %d", current.row());
@@ -284,6 +317,9 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 	progressBar->repaint();
 }
 
+/*
+ * Handle update of job info (status, progress, details, etc)
+ */
 void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &bottomRight)
 {
 	int selected = jobsView->currentIndex().row();
@@ -331,11 +367,17 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 	}
 }
 
+/*
+ * Handle new log file content
+ */
 void MainWindow::jobLogExtended(const QModelIndex & parent, int start, int end)
 {
 	QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
 }
 
+/*
+ * About screen
+ */
 void MainWindow::showAbout(void)
 {
 	QString text;
@@ -387,6 +429,9 @@ void MainWindow::showAbout(void)
 	}
 }
 
+/*
+ * Open web-link
+ */
 void MainWindow::showWebLink(void)
 {
 	if(QObject::sender() == actionWebMulder)     QDesktopServices::openUrl(QUrl(home_url));
@@ -401,6 +446,9 @@ void MainWindow::showWebLink(void)
 	if(QObject::sender() == actionWebSecret)     QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
 }
 
+/*
+ * Pereferences dialog
+ */
 void MainWindow::showPreferences(void)
 {
 	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences, m_cpuFeatures->x64);
@@ -408,6 +456,9 @@ void MainWindow::showPreferences(void)
 	X264_DELETE(preferences);
 }
 
+/*
+ * Launch next job, after running job has finished
+ */
 void MainWindow::launchNextJob(void)
 {
 	qDebug("launchNextJob(void)");
@@ -440,6 +491,9 @@ void MainWindow::launchNextJob(void)
 	qWarning("No enqueued jobs left!");
 }
 
+/*
+ * Shut down the computer (with countdown)
+ */
 void MainWindow::shutdownComputer(void)
 {
 	qDebug("shutdownComputer(void)");
@@ -503,6 +557,9 @@ void MainWindow::shutdownComputer(void)
 	}
 }
 
+/*
+ * Main initialization function (called only once!)
+ */
 void MainWindow::init(void)
 {
 	static const char *binFiles = "x264.exe:x264_x64.exe:avs2yuv.exe:avs2yuv_x64.exe";
@@ -546,7 +603,7 @@ void MainWindow::init(void)
 	{
 		bool ok = false;
 		static const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-		QFile writeTest(QString("%1/%2").arg(QApplication::applicationDirPath(), QUuid::createUuid().toString()));
+		QFile writeTest(QString("%1/%2").arg(x264_data_path(), QUuid::createUuid().toString()));
 		if(writeTest.open(QIODevice::WriteOnly))
 		{
 			ok = (writeTest.write(data) == strlen(data));
@@ -640,12 +697,18 @@ void MainWindow::init(void)
 	}
 }
 
+/*
+ * Update the label position
+ */
 void MainWindow::updateLabelPos(void)
 {
 	const QWidget *const viewPort = jobsView->viewport();
 	m_label->setGeometry(0, 0, viewPort->width(), viewPort->height());
 }
 
+/*
+ * Copy the complete log to the clipboard
+ */
 void MainWindow::copyLogToClipboard(bool checked)
 {
 	qDebug("copyLogToClipboard");
@@ -657,10 +720,35 @@ void MainWindow::copyLogToClipboard(bool checked)
 	}
 }
 
+/*
+ * Process the dropped files
+ */
+void MainWindow::handleDroppedFiles(void)
+{
+	qDebug("MainWindow::handleDroppedFiles");
+	if(m_droppedFiles)
+	{
+		QStringList droppedFiles(*m_droppedFiles);
+		m_droppedFiles->clear();
+		int totalFiles = droppedFiles.count();
+		bool ok = true; int n = 0;
+		while((!droppedFiles.isEmpty()) && ok)
+		{
+			QString currentFile = droppedFiles.takeFirst();
+			qDebug("Adding file: %s", currentFile.toUtf8().constData());
+			addButtonPressed(currentFile, n++, totalFiles, &ok);
+		}
+	}
+	qDebug("Leave from MainWindow::handleDroppedFiles!");
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Event functions
 ///////////////////////////////////////////////////////////////////////////////
 
+/*
+ * Window shown event
+ */
 void MainWindow::showEvent(QShowEvent *e)
 {
 	QMainWindow::showEvent(e);
@@ -672,6 +760,9 @@ void MainWindow::showEvent(QShowEvent *e)
 	}
 }
 
+/*
+ * Window close event
+ */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
 	if(countRunningJobs() > 0)
@@ -706,6 +797,9 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	QMainWindow::closeEvent(e);
 }
 
+/*
+ * Window resize event
+ */
 void MainWindow::resizeEvent(QResizeEvent *e)
 {
 	QMainWindow::resizeEvent(e);
@@ -760,20 +854,20 @@ void MainWindow::dropEvent(QDropEvent *event)
 		QFileInfo file(currentUrl.toLocalFile());
 		if(file.exists() && file.isFile())
 		{
-			qDebug("Dropped File: %s", file.canonicalFilePath().toUtf8().constData());
+			qDebug("MainWindow::dropEvent: %s", file.canonicalFilePath().toUtf8().constData());
 			droppedFiles << file.canonicalFilePath();
 		}
 	}
 	
-	droppedFiles.sort();
-	int totalFiles = droppedFiles.count();
-	
-	bool ok = true; int n = 0;
-	while((!droppedFiles.isEmpty()) && ok)
+	if(droppedFiles.count() > 0)
 	{
-		QString currentFile = droppedFiles.takeFirst();
-		qDebug("Adding file: %s", currentFile.toUtf8().constData());
-		addButtonPressed(currentFile, n++, totalFiles, &ok);
+		if(!m_droppedFiles)
+		{
+			m_droppedFiles = new QStringList();
+		}
+		m_droppedFiles->append(droppedFiles);
+		m_droppedFiles->sort();
+		QTimer::singleShot(0, this, SLOT(handleDroppedFiles()));
 	}
 }
 
@@ -781,7 +875,9 @@ void MainWindow::dropEvent(QDropEvent *event)
 // Private functions
 ///////////////////////////////////////////////////////////////////////////////
 
-/*Jobs that are not completed (or failed, or aborted) yet*/
+/*
+ * Jobs that are not completed (or failed, or aborted) yet
+ */
 unsigned int MainWindow::countPendingJobs(void)
 {
 	unsigned int count = 0;
@@ -799,7 +895,9 @@ unsigned int MainWindow::countPendingJobs(void)
 	return count;
 }
 
-/*Jobs that are still active, i.e. not terminated or enqueued*/
+/*
+ * Jobs that are still active, i.e. not terminated or enqueued
+ */
 unsigned int MainWindow::countRunningJobs(void)
 {
 	unsigned int count = 0;
@@ -817,6 +915,9 @@ unsigned int MainWindow::countRunningJobs(void)
 	return count;
 }
 
+/*
+ * Update all buttons with respect to current job status
+ */
 void MainWindow::updateButtons(EncodeThread::JobStatus status)
 {
 	qDebug("MainWindow::updateButtons(void)");
@@ -837,7 +938,9 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	editDetails->setEnabled(status != EncodeThread::JobStatus_Paused);
 }
 
-
+/*
+ * Update the taskbar with current job status
+ */
 void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon)
 {
 	qDebug("MainWindow::updateTaskbar(void)");

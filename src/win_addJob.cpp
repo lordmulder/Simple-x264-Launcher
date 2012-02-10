@@ -35,6 +35,7 @@
 #include <QDir>
 #include <QInputDialog>
 #include <QSettings>
+#include <QUrl>
 
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
@@ -189,7 +190,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
 
 	//Load directories
-	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_data_path();
 	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
 	initialDir_src = settings.value("path/directory_openFrom", initialDir_src).toString();
 	initialDir_out = settings.value("path/directory_saveTo", initialDir_out).toString();
@@ -249,6 +250,49 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 	return false;
 }
 
+void AddJobDialog::dragEnterEvent(QDragEnterEvent *event)
+{
+	QStringList formats = event->mimeData()->formats();
+	
+	if(formats.contains("application/x-qt-windows-mime;value=\"FileNameW\"", Qt::CaseInsensitive) && formats.contains("text/uri-list", Qt::CaseInsensitive))
+	{
+		event->acceptProposedAction();
+	}
+}
+
+void AddJobDialog::dropEvent(QDropEvent *event)
+{
+	QString droppedFile;
+	QList<QUrl> urls = event->mimeData()->urls();
+
+	if(urls.count() > 1)
+	{
+		QDragEnterEvent dragEvent(event->pos(), event->proposedAction(), event->mimeData(), Qt::NoButton, Qt::NoModifier);
+		if(qApp->notify(parent(), &dragEvent))
+		{
+			qApp->notify(parent(), event);
+			reject(); return;
+		}
+	}
+
+	while((!urls.isEmpty()) && droppedFile.isEmpty())
+	{
+		QUrl currentUrl = urls.takeFirst();
+		QFileInfo file(currentUrl.toLocalFile());
+		if(file.exists() && file.isFile())
+		{
+			qDebug("AddJobDialog::dropEvent: %s", file.canonicalFilePath().toUtf8().constData());
+			droppedFile = file.canonicalFilePath();
+		}
+	}
+	
+	if(!droppedFile.isEmpty())
+	{
+		editSource->setText(QDir::toNativeSeparators(droppedFile));
+		generateOutputFileName(droppedFile);
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
@@ -295,7 +339,7 @@ void AddJobDialog::accept(void)
 	}
 	if(outputFile.exists() && (!outputFile.isFile()))
 	{
-		QMessageBox::warning(this, tr("Not a File!"), tr("<nobr>Selected output files does not appear to be a file!</nobr>"));
+		QMessageBox::warning(this, tr("Not a File!"), tr("<nobr>Selected output file does not appear to be a valid file!</nobr>"));
 		return;
 	}
 	if(!editCustomParams->hasAcceptableInput())
@@ -305,7 +349,7 @@ void AddJobDialog::accept(void)
 	}
 
 	//Save directories
-	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_data_path();
 	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
 	if(settings.isWritable())
 	{

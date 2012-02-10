@@ -53,6 +53,7 @@ private:
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
+	QStringList *m_droppedFiles;
 	QList<QFile*> m_toolsList;
 	
 	PreferencesDialog::Preferences m_preferences;
@@ -71,6 +72,7 @@ private slots:
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);
 	void copyLogToClipboard(bool checked);
+	void handleDroppedFiles(void);
 	void init(void);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);

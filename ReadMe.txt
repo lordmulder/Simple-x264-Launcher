@@ -101,7 +101,19 @@ Using old/outdated x264 binaries with this application is NOT supported
 or intended. Report bugs rather than reverting to an old version!
 
 
-7. Help & Support
+7. Command-line Syntax
+----------------------
+
+The following command-line switches are available:
+
+--add <file> [<file>] ... Create new job(s) from files(s)
+--console ............... Show the "debug" console
+--no-console ............ Don't show the "debug" console
+--no-style .............. Don't use the Qt "Plastique" style
+--force-cpu-no-64bit .... Forcefully disable 64-Bit support
+
+
+8. Help & Support
 -----------------
 
 For help and support, please join the discussion at:

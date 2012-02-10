@@ -373,6 +373,25 @@ const char *x264_version_arch(void)
 }
 
 /*
+ * Check for portable mode
+ */
+bool x264_portable(void)
+{
+	static bool detected = false;
+	static bool portable = false;
+
+	if(!detected)
+	{
+		portable = portable || QFileInfo(QApplication::applicationFilePath()).baseName().contains(QRegExp("^portable[^A-Za-z0-9]", Qt::CaseInsensitive));
+		portable = portable || QFileInfo(QApplication::applicationFilePath()).baseName().contains(QRegExp("[^A-Za-z0-9]portable[^A-Za-z0-9]", Qt::CaseInsensitive));
+		portable = portable || QFileInfo(QApplication::applicationFilePath()).baseName().contains(QRegExp("[^A-Za-z0-9]portable$", Qt::CaseInsensitive));
+		detected = true;
+	}
+
+	return portable;
+}
+
+/*
  * Get build date date
  */
 const QDate &x264_version_date(void)

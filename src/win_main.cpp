@@ -541,6 +541,24 @@ void MainWindow::init(void)
 		}
 	}
 
+	//Check for portable mode
+	if(x264_portable())
+	{
+		bool ok = false;
+		static const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+		QFile writeTest(QString("%1/%2").arg(QApplication::applicationDirPath(), QUuid::createUuid().toString()));
+		if(writeTest.open(QIODevice::WriteOnly))
+		{
+			ok = (writeTest.write(data) == strlen(data));
+			writeTest.remove();
+		}
+		if(!ok)
+		{
+			int val = QMessageBox::warning(this, tr("Write Test Failed"), tr("<nobr>The application was launched in portable mode, but the program path is <b>not</b> writable!</nobr>"), tr("Quit"), tr("Ignore"));
+			if(val != 1) { close(); qApp->exit(-1); return; }
+		}
+	}
+
 	//Pre-release popup
 	if(x264_is_prerelease())
 	{

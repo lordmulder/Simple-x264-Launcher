@@ -69,6 +69,12 @@ static int x264_main(int argc, char* argv[])
 		return -1;
 	}
 	
+	//Running in portable mode?
+	if(x264_portable())
+	{
+		qDebug("Application is running in portable mode!\n");
+	}
+
 	//Taskbar init
 	WinSevenTaskbar::init();
 

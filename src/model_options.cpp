@@ -26,6 +26,7 @@
 #include <QDesktopServices>
 #include <QSettings>
 #include <QStringList>
+#include <QApplication>
 
 OptionsModel::OptionsModel(void)
 {
@@ -82,7 +83,7 @@ bool OptionsModel::equals(OptionsModel *model)
 bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 {
 	const QString templateName = name.simplified();
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 
 	if(templateName.contains('\\') || templateName.contains('/'))
 	{
@@ -108,7 +109,7 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 
 bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 {
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	
 	if(name.contains('\\') || name.contains('/'))
 	{
@@ -145,7 +146,7 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
 {
 	QMap<QString, OptionsModel*> list;
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	QStringList allTemplates = settings.childGroups();
 
@@ -169,7 +170,7 @@ QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
 
 bool OptionsModel::templateExists(const QString &name)
 {
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	QStringList allGroups = settings.childGroups();
 	return allGroups.contains(name, Qt::CaseInsensitive);
@@ -177,7 +178,7 @@ bool OptionsModel::templateExists(const QString &name)
 
 bool OptionsModel::deleteTemplate(const QString &name)
 {
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 
 	if(settings.childGroups().contains(name, Qt::CaseInsensitive))

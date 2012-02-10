@@ -130,7 +130,7 @@ void PreferencesDialog::initPreferences(Preferences *preferences)
 
 void PreferencesDialog::loadPreferences(Preferences *preferences)
 {
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
 
 	Preferences defaults;
@@ -145,7 +145,7 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 
 void PreferencesDialog::savePreferences(Preferences *preferences)
 {
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
 
 	settings.beginGroup("preferences");

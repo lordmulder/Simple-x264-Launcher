@@ -189,7 +189,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
 
 	//Load directories
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
 	initialDir_src = settings.value("path/directory_openFrom", initialDir_src).toString();
 	initialDir_out = settings.value("path/directory_saveTo", initialDir_out).toString();
@@ -305,7 +305,7 @@ void AddJobDialog::accept(void)
 	}
 
 	//Save directories
-	const QString appDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+	const QString appDir = x264_portable() ? QApplication::applicationDirPath() : QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
 	if(settings.isWritable())
 	{

@@ -72,7 +72,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 http://www.gnu.org/licenses/gpl-2.0.txt
 
 
-5. Help & Support
+5. Portable Mode
+----------------
+
+This application can be run in "portable" mode. Just rename the EXE
+file to 'x264_launcher_portable.exe' in order to trigger portable mode.
+In that mode all configuration files will be saved in the same folder
+where the EXE file resides. This may be helpful, if you want to run the
+application directly from your USB stick on different computers. Note,
+however, that in portable mode the install folder must be writable!
+
+
+6. Help & Support
 -----------------
 
 For help and support, please join the discussion at:

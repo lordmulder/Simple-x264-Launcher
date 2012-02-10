@@ -5,11 +5,11 @@
 	VIAddVersionKey "Comments" "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version."
 	VIAddVersionKey "CompanyName" "Free Software Foundation"
 	VIAddVersionKey "FileDescription" "Simple x264 Launcher (${DATE})"
-	VIAddVersionKey "FileVersion" "${DATE} ${TIME} [Build #${BUILDNO}]"
+	VIAddVersionKey "FileVersion" "${DATE}, ${TIME} [Build #${BUILDNO}]"
 	VIAddVersionKey "LegalCopyright" "Copyright 2004-2012 LoRd_MuldeR"
 	VIAddVersionKey "LegalTrademarks" "GNU"
 	VIAddVersionKey "OriginalFilename" "x264_x64.${DATE}.exe"
 	VIAddVersionKey "ProductName" "Simple x264 Launcher"
-	VIAddVersionKey "ProductVersion" "${DATE} ${TIME} [Build #${BUILDNO}]"
+	VIAddVersionKey "ProductVersion" "${DATE}, ${TIME} [Build #${BUILDNO}]"
 	VIAddVersionKey "Website" "http://mulder.at.gg/"
 !macroend

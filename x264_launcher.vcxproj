@@ -73,7 +73,7 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
       <Message>Copy Toolset</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_PATCH "$(SolutionDir)src\version.h" 5</Command>
+      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_BUILD "$(SolutionDir)src\version.h" 5</Command>
       <Message>Update Build Number</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -106,7 +106,7 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_PATCH "$(SolutionDir)src\version.h" 5</Command>
+      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_BUILD "$(SolutionDir)src\version.h" 5</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Update Build Number</Message>

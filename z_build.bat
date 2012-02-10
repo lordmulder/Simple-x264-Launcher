@@ -40,6 +40,21 @@ if not exist "%QTDIR%\bin\moc.exe" (
 )
 
 REM ///////////////////////////////////////////////////////////////////////////
+REM // Get current date and time (in ISO format)
+REM ///////////////////////////////////////////////////////////////////////////
+set "ISO_DATE="
+set "ISO_TIME="
+if not exist "%~dp0\etc\date.exe" BuildError
+for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\etc\date.exe" +ISODATE:%%Y-%%m-%%d') do (
+	if "%%a"=="ISODATE" set "ISO_DATE=%%b"
+)
+for /F "tokens=1,2,3,4 delims=:" %%a in ('"%~dp0\etc\date.exe" +ISOTIME:%%T') do (
+	if "%%a"=="ISOTIME" set "ISO_TIME=%%b:%%c:%%d"
+)
+if "%ISO_DATE%"=="" goto BuildError
+if "%ISO_TIME%"=="" goto BuildError
+
+REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the binaries
 REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
@@ -49,6 +64,15 @@ MSBuild.exe /property:Configuration=release /target:clean "%~dp0\x264_launcher.s
 if not "%ERRORLEVEL%"=="0" goto BuildError
 MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
+
+REM ///////////////////////////////////////////////////////////////////////////
+REM // Detect build number
+REM ///////////////////////////////////////////////////////////////////////////
+set "BUILD_NO="
+for /F "tokens=2,*" %%s in (%~dp0\src\version.h) do (
+	if "%%s"=="VER_X264_BUILD" set "BUILD_NO=%%~t"
+)
+if "%BUILD_NO%"=="" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy base files
@@ -83,15 +107,6 @@ REM ///////////////////////////////////////////////////////////////////////////
 "%UPX3_PATH%\upx.exe" --best "%PACK_PATH%\*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
-REM // Get current date (in ISO format)
-REM ///////////////////////////////////////////////////////////////////////////
-if not exist "%~dp0\etc\date.exe" BuildError
-for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\etc\date.exe" +ISODATE:%%Y-%%m-%%d') do (
-	if "%%a"=="ISODATE" set "ISO_DATE=%%b"
-)
-if "%ISO_DATE%"=="" BuildError
-
-REM ///////////////////////////////////////////////////////////////////////////
 REM // Setup install parameters
 REM ///////////////////////////////////////////////////////////////////////////
 set "NSI_FILE=%TMP%\~%RANDOM%%RANDOM%.nsi"
@@ -109,23 +124,24 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Generate install script
 REM ///////////////////////////////////////////////////////////////////////////
 echo #Generated File - Do NOT modify! > "%NSI_FILE%"
+echo RequestExecutionLevel Admin >> "%NSI_FILE%"
+echo ShowInstDetails show >> "%NSI_FILE%"
+echo BrandingText `Created: %ISO_DATE%, %ISO_TIME% [Build #%BUILD_NO%]` >> "%NSI_FILE%"
 echo !define ZIP2EXE_NAME `Simple x264 Launcher (%ISO_DATE%)` >> "%NSI_FILE%"
 echo !define ZIP2EXE_OUTFILE `%OUT_FULL%` >> "%NSI_FILE%"
 echo !define ZIP2EXE_COMPRESSOR_LZMA >> "%NSI_FILE%"
 echo !define ZIP2EXE_INSTALLDIR `$PROGRAMFILES\MuldeR\Simple x264 Launcher v2` >> "%NSI_FILE%"
 echo !define MUI_INSTFILESPAGE_COLORS "C5DEFB 000000" >> "%NSI_FILE%"
-echo RequestExecutionLevel Admin >> "%NSI_FILE%"
-echo ShowInstDetails show >> "%NSI_FILE%"
 echo !include `${NSISDIR}\Contrib\zip2exe\Base.nsh` >> "%NSI_FILE%"
 echo !include `${NSISDIR}\Contrib\zip2exe\Modern.nsh` >> "%NSI_FILE%"
+echo !include `%~dp0\etc\check_os.nsh` >> "%NSI_FILE%"
+echo !include `%~dp0\etc\finalization.nsh` >> "%NSI_FILE%"
+echo !include `%~dp0\etc\version.nsh` >> "%NSI_FILE%"
+echo !insertmacro X264_VERSIONINFO `%ISO_DATE%` `%ISO_TIME%` `%BUILD_NO%` >> "%NSI_FILE%"
 echo !insertmacro SECTION_BEGIN >> "%NSI_FILE%"
 echo File /r `%PACK_PATH%\*.*` >> "%NSI_FILE%"
 echo !include `%~dp0\etc\shortcut.nsh` >> "%NSI_FILE%"
 echo !insertmacro SECTION_END >> "%NSI_FILE%"
-echo !include `%~dp0\etc\check_os.nsh` >> "%NSI_FILE%"
-echo !include `%~dp0\etc\finalization.nsh` >> "%NSI_FILE%"
-echo !include `%~dp0\etc\version.nsh` >> "%NSI_FILE%"
-echo !insertmacro X264_VERSIONINFO `%ISO_DATE%` >> "%NSI_FILE%"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer

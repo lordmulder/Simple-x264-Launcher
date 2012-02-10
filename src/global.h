@@ -97,7 +97,7 @@ void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, 
 void x264_message_handler(QtMsgType type, const char *msg);
 unsigned int x264_version_major(void);
 unsigned int x264_version_minor(void);
-unsigned int x264_version_patch(void);
+unsigned int x264_version_build(void);
 const QDate &x264_version_date(void);
 bool x264_portable(void);
 const QString &x264_data_path(void);

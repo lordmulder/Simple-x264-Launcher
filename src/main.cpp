@@ -38,7 +38,7 @@ static int x264_main(int argc, char* argv[])
 	x264_init_console(argc, argv);
 
 	//Print version info
-	qDebug("Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth", x264_version_major(), x264_version_minor(), x264_version_patch());
+	qDebug("Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth", x264_version_major(), x264_version_minor(), x264_version_build());
 	qDebug("Copyright (c) 2004-%04d LoRd_MuldeR <mulder2@gmx.de>. Some rights reserved.", qMax(x264_version_date().year(),QDate::currentDate().year()));
 	qDebug("Built on %s at %s with %s for Win-%s.\n", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
 	

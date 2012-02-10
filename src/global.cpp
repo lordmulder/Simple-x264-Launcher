@@ -76,6 +76,7 @@ static const struct
 	unsigned int ver_major;
 	unsigned int ver_minor;
 	unsigned int ver_patch;
+	unsigned int ver_build;
 	const char* ver_date;
 	const char* ver_time;
 }
@@ -84,6 +85,7 @@ g_x264_version =
 	(VER_X264_MAJOR),
 	(VER_X264_MINOR),
 	(VER_X264_PATCH),
+	(VER_X264_BUILD),
 	__DATE__,
 	__TIME__
 };
@@ -355,12 +357,12 @@ unsigned int x264_version_major(void)
 
 unsigned int x264_version_minor(void)
 {
-	return g_x264_version.ver_minor;
+	return (g_x264_version.ver_minor * 10) + (g_x264_version.ver_patch % 10);
 }
 
-unsigned int x264_version_patch(void)
+unsigned int x264_version_build(void)
 {
-	return g_x264_version.ver_patch;
+	return g_x264_version.ver_build;
 }
 
 const char *x264_version_compiler(void)

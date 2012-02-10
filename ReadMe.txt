@@ -83,7 +83,25 @@ application directly from your USB stick on different computers. Note,
 however, that in portable mode the install folder must be writable!
 
 
-6. Help & Support
+6. Updating Your x264 Binaries
+------------------------------
+
+This application works best with the x264 binaries that are included in
+the distribution package. That's because these binaries have been
+tested to work properly with the GUI. Nonetheless in some cases you may
+want to replace the included binaries with a newer version of x264 or
+with an alternative build of the same version. Generally newer versions
+of x264 should work with the GUI too, though there is NO guarantee. In
+rare cases the CLI syntax (or console output) of x264 may change in a
+way that breaks the compatibility and therefore will require an update
+of the GUI itself. Furthermore this application does NOT provide any
+support for unofficial x264 patches. Usually x264 builds that contain
+unofficial patches will work anyway, but again there is NO guarantee.
+Using old/outdated x264 binaries with this application is NOT supported
+or intended. Report bugs rather than reverting to an old version!
+
+
+7. Help & Support
 -----------------
 
 For help and support, please join the discussion at:

@@ -36,6 +36,7 @@
 #include <QSysInfo>
 #include <QStringList>
 #include <QSystemSemaphore>
+#include <QDesktopServices>
 #include <QMutex>
 #include <QTextCodec>
 #include <QLibrary>
@@ -389,6 +390,34 @@ bool x264_portable(void)
 	}
 
 	return portable;
+}
+
+/*
+ * Get data path (i.e. path to store config files)
+ */
+const QString &x264_data_path(void)
+{
+	static QString *pathCache = NULL;
+	
+	if(!pathCache)
+	{
+		pathCache = new QString();
+		if(!x264_portable())
+		{
+			*pathCache = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+		}
+		if(pathCache->isEmpty() || x264_portable())
+		{
+			*pathCache = QApplication::applicationDirPath();
+		}
+		if(!QDir(*pathCache).mkpath("."))
+		{
+			qWarning("Data directory could not be created:\n%s\n", pathCache->toUtf8().constData());
+			*pathCache = QDir::currentPath();
+		}
+	}
+	
+	return *pathCache;
 }
 
 /*

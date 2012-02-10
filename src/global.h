@@ -100,6 +100,7 @@ unsigned int x264_version_minor(void);
 unsigned int x264_version_patch(void);
 const QDate &x264_version_date(void);
 bool x264_portable(void);
+const QString &x264_data_path(void);
 bool x264_is_prerelease(void);
 const char *x264_version_time(void);
 const char *x264_version_compiler(void);

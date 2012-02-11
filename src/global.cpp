@@ -741,12 +741,11 @@ bool x264_init_qt(int argc, char* argv[])
 	{
 	case 0:
 	case QSysInfo::WV_NT:
-		qFatal("%s", QApplication::tr("Executable '%1' requires Windows 2000 or later.").arg(QString::fromLatin1(executableName)).toLatin1().constData());
-		break;
 	case QSysInfo::WV_2000:
-		qDebug("Running on Windows 2000 (not officially supported!).\n");
-		x264_check_compatibility_mode("GetNativeSystemInfo", executableName);
+		qFatal("%s", QApplication::tr("Executable '%1' requires Windows XP or later.").arg(QString::fromLatin1(executableName)).toLatin1().constData());
 		break;
+		//qDebug("Running on Windows 2000 (not officially supported!).\n");
+		//x264_check_compatibility_mode("GetNativeSystemInfo", executableName);
 	case QSysInfo::WV_XP:
 		qDebug("Running on Windows XP.\n");
 		x264_check_compatibility_mode("GetLargePageMinimum", executableName);

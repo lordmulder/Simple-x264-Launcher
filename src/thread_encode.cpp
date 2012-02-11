@@ -345,17 +345,22 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 				waitCounter = 0;
 				continue;
 			}
-			if(!processEncode.waitForReadyRead(2500))
+			if(!processEncode.waitForReadyRead(m_processTimeoutInterval))
 			{
 				if(processEncode.state() == QProcess::Running)
 				{
-					if(waitCounter++ > m_processTimeoutCounter)
+					if(waitCounter++ > m_processTimeoutMaxCounter)
 					{
 						processEncode.kill();
 						qWarning("x264 process timed out <-- killing!");
 						log("\nPROCESS TIMEOUT !!!");
 						bTimeout = true;
 						break;
+					}
+					else if(waitCounter == m_processTimeoutWarning)
+					{
+						unsigned int timeOut = (waitCounter * m_processTimeoutInterval) / 1000U;
+						log(tr("Warning: x264 did not respond for %1 seconds, potential deadlock...").arg(QString::number(timeOut)));
 					}
 					continue;
 				}
@@ -764,6 +769,8 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 	unsigned int fSizeW = 0;
 	unsigned int fSizeH = 0;
 	
+	unsigned int waitCounter = 0;
+
 	while(process.state() != QProcess::NotRunning)
 	{
 		if(m_abort)
@@ -772,17 +779,30 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 			bAborted = true;
 			break;
 		}
-		if(!process.waitForReadyRead())
+		if(!process.waitForReadyRead(m_processTimeoutInterval))
 		{
 			if(process.state() == QProcess::Running)
 			{
-				process.kill();
-				qWarning("Avs2YUV process timed out <-- killing!");
-				log("\nPROCESS TIMEOUT !!!");
-				bTimeout = true;
-				break;
+				if(waitCounter++ > m_processTimeoutMaxCounter)
+				{
+					process.kill();
+					qWarning("Avs2YUV process timed out <-- killing!");
+					log("\nPROCESS TIMEOUT !!!");
+					log("\nAvisynth has encountered a deadlock or your script takes EXTREMELY long to initialize!");
+					bTimeout = true;
+					break;
+				}
+				else if(waitCounter == m_processTimeoutWarning)
+				{
+					unsigned int timeOut = (waitCounter * m_processTimeoutInterval) / 1000U;
+					log(tr("Warning: Avisynth did not respond for %1 seconds, potential deadlock...").arg(QString::number(timeOut)));
+				}
 			}
+			continue;
 		}
+		
+		waitCounter = 0;
+		
 		while(process.bytesAvailable() > 0)
 		{
 			QList<QByteArray> lines = process.readLine().split('\r');

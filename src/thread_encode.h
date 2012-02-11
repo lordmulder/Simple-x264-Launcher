@@ -79,7 +79,9 @@ public:
 
 protected:
 	static QMutex m_mutex_startProcess;
-	static const int m_processTimeoutCounter = 24;
+	static const unsigned int m_processTimeoutInterval = 2500;
+	static const unsigned int m_processTimeoutMaxCounter = 120;
+	static const unsigned int m_processTimeoutWarning = 24;
 
 	//Constants
 	const QUuid m_jobId;

@@ -101,7 +101,24 @@ Using old/outdated x264 binaries with this application is NOT supported
 or intended. Report bugs rather than reverting to an old version!
 
 
-7. Command-line Syntax
+7. Timeout Warning
+------------------
+
+This application provides "deadlock" prevention. This means that if an
+encoder process (x264 or Avisynth) stopps responding, it will be
+terminated. This is done in order to ensure that the main program as
+well as the other encoder processes can continue properly. More
+specifically, a warning will be raised if the process does not respond
+for one minute. If the process still didn't respond after five minutes,
+it will be terminated and consequently the encoding job is aborted. In
+some rare cases, your Avisynth script may take a very long time to
+initialize and thus the process will be aborted before the encoding can
+start. For example, this can happen if FFMS2/FFVideoSource takes a very
+long time to index the source file. In that case, we recommend to index
+the source file beforehand, e.g. by using the 'ffmsindex' tool.
+
+
+8. Command-line Syntax
 ----------------------
 
 The following command-line switches are available:
@@ -113,7 +130,7 @@ The following command-line switches are available:
 --force-cpu-no-64bit .... Forcefully disable 64-Bit support
 
 
-8. Help & Support
+9. Help & Support
 -----------------
 
 For help and support, please join the discussion at:

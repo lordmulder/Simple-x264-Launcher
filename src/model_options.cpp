@@ -36,7 +36,7 @@ OptionsModel::OptionsModel(void)
 	m_preset = "Medium";
 	m_tune = "None";
 	m_profile = "Auto";
-	m_custom = "";
+	m_custom_x264 = "";
 }
 
 OptionsModel::~OptionsModel(void)
@@ -75,7 +75,8 @@ bool OptionsModel::equals(OptionsModel *model)
 	if(this->m_preset.compare(model->m_preset, Qt::CaseInsensitive)) equal = false;
 	if(this->m_tune.compare(model->m_tune, Qt::CaseInsensitive)) equal = false;
 	if(this->m_profile.compare(model->m_profile, Qt::CaseInsensitive)) equal = false;
-	if(this->m_custom.compare(model->m_custom, Qt::CaseInsensitive)) equal = false;
+	if(this->m_custom_x264.compare(model->m_custom_x264, Qt::CaseInsensitive)) equal = false;
+	if(this->m_custom_avs2yuv.compare(model->m_custom_avs2yuv, Qt::CaseInsensitive)) equal = false;
 
 	return equal;
 }
@@ -99,7 +100,8 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 	settings.setValue("preset_name", model->m_preset);
 	settings.setValue("tuning_name", model->m_tune);
 	settings.setValue("profile_name", model->m_profile);
-	settings.setValue("custom_params", model->m_custom);
+	settings.setValue("custom_params_x264", model->m_custom_x264);
+	settings.setValue("custom_params_avs2yuv", model->m_custom_avs2yuv);
 	
 	settings.endGroup();
 	settings.sync();
@@ -126,7 +128,8 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	if(!settings.contains("preset_name")) complete = false;
 	if(!settings.contains("tuning_name")) complete = false;
 	if(!settings.contains("profile_name")) complete = false;
-	if(!settings.contains("custom_params")) complete = false;
+	if(!settings.contains("custom_params_x264")) complete = false;
+	if(!settings.contains("custom_params_avs2yuv")) complete = false;
 
 	if(complete)
 	{
@@ -136,7 +139,8 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 		model->setPreset(settings.value("preset_name", model->m_preset).toString());
 		model->setTune(settings.value("tuning_name", model->m_tune).toString());
 		model->setProfile(settings.value("profile_name", model->m_profile).toString());
-		model->setCustom(settings.value("custom_params", model->m_custom).toString());
+		model->setCustomX264(settings.value("custom_params_x264", model->m_custom_x264).toString());
+		model->setCustomAvs2YUV(settings.value("custom_params_avs2yuv", model->m_custom_avs2yuv).toString());
 	}
 
 	settings.endGroup();

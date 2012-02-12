@@ -174,7 +174,8 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	editCustomParams->clear();
 
 	//Install event filter
-	labelHelpScreen->installEventFilter(this);
+	labelHelpScreenX264->installEventFilter(this);
+	labelHelpScreenAvs2YUV->installEventFilter(this);
 
 	//Monitor for options changes
 	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
@@ -237,15 +238,25 @@ void AddJobDialog::showEvent(QShowEvent *event)
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 {
-	if((o == labelHelpScreen) && (e->type() == QEvent::MouseButtonPress))
+	if((o == labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
 	{
-		HelpDialog *helpScreen = new HelpDialog(this, m_x64supported);
+		HelpDialog *helpScreen = new HelpDialog(this, false, m_x64supported);
+		helpScreen->exec();
+		X264_DELETE(helpScreen);
+	}
+	else if((o == labelHelpScreenAvs2YUV) && (e->type() == QEvent::MouseButtonPress))
+	{
+		HelpDialog *helpScreen = new HelpDialog(this, true, m_x64supported);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
 	else if((o == editCustomParams) && (e->type() == QEvent::FocusOut))
 	{
 		editCustomParams->setText(editCustomParams->text().simplified());
+	}
+	else if((o == editCustomAvs2YUVParams) && (e->type() == QEvent::FocusOut))
+	{
+		editCustomAvs2YUVParams->setText(editCustomAvs2YUVParams->text().simplified());
 	}
 	return false;
 }
@@ -659,7 +670,8 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 	updateComboBox(cbxPreset, options->preset());
 	updateComboBox(cbxTuning, options->tune());
 	updateComboBox(cbxProfile, options->profile());
-	editCustomParams->setText(options->custom());
+	editCustomParams->setText(options->customX264());
+	editCustomAvs2YUVParams->setText(options->customAvs2YUV());
 
 	cbxRateControlMode->blockSignals(false);
 	spinQuantizer->blockSignals(false);
@@ -678,7 +690,8 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setPreset(cbxPreset->model()->data(cbxPreset->model()->index(cbxPreset->currentIndex(), 0)).toString());
 	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
 	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
-	options->setCustom(editCustomParams->hasAcceptableInput() ? editCustomParams->text().simplified() : QString());
+	options->setCustomX264(editCustomParams->hasAcceptableInput() ? editCustomParams->text().simplified() : QString());
+	options->setCustomAvs2YUV(editCustomAvs2YUVParams->text().simplified());
 }
 
 QString AddJobDialog::makeFileFilter(void)

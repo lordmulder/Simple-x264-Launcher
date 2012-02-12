@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>569</height>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -884,7 +884,7 @@
               </spacer>
              </item>
              <item>
-              <widget class="QLabel" name="labelHelpScreen">
+              <widget class="QLabel" name="labelHelpScreenX264">
                <property name="palette">
                 <palette>
                  <active>
@@ -949,6 +949,100 @@
              </property>
              <property name="toolTip">
               <string>All command-line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.</string>
+             </property>
+             <property name="placeholderText">
+              <string>You can enter custom command-line options here...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="QLabel" name="label_11">
+               <property name="text">
+                <string>Custom Avs2YUV Parameters:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_11">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QLabel" name="labelHelpScreenAvs2YUV">
+               <property name="palette">
+                <palette>
+                 <active>
+                  <colorrole role="WindowText">
+                   <brush brushstyle="SolidPattern">
+                    <color alpha="255">
+                     <red>0</red>
+                     <green>0</green>
+                     <blue>255</blue>
+                    </color>
+                   </brush>
+                  </colorrole>
+                 </active>
+                 <inactive>
+                  <colorrole role="WindowText">
+                   <brush brushstyle="SolidPattern">
+                    <color alpha="255">
+                     <red>0</red>
+                     <green>0</green>
+                     <blue>255</blue>
+                    </color>
+                   </brush>
+                  </colorrole>
+                 </inactive>
+                 <disabled>
+                  <colorrole role="WindowText">
+                   <brush brushstyle="SolidPattern">
+                    <color alpha="255">
+                     <red>120</red>
+                     <green>120</green>
+                     <blue>120</blue>
+                    </color>
+                   </brush>
+                  </colorrole>
+                 </disabled>
+                </palette>
+               </property>
+               <property name="font">
+                <font>
+                 <underline>true</underline>
+                </font>
+               </property>
+               <property name="cursor">
+                <cursorShape>PointingHandCursor</cursorShape>
+               </property>
+               <property name="toolTip">
+                <string>Click here to show a detailed list of all command-line options available in your build of Avs2YUV!</string>
+               </property>
+               <property name="text">
+                <string>Show Help Screen</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="editCustomAvs2YUVParams">
+             <property name="font">
+              <font>
+               <family>Lucida Console</family>
+              </font>
+             </property>
+             <property name="toolTip">
+              <string>All command-line parameters you enter here will be passed to Avs2YUV unmodified and unchecked. Only relevant for Avisynth input!</string>
              </property>
              <property name="placeholderText">
               <string>You can enter custom command-line options here...</string>

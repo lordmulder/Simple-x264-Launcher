@@ -184,7 +184,7 @@ void EncodeThread::encode(void)
 	log(tr("Preset:  %1").arg(m_options->preset()));
 	log(tr("Tuning:  %1").arg(m_options->tune()));
 	log(tr("Profile: %1").arg(m_options->profile()));
-	log(tr("Custom:  %1").arg(m_options->custom().isEmpty() ? tr("(None)") : m_options->custom()));
+	log(tr("Custom:  %1").arg(m_options->customX264().isEmpty() ? tr("(None)") : m_options->customX264()));
 	
 	bool ok = false;
 	unsigned int frames = 0;
@@ -284,6 +284,10 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 	if(usePipe)
 	{
 		QStringList cmdLine_Avisynth;
+		if(!m_options->customAvs2YUV().isEmpty())
+		{
+			cmdLine_Avisynth.append(splitParams(m_options->customAvs2YUV()));
+		}
 		cmdLine_Avisynth << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
 		cmdLine_Avisynth << "-";
 		processAvisynth.setStandardOutputProcess(&processEncode);
@@ -521,9 +525,9 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, unsigned int frames, co
 		cmdLine << "--profile" << m_options->profile().toLower();
 	}
 
-	if(!m_options->custom().isEmpty())
+	if(!m_options->customX264().isEmpty())
 	{
-		cmdLine.append(splitParams(m_options->custom()));
+		cmdLine.append(splitParams(m_options->customX264()));
 	}
 
 	cmdLine << "--output" << pathToLocal(QDir::toNativeSeparators(m_outputFileName), true);
@@ -744,8 +748,14 @@ unsigned int EncodeThread::checkVersionAvs2yuv(bool x64)
 bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 {
 	QProcess process;
-	
-	QStringList cmdLine = QStringList() << "-frames" << "1";
+	QStringList cmdLine;
+
+	if(!m_options->customAvs2YUV().isEmpty())
+	{
+		cmdLine.append(splitParams(m_options->customAvs2YUV()));
+	}
+
+	cmdLine << "-frames" << "1";
 	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
 
 	log("Creating process:");
@@ -845,6 +855,10 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 				if(text.contains("failed to load avisynth.dll", Qt::CaseInsensitive))
 				{
 					log(tr("\nWarning: It seems that %1-Bit Avisynth is not currently installed !!!").arg(x64 ? "64" : "32"));
+				}
+				if(text.contains(QRegExp("couldn't convert input clip to (YV16|YV24)", Qt::CaseInsensitive)))
+				{
+					log(tr("\nWarning: YV16 (4:2:2) and YV24 (4:4:4) color-spaces only supported in Avisynth 2.6 !!!"));
 				}
 			}
 		}

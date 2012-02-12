@@ -46,7 +46,8 @@ public:
 	QString preset(void) const { return m_preset; }
 	QString tune(void) const { return m_tune; }
 	QString profile(void) const { return m_profile; }
-	QString custom(void) const { return m_custom; }
+	QString customX264(void) const { return m_custom_x264; }
+	QString customAvs2YUV(void) const { return m_custom_avs2yuv; }
 
 	//Setter
 	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
@@ -55,7 +56,8 @@ public:
 	void setPreset(const QString &preset) { m_preset = preset.trimmed(); }
 	void setTune(const QString &tune) { m_tune = tune.trimmed(); }
 	void setProfile(const QString &profile) { m_profile = profile.trimmed(); }
-	void setCustom(const QString &custom) { m_custom = custom.trimmed(); }
+	void setCustomX264(const QString &custom) { m_custom_x264 = custom.trimmed(); }
+	void setCustomAvs2YUV(const QString &custom) { m_custom_avs2yuv = custom.trimmed(); }
 
 	//Stuff
 	bool equals(OptionsModel *model);
@@ -75,5 +77,6 @@ protected:
 	QString m_preset;
 	QString m_tune;
 	QString m_profile;
-	QString m_custom;
+	QString m_custom_x264;
+	QString m_custom_avs2yuv;
 };

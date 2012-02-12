@@ -30,7 +30,7 @@ class HelpDialog : public QDialog, private Ui::HelpDialog
 	Q_OBJECT
 
 public:
-	HelpDialog(QWidget *parent, bool x64supported);
+	HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported);
 	~HelpDialog(void);
 
 private slots:
@@ -44,6 +44,7 @@ private:
 	bool m_startAgain;
 
 protected:
+	const bool m_avs2yuv;
 	const bool m_x64supported;
 
 	virtual void showEvent(QShowEvent *event);

@@ -118,7 +118,25 @@ long time to index the source file. In that case, we recommend to index
 the source file beforehand, e.g. by using the 'ffmsindex' tool.
 
 
-8. Command-line Syntax
+8. Color Spaces / Chroma Subsampling
+------------------------------------
+
+Avs2YUV converts the output of your Avisynth script to the YV12 format,
+i.e. YUV data with 4:2:0 chroma subsampling and 8-Bit precision.
+Usually this is exactly what you want/need. If, however, your Avisynth
+script outputs image data with a higher chroma resolution, e.g. YUY2
+(4:2:2), then the conversion to YV12 (4:2:0) will discard some of the
+information. In that case, if you want/need to keep the full chroma
+resolution of your Avisynth script's output, you will have to pass the
+"-csp" switch to Avs2YUV as a custom parameter! Use "-csp I422" for
+YUV 4:2:2 (YV16) and use "-csp I444" for YUV 4:4:4 (YV24). Note,
+however, that Avisynth 2.5 did NOT support YV16/YV24, so you need to
+use Avisynth 2.6 or Avs2YUV will fail! Also be aware that x264 itself
+will convert any YV16 or YV24 input back to YV12, if you don't pass the
+suitable "--csp-output i422/i444" switch as a custom parameter to x264!
+
+
+9. Command-line Syntax
 ----------------------
 
 The following command-line switches are available:
@@ -130,8 +148,8 @@ The following command-line switches are available:
 --force-cpu-no-64bit .... Forcefully disable 64-Bit support
 
 
-9. Help & Support
------------------
+10. Help & Support
+------------------
 
 For help and support, please join the discussion at:
 http://forum.doom9.org/showthread.php?t=144140

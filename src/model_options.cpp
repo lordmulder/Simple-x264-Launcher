@@ -121,6 +121,13 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	settings.beginGroup(name);
 
+	//For backward-compatibility
+	if(settings.contains("custom_params"))
+	{
+		settings.setValue("custom_params_x264", settings.value("custom_params"));
+		settings.remove("custom_params"); settings.sync();
+	}
+
 	bool complete = true;
 	if(!settings.contains("rate_control_mode")) complete = false;
 	if(!settings.contains("target_bitrate")) complete = false;

@@ -126,14 +126,20 @@ i.e. YUV data with 4:2:0 chroma subsampling and 8-Bit precision.
 Usually this is exactly what you want/need. If, however, your Avisynth
 script outputs image data with a higher chroma resolution, e.g. YUY2
 (4:2:2), then the conversion to YV12 (4:2:0) will discard some of the
-information. In that case, if you want/need to keep the full chroma
+information. In that case, and if you want/need to keep the full chroma
 resolution of your Avisynth script's output, you will have to pass the
 "-csp" switch to Avs2YUV as a custom parameter! Use "-csp I422" for
-YUV 4:2:2 (YV16) and use "-csp I444" for YUV 4:4:4 (YV24). Note,
-however, that Avisynth 2.5 did NOT support YV16/YV24, so you need to
-use Avisynth 2.6 or Avs2YUV will fail! Also be aware that x264 itself
-will convert any YV16 or YV24 input back to YV12, if you don't pass the
-suitable "--csp-output i422/i444" switch as a custom parameter to x264!
+YUV 4:2:2 (YV16) and use "-csp I444" for YUV 4:4:4 (YV24). Please note
+that Avs2YUV can NOT pass through the "packed" YUY2 format. Thus it has
+to be converted to the "planar" YV16 format. As both, YUY2 and YV16,
+are YUV 4:2:2 formats, converting from YUY2 to YV16 is a lossless
+operation. Note, however, that Avisynth 2.5 did NOT support YV16/YV24,
+so you need to use Avisynth 2.6; otherwise Avs2YUV will fail to do the
+conversion! Also be aware that the x264 encoder itself will convert any
+YV16 or YV24 input back to the YV12 format, if you don't pass the
+suitable "--output-csp i422/i444" switch to x264 as a custom parameter!
+In short, to encode YUY2 from Avisynth, you have to pass "-csp I422" to
+Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 
 9. Command-line Syntax

@@ -69,20 +69,7 @@ public:
 		m_icon->hide();
 	}
 	
-	virtual State validate(QString &input, int &pos) const
-	{
-		static const char* p[] = {"B", "o", "h", "p", "q", "fps", "frames", "preset", "tune", "profile",
-			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help","quiet", NULL};
-
-		bool invalid = false;
-
-		for(size_t i = 0; p[i] && (!invalid); i++)
-		{
-			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]));
-		}
-
-		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
-	}
+	virtual State validate(QString &input, int &pos) const = 0;
 
 	virtual void fixup(QString &input) const
 	{
@@ -92,17 +79,18 @@ public:
 protected:
 	QLabel *const m_notifier, *const m_icon;
 
-	bool checkParam(const QString &input, const QString &param) const
+	bool checkParam(const QString &input, const QString &param, const bool doubleMinus) const
 	{
 		static const char c[20] = {' ', '*', '?', '<', '>', '/', '\\', '"', '\'', '!', '+', '#', '&', '%', '=', ',', ';', '.', '´', '`'};
+		const QString prefix = doubleMinus ? QLatin1String("--") : QLatin1String("-");
 		
 		bool flag = false;
 		if(param.length() > 1)
 		{
-			flag = flag || input.endsWith(QString("--%1").arg(param), Qt::CaseInsensitive);
+			flag = flag || input.endsWith(QString("%1%2").arg(prefix, param), Qt::CaseInsensitive);
 			for(size_t i = 0; i < sizeof(c); i++)
 			{
-				flag = flag || input.contains(QString("--%1%2").arg(param, QChar::fromLatin1(c[i])), Qt::CaseInsensitive);
+				flag = flag || input.contains(QString("%1%2%3").arg(prefix, param, QChar::fromLatin1(c[i])), Qt::CaseInsensitive);
 			}
 		}
 		else
@@ -117,7 +105,7 @@ protected:
 		{
 			if(m_notifier)
 			{
-				m_notifier->setText(tr("Invalid parameter: %1").arg((param.length() > 1) ? QString("--%1").arg(param) : QString("-%1").arg(param)));
+				m_notifier->setText(tr("Invalid parameter: %1").arg((param.length() > 1) ? QString("%1%2").arg(prefix, param) : QString("-%1").arg(param)));
 				if(m_notifier->isHidden()) m_notifier->show();
 				if(m_icon) { if(m_icon->isHidden()) m_icon->show(); }
 			}
@@ -131,6 +119,47 @@ protected:
 			}
 		}
 		return flag;
+	}
+};
+
+class StringValidatorX264 : public StringValidator
+{
+public:
+	StringValidatorX264(QLabel *notifier, QLabel *icon) : StringValidator(notifier, icon) {}
+
+	virtual State validate(QString &input, int &pos) const
+	{
+		static const char* p[] = {"B", "o", "h", "p", "q", "fps", "frames", "preset", "tune", "profile",
+			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help","quiet", NULL};
+
+		bool invalid = false;
+
+		for(size_t i = 0; p[i] && (!invalid); i++)
+		{
+			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), true);
+		}
+
+		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
+	}
+};
+
+class StringValidatorAvs2YUV : public StringValidator
+{
+public:
+	StringValidatorAvs2YUV(QLabel *notifier, QLabel *icon) : StringValidator(notifier, icon) {}
+
+	virtual State validate(QString &input, int &pos) const
+	{
+		static const char* p[] = {"o", "frames", "seek", "raw", "hfyu", NULL};
+
+		bool invalid = false;
+
+		for(size_t i = 0; p[i] && (!invalid); i++)
+		{
+			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), false);
+		}
+
+		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 };
 
@@ -169,9 +198,12 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	connect(buttonDeleteTemplate, SIGNAL(clicked()), this, SLOT(deleteTemplateButtonClicked()));
 
 	//Setup validator
-	editCustomParams->installEventFilter(this);
-	editCustomParams->setValidator(new StringValidator(labelNotification, iconNotification));
-	editCustomParams->clear();
+	editCustomX264Params->installEventFilter(this);
+	editCustomX264Params->setValidator(new StringValidatorX264(labelNotificationX264, iconNotificationX264));
+	editCustomX264Params->clear();
+	editCustomAvs2YUVParams->installEventFilter(this);
+	editCustomAvs2YUVParams->setValidator(new StringValidatorAvs2YUV(labelNotificationAvs2YUV, iconNotificationAvs2YUV));
+	editCustomAvs2YUVParams->clear();
 
 	//Install event filter
 	labelHelpScreenX264->installEventFilter(this);
@@ -184,7 +216,8 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	connect(cbxPreset, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(cbxTuning, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(cbxProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
-	connect(editCustomParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
+	connect(editCustomX264Params, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
+	connect(editCustomAvs2YUVParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
 
 	//Setup template selector
 	loadTemplateList();
@@ -232,8 +265,10 @@ void AddJobDialog::showEvent(QShowEvent *event)
 		buttonAccept->setFocus();
 	}
 
-	labelNotification->hide();
-	iconNotification->hide();
+	labelNotificationX264->hide();
+	iconNotificationX264->hide();
+	labelNotificationAvs2YUV->hide();
+	iconNotificationAvs2YUV->hide();
 }
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
@@ -250,9 +285,9 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
-	else if((o == editCustomParams) && (e->type() == QEvent::FocusOut))
+	else if((o == editCustomX264Params) && (e->type() == QEvent::FocusOut))
 	{
-		editCustomParams->setText(editCustomParams->text().simplified());
+		editCustomX264Params->setText(editCustomX264Params->text().simplified());
 	}
 	else if((o == editCustomAvs2YUVParams) && (e->type() == QEvent::FocusOut))
 	{
@@ -353,7 +388,7 @@ void AddJobDialog::accept(void)
 		QMessageBox::warning(this, tr("Not a File!"), tr("<nobr>Selected output file does not appear to be a valid file!</nobr>"));
 		return;
 	}
-	if(!editCustomParams->hasAcceptableInput())
+	if(!editCustomX264Params->hasAcceptableInput())
 	{
 		int ret = QMessageBox::warning(this, tr("Invalid Params"), tr("<nobr>Your custom parameters are invalid and will be discarded!</nobr>"), QMessageBox::Ignore | QMessageBox::Cancel, QMessageBox::Cancel);
 		if(ret != QMessageBox::Ignore) return;
@@ -662,7 +697,8 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 	cbxPreset->blockSignals(true);
 	cbxTuning->blockSignals(true);
 	cbxProfile->blockSignals(true);
-	editCustomParams->blockSignals(true);
+	editCustomX264Params->blockSignals(true);
+	editCustomAvs2YUVParams->blockSignals(true);
 
 	cbxRateControlMode->setCurrentIndex(options->rcMode());
 	spinQuantizer->setValue(options->quantizer());
@@ -670,7 +706,7 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 	updateComboBox(cbxPreset, options->preset());
 	updateComboBox(cbxTuning, options->tune());
 	updateComboBox(cbxProfile, options->profile());
-	editCustomParams->setText(options->customX264());
+	editCustomX264Params->setText(options->customX264());
 	editCustomAvs2YUVParams->setText(options->customAvs2YUV());
 
 	cbxRateControlMode->blockSignals(false);
@@ -679,7 +715,8 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 	cbxPreset->blockSignals(false);
 	cbxTuning->blockSignals(false);
 	cbxProfile->blockSignals(false);
-	editCustomParams->blockSignals(false);
+	editCustomX264Params->blockSignals(false);
+	editCustomAvs2YUVParams->blockSignals(false);
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)
@@ -690,8 +727,8 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setPreset(cbxPreset->model()->data(cbxPreset->model()->index(cbxPreset->currentIndex(), 0)).toString());
 	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
 	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
-	options->setCustomX264(editCustomParams->hasAcceptableInput() ? editCustomParams->text().simplified() : QString());
-	options->setCustomAvs2YUV(editCustomAvs2YUVParams->text().simplified());
+	options->setCustomX264(editCustomX264Params->hasAcceptableInput() ? editCustomX264Params->text().simplified() : QString());
+	options->setCustomAvs2YUV(editCustomAvs2YUVParams->hasAcceptableInput() ? editCustomAvs2YUVParams->text().simplified() : QString());
 }
 
 QString AddJobDialog::makeFileFilter(void)

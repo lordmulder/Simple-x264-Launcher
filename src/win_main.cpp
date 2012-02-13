@@ -677,22 +677,25 @@ void MainWindow::init(void)
 	}
 
 	//Check for Avisynth support
-	double avisynthVersion = 0.0;
-	QLibrary *avsLib = new QLibrary("avisynth.dll");
-	if(avsLib->load())
+	if(!qApp->arguments().contains("--skip-avisynth-check", Qt::CaseInsensitive))
 	{
-		avisynthVersion = detectAvisynthVersion(avsLib);
-		if(avisynthVersion < 0.0)
+		double avisynthVersion = 0.0;
+		QLibrary *avsLib = new QLibrary("avisynth.dll");
+		if(avsLib->load())
 		{
-			int val = QMessageBox::critical(this, tr("Avisynth Error"), tr("<nobr>A critical error was encountered while checking your Avisynth version!</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			avisynthVersion = detectAvisynthVersion(avsLib);
+			if(avisynthVersion < 0.0)
+			{
+				int val = QMessageBox::critical(this, tr("Avisynth Error"), tr("<nobr>A critical error was encountered while checking your Avisynth version!</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+				if(val != 1) { close(); qApp->exit(-1); return; }
+			}
+		}
+		if(avisynthVersion < 2.5)
+		{
+			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			avsLib->unload(); X264_DELETE(avsLib);
 			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
-	}
-	if(avisynthVersion < 2.5)
-	{
-		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-		avsLib->unload(); X264_DELETE(avsLib);
-		if(val != 1) { close(); qApp->exit(-1); return; }
 	}
 
 	//Check for expiration
@@ -1052,7 +1055,7 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 					{
 						if(avs_is_float(avs_version))
 						{
-							qDebug("Avisynth version: v%f", avs_as_float(avs_version));
+							qDebug("Avisynth version: v%.2f", avs_as_float(avs_version));
 							version_number = avs_as_float(avs_version);
 						}
 					}

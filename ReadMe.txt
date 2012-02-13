@@ -151,6 +151,7 @@ The following command-line switches are available:
 --console ............... Show the "debug" console
 --no-console ............ Don't show the "debug" console
 --no-style .............. Don't use the Qt "Plastique" style
+--skip-avisynth-check ... Skip Avisynth check (not recommended!)
 --force-cpu-no-64bit .... Forcefully disable 64-Bit support
 
 

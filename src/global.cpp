@@ -309,7 +309,7 @@ void x264_init_console(int argc, char* argv[])
 	{
 		if(!g_x264_console_attached)
 		{
-			if(AllocConsole() != FALSE)
+			if(AllocConsole())
 			{
 				SetConsoleCtrlHandler(NULL, TRUE);
 				SetConsoleTitle(L"Simple x264 Launcher | Debug Console");

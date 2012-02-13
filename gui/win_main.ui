@@ -37,7 +37,7 @@
         <enum>Qt::ActionsContextMenu</enum>
        </property>
        <property name="alternatingRowColors">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="selectionMode">
         <enum>QAbstractItemView::SingleSelection</enum>
@@ -350,6 +350,7 @@
     <addaction name="separator"/>
     <addaction name="actionWebWiki"/>
     <addaction name="actionWebBluRay"/>
+    <addaction name="actionWebAvsWiki"/>
     <addaction name="actionWebSecret"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
@@ -557,6 +558,15 @@
    </property>
    <property name="text">
     <string>Secret Recipe (Shush!)</string>
+   </property>
+  </action>
+  <action name="actionWebAvsWiki">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
+   </property>
+   <property name="text">
+    <string>Avisynth Usage Wiki</string>
    </property>
   </action>
  </widget>

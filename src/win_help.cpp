@@ -65,8 +65,11 @@ HelpDialog::~HelpDialog(void)
 
 void HelpDialog::showEvent(QShowEvent *event)
 {
+	logo_x264->setHidden(m_avs2yuv);
+	logo_avisynth->setVisible(m_avs2yuv);
+	
 	QDialog::showEvent(event);
-
+	
 	m_startAgain = true;
 
 	if(!m_avs2yuv)

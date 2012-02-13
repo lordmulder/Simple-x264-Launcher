@@ -531,6 +531,11 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 
 	for(int i = 0; i < cbxTemplate->count(); i++)
 	{
+		const QString tempName = cbxTemplate->itemText(i);
+		if(tempName.contains('<') || tempName.contains('>'))
+		{
+			continue;
+		}
 		OptionsModel* test = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
 		if(test != NULL)
 		{

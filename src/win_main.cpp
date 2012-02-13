@@ -38,6 +38,7 @@
 #include <QLibrary>
 #include <QProcess>
 #include <QProgressDialog>
+#include <QScrollBar>
 
 #include <Mmsystem.h>
 
@@ -139,6 +140,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	connect(actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebAvsWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
@@ -395,6 +397,7 @@ void MainWindow::showAbout(void)
 	aboutBox.setWindowTitle(tr("About..."));
 	aboutBox.setText(text.replace("-", "&minus;"));
 	aboutBox.addButton(tr("About x264"), QMessageBox::NoRole);
+	aboutBox.addButton(tr("About AVS"), QMessageBox::NoRole);
 	aboutBox.addButton(tr("About Qt"), QMessageBox::NoRole);
 	aboutBox.setEscapeButton(aboutBox.addButton(tr("Close"), QMessageBox::NoRole));
 		
@@ -409,7 +412,8 @@ void MainWindow::showAbout(void)
 				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (c) 2003-2012 x264 project.<br>");
 				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
-				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a <u>commercial</u> x264 license!<br></tt></nobr>").arg("http://x264licensing.com/");
+				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a commercial x264 license.<br>").arg("http://x264licensing.com/");
+				text2 += tr("Read the <a href=\"%1\">user's manual</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://mewiki.project357.com/wiki/X264_Settings", "http://forum.doom9.org/forumdisplay.php?f=77");
 
 				QMessageBox x264Box(this);
 				x264Box.setIconPixmap(QIcon(":/images/x264.png").pixmap(48,48));
@@ -421,6 +425,24 @@ void MainWindow::showAbout(void)
 			}
 			break;
 		case 1:
+			{
+				QString text2;
+				text2 += tr("<nobr><tt>Avisynth - powerful tool for video post-production.<br>");
+				text2 += tr("Copyright (c) 2000 Ben Rudiak-Gould and all subsequent developers.<br>");
+				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
+				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://avisynth.org/");
+				text2 += tr("Read the <a href=\"%1\">guide</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://avisynth.org/mediawiki/First_script", "http://forum.doom9.org/forumdisplay.php?f=33");
+
+				QMessageBox x264Box(this);
+				x264Box.setIconPixmap(QIcon(":/images/avisynth.png").pixmap(48,67));
+				x264Box.setWindowTitle(tr("About Avisynth"));
+				x264Box.setText(text2.replace("-", "&minus;"));
+				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
+				MessageBeep(MB_ICONINFORMATION);
+				x264Box.exec();
+			}
+			break;
+		case 2:
 			QMessageBox::aboutQt(this);
 			break;
 		default:
@@ -443,6 +465,7 @@ void MainWindow::showWebLink(void)
 	if(QObject::sender() == actionWebAvisynth64) QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
 	if(QObject::sender() == actionWebWiki)       QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
 	if(QObject::sender() == actionWebBluRay)     QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
+	if(QObject::sender() == actionWebAvsWiki)    QDesktopServices::openUrl(QUrl("http://avisynth.org/mediawiki/Main_Page#Usage"));
 	if(QObject::sender() == actionWebSecret)     QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
 }
 

@@ -29,6 +29,7 @@
 class JobListModel;
 class OptionsModel;
 class QFile;
+class QLibrary;
 
 class MainWindow: public QMainWindow, private Ui::MainWindow
 {
@@ -65,6 +66,7 @@ private:
 	void updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon);
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
+	double detectAvisynthVersion(QLibrary *avsLib);
 
 private slots:
 	void addButtonPressed(const QString &filePath = QString(), int fileNo = -1, int fileTotal = 0, bool *ok = NULL);

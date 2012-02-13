@@ -50,6 +50,21 @@ const char *tpl_last = "<LAST_USED>";
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Avisynth stuff
+///////////////////////////////////////////////////////////////////////////////
+
+#include "avisynth_c.h"
+
+/* AVS uses a versioned interface to control backwards compatibility */
+#define AVS_INTERFACE_25 2
+
+/* Function pointers */
+typedef AVS_ScriptEnvironment* (__stdcall *avs_create_script_environment_func)(int version);
+typedef AVS_Value (__stdcall *avs_invoke_func)(AVS_ScriptEnvironment *, const char * name, AVS_Value args, const char** arg_names);
+typedef int (__stdcall *avs_function_exists_func)(AVS_ScriptEnvironment *, const char * name);
+typedef void (__stdcall *avs_delete_script_environment_func)(AVS_ScriptEnvironment *);
+
+///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -427,7 +442,7 @@ void MainWindow::showAbout(void)
 		case 1:
 			{
 				QString text2;
-				text2 += tr("<nobr><tt>Avisynth - powerful tool for video post-production.<br>");
+				text2 += tr("<nobr><tt>Avisynth - powerful video processing scripting language.<br>");
 				text2 += tr("Copyright (c) 2000 Ben Rudiak-Gould and all subsequent developers.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
 				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://avisynth.org/");
@@ -662,16 +677,21 @@ void MainWindow::init(void)
 	}
 
 	//Check for Avisynth support
-	bool avsAvailable = false;
+	double avisynthVersion = 0.0;
 	QLibrary *avsLib = new QLibrary("avisynth.dll");
 	if(avsLib->load())
 	{
-		avsAvailable = (avsLib->resolve("avs_create_script_environment") != NULL);
+		avisynthVersion = detectAvisynthVersion(avsLib);
+		if(avisynthVersion < 0.0)
+		{
+			int val = QMessageBox::critical(this, tr("Avisynth Error"), tr("<nobr>A critical error was encountered while checking your Avisynth version!</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			if(val != 1) { close(); qApp->exit(-1); return; }
+		}
 	}
-	if(!avsAvailable)
+	if(avisynthVersion < 2.5)
 	{
+		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 		avsLib->unload(); X264_DELETE(avsLib);
-		int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Thus Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 		if(val != 1) { close(); qApp->exit(-1); return; }
 	}
 
@@ -1005,3 +1025,56 @@ void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon
 
 	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
 }
+
+/*
+ * Detect Avisynth version
+ */
+double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
+{
+	double version_number = 0.0;
+	
+	__try
+	{
+		avs_create_script_environment_func avs_create_script_environment_ptr = (avs_create_script_environment_func) avsLib->resolve("avs_create_script_environment");
+		avs_invoke_func avs_invoke_ptr = (avs_invoke_func) avsLib->resolve("avs_invoke");
+		avs_function_exists_func avs_function_exists_ptr = (avs_function_exists_func) avsLib->resolve("avs_function_exists");
+		avs_delete_script_environment_func avs_delete_script_environment_ptr = (avs_delete_script_environment_func) avsLib->resolve("avs_delete_script_environment");
+
+		if((avs_create_script_environment_ptr != NULL) && (avs_invoke_ptr != NULL) && (avs_function_exists_ptr != NULL))
+		{
+			AVS_ScriptEnvironment* avs_env = avs_create_script_environment_ptr(AVS_INTERFACE_25);
+			if(avs_env != NULL)
+			{
+				if(avs_function_exists_ptr(avs_env, "VersionNumber"))
+				{
+					AVS_Value avs_version = avs_invoke_ptr(avs_env, "VersionNumber", avs_new_value_array(NULL, 0), NULL);
+					if(!avs_is_error(avs_version))
+					{
+						if(avs_is_float(avs_version))
+						{
+							qDebug("Avisynth version: v%f", avs_as_float(avs_version));
+							version_number = avs_as_float(avs_version);
+						}
+					}
+				}
+				if(avs_delete_script_environment_ptr != NULL)
+				{
+					avs_delete_script_environment_ptr(avs_env);
+					avs_env = NULL;
+				}
+			}
+		}
+		else
+		{
+			qWarning("It seems the Avisynth DLL is missing required API functions!");
+		}
+	}
+	__except(1)
+	{
+		qWarning("Exception in Avisynth initialization code!");
+		version_number = -1.0;
+	}
+
+	return version_number;
+}
+

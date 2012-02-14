@@ -185,25 +185,16 @@ MainWindow::~MainWindow(void)
 /*
  * The "add" button was clicked
  */
-void MainWindow::addButtonPressed(const QString &filePathIn, const QString &filePathOut, const OptionsModel *options, int fileNo, int fileTotal, bool *ok)
+void MainWindow::addButtonPressed(const QString &filePathIn, const QString &filePathOut, OptionsModel *options, int fileNo, int fileTotal, bool *ok)
 {
 	qDebug("MainWindow::addButtonPressed");
 	
 	if(ok) *ok = false;
-	
-	OptionsModel *optionsTemp = m_options;
-	bool ownsOptions = false;
 
-	if(options)
-	{
-		optionsTemp = new OptionsModel(*options);
-		ownsOptions = true;
-	}
-
-	AddJobDialog *addDialog = new AddJobDialog(this, optionsTemp, m_cpuFeatures->x64);
+	AddJobDialog *addDialog = new AddJobDialog(this, options ? options : m_options, m_cpuFeatures->x64);
 	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
 	
-	if(ownsOptions) addDialog->setWindowTitle(tr("Restart Job"));
+	if(options) addDialog->setWindowTitle(tr("Restart Job"));
 	if((fileNo >= 0) && (fileTotal > 1)) addDialog->setWindowTitle(addDialog->windowTitle().append(tr(" (File %1 of %2)").arg(QString::number(fileNo+1), QString::number(fileTotal))));
 	if(!filePathIn.isEmpty()) addDialog->setSourceFile(filePathIn);
 	if(!filePathOut.isEmpty()) addDialog->setOutputFile(filePathOut);
@@ -215,7 +206,7 @@ void MainWindow::addButtonPressed(const QString &filePathIn, const QString &file
 		(
 			addDialog->sourceFile(),
 			addDialog->outputFile(),
-			optionsTemp,
+			options ? options : m_options,
 			QString("%1/toolset").arg(m_appDir),
 			m_cpuFeatures->x64,
 			m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit
@@ -239,11 +230,6 @@ void MainWindow::addButtonPressed(const QString &filePathIn, const QString &file
 	}
 	
 	X264_DELETE(addDialog);
-	
-	if(ownsOptions)
-	{
-		X264_DELETE(optionsTemp);
-	}
 }
 
 /*
@@ -315,7 +301,9 @@ void MainWindow::restartButtonPressed(void)
 
 	if((options) && (!source.isEmpty()) && (!output.isEmpty()))
 	{
-		addButtonPressed(source, output, options);
+		OptionsModel *tempOptions = new OptionsModel(*options);
+		addButtonPressed(source, output, tempOptions);
+		X264_DELETE(tempOptions);
 	}
 }
 

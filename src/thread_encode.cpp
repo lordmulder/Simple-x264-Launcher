@@ -49,12 +49,14 @@ QMutex EncodeThread::m_mutex_startProcess;
 		log("\nPROCESS ABORTED BY USER !!!"); \
 		setStatus(JobStatus_Aborted); \
 		if(QFileInfo(indexFile).exists()) QFile::remove(indexFile); \
+		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
 		return; \
 	} \
 	else if(!(OK_FLAG)) \
 	{ \
 		setStatus(JobStatus_Failed); \
 		if(QFileInfo(indexFile).exists()) QFile::remove(indexFile); \
+		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
 		return; \
 	} \
 }

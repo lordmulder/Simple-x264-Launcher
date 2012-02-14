@@ -69,7 +69,7 @@ private:
 	double detectAvisynthVersion(QLibrary *avsLib);
 
 private slots:
-	void addButtonPressed(const QString &filePathIn = QString(), const QString &filePathOut = QString(), const OptionsModel *options = NULL, int fileNo = -1, int fileTotal = 0, bool *ok = NULL);
+	void addButtonPressed(const QString &filePathIn = QString(), const QString &filePathOut = QString(), OptionsModel *options = NULL, int fileNo = -1, int fileTotal = 0, bool *ok = NULL);
 	void abortButtonPressed(void);
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);

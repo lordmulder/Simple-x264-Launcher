@@ -1094,5 +1094,9 @@ QStringList EncodeThread::splitParams(const QString &params)
 	}
 	
 	APPEND_AND_CLEAR(list, temp);
+
+	list.replaceInStrings("$(INPUT)", QDir::toNativeSeparators(m_sourceFileName), Qt::CaseInsensitive);
+	list.replaceInStrings("$(OUTPUT)", QDir::toNativeSeparators(m_outputFileName), Qt::CaseInsensitive);
+
 	return list;
 }

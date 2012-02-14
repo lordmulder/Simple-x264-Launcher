@@ -147,13 +147,32 @@ Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 This application is a front-end to the x264 encoder. And, as x264 does
 NOT support audio processing/encoding yet, there is NO explicit support
-for audio encoding in this application. Thus, if you need to encode a
-video file with audio, you will have to add the audio stream to the
+for audio encoding in this application. Thus, if you want to create a
+video file *with* audio, you will have to add the audio stream to the
 encoded video file afterwards. This process is called 'multiplexing' or
-just 'muxing'. You can use MKV Toolnix or MP4 Box for that purpose.
+just 'muxing'. In case you are dealing with Matroska (MKV) files, then
+"MKVMerge GUI" from the "MKVToolNix" package is the right tool for this
+task. If, instead, you are dealing with MP4 files, then you may use
+"MP4Box" or the "YAMB" front-end for muxing the audio stream.
+
+Having said all that, there now is an unofficial "Audio" branch of x264
+available. If you are using one of the patched x264 builds with "audio
+support" patch (e.g. those provided by JEEB), you can process the audio
+with x264 and skip the additional muxing step. Basically the new audio
+patch adds a new "--acodec" switch, which you can pass the x264 as a
+custom parameter. For example you can pass "--acodec aac" for encoding
+the audio to the AAC format (recommended for AAC files). Or you can
+pass "--acodec vorbis" for encoding the audio to the Ogg/Vorbis format
+(recommended for MKV files). Please be aware that audio encoding will
+work only, if your input file contains an audio stream! When using the
+built-in LAVF/FFMS input of x264, the audio can be encoded straight
+from the input file. This does NOT work with Avisynth input! Instead,
+if you want to encode audio from an Avisynth script, you must pass the
+"--audiofile <path_to_avs_file>" switch to x264 as a custom parameter.
+For convenience, the "--audiofile $(INPUT)" parameter may be used.
 
 
-9. Command-line Syntax
+10. Command-line Syntax
 ----------------------
 
 The following command-line switches are available:
@@ -166,7 +185,7 @@ The following command-line switches are available:
 --force-cpu-no-64bit .... Forcefully disable 64-Bit support
 
 
-10. Help & Support
+11. Help & Support
 ------------------
 
 For help and support, please join the discussion at:

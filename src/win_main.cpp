@@ -142,6 +142,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	connect(buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
 	connect(buttonPauseJob, SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
 	connect(actionJob_Delete, SIGNAL(triggered()), this, SLOT(deleteButtonPressed()));
+	connect(actionJob_Restart, SIGNAL(triggered()), this, SLOT(restartButtonPressed()));
 	connect(actionJob_Browse, SIGNAL(triggered()), this, SLOT(browseButtonPressed()));
 
 	//Enable menu
@@ -198,16 +199,28 @@ MainWindow::~MainWindow(void)
 /*
  * The "add" button was clicked
  */
-void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileTotal, bool *ok)
+void MainWindow::addButtonPressed(const QString &filePathIn, const QString &filePathOut, const OptionsModel *options, int fileNo, int fileTotal, bool *ok)
 {
 	qDebug("MainWindow::addButtonPressed");
 	
 	if(ok) *ok = false;
 	
-	AddJobDialog *addDialog = new AddJobDialog(this, m_options, m_cpuFeatures->x64);
+	OptionsModel *optionsTemp = m_options;
+	bool ownsOptions = false;
+
+	if(options)
+	{
+		optionsTemp = new OptionsModel(*options);
+		ownsOptions = true;
+	}
+
+	AddJobDialog *addDialog = new AddJobDialog(this, optionsTemp, m_cpuFeatures->x64);
 	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+	
+	if(ownsOptions) addDialog->setWindowTitle(tr("Restart Job"));
 	if((fileNo >= 0) && (fileTotal > 1)) addDialog->setWindowTitle(addDialog->windowTitle().append(tr(" (File %1 of %2)").arg(QString::number(fileNo+1), QString::number(fileTotal))));
-	if(!filePath.isEmpty()) addDialog->setSourceFile(filePath);
+	if(!filePathIn.isEmpty()) addDialog->setSourceFile(filePathIn);
+	if(!filePathOut.isEmpty()) addDialog->setOutputFile(filePathOut);
 
 	int result = addDialog->exec();
 	if(result == QDialog::Accepted)
@@ -216,7 +229,7 @@ void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileT
 		(
 			addDialog->sourceFile(),
 			addDialog->outputFile(),
-			m_options,
+			optionsTemp,
 			QString("%1/toolset").arg(m_appDir),
 			m_cpuFeatures->x64,
 			m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit
@@ -235,10 +248,16 @@ void MainWindow::addButtonPressed(const QString &filePath, int fileNo, int fileT
 
 			if(ok) *ok = true;
 		}
-	}
 
-	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+		m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+	}
+	
 	X264_DELETE(addDialog);
+	
+	if(ownsOptions)
+	{
+		X264_DELETE(optionsTemp);
+	}
 }
 
 /*
@@ -294,6 +313,23 @@ void MainWindow::pauseButtonPressed(bool checked)
 	else
 	{
 		m_jobList->resumeJob(jobsView->currentIndex());
+	}
+}
+
+/*
+ * The "restart" button was clicked
+ */
+void MainWindow::restartButtonPressed(void)
+{
+	const QModelIndex index = jobsView->currentIndex();
+	
+	const QString &source = m_jobList->getJobSourceFile(index);
+	const QString &output = m_jobList->getJobOutputFile(index);
+	const OptionsModel *options = m_jobList->getJobOptions(index);
+
+	if((options) && (!source.isEmpty()) && (!output.isEmpty()))
+	{
+		addButtonPressed(source, output, options);
 	}
 }
 
@@ -738,7 +774,7 @@ void MainWindow::init(void)
 		{
 			QString currentFile = files.takeFirst();
 			qDebug("Adding file: %s", currentFile.toUtf8().constData());
-			addButtonPressed(currentFile, n++, totalFiles, &ok);
+			addButtonPressed(currentFile, QString(), NULL, n++, totalFiles, &ok);
 		}
 	}
 }
@@ -782,7 +818,7 @@ void MainWindow::handleDroppedFiles(void)
 		{
 			QString currentFile = droppedFiles.takeFirst();
 			qDebug("Adding file: %s", currentFile.toUtf8().constData());
-			addButtonPressed(currentFile, n++, totalFiles, &ok);
+			addButtonPressed(currentFile, QString(), NULL, n++, totalFiles, &ok);
 		}
 	}
 	qDebug("Leave from MainWindow::handleDroppedFiles!");
@@ -974,6 +1010,7 @@ void MainWindow::updateButtons(EncodeThread::JobStatus status)
 	buttonPauseJob->setChecked(status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Pausing);
 
 	actionJob_Delete->setEnabled(status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Aborted || status == EncodeThread::JobStatus_Failed || status == EncodeThread::JobStatus_Enqueued);
+	actionJob_Restart->setEnabled(status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Aborted || status == EncodeThread::JobStatus_Failed || status == EncodeThread::JobStatus_Enqueued);
 	actionJob_Browse->setEnabled(status == EncodeThread::JobStatus_Completed);
 
 	actionJob_Start->setEnabled(buttonStartJob->isEnabled());

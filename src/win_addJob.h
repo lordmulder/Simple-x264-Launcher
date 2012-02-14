@@ -44,6 +44,7 @@ public:
 	bool runImmediately(void) { return checkBoxRun->isChecked(); }
 	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
 	void setSourceFile(const QString &path) { editSource->setText(QDir::toNativeSeparators(path)); }
+	void setOutputFile(const QString &path) { editOutput->setText(QDir::toNativeSeparators(path)); }
 
 protected:
 	OptionsModel *m_options;

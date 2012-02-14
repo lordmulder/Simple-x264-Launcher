@@ -364,8 +364,10 @@
     <addaction name="actionJob_Start"/>
     <addaction name="actionJob_Pause"/>
     <addaction name="actionJob_Abort"/>
+    <addaction name="separator"/>
     <addaction name="actionJob_Browse"/>
     <addaction name="actionJob_Delete"/>
+    <addaction name="actionJob_Restart"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuJob"/>
@@ -449,7 +451,7 @@
      <normaloff>:/buttons/add.png</normaloff>:/buttons/add.png</iconset>
    </property>
    <property name="text">
-    <string>Add New Job</string>
+    <string>Create Job</string>
    </property>
   </action>
   <action name="actionJob_Start">
@@ -567,6 +569,18 @@
    </property>
    <property name="text">
     <string>Avisynth Usage Wiki</string>
+   </property>
+  </action>
+  <action name="actionJob_Restart">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/restart.png</normaloff>:/buttons/restart.png</iconset>
+   </property>
+   <property name="text">
+    <string>Restart Job</string>
    </property>
   </action>
  </widget>

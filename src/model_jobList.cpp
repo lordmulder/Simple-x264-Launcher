@@ -400,6 +400,19 @@ LogFileModel *JobListModel::getLogFile(const QModelIndex &index)
 	return NULL;
 }
 
+const QString &JobListModel::getJobSourceFile(const QModelIndex &index)
+{
+	static QString nullStr;
+	
+	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	{
+		EncodeThread *thread = m_threads.value(m_jobs.at(index.row()));
+		return (thread != NULL) ? thread->sourceFileName() : nullStr;
+	}
+
+	return nullStr;
+}
+
 const QString &JobListModel::getJobOutputFile(const QModelIndex &index)
 {
 	static QString nullStr;
@@ -431,6 +444,19 @@ unsigned int JobListModel::getJobProgress(const QModelIndex &index)
 	}
 
 	return 0;
+}
+
+const OptionsModel *JobListModel::getJobOptions(const QModelIndex &index)
+{
+	static QString nullStr;
+	
+	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	{
+		EncodeThread *thread = m_threads.value(m_jobs.at(index.row()));
+		return (thread != NULL) ? thread->options() : NULL;
+	}
+
+	return NULL;
 }
 
 QModelIndex JobListModel::getJobIndexById(const QUuid &id)

@@ -774,7 +774,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>All command-line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.</string>
+                <string>&lt;nobr&gt;All command&amp;minus;line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.&lt;br&gt;The following macros can be used:&lt;tt&gt; $(INPUT)&lt;/tt&gt; expands to the current source file path and&lt;tt&gt; $(OUTPUT)&lt;/tt&gt; expands to the current output file path.&lt;/nobr&gt;</string>
                </property>
                <property name="text">
                 <string>Custom x264 Parameters:</string>
@@ -954,7 +954,7 @@
               </font>
              </property>
              <property name="toolTip">
-              <string>All command-line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.</string>
+              <string>&lt;nobr&gt;All command&amp;minus;line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.&lt;br&gt;The following macros can be used:&lt;tt&gt; $(INPUT)&lt;/tt&gt; expands to the current source file path and&lt;tt&gt; $(OUTPUT)&lt;/tt&gt; expands to the current output file path.&lt;/nobr&gt;</string>
              </property>
              <property name="placeholderText">
               <string>You can enter custom command-line options here...</string>
@@ -1007,6 +1007,9 @@
              </item>
              <item>
               <widget class="QLabel" name="iconNotificationAvs2YUV">
+               <property name="toolTip">
+                <string>Your custom parameters will be ignored entirely, if you don't fix them!</string>
+               </property>
                <property name="text">
                 <string/>
                </property>
@@ -1075,6 +1078,9 @@
                  <weight>75</weight>
                  <bold>true</bold>
                 </font>
+               </property>
+               <property name="toolTip">
+                <string>Your custom parameters will be ignored entirely, if you don't fix them!</string>
                </property>
                <property name="text">
                 <string>Invalid parameter entered!</string>

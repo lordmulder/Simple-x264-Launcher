@@ -27,6 +27,7 @@
 #include "win_preferences.h"
 #include "taskbar7.h"
 #include "resource.h"
+#include "avisynth_c.h"
 
 #include <QDate>
 #include <QTimer>
@@ -48,21 +49,6 @@ const char *tpl_last = "<LAST_USED>";
 
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
-
-///////////////////////////////////////////////////////////////////////////////
-// Avisynth stuff
-///////////////////////////////////////////////////////////////////////////////
-
-#include "avisynth_c.h"
-
-/* AVS uses a versioned interface to control backwards compatibility */
-#define AVS_INTERFACE_25 2
-
-/* Function pointers */
-typedef AVS_ScriptEnvironment* (__stdcall *avs_create_script_environment_func)(int version);
-typedef AVS_Value (__stdcall *avs_invoke_func)(AVS_ScriptEnvironment *, const char * name, AVS_Value args, const char** arg_names);
-typedef int (__stdcall *avs_function_exists_func)(AVS_ScriptEnvironment *, const char * name);
-typedef void (__stdcall *avs_delete_script_environment_func)(AVS_ScriptEnvironment *);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor

@@ -142,6 +142,17 @@ In short, to encode YUY2 from Avisynth, you have to pass "-csp I422" to
 Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 
+9. Audio Processing/Encoding
+----------------------------
+
+This application is a front-end to the x264 encoder. And, as x264 does
+NOT support audio processing/encoding yet, there is NO explicit support
+for audio encoding in this application. Thus, if you need to encode a
+video file with audio, you will have to add the audio stream to the
+encoded video file afterwards. This process is called 'multiplexing' or
+just 'muxing'. You can use MKV Toolnix or MP4 Box for that purpose.
+
+
 9. Command-line Syntax
 ----------------------
 

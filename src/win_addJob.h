@@ -68,6 +68,8 @@ private slots:
 	void saveTemplateButtonClicked(void);
 	void deleteTemplateButtonClicked(void);
 	void editorActionTriggered(void);
+	void copyActionTriggered(void);
+	void pasteActionTriggered(void);
 	
 	virtual void accept(void);
 

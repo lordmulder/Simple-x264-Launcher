@@ -38,6 +38,7 @@
 #include <QSettings>
 #include <QUrl>
 #include <QAction>
+#include <QClipboard>
 
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
@@ -55,6 +56,21 @@
 		} \
 	} \
 }
+
+#define ADD_CONTEXTMENU_ACTION(WIDGET, ICON, TEXT, SLOTNAME) \
+{ \
+	QAction *_action = new QAction((ICON), (TEXT), this); \
+	_action->setData(QVariant::fromValue<void*>(WIDGET)); \
+	WIDGET->addAction(_action); \
+	connect(_action, SIGNAL(triggered(bool)), this, SLOT(SLOTNAME())); \
+}
+
+#define ADD_CONTEXTMENU_SEPARATOR(WIDGET) \
+{ \
+	QAction *_action = new QAction(this); \
+	_action->setSeparator(true); \
+	WIDGET->addAction(_action); \
+} 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
@@ -222,14 +238,14 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	connect(editCustomAvs2YUVParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
 
 	//Create context menus
-	QAction *editorActionX264 = new QAction(QIcon(":/buttons/page_edit.png"), tr("Open Editor"), this);
-	editorActionX264->setData(QVariant::fromValue<void*>(editCustomX264Params));
-	editCustomX264Params->addAction(editorActionX264);
-	connect(editorActionX264, SIGNAL(triggered(bool)), this, SLOT(editorActionTriggered()));
-	QAction *editorActionAvs2YUV = new QAction(QIcon(":/buttons/page_edit.png"), tr("Open Editor"), this);
-	editorActionAvs2YUV->setData(QVariant::fromValue<void*>(editCustomAvs2YUVParams));
-	editCustomAvs2YUVParams->addAction(editorActionAvs2YUV);
-	connect(editorActionAvs2YUV, SIGNAL(triggered(bool)), this, SLOT(editorActionTriggered()));
+	ADD_CONTEXTMENU_ACTION(editCustomX264Params, QIcon(":/buttons/page_edit.png"), tr("Open the Text-Editor"), editorActionTriggered);
+	ADD_CONTEXTMENU_ACTION(editCustomAvs2YUVParams, QIcon(":/buttons/page_edit.png"), tr("Open the Text-Editor"), editorActionTriggered);
+	ADD_CONTEXTMENU_SEPARATOR(editCustomX264Params);
+	ADD_CONTEXTMENU_SEPARATOR(editCustomAvs2YUVParams);
+	ADD_CONTEXTMENU_ACTION(editCustomX264Params, QIcon(":/buttons/page_copy.png"), tr("Copy to Clipboard"), copyActionTriggered);
+	ADD_CONTEXTMENU_ACTION(editCustomAvs2YUVParams, QIcon(":/buttons/page_copy.png"), tr("Copy to Clipboard"), copyActionTriggered);
+	ADD_CONTEXTMENU_ACTION(editCustomX264Params, QIcon(":/buttons/page_paste.png"), tr("Paste from Clipboard"), pasteActionTriggered);
+	ADD_CONTEXTMENU_ACTION(editCustomAvs2YUVParams, QIcon(":/buttons/page_paste.png"), tr("Paste from Clipboard"), pasteActionTriggered);
 
 	//Setup template selector
 	loadTemplateList();
@@ -665,6 +681,28 @@ void AddJobDialog::editorActionTriggered(void)
 		}
 
 		X264_DELETE(editor);
+	}
+}
+
+void AddJobDialog::copyActionTriggered(void)
+{
+	if(QAction *action = dynamic_cast<QAction*>(QObject::sender()))
+	{
+		QClipboard *clipboard = QApplication::clipboard();
+		QLineEdit *lineEdit = reinterpret_cast<QLineEdit*>(action->data().value<void*>());
+		QString text = lineEdit->hasSelectedText() ? lineEdit->selectedText() : lineEdit->text();
+		clipboard->setText(text);
+	}
+}
+
+void AddJobDialog::pasteActionTriggered(void)
+{
+	if(QAction *action = dynamic_cast<QAction*>(QObject::sender()))
+	{
+		QClipboard *clipboard = QApplication::clipboard();
+		QLineEdit *lineEdit = reinterpret_cast<QLineEdit*>(action->data().value<void*>());
+		QString text = clipboard->text();
+		if(!text.isEmpty()) lineEdit->setText(text);
 	}
 }
 

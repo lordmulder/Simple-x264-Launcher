@@ -24,6 +24,7 @@
 #include "global.h"
 #include "model_options.h"
 #include "win_help.h"
+#include "win_editor.h"
 
 #include <QDate>
 #include <QTimer>
@@ -36,6 +37,7 @@
 #include <QInputDialog>
 #include <QSettings>
 #include <QUrl>
+#include <QAction>
 
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
@@ -150,7 +152,7 @@ public:
 
 	virtual State validate(QString &input, int &pos) const
 	{
-		static const char* p[] = {"o", "frames", "seek", "raw", "hfyu", NULL};
+		static const char* p[] = {"o", "frames", "seek", "raw", "hfyu", "slave", NULL};
 
 		bool invalid = false;
 
@@ -218,6 +220,16 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	connect(cbxProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(editCustomX264Params, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
 	connect(editCustomAvs2YUVParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
+
+	//Create context menus
+	QAction *editorActionX264 = new QAction(QIcon(":/buttons/page_edit.png"), tr("Open Editor"), this);
+	editorActionX264->setData(QVariant::fromValue<void*>(editCustomX264Params));
+	editCustomX264Params->addAction(editorActionX264);
+	connect(editorActionX264, SIGNAL(triggered(bool)), this, SLOT(editorActionTriggered()));
+	QAction *editorActionAvs2YUV = new QAction(QIcon(":/buttons/page_edit.png"), tr("Open Editor"), this);
+	editorActionAvs2YUV->setData(QVariant::fromValue<void*>(editCustomAvs2YUVParams));
+	editCustomAvs2YUVParams->addAction(editorActionAvs2YUV);
+	connect(editorActionAvs2YUV, SIGNAL(triggered(bool)), this, SLOT(editorActionTriggered()));
 
 	//Setup template selector
 	loadTemplateList();
@@ -635,6 +647,25 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 	OptionsModel *item = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(index).value<void*>());
 	cbxTemplate->removeItem(index);
 	X264_DELETE(item);
+}
+
+void AddJobDialog::editorActionTriggered(void)
+{
+
+	if(QAction *action = dynamic_cast<QAction*>(QObject::sender()))
+	{
+		QLineEdit *lineEdit = reinterpret_cast<QLineEdit*>(action->data().value<void*>());
+		
+		EditorDialog *editor = new EditorDialog(this);
+		editor->setEditText(lineEdit->text());
+
+		if(editor->exec() == QDialog::Accepted)
+		{
+			lineEdit->setText(editor->getEditText());
+		}
+
+		X264_DELETE(editor);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

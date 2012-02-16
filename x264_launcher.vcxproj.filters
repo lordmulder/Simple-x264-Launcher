@@ -107,6 +107,12 @@
     <ClCompile Include="src\taskbar7.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\win_editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_win_editor.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -144,6 +150,12 @@
     </CustomBuild>
     <CustomBuild Include="gui\win_main.ui">
       <Filter>Dialogs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_editor.ui">
+      <Filter>Dialogs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_editor.h">
+      <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

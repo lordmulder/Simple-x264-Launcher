@@ -144,6 +144,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebAvsWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebSupport, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 	//Create floating label
@@ -491,6 +492,7 @@ void MainWindow::showWebLink(void)
 	if(QObject::sender() == actionWebWiki)       QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
 	if(QObject::sender() == actionWebBluRay)     QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
 	if(QObject::sender() == actionWebAvsWiki)    QDesktopServices::openUrl(QUrl("http://avisynth.org/mediawiki/Main_Page#Usage"));
+	if(QObject::sender() == actionWebSupport)    QDesktopServices::openUrl(QUrl("http://forum.doom9.org/showthread.php?t=144140"));
 	if(QObject::sender() == actionWebSecret)     QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
 }
 

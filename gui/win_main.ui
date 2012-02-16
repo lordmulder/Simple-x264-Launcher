@@ -343,6 +343,7 @@
     </widget>
     <addaction name="actionWebMulder"/>
     <addaction name="actionWebX264"/>
+    <addaction name="actionWebSupport"/>
     <addaction name="separator"/>
     <addaction name="menuDownloadX264"/>
     <addaction name="actionWebAvisynth32"/>
@@ -581,6 +582,15 @@
    </property>
    <property name="text">
     <string>Restart Job</string>
+   </property>
+  </action>
+  <action name="actionWebSupport">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/group.png</normaloff>:/buttons/group.png</iconset>
+   </property>
+   <property name="text">
+    <string>Help and Support</string>
    </property>
   </action>
  </widget>

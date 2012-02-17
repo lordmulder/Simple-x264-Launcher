@@ -404,7 +404,7 @@
   <action name="actionWebX264">
    <property name="icon">
     <iconset resource="../res/resources.qrc">
-     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+     <normaloff>:/buttons/x264.png</normaloff>:/buttons/x264.png</iconset>
    </property>
    <property name="text">
     <string>Official x264 Web-Site</string>
@@ -560,7 +560,7 @@
      <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
    </property>
    <property name="text">
-    <string>Secret Recipe (Shush!)</string>
+    <string>Secret Recipe  - Shush!</string>
    </property>
   </action>
   <action name="actionWebAvsWiki">

@@ -105,7 +105,7 @@ or intended. Report bugs rather than reverting to an old version!
 ------------------
 
 This application provides "deadlock" prevention. This means that if an
-encoder process (x264 or Avisynth) stopps responding, it will be
+encoder process (x264 or Avisynth) stops responding, it will be
 terminated. This is done in order to ensure that the main program as
 well as the other encoder processes can continue properly. More
 specifically, a warning will be raised if the process does not respond
@@ -118,7 +118,23 @@ long time to index the source file. In that case, we recommend to index
 the source file beforehand, e.g. by using the 'ffmsindex' tool.
 
 
-8. Color Spaces / Chroma Subsampling
+8. Custom Parameters
+--------------------
+
+This application provides a "custom parameters" edit box. All command-
+line parameters you enter there will be passed to x264 unmodified. This
+way you can send arbitrary parameters to x264 - even such ones that are
+only available in patched builds of x264. See the x264 Wiki or the Help
+Screen for a list of available parameters. However be aware that the
+GUI will not check your parameters at all! Thus using an unknown or
+unsupported parameter will cause your encode to fail. Using an existing
+parameter in the wrong way will cause your encode to fail too. Last but
+not least, some parameters are forbidden by the GUI. If some parameter
+is forbidden, that's because the GUI will set that parameter for you
+(if required) or because that parameter is NOT compatible with the GUI.
+
+
+9. Color Spaces / Chroma Subsampling
 ------------------------------------
 
 Avs2YUV converts the output of your Avisynth script to the YV12 format,
@@ -142,7 +158,7 @@ In short, to encode YUY2 from Avisynth, you have to pass "-csp I422" to
 Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 
-9. Audio Processing/Encoding
+10. Audio Processing/Encoding
 ----------------------------
 
 This application is a front-end to the x264 encoder. And, as x264 does
@@ -156,23 +172,23 @@ task. If, instead, you are dealing with MP4 files, then you may use
 "MP4Box" or the "YAMB" front-end for muxing the audio stream.
 
 Having said all that, there now is an unofficial "Audio" branch of x264
-available. If you are using one of the patched x264 builds with "audio
-support" patch (e.g. those provided by JEEB), you can process the audio
-with x264 and skip the additional muxing step. Basically the new audio
-patch adds a new "--acodec" switch, which you can pass the x264 as a
-custom parameter. For example you can pass "--acodec aac" for encoding
-the audio to the AAC format (recommended for AAC files). Or you can
-pass "--acodec vorbis" for encoding the audio to the Ogg/Vorbis format
-(recommended for MKV files). Please be aware that audio encoding will
-work only, if your input file contains an audio stream! When using the
-built-in LAVF/FFMS input of x264, the audio can be encoded straight
+available. If you are using one of the modified x264 builds with "audio
+support" patch (e.g. those provided by JEEB), then you can process the
+audio with x264 and skip the additional muxing step. Basically the
+audio patch adds a new "--acodec" switch, which you can pass to x264 as
+a custom parameter. For example, you can pass "--acodec aac" for
+encoding the audio to the AAC format (recommended for MP4 files). Or
+you can pass "--acodec vorbis" for encoding the audio to the Ogg/Vorbis
+format (recommended for MKV files). Please be aware that audio encoding
+will work only, if your input file contains an audio stream! When using
+the built-in LAVF/FFMS input of x264, the audio can be encoded straight
 from the input file. This does NOT work with Avisynth input! Instead,
 if you want to encode audio from an Avisynth script, you must pass the
 "--audiofile <path_to_avs_file>" switch to x264 as a custom parameter.
 For convenience, the "--audiofile $(INPUT)" parameter may be used.
 
 
-10. Command-line Syntax
+11. Command-line Syntax
 ----------------------
 
 The following command-line switches are available:
@@ -185,7 +201,7 @@ The following command-line switches are available:
 --force-cpu-no-64bit .... Forcefully disable 64-Bit support
 
 
-11. Help & Support
+12. Help & Support
 ------------------
 
 For help and support, please join the discussion at:

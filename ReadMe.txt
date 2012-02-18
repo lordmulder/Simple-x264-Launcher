@@ -24,6 +24,8 @@ This program runs on Windows XP with Service Pack 2 and later.
 64-Bit Windows is highly recommended, but 32-Bit Windows works as well.
 The CPU should support at least the MMX and SSE1 instruction sets.
 Avisynth 2.5.x must be installed in order to use Avisynth (.avs) input.
+YV16/YV24 color spaces only supported by Avisynth 2.6 [see section 9].
+Audio encoding NOT officially supported by x264 yet [see section 10].
 
 
 3. Anti-Virus Warning
@@ -159,7 +161,7 @@ Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 
 10. Audio Processing/Encoding
-----------------------------
+-----------------------------
 
 This application is a front-end to the x264 encoder. And, as x264 does
 NOT support audio processing/encoding yet, there is NO explicit support
@@ -189,7 +191,7 @@ For convenience, the "--audiofile $(INPUT)" parameter may be used.
 
 
 11. Command-line Syntax
-----------------------
+-----------------------
 
 The following command-line switches are available:
 

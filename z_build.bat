@@ -107,6 +107,13 @@ REM ///////////////////////////////////////////////////////////////////////////
 "%UPX3_PATH%\upx.exe" --best "%PACK_PATH%\*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
+REM // Attributes
+REM ///////////////////////////////////////////////////////////////////////////
+attrib +R "%PACK_PATH%\*.exe"
+attrib +R "%PACK_PATH%\*.dll"
+attrib +R "%PACK_PATH%\*.txt"
+
+REM ///////////////////////////////////////////////////////////////////////////
 REM // Setup install parameters
 REM ///////////////////////////////////////////////////////////////////////////
 set "NSI_FILE=%TMP%\~%RANDOM%%RANDOM%.nsi"
@@ -141,7 +148,9 @@ echo !include `%~dp0\etc\finalization.nsh` >> "%NSI_FILE%"
 echo !include `%~dp0\etc\version.nsh` >> "%NSI_FILE%"
 echo !insertmacro X264_VERSIONINFO `%ISO_DATE%` `%ISO_TIME%` `%BUILD_NO%` >> "%NSI_FILE%"
 echo !insertmacro SECTION_BEGIN >> "%NSI_FILE%"
-echo File /r `%PACK_PATH%\*.*` >> "%NSI_FILE%"
+echo File /a /r `%PACK_PATH%\*.exe` >> "%NSI_FILE%"
+echo File /a /r `%PACK_PATH%\*.dll` >> "%NSI_FILE%"
+echo File /a /r `%PACK_PATH%\*.txt` >> "%NSI_FILE%"
 echo WriteRegStr HKLM `${ZIP2EXE_REGPATH}` InstallLocation `$INSTDIR` >> "%NSI_FILE%"
 echo !include `%~dp0\etc\shortcut.nsh` >> "%NSI_FILE%"
 echo !insertmacro SECTION_END >> "%NSI_FILE%"

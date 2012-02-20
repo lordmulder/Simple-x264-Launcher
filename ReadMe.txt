@@ -123,7 +123,7 @@ the source file beforehand, e.g. by using the 'ffmsindex' tool.
 8. Custom Parameters
 --------------------
 
-This application provides a "custom parameters" edit box. All command-
+This application provides a "Custom Parameters" edit box. All command-
 line parameters you enter there will be passed to x264 unmodified. This
 way you can send arbitrary parameters to x264 - even such ones that are
 only available in patched builds of x264. See the x264 Wiki or the Help
@@ -134,6 +134,11 @@ parameter in the wrong way will cause your encode to fail too. Last but
 not least, some parameters are forbidden by the GUI. If some parameter
 is forbidden, that's because the GUI will set that parameter for you
 (if required) or because that parameter is NOT compatible with the GUI.
+
+Hint: Occasionally your custom parameters string may become very long,
+especially when working with zones. In that case you can right-click on
+the "Custom Parameters" edit box and choose "Open the Text-Editor".
+This will open a multi-line text editor for easier parameter handling.
 
 
 9. Color Spaces / Chroma Subsampling
@@ -187,7 +192,7 @@ the built-in LAVF/FFMS input of x264, the audio can be encoded straight
 from the input file. This does NOT work with Avisynth input! Instead,
 if you want to encode audio from an Avisynth script, you must pass the
 "--audiofile <path_to_avs_file>" switch to x264 as a custom parameter.
-For convenience, the "--audiofile $(INPUT)" parameter may be used.
+For convenience, the string "--audiofile $(INPUT)" may be used.
 
 
 11. Command-line Syntax

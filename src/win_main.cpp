@@ -72,6 +72,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 
 	//Register meta types
 	qRegisterMetaType<QUuid>("QUuid");
+	qRegisterMetaType<QUuid>("DWORD");
 	qRegisterMetaType<EncodeThread::JobStatus>("EncodeThread::JobStatus");
 
 	//Load preferences
@@ -81,6 +82,10 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Create options object
 	m_options = new OptionsModel();
 	OptionsModel::loadTemplate(m_options, QString::fromLatin1(tpl_last));
+
+	//Create IPC thread object
+	m_ipcThread = new IPCThread();
+	connect(m_ipcThread, SIGNAL(instanceCreated(DWORD)), this, SLOT(instanceCreated(DWORD)), Qt::QueuedConnection);
 
 	//Freeze minimum size
 	setMinimumSize(size());
@@ -177,6 +182,18 @@ MainWindow::~MainWindow(void)
 		QFile *temp = m_toolsList.takeFirst();
 		X264_DELETE(temp);
 	}
+
+	if(m_ipcThread->isRunning())
+	{
+		m_ipcThread->setAbort();
+		if(!m_ipcThread->wait(5000))
+		{
+			m_ipcThread->terminate();
+			m_ipcThread->wait();
+		}
+	}
+
+	X264_DELETE(m_ipcThread);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -617,6 +634,18 @@ void MainWindow::init(void)
 
 	updateLabelPos();
 
+	//Check for a running instance
+	bool firstInstance = false;
+	if(m_ipcThread->initialize(&firstInstance))
+	{
+		if(!firstInstance)
+		{
+			m_ipcThread->notifyOtherInstance();
+			close(); qApp->exit(-1); return;
+		}
+		m_ipcThread->start();
+	}
+
 	//Check all binaries
 	while(!binaries.isEmpty())
 	{
@@ -798,6 +827,24 @@ void MainWindow::handleDroppedFiles(void)
 		}
 	}
 	qDebug("Leave from MainWindow::handleDroppedFiles!");
+}
+
+void MainWindow::instanceCreated(DWORD pid)
+{
+	qDebug("Notification from other instance received!");
+	
+	FLASHWINFO flashWinInfo;
+	memset(&flashWinInfo, 0, sizeof(FLASHWINFO));
+	flashWinInfo.cbSize = sizeof(FLASHWINFO);
+	flashWinInfo.hwnd = this->winId();
+	flashWinInfo.dwFlags = FLASHW_ALL;
+	flashWinInfo.dwTimeout = 125;
+	flashWinInfo.uCount = 5;
+
+	SwitchToThisWindow(this->winId(), TRUE);
+	SetForegroundWindow(this->winId());
+	qApp->processEvents();
+	FlashWindowEx(&flashWinInfo);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

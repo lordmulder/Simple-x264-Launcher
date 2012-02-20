@@ -22,6 +22,7 @@
 #pragma once
 
 #include "uic_win_main.h"
+#include "thread_ipc.h"
 #include "thread_encode.h"
 #include "win_preferences.h"
 #include "global.h"
@@ -51,6 +52,7 @@ protected:
 private:
 	bool m_firstShow;
 	QLabel *m_label;
+	IPCThread *m_ipcThread;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
@@ -76,6 +78,7 @@ private slots:
 	void copyLogToClipboard(bool checked);
 	void handleDroppedFiles(void);
 	void init(void);
+	void instanceCreated(DWORD pid);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);

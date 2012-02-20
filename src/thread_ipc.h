@@ -19,13 +19,41 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 0
-#define VER_X264_PATCH 2
-#define VER_X264_BUILD 238
+#pragma once
 
-#define VER_X264_MINIMUM_REV 2146
-#define VER_X264_CURRENT_API 120
-#define VER_X264_AVS2YUV_VER 242
+#include "global.h"
+#include <QThread>
 
-#define VER_X264_PRE_RELEASE (0)
+class QSystemSemaphore;
+class QSharedMemory;
+
+class IPCThread : public QThread
+{
+	Q_OBJECT
+
+public:
+	IPCThread(void);
+	~IPCThread(void);
+
+	void setAbort(void);
+	bool initialize(bool *firstInstance = NULL);
+	void notifyOtherInstance(void);
+
+signals:
+	void instanceCreated(DWORD pid);
+
+public slots:
+	void start(Priority priority = InheritPriority);
+
+protected:
+	volatile bool m_abort;
+
+	QSystemSemaphore *m_semaphore_r;
+	QSystemSemaphore *m_semaphore_w;
+	QSharedMemory *m_sharedMem;
+
+	bool m_ipcReady;
+	bool m_firstInstance;
+
+	virtual void run(void);
+};

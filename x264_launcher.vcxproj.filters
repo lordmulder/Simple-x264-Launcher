@@ -113,6 +113,12 @@
     <ClCompile Include="tmp\moc\moc_win_editor.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread_ipc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_thread_ipc.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -155,6 +161,9 @@
       <Filter>Dialogs</Filter>
     </CustomBuild>
     <CustomBuild Include="src\win_editor.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_ipc.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

@@ -37,7 +37,6 @@ public:
 
 	void setAbort(void);
 	bool initialize(bool *firstInstance = NULL);
-	void notifyOtherInstance(void);
 
 signals:
 	void instanceCreated(DWORD pid);

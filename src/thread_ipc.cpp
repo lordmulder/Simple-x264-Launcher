@@ -57,6 +57,7 @@ bool IPCThread::initialize(bool *firstInstance)
 			if(m_sharedMem->create(sizeof(DWORD), QSharedMemory::ReadWrite))
 			{
 				m_firstInstance = m_ipcReady = true;
+				memset(m_sharedMem->data(), 0, sizeof(DWORD));
 			}
 			else
 			{
@@ -76,17 +77,6 @@ bool IPCThread::initialize(bool *firstInstance)
 	return m_ipcReady;
 }
 
-void IPCThread::notifyOtherInstance(void)
-{
-	if(!m_firstInstance)
-	{
-		m_semaphore_w->acquire();
-		DWORD *pidPtr = reinterpret_cast<DWORD*>(m_sharedMem->data());
-		*pidPtr = GetCurrentProcessId();
-		m_semaphore_r->release();
-	}
-}
-
 void IPCThread::start(Priority priority)
 {
 	m_abort = false;
@@ -94,12 +84,6 @@ void IPCThread::start(Priority priority)
 	if(!m_ipcReady)
 	{
 		throw "IPC not initialized yet !!!";
-		return;
-	}
-	
-	if(!m_firstInstance)
-	{
-		qWarning("This is NOT the first instance!");
 		return;
 	}
 
@@ -117,6 +101,15 @@ void IPCThread::setAbort(void)
 
 void IPCThread::run(void)
 {
+	if(!m_firstInstance)
+	{
+		m_semaphore_w->acquire();
+		DWORD *pidPtr = reinterpret_cast<DWORD*>(m_sharedMem->data());
+		*pidPtr = GetCurrentProcessId();
+		m_semaphore_r->release();
+		return;
+	}
+
 	forever
 	{
 		if(!m_semaphore_r->acquire())

@@ -638,12 +638,17 @@ void MainWindow::init(void)
 	bool firstInstance = false;
 	if(m_ipcThread->initialize(&firstInstance))
 	{
+		m_ipcThread->start();
 		if(!firstInstance)
 		{
-			m_ipcThread->notifyOtherInstance();
+			if(!m_ipcThread->wait(5000))
+			{
+				QMessageBox::warning(this, tr("Not Responding"), tr("<nobr>Another instance of this application is already running, but did not respond in time.<br>If the problem persists, please kill the running instance from the task manager!</nobr>"), tr("Quit"));
+				m_ipcThread->terminate();
+				m_ipcThread->wait();
+			}
 			close(); qApp->exit(-1); return;
 		}
-		m_ipcThread->start();
 	}
 
 	//Check all binaries
@@ -831,7 +836,7 @@ void MainWindow::handleDroppedFiles(void)
 
 void MainWindow::instanceCreated(DWORD pid)
 {
-	qDebug("Notification from other instance received!");
+	qDebug("Notification from other instance (PID=0x%X) received!", pid);
 	
 	FLASHWINFO flashWinInfo;
 	memset(&flashWinInfo, 0, sizeof(FLASHWINFO));

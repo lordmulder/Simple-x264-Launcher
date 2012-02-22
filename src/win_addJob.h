@@ -52,8 +52,10 @@ protected:
 
 	const bool m_x64supported;
 
-	QString initialDir_src;
-	QString initialDir_out;
+	QStringList m_types;
+	QString m_initialDir_src;
+	QString m_initialDir_out;
+	int m_lastFilterIndex;
 
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
@@ -80,4 +82,6 @@ private:
 	void updateComboBox(QComboBox *cbox, const QString &text);
 	QString makeFileFilter(void);
 	void generateOutputFileName(const QString &filePath);
+	int getFilterIndex(const QString &fileExt);
+	QString getFilterExt(int filterIdx);
 };

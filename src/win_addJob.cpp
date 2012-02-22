@@ -191,9 +191,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	m_defaults(new OptionsModel()),
 	m_options(options),
 	m_x64supported(x64supported),
-	initialDir_src(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation)),
-	initialDir_out(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))
-
+	m_initialDir_src(QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))),
+	m_initialDir_out(QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))),
+	m_lastFilterIndex(0)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
@@ -205,6 +205,12 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	resize(width(), minimumHeight());
 	setMinimumSize(size());
 	setMaximumHeight(height());
+
+	//Setup file type filter
+	m_types.clear();
+	m_types << tr("Matroska Files (*.mkv)");
+	m_types << tr("MPEG-4 Part 14 Container (*.mp4)");
+	m_types << tr("H.264 Elementary Stream (*.264)");
 
 	//Monitor RC mode combobox
 	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
@@ -254,8 +260,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	//Load directories
 	const QString appDir = x264_data_path();
 	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
-	initialDir_src = settings.value("path/directory_openFrom", initialDir_src).toString();
-	initialDir_out = settings.value("path/directory_saveTo", initialDir_out).toString();
+	m_initialDir_src = settings.value("path/directory_openFrom", m_initialDir_src).toString();
+	m_initialDir_out = settings.value("path/directory_saveTo", m_initialDir_out).toString();
+	m_lastFilterIndex = settings.value("path/filterIndex", m_lastFilterIndex).toInt();
 }
 
 AddJobDialog::~AddJobDialog(void)
@@ -284,8 +291,8 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	QDialog::showEvent(event);
 	templateSelected();
 
-	if(!editSource->text().isEmpty()) initialDir_src = QFileInfo(QDir::fromNativeSeparators(editSource->text())).path();
-	if(!editOutput->text().isEmpty()) initialDir_out = QFileInfo(QDir::fromNativeSeparators(editOutput->text())).path();
+	if(!editSource->text().isEmpty()) m_initialDir_src = QFileInfo(QDir::fromNativeSeparators(editSource->text())).path();
+	if(!editOutput->text().isEmpty()) m_initialDir_out = QFileInfo(QDir::fromNativeSeparators(editOutput->text())).path();
 
 	if((!editSource->text().isEmpty()) && editOutput->text().isEmpty())
 	{
@@ -427,8 +434,9 @@ void AddJobDialog::accept(void)
 	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
 	if(settings.isWritable())
 	{
-		settings.setValue("path/directory_openFrom", initialDir_src);
-		settings.setValue("path/directory_saveTo", initialDir_out);
+		settings.setValue("path/directory_saveTo", m_initialDir_out);
+		settings.setValue("path/directory_openFrom", m_initialDir_src);
+		settings.setValue("path/filterIndex", m_lastFilterIndex);
 		settings.sync();
 	}
 
@@ -440,7 +448,7 @@ void AddJobDialog::browseButtonClicked(void)
 {
 	if(QObject::sender() == buttonBrowseSource)
 	{
-		QString initDir = VALID_DIR(initialDir_src) ? initialDir_src : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
+		QString initDir = VALID_DIR(m_initialDir_src) ? m_initialDir_src : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
 		if(!editSource->text().isEmpty()) initDir = QString("%1/%2").arg(initDir, QFileInfo(QDir::fromNativeSeparators(editSource->text())).fileName());
 
 		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initDir, makeFileFilter(), NULL, QFileDialog::DontUseNativeDialog);
@@ -448,61 +456,31 @@ void AddJobDialog::browseButtonClicked(void)
 		{
 			editSource->setText(QDir::toNativeSeparators(filePath));
 			generateOutputFileName(filePath);
-			initialDir_src = QFileInfo(filePath).path();
+			m_initialDir_src = QFileInfo(filePath).path();
 		}
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
 	{
-		QString selectedType; QStringList types;
-		types << tr("Matroska Files (*.mkv)");
-		types << tr("MPEG-4 Part 14 Container (*.mp4)");
-		types << tr("H.264 Elementary Stream (*.264)");
-
-		QString initDir = VALID_DIR(initialDir_out) ? initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
+		QString initDir = VALID_DIR(m_initialDir_out) ? m_initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
 		if(!editOutput->text().isEmpty()) initDir = QString("%1/%2").arg(initDir, QFileInfo(QDir::fromNativeSeparators(editOutput->text())).completeBaseName());
+		int filterIdx = getFilterIndex(QFileInfo(QDir::fromNativeSeparators(editOutput->text())).suffix());
+		QString selectedType = m_types.at((filterIdx >= 0) ? filterIdx : m_lastFilterIndex);
 
-		QRegExp ext("\\(\\*\\.(.+)\\)");
-		for(int i = 0; i < types.count(); i++)
-		{
-			if(ext.lastIndexIn(types.at(i)) >= 0)
-			{
-				if(QFileInfo(initDir).suffix().compare(ext.cap(1), Qt::CaseInsensitive) == 0)
-				{
-					selectedType = types.at(i);
-					break;
-				}
-			}
-		}
-
-		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initDir, types.join(";;"), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
+		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initDir, m_types.join(";;"), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			QString suffix = QFileInfo(filePath).suffix();
-			bool hasProperExt = false;
-			for(int i = 0; i < types.count(); i++)
+			if(getFilterIndex(QFileInfo(filePath).suffix()) < 0)
 			{
-				if(ext.lastIndexIn(types.at(i)) >= 0)
+				filterIdx = m_types.indexOf(selectedType);
+				if(filterIdx >= 0)
 				{
-					if(suffix.compare(ext.cap(1), Qt::CaseInsensitive) == 0)
-					{
-						hasProperExt = true;
-						break;
-					}
-				}
-			}
-			if(!hasProperExt)
-			{
-				if(ext.lastIndexIn(selectedType) >= 0)
-				{
-					if(suffix.compare(ext.cap(1), Qt::CaseInsensitive))
-					{
-						filePath = QString("%1.%2").arg(filePath, ext.cap(1));
-					}
+					filePath = QString("%1.%2").arg(filePath, getFilterExt(filterIdx));
 				}
 			}
 			editOutput->setText(QDir::toNativeSeparators(filePath));
-			initialDir_out = QFileInfo(filePath).path();
+			m_lastFilterIndex = getFilterIndex(QFileInfo(filePath).suffix());
+			m_initialDir_out = QFileInfo(filePath).path();
 		}
 	}
 }
@@ -845,18 +823,52 @@ QString AddJobDialog::makeFileFilter(void)
 void AddJobDialog::generateOutputFileName(const QString &filePath)
 {
 	QString name = QFileInfo(filePath).completeBaseName();
-	QString path = VALID_DIR(initialDir_out) ? initialDir_out : QFileInfo(filePath).path();
+	QString path = VALID_DIR(m_initialDir_out) ? m_initialDir_out : QFileInfo(filePath).path();
+	QString fext = getFilterExt(m_lastFilterIndex);
 			
-	QString outPath = QString("%1/%2.mkv").arg(path, name);
+	QString outPath = QString("%1/%2.%3").arg(path, name, fext);
 
 	if(QFileInfo(outPath).exists())
 	{
 		int i = 2;
 		while(QFileInfo(outPath).exists())
 		{
-			outPath = QString("%1/%2 (%3).mkv").arg(path, name, QString::number(i++));
+			outPath = QString("%1/%2 (%3).%4").arg(path, name, QString::number(i++), fext);
 		}
 	}
 
 	editOutput->setText(QDir::toNativeSeparators(outPath));
+}
+
+int AddJobDialog::getFilterIndex(const QString &fileExt)
+{
+	if(!fileExt.isEmpty())
+	{
+		QRegExp ext("\\(\\*\\.(.+)\\)");
+		for(int i = 0; i < m_types.count(); i++)
+		{
+			if(ext.lastIndexIn(m_types.at(i)) >= 0)
+			{
+				if(fileExt.compare(ext.cap(1), Qt::CaseInsensitive) == 0)
+				{
+					return i;
+				}
+			}
+		}
+	}
+
+	return -1;
+}
+
+QString AddJobDialog::getFilterExt(int filterIdx)
+{
+	int index = qBound(0, filterIdx, m_types.count()-1);
+
+	QRegExp ext("\\(\\*\\.(.+)\\)");
+	if(ext.lastIndexIn(m_types.at(index)) >= 0)
+	{
+		return ext.cap(1).toLower();
+	}
+
+	return QString::fromLatin1("mkv");
 }

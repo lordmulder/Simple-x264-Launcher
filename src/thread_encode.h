@@ -126,6 +126,7 @@ protected:
 	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
 	QString pathToLocal(const QString &longPath, bool create = false, bool keep = true);
 	QStringList splitParams(const QString &params);
+	QString estimateSize(int progressInt, int progressFrc);
 
 	//Static functions
 	static QString commandline2string(const QString &program, const QStringList &arguments);

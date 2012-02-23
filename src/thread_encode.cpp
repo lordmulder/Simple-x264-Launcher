@@ -310,7 +310,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 	}
 
 	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.\\d+%\\]");
-	QRegExp regExpProgress("\\[(\\d+)\\.\\d+%\\].+frames");
+	QRegExp regExpProgress("\\[(\\d+)\\.(\\d+)%\\].+frames");
 	QRegExp regExpFrameCnt("^(\\d+) frames:");
 	
 	QTextCodec *localCodec = QTextCodec::codecForName("System");
@@ -394,11 +394,12 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 				int offset = -1;
 				if((offset = regExpProgress.lastIndexIn(text)) >= 0)
 				{
-					bool ok = false;
-					unsigned int progress = regExpProgress.cap(1).toUInt(&ok);
+					bool ok[2] = {false, false};
+					unsigned int progressInt = regExpProgress.cap(1).toUInt(&ok[0]);
+					unsigned int progressFrc = regExpProgress.cap(2).toUInt(&ok[1]);
 					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
-					setDetails(text.mid(offset).trimmed());
-					if(ok) setProgress(progress);
+					setDetails(tr("%1, est. size %2").arg(text.mid(offset).trimmed(), estimateSize(ok[0] ? progressInt : 0, ok[1] ? progressFrc : 0)));
+					if(ok[0]) setProgress(progressInt);
 				}
 				else if((offset = regExpIndexing.lastIndexIn(text)) >= 0)
 				{
@@ -1102,3 +1103,33 @@ QStringList EncodeThread::splitParams(const QString &params)
 
 	return list;
 }
+
+QString EncodeThread::estimateSize(int progressInt, int progressFrc)
+{
+	int progress = (10 * progressInt) + (progressFrc % 10);
+	static char *prefix[5] = {"Byte", "KB", "MB", "GB", "TB"};
+
+	if(progress >= 30)
+	{
+		qint64 currentSize = QFileInfo(m_outputFileName).size();
+		if(currentSize > 1024I64)
+		{
+			qint64 estimatedSize = (currentSize * 1000I64) / static_cast<qint64>(progress);
+			qint64 remainderSize = 0I64;
+
+			int prefixIdx = 0;
+			while((estimatedSize > 1024I64) && (prefixIdx < 4))
+			{
+				remainderSize = estimatedSize % 1024I64;
+				estimatedSize = estimatedSize / 1024I64;
+				prefixIdx++;
+			}
+			
+			double value = static_cast<double>(estimatedSize) + (static_cast<double>(remainderSize) / 1024.0);
+			return QString().sprintf((value < 10.0) ? "%.2f %s" : "%.1f %s", value, prefix[prefixIdx]);
+		}
+	}
+
+	return tr("N/A");
+}
+

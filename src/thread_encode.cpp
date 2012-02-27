@@ -33,6 +33,7 @@
 #include <QProcess>
 #include <QMutex>
 #include <QTextCodec>
+#include <QLocale>
 
 /*
  * Static vars
@@ -309,7 +310,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 		return false;
 	}
 
-	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.\\d+%\\]");
+	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.(\\d+)%\\]");
 	QRegExp regExpProgress("\\[(\\d+)\\.(\\d+)%\\].+frames");
 	QRegExp regExpFrameCnt("^(\\d+) frames:");
 	
@@ -317,6 +318,10 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 
 	bool bTimeout = false;
 	bool bAborted = false;
+
+	unsigned int last_progress = UINT_MAX;
+	unsigned int last_indexing = UINT_MAX;
+	qint64 size_estimate = 0I64;
 
 	//Main processing loop
 	while(processEncode.state() != QProcess::NotRunning)
@@ -394,28 +399,40 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 				int offset = -1;
 				if((offset = regExpProgress.lastIndexIn(text)) >= 0)
 				{
-					bool ok[2] = {false, false};
-					unsigned int progressInt = regExpProgress.cap(1).toUInt(&ok[0]);
-					unsigned int progressFrc = regExpProgress.cap(2).toUInt(&ok[1]);
+					bool ok = false;
+					unsigned int progress = regExpProgress.cap(1).toUInt(&ok);
 					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
-					setDetails(tr("%1, est. size %2").arg(text.mid(offset).trimmed(), estimateSize(ok[0] ? progressInt : 0, ok[1] ? progressFrc : 0)));
-					if(ok[0]) setProgress(progressInt);
+					if(ok && ((progress > last_progress) || (last_progress == UINT_MAX)))
+					{
+						setProgress(progress);
+						size_estimate = estimateSize(progress);
+						last_progress = progress;
+					}
+					setDetails(tr("%1, est. file size %2").arg(text.mid(offset).trimmed(), sizeToString(size_estimate)));
+					last_indexing = UINT_MAX;
 				}
 				else if((offset = regExpIndexing.lastIndexIn(text)) >= 0)
 				{
 					bool ok = false;
 					unsigned int progress = regExpIndexing.cap(1).toUInt(&ok);
 					setStatus(JobStatus_Indexing);
+					if(ok && ((progress > last_indexing) || (last_indexing == UINT_MAX)))
+					{
+						setProgress(progress);
+						last_indexing = progress;
+					}
 					setDetails(text.mid(offset).trimmed());
-					if(ok) setProgress(progress);
+					last_progress = UINT_MAX;
 				}
 				else if((offset = regExpFrameCnt.lastIndexIn(text)) >= 0)
 				{
+					last_progress = last_indexing = UINT_MAX;
 					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
 					setDetails(text.mid(offset).trimmed());
 				}
 				else if(!text.isEmpty())
 				{
+					last_progress = last_indexing = UINT_MAX;
 					log(text);
 				}
 			}
@@ -465,6 +482,12 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 		return false;
 	}
 
+	QThread::yieldCurrentThread();
+
+	const qint64 finalSize = QFileInfo(m_outputFileName).size();
+	QLocale locale(QLocale::English);
+	log(tr("Final file size is %1 bytes.").arg(locale.toString(finalSize)));
+
 	switch(pass)
 	{
 	case 1:
@@ -473,11 +496,11 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe
 		break;
 	case 2:
 		setStatus(JobStatus_Running_Pass2);
-		setDetails(tr("Second pass completed successfully."));
+		setDetails(tr("Second pass completed successfully. Final size is %1.").arg(sizeToString(finalSize)));
 		break;
 	default:
 		setStatus(JobStatus_Running);
-		setDetails(tr("Encode completed successfully."));
+		setDetails(tr("Encode completed successfully. Final size is %1.").arg(sizeToString(finalSize)));
 		break;
 	}
 
@@ -1104,32 +1127,38 @@ QStringList EncodeThread::splitParams(const QString &params)
 	return list;
 }
 
-QString EncodeThread::estimateSize(int progressInt, int progressFrc)
+qint64 EncodeThread::estimateSize(int progress)
 {
-	int progress = (10 * progressInt) + (progressFrc % 10);
-	static char *prefix[5] = {"Byte", "KB", "MB", "GB", "TB"};
-
-	if(progress >= 30)
+	if(progress >= 3)
 	{
 		qint64 currentSize = QFileInfo(m_outputFileName).size();
-		if(currentSize > 1024I64)
-		{
-			qint64 estimatedSize = (currentSize * 1000I64) / static_cast<qint64>(progress);
-			qint64 remainderSize = 0I64;
+		qint64 estimatedSize = (currentSize * 100I64) / static_cast<qint64>(progress);
+		return estimatedSize;
+	}
 
-			int prefixIdx = 0;
-			while((estimatedSize > 1024I64) && (prefixIdx < 4))
-			{
-				remainderSize = estimatedSize % 1024I64;
-				estimatedSize = estimatedSize / 1024I64;
-				prefixIdx++;
-			}
-			
-			double value = static_cast<double>(estimatedSize) + (static_cast<double>(remainderSize) / 1024.0);
-			return QString().sprintf((value < 10.0) ? "%.2f %s" : "%.1f %s", value, prefix[prefixIdx]);
+	return 0I64;
+}
+
+QString EncodeThread::sizeToString(qint64 size)
+{
+	static char *prefix[5] = {"Byte", "KB", "MB", "GB", "TB"};
+
+	if(size > 1024I64)
+	{
+		qint64 estimatedSize = size;
+		qint64 remainderSize = 0I64;
+
+		int prefixIdx = 0;
+		while((estimatedSize > 1024I64) && (prefixIdx < 4))
+		{
+			remainderSize = estimatedSize % 1024I64;
+			estimatedSize = estimatedSize / 1024I64;
+			prefixIdx++;
 		}
+			
+		double value = static_cast<double>(estimatedSize) + (static_cast<double>(remainderSize) / 1024.0);
+		return QString().sprintf((value < 10.0) ? "%.2f %s" : "%.1f %s", value, prefix[prefixIdx]);
 	}
 
 	return tr("N/A");
 }
-

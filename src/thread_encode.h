@@ -53,7 +53,7 @@ public:
 		JobStatus_Undefined = 666
 	};
 	
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool avs2yuv_x64);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -90,6 +90,7 @@ protected:
 	const OptionsModel *m_options;
 	const QString m_binDir;
 	const bool m_x264_x64;
+	const bool m_x264_10bit;
 	const bool m_avs2yuv_x64;
 
 	//Flags
@@ -112,9 +113,9 @@ protected:
 	
 	//Encode functions
 	void encode(void);
-	bool runEncodingPass(bool x264_x64, bool avs2yuv_x64, bool usePipe, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
-	QStringList buildCommandLine(bool usePipe, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
-	unsigned int checkVersionX264(bool x64, bool &modified);
+	bool runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool usePipe, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
+	QStringList buildCommandLine(bool usePipe, bool use10Bit, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
+	unsigned int checkVersionX264(bool use_x64, bool use_10bit, bool &modified);
 	unsigned int checkVersionAvs2yuv(bool x64);
 	bool checkProperties(bool x64, unsigned int &frames);
 

@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>379</width>
-    <height>226</height>
+    <height>260</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,7 +47,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0" rowspan="6">
+        <item row="1" column="0" rowspan="8">
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -63,7 +63,7 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="6" rowspan="6">
+        <item row="1" column="6" rowspan="8">
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -89,7 +89,7 @@
         <item row="1" column="1">
          <widget class="QCheckBox" name="checkRunNextJob">
           <property name="text">
-           <string/>
+           <string notr="true"/>
           </property>
          </widget>
         </item>
@@ -128,14 +128,14 @@
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
+        <item row="6" column="1">
          <widget class="QCheckBox" name="checkUse64BitAvs2YUV">
           <property name="toolTip">
            <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
 Please be aware that this option does NOT have any effect on 32-Bit systems.</string>
           </property>
           <property name="text">
-           <string/>
+           <string notr="true"/>
           </property>
          </widget>
         </item>
@@ -155,14 +155,14 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="6" column="1">
+        <item row="8" column="1">
          <widget class="QCheckBox" name="checkShutdownComputer">
           <property name="text">
-           <string/>
+           <string notr="true"/>
           </property>
          </widget>
         </item>
-        <item row="6" column="2" colspan="4">
+        <item row="8" column="2" colspan="4">
          <widget class="QLabel" name="labelShutdownComputer">
           <property name="text">
            <string>Shutdown computer as soon as the last job has completed</string>
@@ -185,7 +185,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="7" column="1" colspan="5">
+        <item row="9" column="1" colspan="5">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -201,7 +201,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="4" column="2" colspan="4">
+        <item row="6" column="2" colspan="4">
          <widget class="QLabel" name="labelUse64BitAvs2YUV">
           <property name="toolTip">
            <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
@@ -212,8 +212,38 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </widget>
         </item>
-        <item row="5" column="2" colspan="4">
+        <item row="7" column="1" colspan="5">
          <spacer name="verticalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>8</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="4" column="1">
+         <widget class="QCheckBox" name="checkUse10BitEncoding">
+          <property name="text">
+           <string notr="true"/>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2" colspan="4">
+         <widget class="QLabel" name="labelUse10BitEncoding">
+          <property name="text">
+           <string>Use 10-Bit version of x264 → implies 'High 10' H.264 Profile</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1" colspan="5">
+         <spacer name="verticalSpacer_5">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>

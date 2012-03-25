@@ -104,7 +104,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress
 REM ///////////////////////////////////////////////////////////////////////////
 "%UPX3_PATH%\upx.exe" --brute "%PACK_PATH%\*.exe"
-"%UPX3_PATH%\upx.exe" --best "%PACK_PATH%\*.dll"
+"%UPX3_PATH%\upx.exe" --best  "%PACK_PATH%\*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Attributes
@@ -134,6 +134,7 @@ echo #Generated File - Do NOT modify! > "%NSI_FILE%"
 echo !define ZIP2EXE_NAME `Simple x264 Launcher (%ISO_DATE%)` >> "%NSI_FILE%"
 echo !define ZIP2EXE_OUTFILE `%OUT_FULL%` >> "%NSI_FILE%"
 echo !define ZIP2EXE_COMPRESSOR_LZMA >> "%NSI_FILE%"
+echo !define ZIP2EXE_COMPRESSOR_SOLID  >> "%NSI_FILE%"
 echo !define ZIP2EXE_INSTALLDIR `$PROGRAMFILES\MuldeR\Simple x264 Launcher v2` >> "%NSI_FILE%"
 echo !define ZIP2EXE_REGPATH `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{986E454F-DACA-4326-A9C7-3E46C0BFFDCE}` >> "%NSI_FILE%"
 echo !define MUI_INSTFILESPAGE_COLORS "C5DEFB 000000" >> "%NSI_FILE%"
@@ -142,6 +143,7 @@ echo ShowInstDetails show >> "%NSI_FILE%"
 echo BrandingText `Created: %ISO_DATE%, %ISO_TIME% [Build #%BUILD_NO%]` >> "%NSI_FILE%"
 echo InstallDirRegKey HKLM `${ZIP2EXE_REGPATH}` InstallLocation >> "%NSI_FILE%"
 echo !include `${NSISDIR}\Contrib\zip2exe\Base.nsh` >> "%NSI_FILE%"
+echo SetCompressorDictSize 96 >> "%NSI_FILE%"
 echo !include `${NSISDIR}\Contrib\zip2exe\Modern.nsh` >> "%NSI_FILE%"
 echo !include `%~dp0\etc\check_os.nsh` >> "%NSI_FILE%"
 echo !include `%~dp0\etc\finalization.nsh` >> "%NSI_FILE%"

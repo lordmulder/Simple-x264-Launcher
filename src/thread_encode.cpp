@@ -299,7 +299,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 		processAvisynth.setStandardOutputProcess(&processEncode);
 
 		log("Creating Avisynth process:");
-		if(!startProcess(processAvisynth, QString("%1/%2.exe").arg(m_binDir, avs2yuv_x64 ? "avs2yuv_x64" : "avs2yuv"), cmdLine_Avisynth, false))
+		if(!startProcess(processAvisynth, QString("%1/%2.exe").arg(m_binDir, avs2yuv_x64 ? "avs2yuv_x64" : "avs2yuv_x86"), cmdLine_Avisynth, false))
 		{
 			return false;
 		}
@@ -693,7 +693,7 @@ unsigned int EncodeThread::checkVersionAvs2yuv(bool x64)
 	QProcess process;
 
 	log("\nCreating process:");
-	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv"), QStringList()))
+	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv_x86"), QStringList()))
 	{
 		return false;;
 	}
@@ -802,7 +802,7 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
 
 	log("Creating process:");
-	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv"), cmdLine))
+	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv_x86"), cmdLine))
 	{
 		return false;;
 	}

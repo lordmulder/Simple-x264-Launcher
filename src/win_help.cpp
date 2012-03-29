@@ -26,16 +26,19 @@
 #include <QScrollBar>
 #include <QTimer>
 
+#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/x264_%2_%3.exe").arg((BIN_DIR), ((IS_10BIT) ? "10bit" : "8bit"), ((IS_X64) ? "x64" : "x86"))
+
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-HelpDialog::HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported)
+HelpDialog::HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported, bool use10BitEncoding)
 :
 	QDialog(parent),
-	m_appDir(QApplication::applicationDirPath()),
+	m_appDir(QApplication::applicationDirPath() + "/toolset"),
 	m_avs2yuv(avs2yuv),
 	m_x64supported(x64supported),
+	m_use10BitEncoding(use10BitEncoding),
 	m_process(new QProcess())
 {
 	//Init the dialog, from the .ui file
@@ -74,11 +77,11 @@ void HelpDialog::showEvent(QShowEvent *event)
 
 	if(!m_avs2yuv)
 	{
-		m_process->start(QString("%1/toolset/%2.exe").arg(m_appDir, m_x64supported ? "x264_x64" : "x264"), QStringList() << "--version");
+		m_process->start(X264_BINARY(m_appDir, m_use10BitEncoding, m_x64supported), QStringList() << "--version");
 	}
 	else
 	{
-		m_process->start(QString("%1/toolset/%2.exe").arg(m_appDir, m_x64supported ? "avs2yuv_x64" : "avs2yuv"), QStringList());
+		m_process->start(QString("%1/%2.exe").arg(m_appDir, m_x64supported ? "avs2yuv_x64" : "avs2yuv_x86"), QStringList());
 	}
 
 	if(!m_process->waitForStarted())
@@ -123,7 +126,7 @@ void HelpDialog::finished(void)
 		m_startAgain = false;
 		if(!m_avs2yuv)
 		{
-			m_process->start(QString("%1/toolset/x264.exe").arg(m_appDir), QStringList() << "--fullhelp");
+			m_process->start(X264_BINARY(m_appDir, m_use10BitEncoding, m_x64supported), QStringList() << "--fullhelp");
 			plainTextEdit->appendPlainText("\n--------\n");
 
 			if(!m_process->waitForStarted())

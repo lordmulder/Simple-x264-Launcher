@@ -209,7 +209,7 @@ void MainWindow::addButtonPressed(const QString &filePathIn, const QString &file
 	
 	if(ok) *ok = false;
 
-	AddJobDialog *addDialog = new AddJobDialog(this, options ? options : m_options, m_cpuFeatures->x64);
+	AddJobDialog *addDialog = new AddJobDialog(this, options ? options : m_options, m_cpuFeatures->x64, m_preferences.use10BitEncoding);
 	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
 	
 	if(options) addDialog->setWindowTitle(tr("Restart Job"));
@@ -630,7 +630,7 @@ void MainWindow::shutdownComputer(void)
  */
 void MainWindow::init(void)
 {
-	static const char *binFiles = "x264_8bit_x86.exe:x264_8bit_x64.exe:x264_10bit_x86.exe:x264_10bit_x64.exe:avs2yuv.exe:avs2yuv_x64.exe";
+	static const char *binFiles = "x264_8bit_x86.exe:x264_8bit_x64.exe:x264_10bit_x86.exe:x264_10bit_x64.exe:avs2yuv_x86.exe:avs2yuv_x64.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
 	updateLabelPos();

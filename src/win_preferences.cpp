@@ -47,6 +47,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, Preferences *preferences, 
 	labelUse10BitEncoding->installEventFilter(this);
 	labelUse64BitAvs2YUV->installEventFilter(this);
 	labelShutdownComputer->installEventFilter(this);
+	labelSaveLogFiles->installEventFilter(this);
 
 	connect(resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
 	connect(checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
@@ -65,6 +66,7 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob);
 	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer);
 	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit);
+	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles);
 
 	checkUse10BitEncoding->blockSignals(true);
 	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding);
@@ -82,6 +84,7 @@ bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 	emulateMouseEvent(o, e, labelShutdownComputer, checkShutdownComputer);
 	emulateMouseEvent(o, e, labelUse10BitEncoding, checkUse10BitEncoding);
 	emulateMouseEvent(o, e, labelUse64BitAvs2YUV, checkUse64BitAvs2YUV);
+	emulateMouseEvent(o, e, labelSaveLogFiles, checkSaveLogFiles);
 	return false;
 }
 
@@ -111,6 +114,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->shutdownComputer = checkShutdownComputer->isChecked();
 	m_preferences->use10BitEncoding = checkUse10BitEncoding->isChecked();
 	m_preferences->useAvisyth64Bit = checkUse64BitAvs2YUV->isChecked();
+	m_preferences->saveLogFiles = checkSaveLogFiles->isChecked();
 	m_preferences->maxRunningJobCount = spinBoxJobCount->value();
 
 	savePreferences(m_preferences);
@@ -152,6 +156,7 @@ void PreferencesDialog::initPreferences(Preferences *preferences)
 	preferences->shutdownComputer = false;
 	preferences->use10BitEncoding = false;
 	preferences->useAvisyth64Bit = false;
+	preferences->saveLogFiles = false;
 }
 
 void PreferencesDialog::loadPreferences(Preferences *preferences)
@@ -168,6 +173,7 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 	preferences->shutdownComputer = settings.value("shutdown_computer_on_completion", QVariant(defaults.shutdownComputer)).toBool();
 	preferences->use10BitEncoding = settings.value("use_10bit_encoding", QVariant(defaults.use10BitEncoding)).toBool();
 	preferences->useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(defaults.useAvisyth64Bit)).toBool();
+	preferences->saveLogFiles = settings.value("save_log_files", QVariant(defaults.saveLogFiles)).toBool();
 }
 
 void PreferencesDialog::savePreferences(Preferences *preferences)
@@ -181,6 +187,7 @@ void PreferencesDialog::savePreferences(Preferences *preferences)
 	settings.setValue("max_running_job_count", preferences->maxRunningJobCount);
 	settings.setValue("use_10bit_encoding", preferences->use10BitEncoding);
 	settings.setValue("use_64bit_avisynth", preferences->useAvisyth64Bit);
+	settings.setValue("save_log_files", preferences->saveLogFiles);
 	settings.sync();
 }
 

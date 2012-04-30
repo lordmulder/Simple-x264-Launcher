@@ -180,6 +180,7 @@ void EncodeThread::encode(void)
 	QDateTime startTime = QDateTime::currentDateTime();
 
 	//Print some basic info
+	log(tr("Simple x264 Launcher (Build #%1), built %2\n").arg(QString::number(x264_version_build()), x264_version_date().toString(Qt::ISODate)));
 	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 	log(tr("Source file: %1").arg(m_sourceFileName));
 	log(tr("Output file: %1").arg(m_outputFileName));

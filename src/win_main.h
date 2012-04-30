@@ -86,6 +86,7 @@ private slots:
 	void launchNextJob();
 	void pauseButtonPressed(bool checked);
 	void restartButtonPressed(void);
+	void saveLogFile(const QModelIndex &index);
 	void showAbout(void);
 	void showPreferences(void);
 	void showWebLink(void);

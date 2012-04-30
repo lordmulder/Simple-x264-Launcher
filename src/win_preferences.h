@@ -35,6 +35,7 @@ public:
 		bool shutdownComputer;
 		bool use10BitEncoding;
 		bool useAvisyth64Bit;
+		bool saveLogFiles;
 	}
 	Preferences;
 

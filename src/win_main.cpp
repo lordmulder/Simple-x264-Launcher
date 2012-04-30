@@ -40,6 +40,7 @@
 #include <QProcess>
 #include <QProgressDialog>
 #include <QScrollBar>
+#include <QTextStream>
 
 #include <Mmsystem.h>
 
@@ -392,6 +393,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			{
 				if(m_preferences.autoRunNextJob) QTimer::singleShot(0, this, SLOT(launchNextJob()));
 				if(m_preferences.shutdownComputer) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
+				if(m_preferences.saveLogFiles) saveLogFile(m_jobList->index(i, 1, QModelIndex()));
 			}
 		}
 	}
@@ -537,7 +539,6 @@ void MainWindow::showPreferences(void)
 void MainWindow::launchNextJob(void)
 {
 	qDebug("launchNextJob(void)");
-
 	
 	const int rows = m_jobList->rowCount(QModelIndex());
 
@@ -564,6 +565,39 @@ void MainWindow::launchNextJob(void)
 	}
 		
 	qWarning("No enqueued jobs left!");
+}
+
+/*
+ * Save log to text file
+ */
+void MainWindow::saveLogFile(const QModelIndex &index)
+{
+	if(index.isValid())
+	{
+		if(LogFileModel *log = m_jobList->getLogFile(index))
+		{
+			QDir(QString("%1/logs").arg(x264_data_path())).mkpath(".");
+			QString logFilePath = QString("%1/logs/LOG.%2.%3.txt").arg(x264_data_path(), QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate).replace(':', "-"));
+			QFile outFile(logFilePath);
+			if(outFile.open(QIODevice::WriteOnly))
+			{
+				QTextStream outStream(&outFile);
+				outStream.setCodec("UTF-8");
+				outStream.setGenerateByteOrderMark(true);
+				
+				const int rows = log->rowCount(QModelIndex());
+				for(int i = 0; i < rows; i++)
+				{
+					outStream << log->data(log->index(i, 0, QModelIndex()), Qt::DisplayRole).toString() << QLatin1String("\r\n");
+				}
+				outFile.close();
+			}
+			else
+			{
+				qWarning("Failed to open log file for writing:\n%s", logFilePath.toUtf8().constData());
+			}
+		}
+	}
 }
 
 /*
@@ -748,12 +782,17 @@ void MainWindow::init(void)
 				if(val != 1) { close(); qApp->exit(-1); return; }
 			}
 		}
+		else
+		{
+			qWarning("Failed to load avisynth.dll libraray!");
+		}
 		if(avisynthVersion < 2.5)
 		{
 			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			m_avsLib->unload(); X264_DELETE(m_avsLib);
 			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
+		qDebug("");
 	}
 
 	//Check for expiration

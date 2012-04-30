@@ -51,6 +51,8 @@ const char *tpl_last = "<LAST_USED>";
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
 
+static int exceptionFilter(_EXCEPTION_RECORD *dst, _EXCEPTION_POINTERS *src) { memcpy(dst, src->ExceptionRecord, sizeof(_EXCEPTION_RECORD)); return EXCEPTION_EXECUTE_HANDLER; }
+
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
@@ -1152,6 +1154,7 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 {
 	qDebug("detectAvisynthVersion(QLibrary *avsLib)");
 	double version_number = 0.0;
+	EXCEPTION_RECORD exceptionRecord;
 	
 	__try
 	{
@@ -1210,9 +1213,9 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 			qWarning("It seems the Avisynth DLL is missing required API functions!");
 		}
 	}
-	__except(1)
+	__except(exceptionFilter(&exceptionRecord, GetExceptionInformation()))
 	{
-		qWarning("Exception in Avisynth initialization code!");
+		qWarning("Exception in Avisynth initialization code! (Address: %p, Code: 0x%08x)", exceptionRecord.ExceptionAddress, exceptionRecord.ExceptionCode);
 		version_number = -1.0;
 	}
 

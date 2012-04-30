@@ -279,7 +279,19 @@ AddJobDialog::~AddJobDialog(void)
 		cbxTemplate->setItemData(i, QVariant::fromValue<void*>(NULL));
 		X264_DELETE(item);
 	}
-	
+
+	//Free validators
+	if(const QValidator *tmp = editCustomX264Params->validator())
+	{
+		editCustomX264Params->setValidator(NULL);
+		X264_DELETE(tmp);
+	}
+	if(const QValidator *tmp = editCustomAvs2YUVParams->validator())
+	{
+		editCustomAvs2YUVParams->setValidator(NULL);
+		X264_DELETE(tmp);
+	}
+
 	X264_DELETE(m_defaults);
 }
 

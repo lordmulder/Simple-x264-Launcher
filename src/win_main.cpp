@@ -63,6 +63,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_appDir(QApplication::applicationDirPath()),
 	m_options(NULL),
 	m_jobList(NULL),
+	m_avsLib(NULL),
 	m_droppedFiles(NULL),
 	m_firstShow(true)
 {
@@ -194,6 +195,12 @@ MainWindow::~MainWindow(void)
 	}
 
 	X264_DELETE(m_ipcThread);
+
+	if(m_avsLib)
+	{
+		m_avsLib->unload();
+		X264_DELETE(m_avsLib);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -726,11 +733,15 @@ void MainWindow::init(void)
 	//Check for Avisynth support
 	if(!qApp->arguments().contains("--skip-avisynth-check", Qt::CaseInsensitive))
 	{
+		qDebug("[Check for Avisynth support]");
 		double avisynthVersion = 0.0;
-		QLibrary *avsLib = new QLibrary("avisynth.dll");
-		if(avsLib->load())
+		if(!m_avsLib)
 		{
-			avisynthVersion = detectAvisynthVersion(avsLib);
+			m_avsLib = new QLibrary("avisynth.dll");
+		}
+		if(m_avsLib->load())
+		{
+			avisynthVersion = detectAvisynthVersion(m_avsLib);
 			if(avisynthVersion < 0.0)
 			{
 				int val = QMessageBox::critical(this, tr("Avisynth Error"), tr("<nobr>A critical error was encountered while checking your Avisynth version!</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
@@ -740,7 +751,7 @@ void MainWindow::init(void)
 		if(avisynthVersion < 2.5)
 		{
 			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-			avsLib->unload(); X264_DELETE(avsLib);
+			m_avsLib->unload(); X264_DELETE(m_avsLib);
 			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
 	}
@@ -1100,6 +1111,7 @@ void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon
  */
 double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 {
+	qDebug("detectAvisynthVersion(QLibrary *avsLib)");
 	double version_number = 0.0;
 	
 	__try
@@ -1108,14 +1120,18 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 		avs_invoke_func avs_invoke_ptr = (avs_invoke_func) avsLib->resolve("avs_invoke");
 		avs_function_exists_func avs_function_exists_ptr = (avs_function_exists_func) avsLib->resolve("avs_function_exists");
 		avs_delete_script_environment_func avs_delete_script_environment_ptr = (avs_delete_script_environment_func) avsLib->resolve("avs_delete_script_environment");
+		avs_release_value_func avs_release_value_ptr = (avs_release_value_func) avsLib->resolve("avs_release_value");
 
 		if((avs_create_script_environment_ptr != NULL) && (avs_invoke_ptr != NULL) && (avs_function_exists_ptr != NULL))
 		{
+			qDebug("avs_create_script_environment_ptr(AVS_INTERFACE_25)");
 			AVS_ScriptEnvironment* avs_env = avs_create_script_environment_ptr(AVS_INTERFACE_25);
 			if(avs_env != NULL)
 			{
+				qDebug("avs_function_exists_ptr(avs_env, \"VersionNumber\")");
 				if(avs_function_exists_ptr(avs_env, "VersionNumber"))
 				{
+					qDebug("avs_invoke_ptr(avs_env, \"VersionNumber\", avs_new_value_array(NULL, 0), NULL)");
 					AVS_Value avs_version = avs_invoke_ptr(avs_env, "VersionNumber", avs_new_value_array(NULL, 0), NULL);
 					if(!avs_is_error(avs_version))
 					{
@@ -1123,14 +1139,31 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 						{
 							qDebug("Avisynth version: v%.2f", avs_as_float(avs_version));
 							version_number = avs_as_float(avs_version);
+							if(avs_release_value_ptr) avs_release_value_ptr(avs_version);
+						}
+						else
+						{
+							qWarning("Failed to determine version number, Avisynth didn't return a float!");
 						}
 					}
+					else
+					{
+						qWarning("Failed to determine version number, Avisynth returned an error!");
+					}
+				}
+				else
+				{
+					qWarning("The 'VersionNumber' function does not exist in your Avisynth DLL, can't determine version!");
 				}
 				if(avs_delete_script_environment_ptr != NULL)
 				{
 					avs_delete_script_environment_ptr(avs_env);
 					avs_env = NULL;
 				}
+			}
+			else
+			{
+				qWarning("The Avisynth DLL failed to create the script environment!");
 			}
 		}
 		else

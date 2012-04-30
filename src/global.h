@@ -33,6 +33,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+//VLD
+#include <vld.h>
+
 //Debug build
 #if defined(_DEBUG) && defined(QT_DEBUG) && !defined(NDEBUG) && !defined(QT_NO_DEBUG)
 	#define X264_DEBUG (1)
@@ -40,19 +43,26 @@
 	#define X264_DEBUG (0)
 #endif
 
-//Memory leack checker
+//Memory check
 #if X264_DEBUG
-#define X264_MEMORY_CHECK(CMD) \
+#define X264_MEMORY_CHECK(FUNC, RETV,  ...) \
 { \
 	SIZE_T _privateBytesBefore = x264_dbg_private_bytes(); \
-	CMD; \
+	RETV = FUNC(__VA_ARGS__); \
 	SIZE_T _privateBytesLeak = (x264_dbg_private_bytes() - _privateBytesBefore) / 1024; \
-	if(_privateBytesLeak > 10) { \
-		qWarning("Memory leak: Lost %u KiloBytes.", _privateBytesLeak); \
+	if(_privateBytesLeak > 0) { \
+		char _buffer[128]; \
+		_snprintf_s(_buffer, 128, _TRUNCATE, "Memory leak: Lost %u KiloBytes of PrivateUsage memory.\n", _privateBytesLeak); \
+		OutputDebugStringA("----------\n"); \
+		OutputDebugStringA(_buffer); \
+		OutputDebugStringA("----------\n"); \
 	} \
 }
 #else
-#define X264_MEMORY_CHECK(CMD) CMD
+#define X264_MEMORY_CHECK(FUNC, RETV,  ...) \
+{ \
+	RETV = __noop(__VA_ARGS__); \
+}
 #endif
 
 //Helper macros

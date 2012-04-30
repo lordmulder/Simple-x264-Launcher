@@ -66,6 +66,7 @@ typedef AVS_ScriptEnvironment* (__stdcall *avs_create_script_environment_func)(i
 typedef AVS_Value (__stdcall *avs_invoke_func)(AVS_ScriptEnvironment *, const char * name, AVS_Value args, const char** arg_names);
 typedef int (__stdcall *avs_function_exists_func)(AVS_ScriptEnvironment *, const char * name);
 typedef void (__stdcall *avs_delete_script_environment_func)(AVS_ScriptEnvironment *);
+typedef void (__stdcall *avs_release_value_func)(AVS_Value);
 
 /* Inline functions */
 inline static int avs_is_int(AVS_Value v) { return v.type == 'i'; }

@@ -55,18 +55,20 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;QT_DEBUG;QT_DLL;QT_GUI_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;$(SolutionDir)tmp\uic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;$(SolutionDir)tmp\uic;$(SolutionDir)etc\vld\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)etc\vld\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QtMaind.lib;QtCored4.lib;QtGuid4.lib;Winmm.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>rmdir /S /Q "$(SolutionDir)bin\$(Configuration)\toolset"
 mkdir "$(SolutionDir)bin\$(Configuration)\toolset"
-copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\toolset"
+copy /Y "$(SolutionDir)res\toolset\*.exe" "$(TargetDir)\toolset"
+copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.dll" "$(TargetDir)"
+copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"
 </Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -85,7 +87,7 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;QT_NO_DEBUG;QT_DLL;QT_GUI_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;$(SolutionDir)tmp\uic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;$(SolutionDir)tmp\uic;$(SolutionDir)etc\vld\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -120,9 +122,9 @@ copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\tools
       </Message>
     </PreLinkEvent>
     <PostBuildEvent>
-      <Command>rmdir /S /Q "$(SolutionDir)bin\$(Configuration)\toolset"
-mkdir "$(SolutionDir)bin\$(Configuration)\toolset"
-copy "$(SolutionDir)res\toolset\*.exe" "$(SolutionDir)bin\$(Configuration)\toolset"
+      <Command>rmdir /S /Q "$(TargetDir)\toolset"
+mkdir "$(TargetDir)\toolset"
+copy /Y "$(SolutionDir)res\toolset\*.exe" "$(TargetDir)\toolset\"
 </Command>
       <Message>Copy Toolset</Message>
     </PostBuildEvent>

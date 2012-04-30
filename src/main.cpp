@@ -108,7 +108,7 @@ static int _main(int argc, char* argv[])
 	{
 		int iResult = -1;
 		qInstallMsgHandler(x264_message_handler);
-		X264_MEMORY_CHECK(iResult = x264_main(argc, argv));
+		X264_MEMORY_CHECK(x264_main, iResult, argc, argv);
 		x264_finalization();
 		return iResult;
 	}

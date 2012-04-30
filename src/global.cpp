@@ -399,27 +399,26 @@ bool x264_portable(void)
  */
 const QString &x264_data_path(void)
 {
-	static QString *pathCache = NULL;
+	static QString pathCache;
 	
-	if(!pathCache)
+	if(pathCache.isNull())
 	{
-		pathCache = new QString();
 		if(!x264_portable())
 		{
-			*pathCache = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+			pathCache = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 		}
-		if(pathCache->isEmpty() || x264_portable())
+		if(pathCache.isEmpty() || x264_portable())
 		{
-			*pathCache = QApplication::applicationDirPath();
+			pathCache = QApplication::applicationDirPath();
 		}
-		if(!QDir(*pathCache).mkpath("."))
+		if(!QDir(pathCache).mkpath("."))
 		{
-			qWarning("Data directory could not be created:\n%s\n", pathCache->toUtf8().constData());
-			*pathCache = QDir::currentPath();
+			qWarning("Data directory could not be created:\n%s\n", pathCache.toUtf8().constData());
+			pathCache = QDir::currentPath();
 		}
 	}
 	
-	return *pathCache;
+	return pathCache;
 }
 
 /*
@@ -933,5 +932,22 @@ SIZE_T x264_dbg_private_bytes(void)
  */
 void x264_finalization(void)
 {
-	/* NOP */
+	//Destroy Qt application object
+	QApplication *application = dynamic_cast<QApplication*>(QApplication::instance());
+	X264_DELETE(application);
+
+	//Free STDOUT and STDERR buffers
+	if(g_x264_console_attached)
+	{
+		if(std::filebuf *tmp = dynamic_cast<std::filebuf*>(std::cout.rdbuf()))
+		{
+			std::cout.rdbuf(NULL);
+			X264_DELETE(tmp);
+		}
+		if(std::filebuf *tmp = dynamic_cast<std::filebuf*>(std::cerr.rdbuf()))
+		{
+			std::cerr.rdbuf(NULL);
+			X264_DELETE(tmp);
+		}
+	}
 }

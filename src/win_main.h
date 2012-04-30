@@ -53,6 +53,7 @@ private:
 	bool m_firstShow;
 	QLabel *m_label;
 	IPCThread *m_ipcThread;
+	QLibrary *m_avsLib;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;

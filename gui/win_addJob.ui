@@ -419,10 +419,10 @@
                 <string>Select the target average(!) bitrate, in kilobit/sec. Higher value means better quality, but bigger file. Lower value means smaller file, but lower quality.</string>
                </property>
                <property name="minimum">
-                <number>100</number>
+                <number>10</number>
                </property>
                <property name="maximum">
-                <number>250000</number>
+                <number>1000000</number>
                </property>
                <property name="value">
                 <number>100</number>
@@ -1291,6 +1291,7 @@
   <tabstop>buttonCancel</tabstop>
  </tabstops>
  <resources>
+  <include location="../res/resources.qrc"/>
   <include location="../res/resources.qrc"/>
  </resources>
  <connections>

@@ -51,7 +51,7 @@ public:
 
 	//Setter
 	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
-	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(100U, bitrate, 250000U); }
+	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(10U, bitrate, 800000U); }
 	void setQuantizer(double quantizer) { m_quantizer = qBound(0.0, quantizer, 52.0); }
 	void setPreset(const QString &preset) { m_preset = preset.trimmed(); }
 	void setTune(const QString &tune) { m_tune = tune.trimmed(); }

@@ -219,7 +219,7 @@ void MainWindow::addButtonPressed(const QString &filePathIn, const QString &file
 	
 	if(ok) *ok = false;
 
-	AddJobDialog *addDialog = new AddJobDialog(this, options ? options : m_options, m_cpuFeatures->x64, m_preferences.use10BitEncoding);
+	AddJobDialog *addDialog = new AddJobDialog(this, options ? options : m_options, m_cpuFeatures->x64, m_preferences.use10BitEncoding, m_preferences.saveToSourcePath);
 	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
 	
 	if(options) addDialog->setWindowTitle(tr("Restart Job"));
@@ -777,10 +777,14 @@ void MainWindow::init(void)
 		}
 		if(m_avsLib->load())
 		{
-			avisynthVersion = detectAvisynthVersion(m_avsLib);
-			if(avisynthVersion < 0.0)
+			DWORD errorCode = 0;
+			avisynthVersion = detectAvisynthVersion(m_avsLib, &errorCode);
+			if((avisynthVersion < 0.0) || errorCode)
 			{
-				int val = QMessageBox::critical(this, tr("Avisynth Error"), tr("<nobr>A critical error was encountered while checking your Avisynth version!</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+				QString text = tr("A critical error (code: 0x%1) was encountered while checking your Avisynth version.").arg(QString().sprintf("%08X", errorCode)).append("<br>");
+				text += tr("This is most likely caused by an erroneous Avisynth Plugin, please try to clean your Plugins foler!").append("<br>");
+				text += tr("We suggest to move all .dll and .avsi files out of your Avisynth Plugins folder and try again.");
+				int val = QMessageBox::critical(this, tr("Avisynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 				if(val != 1) { close(); qApp->exit(-1); return; }
 			}
 		}
@@ -1150,9 +1154,10 @@ void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon
 /*
  * Detect Avisynth version
  */
-double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
+double MainWindow::detectAvisynthVersion(QLibrary *avsLib, DWORD *errorCode)
 {
 	qDebug("detectAvisynthVersion(QLibrary *avsLib)");
+	if(errorCode) *errorCode = 0;
 	double version_number = 0.0;
 	EXCEPTION_RECORD exceptionRecord;
 	
@@ -1163,6 +1168,8 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 		avs_function_exists_func avs_function_exists_ptr = (avs_function_exists_func) avsLib->resolve("avs_function_exists");
 		avs_delete_script_environment_func avs_delete_script_environment_ptr = (avs_delete_script_environment_func) avsLib->resolve("avs_delete_script_environment");
 		avs_release_value_func avs_release_value_ptr = (avs_release_value_func) avsLib->resolve("avs_release_value");
+
+		//volatile int x = 0, y = 0; x = 42 / y;
 
 		if((avs_create_script_environment_ptr != NULL) && (avs_invoke_ptr != NULL) && (avs_function_exists_ptr != NULL))
 		{
@@ -1215,6 +1222,7 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib)
 	}
 	__except(exceptionFilter(&exceptionRecord, GetExceptionInformation()))
 	{
+		if(errorCode) *errorCode = exceptionRecord.ExceptionCode;
 		qWarning("Exception in Avisynth initialization code! (Address: %p, Code: 0x%08x)", exceptionRecord.ExceptionAddress, exceptionRecord.ExceptionCode);
 		version_number = -1.0;
 	}

@@ -32,7 +32,7 @@ class AddJobDialog : public QDialog, private Ui::AddJobDialog
 	Q_OBJECT
 
 public:
-	AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding);
+	AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder);
 	~AddJobDialog(void);
 
 	QString sourceFile(void);
@@ -52,6 +52,7 @@ protected:
 
 	const bool m_x64supported;
 	const bool m_use10BitEncoding;
+	const bool m_saveToSourceFolder;
 
 	QStringList m_types;
 	QString m_initialDir_src;

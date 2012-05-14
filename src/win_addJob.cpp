@@ -185,13 +185,14 @@ public:
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding)
+AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder)
 :
 	QDialog(parent),
 	m_defaults(new OptionsModel()),
 	m_options(options),
 	m_x64supported(x64supported),
 	m_use10BitEncoding(use10BitEncoding),
+	m_saveToSourceFolder(saveToSourceFolder),
 	m_initialDir_src(QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))),
 	m_initialDir_out(QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))),
 	m_lastFilterIndex(0)
@@ -836,7 +837,7 @@ QString AddJobDialog::makeFileFilter(void)
 void AddJobDialog::generateOutputFileName(const QString &filePath)
 {
 	QString name = QFileInfo(filePath).completeBaseName();
-	QString path = VALID_DIR(m_initialDir_out) ? m_initialDir_out : QFileInfo(filePath).path();
+	QString path = m_saveToSourceFolder ? QFileInfo(filePath).canonicalPath() : (VALID_DIR(m_initialDir_out) ? m_initialDir_out : QFileInfo(filePath).path());
 	QString fext = getFilterExt(m_lastFilterIndex);
 			
 	QString outPath = QString("%1/%2.%3").arg(path, name, fext);

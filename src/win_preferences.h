@@ -36,6 +36,7 @@ public:
 		bool use10BitEncoding;
 		bool useAvisyth64Bit;
 		bool saveLogFiles;
+		bool saveToSourcePath;
 	}
 	Preferences;
 

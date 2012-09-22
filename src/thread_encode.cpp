@@ -43,7 +43,7 @@ QMutex EncodeThread::m_mutex_startProcess;
 /*
  * Macros
  */
-#define CHECK_STATUS(ABORT_FLAG, OK_FLAG) \
+#define CHECK_STATUS(ABORT_FLAG, OK_FLAG) do \
 { \
 	if(ABORT_FLAG) \
 	{ \
@@ -60,16 +60,36 @@ QMutex EncodeThread::m_mutex_startProcess;
 		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
 		return; \
 	} \
-}
+} \
+while(0)
 
-#define APPEND_AND_CLEAR(LIST, STR) \
+#define APPEND_AND_CLEAR(LIST, STR) do \
 { \
 	if(!((STR).isEmpty())) \
 	{ \
 		(LIST) << (STR); \
 		(STR).clear(); \
 	} \
-}
+} \
+while(0)
+
+#define REMOVE_CUSTOM_ARG(LIST, ITER, FLAG, PARAM) do \
+{ \
+	if(ITER != LIST.end()) \
+	{ \
+		if((*ITER).compare(PARAM, Qt::CaseInsensitive) == 0) \
+		{ \
+			log(tr("WARNING: Custom parameter \"" PARAM "\" will be ignored in Pipe'd mode!\n")); \
+			ITER = LIST.erase(ITER); \
+			if(ITER != LIST.end()) \
+			{ \
+				if(!((*ITER).startsWith("--", Qt::CaseInsensitive))) ITER = LIST.erase(ITER); \
+			} \
+			FLAG = true; \
+		} \
+	} \
+} \
+while(0)
 
 #define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/x264_%2_%3.exe").arg((BIN_DIR), ((IS_10BIT) ? "10bit" : "8bit"), ((IS_X64) ? "x64" : "x86"))
 
@@ -571,7 +591,19 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 
 	if(!m_options->customX264().isEmpty())
 	{
-		cmdLine.append(splitParams(m_options->customX264()));
+		QStringList customArgs = splitParams(m_options->customX264());
+		if(usePipe)
+		{
+			QStringList::iterator i = customArgs.begin();
+			while(i != customArgs.end())
+			{
+				bool bModified = false;
+				REMOVE_CUSTOM_ARG(customArgs, i, bModified, "--fps");
+				REMOVE_CUSTOM_ARG(customArgs, i, bModified, "--frames");
+				if(!bModified) i++;
+			}
+		}
+		cmdLine.append(customArgs);
 	}
 
 	cmdLine << "--output" << pathToLocal(QDir::toNativeSeparators(m_outputFileName), true);

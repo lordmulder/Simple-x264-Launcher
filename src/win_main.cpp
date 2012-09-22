@@ -1229,4 +1229,3 @@ double MainWindow::detectAvisynthVersion(QLibrary *avsLib, DWORD *errorCode)
 
 	return version_number;
 }
-

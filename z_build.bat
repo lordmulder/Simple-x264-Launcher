@@ -4,7 +4,7 @@ REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
 set "MSVC_PATH=C:\Program Files\Microsoft Visual Studio 10.0\VC"
 set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
-set "QTVC_PATH=C:\MuldeR\Qt\4.8.0"
+set "QTVC_PATH=C:\MuldeR\Qt\4.8.2"
 set "UPX3_PATH=C:\Program Files\UPX"
 
 REM ###############################################

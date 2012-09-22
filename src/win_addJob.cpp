@@ -147,7 +147,7 @@ public:
 
 	virtual State validate(QString &input, int &pos) const
 	{
-		static const char* p[] = {"B", "o", "h", "p", "q", "fps", "frames", "preset", "tune", "profile",
+		static const char* p[] = {"B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
 			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help","quiet", NULL};
 
 		bool invalid = false;

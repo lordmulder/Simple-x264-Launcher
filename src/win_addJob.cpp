@@ -39,6 +39,7 @@
 #include <QUrl>
 #include <QAction>
 #include <QClipboard>
+#include <QToolTip>
 
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
@@ -119,13 +120,25 @@ protected:
 				flag = flag || input.contains(QString("%1-%2").arg(QChar::fromLatin1(c[i]), param), Qt::CaseSensitive);
 			}
 		}
+		if((flag) && (m_notifier))
+		{
+			m_notifier->setText(tr("Invalid parameter: %1").arg((param.length() > 1) ? QString("%1%2").arg(prefix, param) : QString("-%1").arg(param)));
+		}
+		return flag;
+	}
+
+	const bool &setStatus(const bool &flag, const QString &toolName) const
+	{
 		if(flag)
 		{
 			if(m_notifier)
 			{
-				m_notifier->setText(tr("Invalid parameter: %1").arg((param.length() > 1) ? QString("%1%2").arg(prefix, param) : QString("-%1").arg(param)));
 				if(m_notifier->isHidden()) m_notifier->show();
 				if(m_icon) { if(m_icon->isHidden()) m_icon->show(); }
+				if(QWidget *w = m_notifier->topLevelWidget()->focusWidget())
+				{
+					QToolTip::showText(static_cast<QWidget*>(w->parent())->mapToGlobal(w->pos()), QString("<nobr>%1</nobr>").arg(tr("<b>Warning:</b> You entered a parameter that is incomaptible with using %1 from a GUI.<br>Please note that the GUI will automatically set <i>this</i> parameter for you (if required).").arg(toolName)), m_notifier, QRect());
+				}
 			}
 		}
 		else
@@ -134,6 +147,7 @@ protected:
 			{
 				if(m_notifier->isVisible()) m_notifier->hide();
 				if(m_icon) { if(m_icon->isVisible()) m_icon->hide(); }
+				QToolTip::hideText();
 			}
 		}
 		return flag;
@@ -157,7 +171,7 @@ public:
 			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), true);
 		}
 
-		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
+		return setStatus(invalid, "x264") ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 };
 
@@ -176,8 +190,8 @@ public:
 		{
 			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), false);
 		}
-
-		return invalid ? QValidator::Intermediate : QValidator::Acceptable;
+		
+		return setStatus(invalid, "Avs2YUV") ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 };
 

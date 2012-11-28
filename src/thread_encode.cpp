@@ -371,7 +371,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 				Q_PID pid[2] = {processEncode.pid(), processAvisynth.pid()};
 				if(pid[0]) { ok[0] = (SuspendThread(pid[0]->hThread) != (DWORD)(-1)); }
 				if(pid[1]) { ok[1] = (SuspendThread(pid[1]->hThread) != (DWORD)(-1)); }
-				while(m_pause) m_semaphorePaused.acquire();
+				while(m_pause) m_semaphorePaused.tryAcquire(1, 5000);
 				while(m_semaphorePaused.tryAcquire(1, 0));
 				if(pid[0]) { if(ok[0]) ResumeThread(pid[0]->hThread); }
 				if(pid[1]) { if(ok[1]) ResumeThread(pid[1]->hThread); }

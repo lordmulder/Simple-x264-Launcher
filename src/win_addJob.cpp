@@ -332,6 +332,9 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	iconNotificationX264->hide();
 	labelNotificationAvs2YUV->hide();
 	iconNotificationAvs2YUV->hide();
+
+	//Enable drag&drop support for this window, required for Qt v4.8.4+
+	setAcceptDrops(true);
 }
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
@@ -361,9 +364,15 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 
 void AddJobDialog::dragEnterEvent(QDragEnterEvent *event)
 {
-	QStringList formats = event->mimeData()->formats();
-	
-	if(formats.contains("application/x-qt-windows-mime;value=\"FileNameW\"", Qt::CaseInsensitive) && formats.contains("text/uri-list", Qt::CaseInsensitive))
+	bool accept[2] = {false, false};
+
+	foreach(const QString &fmt, event->mimeData()->formats())
+	{
+		accept[0] = accept[0] || fmt.contains("text/uri-list", Qt::CaseInsensitive);
+		accept[1] = accept[1] || fmt.contains("FileNameW", Qt::CaseInsensitive);
+	}
+
+	if(accept[0] && accept[1])
 	{
 		event->acceptProposedAction();
 	}

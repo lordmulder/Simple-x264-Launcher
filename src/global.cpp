@@ -91,23 +91,39 @@ g_x264_version =
 };
 
 //Compiler detection
-//The following code was borrowed from MPC-HC project: http://mpc-hc.sf.net/
+//The following code was (partially) borrowed from MPC-HC project: http://mpc-hc.sf.net/
 #if defined(__INTEL_COMPILER)
-	#if (__INTEL_COMPILER >= 1200)
-		static const char *g_x264_version_compiler = "ICL 12.x";
+	#if (__INTEL_COMPILER >= 1300)
+		static const char *g_x264_version_compiler = "ICL 13." LAMEXP_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
+	#elif (__INTEL_COMPILER >= 1200)
+		static const char *g_x264_version_compiler = "ICL 12." LAMEXP_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
 	#elif (__INTEL_COMPILER >= 1100)
-		static const char *g_x264_version_compiler = = "ICL 11.x";
+		static const char *g_x264_version_compiler = "ICL 11.x";
 	#elif (__INTEL_COMPILER >= 1000)
-		static const char *g_x264_version_compiler = = "ICL 10.x";
+		static const char *g_x264_version_compiler = "ICL 10.x";
 	#else
 		#error Compiler is not supported!
 	#endif
 #elif defined(_MSC_VER)
-	#if (_MSC_VER == 1600)
-		#if (_MSC_FULL_VER >= 160040219)
+	#if (_MSC_VER == 1700)
+		#if (_MSC_FULL_VER < 170050727)
+			static const char *g_x264_version_compiler = "MSVC 2012-Beta";
+		#elif (_MSC_FULL_VER < 170051020)
+			static const char *g_x264_version_compiler = "MSVC 2012-RTM";
+		#elif (_MSC_FULL_VER < 170051106)
+			static const char *g_x264_version_compiler = "MSVC 2012-U1 CTP";
+		#elif (_MSC_FULL_VER == 170051106)
+			static const char *g_x264_version_compiler = "MSVC 2012-U1";
+		#else
+			#error Compiler version is not supported yet!
+		#endif
+	#elif (_MSC_VER == 1600)
+		#if (_MSC_FULL_VER < 160040219)
+			static const char *g_x264_version_compiler = "MSVC 2010-RTM";
+		#elif (_MSC_FULL_VER == 160040219)
 			static const char *g_x264_version_compiler = "MSVC 2010-SP1";
 		#else
-			static const char *g_x264_version_compiler = "MSVC 2010";
+			#error Compiler version is not supported yet!
 		#endif
 	#elif (_MSC_VER == 1500)
 		#if (_MSC_FULL_VER >= 150030729)
@@ -122,9 +138,9 @@ g_x264_version =
 	// Note: /arch:SSE and /arch:SSE2 are only available for the x86 platform
 	#if !defined(_M_X64) && defined(_M_IX86_FP)
 		#if (_M_IX86_FP == 1)
-			x264_COMPILER_WARNING("SSE instruction set is enabled!")
+			X264_COMPILER_WARNING("SSE instruction set is enabled!")
 		#elif (_M_IX86_FP == 2)
-			x264_COMPILER_WARNING("SSE2 instruction set is enabled!")
+			X264_COMPILER_WARNING("SSE2 instruction set is enabled!")
 		#endif
 	#endif
 #else

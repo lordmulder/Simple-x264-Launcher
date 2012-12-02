@@ -14,6 +14,7 @@
     <ProjectGuid>{563D953B-CBC3-4C75-AFC2-5BD87531C332}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>x264_launcher</RootNamespace>
+    <ProjectName>x264_launcher</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -39,7 +40,6 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
   </PropertyGroup>
@@ -64,9 +64,21 @@
       <AdditionalDependencies>QtMaind.lib;QtCored4.lib;QtGuid4.lib;Winmm.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>rmdir /S /Q "$(SolutionDir)bin\$(Configuration)\toolset"
-mkdir "$(SolutionDir)bin\$(Configuration)\toolset"
-copy /Y "$(SolutionDir)res\toolset\*.exe" "$(TargetDir)\toolset"
+      <Command>del /S /Q "$(TargetDir)\*.dll"
+rmdir /S /Q "$(TargetDir)\toolset"
+rmdir /S /Q "$(TargetDir)\imageformats"
+mkdir "$(TargetDir)\toolset"
+mkdir "$(TargetDir)\imageformats"
+copy /Y "$(SolutionDir)res\toolset\*.exe" "$(TargetDir)\toolset\"
+copy /Y "$(QTDIR)\bin\QtCored4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\bin\QtGuid4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\bin\QtSvgd4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\bin\QtXmld4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\plugins\imageformats\qicod4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qsvgd4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qjpegd4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qtiffd4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qgifd4.dll" "$(TargetDir)\imageformats"
 copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.dll" "$(TargetDir)"
 copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"
 </Command>
@@ -122,9 +134,21 @@ copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"
       </Message>
     </PreLinkEvent>
     <PostBuildEvent>
-      <Command>rmdir /S /Q "$(TargetDir)\toolset"
+      <Command>del /S /Q "$(TargetDir)\*.dll"
+rmdir /S /Q "$(TargetDir)\toolset"
+rmdir /S /Q "$(TargetDir)\imageformats"
 mkdir "$(TargetDir)\toolset"
+mkdir "$(TargetDir)\imageformats"
 copy /Y "$(SolutionDir)res\toolset\*.exe" "$(TargetDir)\toolset\"
+copy /Y "$(QTDIR)\bin\QtCore4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\bin\QtGui4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\bin\QtSvg4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\bin\QtXml4.dll" "$(TargetDir)"
+copy /Y "$(QTDIR)\plugins\imageformats\qico4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qsvg4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qjpeg4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qtiff4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
 </Command>
       <Message>Copy Toolset</Message>
     </PostBuildEvent>

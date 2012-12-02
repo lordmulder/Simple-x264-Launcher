@@ -70,6 +70,9 @@
 #define X264_BOOL(X) ((X) ? "1" : "0")
 #define X264_DELETE(PTR) if(PTR) { delete PTR; PTR = NULL; }
 #define X264_DELETE_ARRAY(PTR) if(PTR) { delete [] PTR; PTR = NULL; }
+#define _X264_MAKE_STRING_(X) #X
+#define X264_MAKE_STRING(X) _X264_MAKE_STRING_(X)
+#define X264_COMPILER_WARNING(TXT) __pragma(message(__FILE__ "(" X264_MAKE_STRING(__LINE__) ") : warning: " TXT))
 
 //Declarations
 class QString;

@@ -60,9 +60,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD
 echo ---------------------------------------------------------------------
-MSBuild.exe /property:Configuration=release /target:clean "%~dp0\x264_launcher.sln"
+MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2010.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher.sln"
+MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2010.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -91,7 +91,11 @@ copy "%~dp0\*.txt" "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
 REM ///////////////////////////////////////////////////////////////////////////
-copy "%MSVC_PATH%\redist\x86\Microsoft.VC100.CRT\*.dll" "%PACK_PATH%"
+for %%i in (100, 110) do (
+	if exist "%MSVC_PATH%\redist\x86\Microsoft.VC%%i.CRT\*.dll" (
+		copy "%MSVC_PATH%\redist\x86\Microsoft.VC%%i.CRT\msvc?%%i.dll" "%PACK_PATH%"
+	)
+)
 copy "%QTVC_PATH%\bin\QtCore4.dll" "%PACK_PATH%"
 copy "%QTVC_PATH%\bin\QtGui4.dll" "%PACK_PATH%"
 copy "%QTVC_PATH%\bin\QtSvg4.dll" "%PACK_PATH%"

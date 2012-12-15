@@ -167,8 +167,7 @@ LONG WINAPI x264_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInf
 		if(mainThread) TerminateThread(mainThread, ULONG_MAX);
 	}
 
-	FatalAppExit(0, L"Unhandeled exception handler invoked, application will exit!");
-	TerminateProcess(GetCurrentProcess(), -1);
+	x264_fatal_exit(L"Unhandeled exception handler invoked, application will exit!");
 	return LONG_MAX;
 }
 
@@ -183,8 +182,7 @@ void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, 
 		if(mainThread) TerminateThread(mainThread, ULONG_MAX);
 	}
 
-	FatalAppExit(0, L"Invalid parameter handler invoked, application will exit!");
-	TerminateProcess(GetCurrentProcess(), -1);
+	x264_fatal_exit(L"Invalid parameter handler invoked, application will exit!");
 }
 
 /*
@@ -274,9 +272,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
 	if(type == QtCriticalMsg || type == QtFatalMsg)
 	{
 		lock.unlock();
-		MessageBoxW(NULL, QWCHAR(QString::fromUtf8(msg)), L"Simple x264 Launcher - GURU MEDITATION", MB_ICONERROR | MB_TOPMOST | MB_TASKMODAL);
-		FatalAppExit(0, L"The application has encountered a critical error and will exit now!");
-		TerminateProcess(GetCurrentProcess(), -1);
+		x264_fatal_exit(L"The application has encountered a critical error and will exit now!", QWCHAR(QString::fromUtf8(msg)));
 	}
 }
 
@@ -906,7 +902,10 @@ static void WINAPI x264_debug_thread_proc(__in LPVOID lpParameter)
 	{
 		Sleep(333);
 	}
-	TerminateProcess(GetCurrentProcess(), -1);
+	for(;;)
+	{
+		TerminateProcess(GetCurrentProcess(), -1);
+	}
 }
 
 /*
@@ -916,11 +915,40 @@ static HANDLE x264_debug_thread_init(void)
 {
 	if(IsDebuggerPresent() || x264_check_for_debugger())
 	{
-		FatalAppExit(0, L"Not a debug build. Please unload debugger and try again!");
-		TerminateProcess(GetCurrentProcess(), -1);
+		x264_fatal_exit(L"Not a debug build. Please unload debugger and try again!");
 	}
 
 	return CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(&x264_debug_thread_proc), NULL, NULL, NULL);
+}
+
+/*
+ * Fatal application exit
+ */
+#pragma intrinsic(_InterlockedExchange)
+void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage)
+{
+	static volatile long bFatalFlag = 0L;
+
+	if(_InterlockedExchange(&bFatalFlag, 1L) == 0L)
+	{
+		if(GetCurrentThreadId() != g_main_thread_id)
+		{
+			HANDLE mainThread = OpenThread(THREAD_TERMINATE, FALSE, g_main_thread_id);
+			if(mainThread) TerminateThread(mainThread, ULONG_MAX);
+		}
+	
+		if(errorBoxMessage)
+		{
+			MessageBoxW(NULL, errorBoxMessage, L"Simple x264 Launcher - GURU MEDITATION", MB_ICONERROR | MB_TOPMOST | MB_TASKMODAL);
+		}
+
+		FatalAppExit(0, exitMessage);
+
+		for(;;)
+		{
+			TerminateProcess(GetCurrentProcess(), -1);
+		}
+	}
 }
 
 /*

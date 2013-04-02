@@ -53,7 +53,6 @@ private:
 	bool m_firstShow;
 	QLabel *m_label;
 	IPCThread *m_ipcThread;
-	QLibrary *m_avsLib;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
@@ -69,7 +68,6 @@ private:
 	void updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon);
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
-	double detectAvisynthVersion(QLibrary *avsLib, DWORD *errorCode = NULL);
 
 private slots:
 	void addButtonPressed(const QString &filePathIn = QString(), const QString &filePathOut = QString(), OptionsModel *options = NULL, int fileNo = -1, int fileTotal = 0, bool *ok = NULL);

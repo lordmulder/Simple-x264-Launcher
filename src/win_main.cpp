@@ -25,9 +25,9 @@
 #include "model_options.h"
 #include "win_addJob.h"
 #include "win_preferences.h"
+#include "thread_avisynth.h"
 #include "taskbar7.h"
 #include "resource.h"
-#include "avisynth_c.h"
 
 #include <QDate>
 #include <QTimer>
@@ -66,7 +66,6 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_appDir(QApplication::applicationDirPath()),
 	m_options(NULL),
 	m_jobList(NULL),
-	m_avsLib(NULL),
 	m_droppedFiles(NULL),
 	m_firstShow(true)
 {
@@ -198,12 +197,7 @@ MainWindow::~MainWindow(void)
 	}
 
 	X264_DELETE(m_ipcThread);
-
-	if(m_avsLib)
-	{
-		m_avsLib->unload();
-		X264_DELETE(m_avsLib);
-	}
+	AvisynthCheckThread::unload();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -770,32 +764,19 @@ void MainWindow::init(void)
 	if(!qApp->arguments().contains("--skip-avisynth-check", Qt::CaseInsensitive))
 	{
 		qDebug("[Check for Avisynth support]");
-		double avisynthVersion = 0.0;
-		if(!m_avsLib)
+		volatile double avisynthVersion = 0.0;
+		const int result = AvisynthCheckThread::detect(&avisynthVersion);
+		if(result < 0)
 		{
-			m_avsLib = new QLibrary("avisynth.dll");
+			QString text = tr("A critical error was encountered while checking your Avisynth version.").append("<br>");
+			text += tr("This is most likely caused by an erroneous Avisynth Plugin, please try to clean your Plugins folder!").append("<br>");
+			text += tr("We suggest to move all .dll and .avsi files out of your Avisynth Plugins folder and try again.");
+			int val = QMessageBox::critical(this, tr("Avisynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
-		if(m_avsLib->load())
-		{
-			DWORD errorCode = 0;
-			avisynthVersion = detectAvisynthVersion(m_avsLib, &errorCode);
-			if((avisynthVersion < 0.0) || errorCode)
-			{
-				QString text = tr("A critical error (code: 0x%1) was encountered while checking your Avisynth version.").arg(QString().sprintf("%08X", errorCode)).append("<br>");
-				text += tr("This is most likely caused by an erroneous Avisynth Plugin, please try to clean your Plugins foler!").append("<br>");
-				text += tr("We suggest to move all .dll and .avsi files out of your Avisynth Plugins folder and try again.");
-				int val = QMessageBox::critical(this, tr("Avisynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-				if(val != 1) { close(); qApp->exit(-1); return; }
-			}
-		}
-		else
-		{
-			qWarning("Failed to load avisynth.dll libraray!");
-		}
-		if(avisynthVersion < 2.5)
+		if((!result) || (avisynthVersion < 2.5))
 		{
 			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-			m_avsLib->unload(); X264_DELETE(m_avsLib);
 			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
 		qDebug("");
@@ -1158,83 +1139,4 @@ void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon
 	}
 
 	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
-}
-
-/*
- * Detect Avisynth version
- */
-double MainWindow::detectAvisynthVersion(QLibrary *avsLib, DWORD *errorCode)
-{
-	qDebug("detectAvisynthVersion(QLibrary *avsLib)");
-	if(errorCode) *errorCode = 0;
-	double version_number = 0.0;
-	EXCEPTION_RECORD exceptionRecord;
-	
-	__try
-	{
-		avs_create_script_environment_func avs_create_script_environment_ptr = (avs_create_script_environment_func) avsLib->resolve("avs_create_script_environment");
-		avs_invoke_func avs_invoke_ptr = (avs_invoke_func) avsLib->resolve("avs_invoke");
-		avs_function_exists_func avs_function_exists_ptr = (avs_function_exists_func) avsLib->resolve("avs_function_exists");
-		avs_delete_script_environment_func avs_delete_script_environment_ptr = (avs_delete_script_environment_func) avsLib->resolve("avs_delete_script_environment");
-		avs_release_value_func avs_release_value_ptr = (avs_release_value_func) avsLib->resolve("avs_release_value");
-
-		//volatile int x = 0, y = 0; x = 42 / y;
-
-		if((avs_create_script_environment_ptr != NULL) && (avs_invoke_ptr != NULL) && (avs_function_exists_ptr != NULL))
-		{
-			qDebug("avs_create_script_environment_ptr(AVS_INTERFACE_25)");
-			AVS_ScriptEnvironment* avs_env = avs_create_script_environment_ptr(AVS_INTERFACE_25);
-			if(avs_env != NULL)
-			{
-				qDebug("avs_function_exists_ptr(avs_env, \"VersionNumber\")");
-				if(avs_function_exists_ptr(avs_env, "VersionNumber"))
-				{
-					qDebug("avs_invoke_ptr(avs_env, \"VersionNumber\", avs_new_value_array(NULL, 0), NULL)");
-					AVS_Value avs_version = avs_invoke_ptr(avs_env, "VersionNumber", avs_new_value_array(NULL, 0), NULL);
-					if(!avs_is_error(avs_version))
-					{
-						if(avs_is_float(avs_version))
-						{
-							qDebug("Avisynth version: v%.2f", avs_as_float(avs_version));
-							version_number = avs_as_float(avs_version);
-							if(avs_release_value_ptr) avs_release_value_ptr(avs_version);
-						}
-						else
-						{
-							qWarning("Failed to determine version number, Avisynth didn't return a float!");
-						}
-					}
-					else
-					{
-						qWarning("Failed to determine version number, Avisynth returned an error!");
-					}
-				}
-				else
-				{
-					qWarning("The 'VersionNumber' function does not exist in your Avisynth DLL, can't determine version!");
-				}
-				if(avs_delete_script_environment_ptr != NULL)
-				{
-					avs_delete_script_environment_ptr(avs_env);
-					avs_env = NULL;
-				}
-			}
-			else
-			{
-				qWarning("The Avisynth DLL failed to create the script environment!");
-			}
-		}
-		else
-		{
-			qWarning("It seems the Avisynth DLL is missing required API functions!");
-		}
-	}
-	__except(exceptionFilter(&exceptionRecord, GetExceptionInformation()))
-	{
-		if(errorCode) *errorCode = exceptionRecord.ExceptionCode;
-		qWarning("Exception in Avisynth initialization code! (Address: %p, Code: 0x%08x)", exceptionRecord.ExceptionAddress, exceptionRecord.ExceptionCode);
-		version_number = -1.0;
-	}
-
-	return version_number;
 }

@@ -19,13 +19,44 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 1
-#define VER_X264_PATCH 0
-#define VER_X264_BUILD 419
+#pragma once
 
-#define VER_X264_MINIMUM_REV 2250
-#define VER_X264_CURRENT_API 130
-#define VER_X264_AVS2YUV_VER 242
+#include <QThread>
+#include <QMutex>
 
-#define VER_X264_PRE_RELEASE (0)
+class QLibrary;
+
+class AvisynthCheckThread : public QThread
+{
+	Q_OBJECT
+
+public:
+	AvisynthCheckThread(void);
+	~AvisynthCheckThread(void);
+
+	static int detect(volatile double *version);
+	static void unload(void);
+
+	bool getSuccess(void) { return m_success; }
+	bool getException(void) { return m_exception; }
+	double getVersion(void) { return m_version; }
+
+private slots:
+	void start(Priority priority = InheritPriority) { QThread::start(priority); }
+
+private:
+	volatile bool m_exception;
+	volatile bool m_success;
+	volatile double m_version;
+
+	static QMutex m_avsLock;
+	static QLibrary *m_avsLib;
+	
+	//Entry point
+	virtual void run(void);
+
+	//Functions
+	static bool detectAvisynthVersion1(volatile double *version_number, volatile bool *exception);
+	static bool detectAvisynthVersion2(volatile double *version_number, volatile bool *exception);
+	static bool detectAvisynthVersion3(volatile double *version_number);
+};

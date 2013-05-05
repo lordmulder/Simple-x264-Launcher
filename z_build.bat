@@ -60,9 +60,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD
 echo ---------------------------------------------------------------------
-MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2010.sln"
+MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2012.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2010.sln"
+MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2012.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -83,9 +83,13 @@ echo ---------------------------------------------------------------------
 set "PACK_PATH=%TMP%\~%RANDOM%%RANDOM%.tmp"
 mkdir "%PACK_PATH%"
 mkdir "%PACK_PATH%\imageformats"
-mkdir "%PACK_PATH%\toolset"
+mkdir "%PACK_PATH%\toolset\x86"
+mkdir "%PACK_PATH%\toolset\x64"
 copy "%~dp0\bin\Release\*.exe" "%PACK_PATH%"
-copy "%~dp0\bin\Release\toolset\*.exe" "%PACK_PATH%\toolset"
+copy "%~dp0\bin\Release\toolset\x86\*.exe" "%PACK_PATH%\toolset\x86"
+copy "%~dp0\bin\Release\toolset\x86\*.dll" "%PACK_PATH%\toolset\x86"
+copy "%~dp0\bin\Release\toolset\x64\*.exe" "%PACK_PATH%\toolset\x64"
+copy "%~dp0\bin\Release\toolset\x64\*.dll" "%PACK_PATH%\toolset\x64"
 copy "%~dp0\*.txt" "%PACK_PATH%"
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -157,6 +161,8 @@ echo !insertmacro SECTION_BEGIN >> "%NSI_FILE%"
 echo Delete `$INSTDIR\*.exe` >> "%NSI_FILE%"
 echo Delete `$INSTDIR\*.dll` >> "%NSI_FILE%"
 echo Delete `$INSTDIR\toolset\*.exe` >> "%NSI_FILE%"
+echo Delete `$INSTDIR\toolset\x86\*.exe` >> "%NSI_FILE%"
+echo Delete `$INSTDIR\toolset\x64\*.exe` >> "%NSI_FILE%"
 echo File /a /r `%PACK_PATH%\*.exe` >> "%NSI_FILE%"
 echo File /a /r `%PACK_PATH%\*.dll` >> "%NSI_FILE%"
 echo File /a /r `%PACK_PATH%\*.txt` >> "%NSI_FILE%"

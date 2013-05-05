@@ -91,7 +91,8 @@ while(0)
 } \
 while(0)
 
-#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/x264_%2_%3.exe").arg((BIN_DIR), ((IS_10BIT) ? "10bit" : "8bit"), ((IS_X64) ? "x64" : "x86"))
+#define AVS2_BINARY(BIN_DIR, IS_X64) QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"))
+#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR),  ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit"))
 
 /*
  * Static vars
@@ -320,7 +321,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 		processAvisynth.setStandardOutputProcess(&processEncode);
 
 		log("Creating Avisynth process:");
-		if(!startProcess(processAvisynth, QString("%1/%2.exe").arg(m_binDir, avs2yuv_x64 ? "avs2yuv_x64" : "avs2yuv_x86"), cmdLine_Avisynth, false))
+		if(!startProcess(processAvisynth, AVS2_BINARY(m_binDir, avs2yuv_x64), cmdLine_Avisynth, false))
 		{
 			return false;
 		}
@@ -726,7 +727,7 @@ unsigned int EncodeThread::checkVersionAvs2yuv(bool x64)
 	QProcess process;
 
 	log("\nCreating process:");
-	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv_x86"), QStringList()))
+	if(!startProcess(process, AVS2_BINARY(m_binDir, x64), QStringList()))
 	{
 		return false;;
 	}
@@ -835,7 +836,7 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
 
 	log("Creating process:");
-	if(!startProcess(process, QString("%1/%2.exe").arg(m_binDir, x64 ? "avs2yuv_x64" : "avs2yuv_x86"), cmdLine))
+	if(!startProcess(process, AVS2_BINARY(m_binDir, x64), cmdLine))
 	{
 		return false;;
 	}

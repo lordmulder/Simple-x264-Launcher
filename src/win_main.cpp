@@ -667,7 +667,7 @@ void MainWindow::shutdownComputer(void)
  */
 void MainWindow::init(void)
 {
-	static const char *binFiles = "x264_8bit_x86.exe:x264_8bit_x64.exe:x264_10bit_x86.exe:x264_10bit_x64.exe:avs2yuv_x86.exe:avs2yuv_x64.exe";
+	static const char *binFiles = "x86/x264_8bit_x86.exe:x64/x264_8bit_x64.exe:x86/x264_10bit_x86.exe:x64/x264_10bit_x64.exe:x86/avs2yuv_x86.exe:x64/avs2yuv_x64.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
 	updateLabelPos();
@@ -699,7 +699,7 @@ void MainWindow::init(void)
 		{
 			bool binaryTypeOkay = false;
 			DWORD binaryType;
-			if(GetBinaryType(QWCHAR(file->fileName()), &binaryType))
+			if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(file->fileName())), &binaryType))
 			{
 				binaryTypeOkay = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
 			}

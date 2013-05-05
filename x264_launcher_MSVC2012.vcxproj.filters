@@ -48,9 +48,6 @@
     <ClInclude Include="src\taskbar7.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_avisynth.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -176,6 +173,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\thread_ipc.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_avisynth.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

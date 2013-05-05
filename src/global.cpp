@@ -91,7 +91,7 @@ g_x264_version =
 };
 
 //Compiler detection
-//The following code was (partially) borrowed from MPC-HC project: http://mpc-hc.sf.net/
+//The following code was borrowed from MPC-HC project: http://mpc-hc.sf.net/
 #if defined(__INTEL_COMPILER)
 	#if (__INTEL_COMPILER >= 1300)
 		static const char *g_x264_version_compiler = "ICL 13." LAMEXP_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
@@ -112,8 +112,10 @@ g_x264_version =
 			static const char *g_x264_version_compiler = "MSVC 2012-RTM";
 		#elif (_MSC_FULL_VER < 170051106)
 			static const char *g_x264_version_compiler = "MSVC 2012-U1 CTP";
-		#elif (_MSC_FULL_VER == 170051106)
+		#elif (_MSC_FULL_VER < 170060315)
 			static const char *g_x264_version_compiler = "MSVC 2012-U1";
+		#elif (_MSC_FULL_VER == 170060315)
+			static const char *g_x264_version_compiler = "MSVC 2012-U2";
 		#else
 			#error Compiler version is not supported yet!
 		#endif

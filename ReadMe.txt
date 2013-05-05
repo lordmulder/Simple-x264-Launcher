@@ -195,7 +195,25 @@ if you want to encode audio from an Avisynth script, you must pass the
 For convenience, the string "--audiofile $(INPUT)" may be used.
 
 
-11. Command-line Syntax
+11. OpenCL Support
+-----------------------
+
+Newer builds of x264 now support OpenCL Lookahead, which can be enabled
+with the "--opencl" parameter. However, even if you do NOT want to use
+this feature, x264 will still depend on the OpenCL library (OpenCL.DLL)
+and it will NOT even start, if the OpenCL DLL is missing! For this
+reason, the Simple x264 Launcher ships with a "dummy" OpenCL library to
+make x264 start on systems that do NOT support OpenCL. As a side effect
+of this workaround, any OpenCL functions in x264 will not work at all!
+
+If your video hardware supports OpenCL *and* if you have an up-to-date
+video driver with OpenCL support installed *and* if you which to use
+the OpenCL Lookahead function, then please remove the dummy OpenCL.DLL
+from the Simple x264 Launcher directory, so x264 can load the system's
+OpenCL.DLL (from system directory), provided by the video driver.
+
+
+12. Command-line Syntax
 -----------------------
 
 The following command-line switches are available:
@@ -207,8 +225,11 @@ The following command-line switches are available:
 --skip-avisynth-check ... Skip Avisynth check (not recommended!)
 --force-cpu-no-64bit .... Forcefully disable 64-Bit support
 
+These are parameters you can pass to Simple x264 Launcher, they can NOT
+be passed to x264 itself as "custom" parameters!
 
-12. Help & Support
+
+13. Help & Support
 ------------------
 
 For help and support, please join the discussion at:

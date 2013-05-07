@@ -64,13 +64,17 @@ private:
 	const x264_cpu_t *const m_cpuFeatures;
 	const QString m_appDir;
 	
+	bool createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart = false, int fileNo = -1, int fileTotal = 0, bool *applyToAll = NULL);
+	bool createJobMultiple(const QStringList &filePathIn);
+
+	bool appendJob(const QString &sourceFileName, const QString &outputFileName, OptionsModel *options, const bool runImmediately);
 	void updateButtons(EncodeThread::JobStatus status);
 	void updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon);
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
 
 private slots:
-	void addButtonPressed(const QString &filePathIn = QString(), const QString &filePathOut = QString(), OptionsModel *options = NULL, int fileNo = -1, int fileTotal = 0, bool *ok = NULL);
+	void addButtonPressed();
 	void abortButtonPressed(void);
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);

@@ -41,6 +41,7 @@
 #include <QProgressDialog>
 #include <QScrollBar>
 #include <QTextStream>
+#include <QSettings>
 
 #include <Mmsystem.h>
 
@@ -207,52 +208,16 @@ MainWindow::~MainWindow(void)
 /*
  * The "add" button was clicked
  */
-void MainWindow::addButtonPressed(const QString &filePathIn, const QString &filePathOut, OptionsModel *options, int fileNo, int fileTotal, bool *ok)
+void MainWindow::addButtonPressed()
 {
 	qDebug("MainWindow::addButtonPressed");
+	bool runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+	QString sourceFileName, outputFileName;
 	
-	if(ok) *ok = false;
-
-	AddJobDialog *addDialog = new AddJobDialog(this, options ? options : m_options, m_cpuFeatures->x64, m_preferences.use10BitEncoding, m_preferences.saveToSourcePath);
-	addDialog->setRunImmediately(countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
-	
-	if(options) addDialog->setWindowTitle(tr("Restart Job"));
-	if((fileNo >= 0) && (fileTotal > 1)) addDialog->setWindowTitle(addDialog->windowTitle().append(tr(" (File %1 of %2)").arg(QString::number(fileNo+1), QString::number(fileTotal))));
-	if(!filePathIn.isEmpty()) addDialog->setSourceFile(filePathIn);
-	if(!filePathOut.isEmpty()) addDialog->setOutputFile(filePathOut);
-
-	int result = addDialog->exec();
-	if(result == QDialog::Accepted)
+	if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
 	{
-		EncodeThread *thrd = new EncodeThread
-		(
-			addDialog->sourceFile(),
-			addDialog->outputFile(),
-			options ? options : m_options,
-			QString("%1/toolset").arg(m_appDir),
-			m_cpuFeatures->x64,
-			m_preferences.use10BitEncoding,
-			m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit
-		);
-
-		QModelIndex newIndex = m_jobList->insertJob(thrd);
-
-		if(newIndex.isValid())
-		{
-			if(addDialog->runImmediately())
-			{
-				jobsView->selectRow(newIndex.row());
-				QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-				m_jobList->startJob(newIndex);
-			}
-
-			if(ok) *ok = true;
-		}
-
-		m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+		appendJob(sourceFileName, outputFileName, m_options, runImmediately);
 	}
-	
-	X264_DELETE(addDialog);
 }
 
 /*
@@ -317,15 +282,18 @@ void MainWindow::pauseButtonPressed(bool checked)
 void MainWindow::restartButtonPressed(void)
 {
 	const QModelIndex index = jobsView->currentIndex();
-	
-	const QString &source = m_jobList->getJobSourceFile(index);
-	const QString &output = m_jobList->getJobOutputFile(index);
 	const OptionsModel *options = m_jobList->getJobOptions(index);
+	QString sourceFileName = m_jobList->getJobSourceFile(index);
+	QString outputFileName = m_jobList->getJobOutputFile(index);
 
-	if((options) && (!source.isEmpty()) && (!output.isEmpty()))
+	if((options) && (!sourceFileName.isEmpty()) && (!outputFileName.isEmpty()))
 	{
+		bool runImmediately = true;
 		OptionsModel *tempOptions = new OptionsModel(*options);
-		addButtonPressed(source, output, tempOptions);
+		if(createJob(sourceFileName, outputFileName, tempOptions, runImmediately, true))
+		{
+			appendJob(sourceFileName, outputFileName, tempOptions, runImmediately);
+		}
 		X264_DELETE(tempOptions);
 	}
 }
@@ -822,7 +790,8 @@ void MainWindow::init(void)
 		{
 			QString currentFile = files.takeFirst();
 			qDebug("Adding file: %s", currentFile.toUtf8().constData());
-			addButtonPressed(currentFile, QString(), NULL, n++, totalFiles, &ok);
+			/*TODO: Add multiple files!*/
+			//ok = createJob(currentFile, QString(), NULL, n++, totalFiles);
 		}
 	}
 
@@ -863,14 +832,17 @@ void MainWindow::handleDroppedFiles(void)
 	{
 		QStringList droppedFiles(*m_droppedFiles);
 		m_droppedFiles->clear();
+		/*
 		int totalFiles = droppedFiles.count();
 		bool ok = true; int n = 0;
 		while((!droppedFiles.isEmpty()) && ok)
 		{
 			QString currentFile = droppedFiles.takeFirst();
 			qDebug("Adding file: %s", currentFile.toUtf8().constData());
-			addButtonPressed(currentFile, QString(), NULL, n++, totalFiles, &ok);
+			ok = createJob(currentFile, QString(), NULL, n++, totalFiles);
 		}
+		*/
+		//createJobMultiple(droppedFiles);
 	}
 	qDebug("Leave from MainWindow::handleDroppedFiles!");
 }
@@ -1031,6 +1003,121 @@ void MainWindow::dropEvent(QDropEvent *event)
 ///////////////////////////////////////////////////////////////////////////////
 // Private functions
 ///////////////////////////////////////////////////////////////////////////////
+
+/*
+ * Creates a new job
+ */
+bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart, int fileNo, int fileTotal, bool *applyToAll)
+{
+	bool okay = false;
+	AddJobDialog *addDialog = new AddJobDialog(this, options, m_cpuFeatures->x64, m_preferences.use10BitEncoding, m_preferences.saveToSourcePath);
+
+	addDialog->setRunImmediately(runImmediately);
+	if(!sourceFileName.isEmpty()) addDialog->setSourceFile(sourceFileName);
+	if(!outputFileName.isEmpty()) addDialog->setOutputFile(outputFileName);
+	if(restart) addDialog->setWindowTitle(tr("Restart Job"));
+
+	const bool multiFile = (fileNo >= 0) && (fileTotal > 1);
+	if(multiFile)
+	{
+		addDialog->setSourceEditable(false);
+		addDialog->setWindowTitle(addDialog->windowTitle().append(tr(" (File %1 of %2)").arg(QString::number(fileNo+1), QString::number(fileTotal))));
+		addDialog->setApplyToAllVisible(applyToAll);
+	}
+
+	if(addDialog->exec() == QDialog::Accepted)
+	{
+		sourceFileName = addDialog->sourceFile();
+		outputFileName = addDialog->outputFile();
+		runImmediately = addDialog->runImmediately();
+		if(applyToAll)
+		{
+			*applyToAll = addDialog->applyToAll();
+		}
+		okay = true;
+	}
+
+	X264_DELETE(addDialog);
+	return okay;
+}
+
+/*
+ * Append a new job
+ */
+bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputFileName, OptionsModel *options, const bool runImmediately)
+{
+	bool okay = false;
+	
+	EncodeThread *thrd = new EncodeThread
+	(
+		sourceFileName,
+		outputFileName,
+		options,
+		QString("%1/toolset").arg(m_appDir),
+		m_cpuFeatures->x64,
+		m_preferences.use10BitEncoding,
+		m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit
+	);
+
+	QModelIndex newIndex = m_jobList->insertJob(thrd);
+
+	if(newIndex.isValid())
+	{
+		if(runImmediately)
+		{
+			jobsView->selectRow(newIndex.row());
+			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+			m_jobList->startJob(newIndex);
+		}
+
+		okay = true;
+	}
+
+	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+	return okay;
+}
+
+/*
+ * Creates a new job
+ */
+bool MainWindow::createJobMultiple(const QStringList &filePathIn)
+{
+	//bool ok = true, force = false; int counter = 0;
+	//
+	////Add files
+	//QStringList::ConstIterator iter = filePathIn.constBegin();
+	//while(ok && (!force) && (iter != filePathIn.constEnd()))
+	//{
+	//	ok = createJob(*iter, QString(), NULL, ++counter, filePathIn.count(), &force);
+	//	iter++;
+	//}
+
+	//if(force) qWarning("Force mode!");
+
+	////Add remaining files
+	//if(force && (iter != filePathIn.constEnd()))
+	//{
+	//	QSettings settings(QString("%1/last.ini").arg(x264_data_path()), QSettings::IniFormat);
+	//	QString outDirectory = settings.value("path/directory_saveTo", QDesktopServices::storageLocation(QDesktopServices::MoviesLocation)).toString();
+	//	
+	//	while(iter != filePathIn.constEnd())
+	//	{
+	//		int n = 2;
+	//		QString outBaseName = QFileInfo(*iter).completeBaseName();
+	//		QString outPath = QString("%1/%2.mkv").arg(outDirectory, outBaseName);
+	//		while(QFileInfo(outPath).exists())
+	//		{
+	//			outPath = QString("%1/%2 (%3).mkv").arg(outDirectory, outBaseName, QString::number(n++));
+	//		}
+	//		ok = createJob(*iter, outPath, NULL, ++counter, filePathIn.count(), &force);
+	//		iter++;
+	//	}
+	//}
+
+	//return ok;
+
+	return true;
+}
 
 /*
  * Jobs that are not completed (or failed, or aborted) yet

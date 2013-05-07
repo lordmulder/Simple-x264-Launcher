@@ -35,6 +35,14 @@ public:
 	AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder);
 	~AddJobDialog(void);
 
+	typedef struct
+	{
+		QString sourceDirectory;
+		QString outputDirectory;
+		int filterIndex;
+	}
+	RecentlyUsed;
+
 	QString sourceFile(void);
 	QString outputFile(void);
 	QString preset(void) { return cbxPreset->itemText(cbxPreset->currentIndex()); }
@@ -42,22 +50,32 @@ public:
 	QString profile(void) { return cbxProfile->itemText(cbxProfile->currentIndex()); }
 	QString params(void) { return editCustomX264Params->text().simplified(); }
 	bool runImmediately(void) { return checkBoxRun->isChecked(); }
+	bool applyToAll(void) { return checkBoxApplyToAll->isChecked(); }
 	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
 	void setSourceFile(const QString &path) { editSource->setText(QDir::toNativeSeparators(path)); }
 	void setOutputFile(const QString &path) { editOutput->setText(QDir::toNativeSeparators(path)); }
+	void setSourceEditable(const bool editable) { buttonBrowseSource->setEnabled(editable); }
+	void setApplyToAllVisible(const bool visible) { checkBoxApplyToAll->setVisible(visible); }
+
+	static void initRecentlyUsed(RecentlyUsed *recentlyUsed);
+	static void loadRecentlyUsed(RecentlyUsed *recentlyUsed);
+	static void saveRecentlyUsed(RecentlyUsed *recentlyUsed);
+	
+	static QString generateOutputFileName(const QString &sourceFilePath, const QString &destinationDirectory, const int filterIndex, const bool saveToSourceDir);
+	static int getFilterIdx(const QString &fileExt);
+	static QString getFilterExt(const int filterIndex);
 
 protected:
 	OptionsModel *m_options;
 	OptionsModel *m_defaults;
+
+	RecentlyUsed *m_recentlyUsed;
 
 	const bool m_x64supported;
 	const bool m_use10BitEncoding;
 	const bool m_saveToSourceFolder;
 
 	QStringList m_types;
-	QString m_initialDir_src;
-	QString m_initialDir_out;
-	int m_lastFilterIndex;
 
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
@@ -84,6 +102,4 @@ private:
 	void updateComboBox(QComboBox *cbox, const QString &text);
 	QString makeFileFilter(void);
 	void generateOutputFileName(const QString &filePath);
-	int getFilterIndex(const QString &fileExt);
-	QString getFilterExt(int filterIdx);
 };

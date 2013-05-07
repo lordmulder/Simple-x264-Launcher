@@ -222,6 +222,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	setMinimumSize(size());
 	setMaximumHeight(height());
 
+	//Hide optional controls
+	checkBoxApplyToAll->setVisible(false);
+
 	//Setup file type filter
 	m_types.clear();
 	m_types << tr("Matroska Files (*.mkv)");
@@ -857,6 +860,7 @@ QString AddJobDialog::makeFileFilter(void)
 	return filters;
 }
 
+/*
 void AddJobDialog::generateOutputFileName(const QString &filePath)
 {
 	QString name = QFileInfo(filePath).completeBaseName();
@@ -896,16 +900,110 @@ int AddJobDialog::getFilterIndex(const QString &fileExt)
 
 	return -1;
 }
+*/
 
-QString AddJobDialog::getFilterExt(int filterIdx)
+///////////////////////////////////////////////////////////////////////////////
+// Static functions
+///////////////////////////////////////////////////////////////////////////////
+
+static const char *KEY_FILTER_IDX = "path/filterIndex";
+static const char *KEY_SOURCE_DIR = "path/directory_openFrom";
+static const char *KEY_OUTPUT_DIR = "path/directory_saveTo";
+
+void AddJobDialog::initRecentlyUsed(RecentlyUsed *recentlyUsed)
 {
-	int index = qBound(0, filterIdx, m_types.count()-1);
+	recentlyUsed->sourceDirectory = QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation));
+	recentlyUsed->outputDirectory = QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation));
+	recentlyUsed->filterIndex = 0;
+}
 
-	QRegExp ext("\\(\\*\\.(.+)\\)");
-	if(ext.lastIndexIn(m_types.at(index)) >= 0)
+void AddJobDialog::loadRecentlyUsed(RecentlyUsed *recentlyUsed)
+{
+	RecentlyUsed defaults;
+	initRecentlyUsed(&defaults);
+	
+	QSettings settings(QString("%1/last.ini").arg(x264_data_path()), QSettings::IniFormat);
+	recentlyUsed->sourceDirectory = settings.value(KEY_SOURCE_DIR, defaults.sourceDirectory).toString();
+	recentlyUsed->outputDirectory = settings.value(KEY_OUTPUT_DIR, defaults.outputDirectory).toString();
+	recentlyUsed->filterIndex = settings.value(KEY_FILTER_IDX, defaults.filterIndex).toInt();
+
+	if(!VALID_DIR(recentlyUsed->sourceDirectory)) recentlyUsed->sourceDirectory = defaults.sourceDirectory;
+	if(!VALID_DIR(recentlyUsed->outputDirectory)) recentlyUsed->outputDirectory = defaults.outputDirectory;
+}
+
+void AddJobDialog::saveRecentlyUsed(RecentlyUsed *recentlyUsed)
+{
+	QSettings settings(QString("%1/last.ini").arg(x264_data_path()), QSettings::IniFormat);
+	if(settings.isWritable())
 	{
-		return ext.cap(1).toLower();
+		settings.setValue(KEY_SOURCE_DIR, recentlyUsed->sourceDirectory);
+		settings.setValue(KEY_OUTPUT_DIR, recentlyUsed->outputDirectory);
+		settings.setValue(KEY_FILTER_IDX, recentlyUsed->filterIndex);
+		settings.sync();
+	}
+}
+
+QString AddJobDialog::generateOutputFileName(const QString &sourceFilePath, const QString &destinationDirectory, const int filterIndex, const bool saveToSourceDir)
+{
+	QString name = QFileInfo(sourceFilePath).completeBaseName();
+	QString path = saveToSourceDir ? QFileInfo(sourceFilePath).canonicalPath() : destinationDirectory;
+	QString fext = getFilterExt(filterIndex);
+	
+	if(!VALID_DIR(path))
+	{
+		RecentlyUsed defaults; initRecentlyUsed(&defaults);
+		path = defaults.outputDirectory;
 	}
 
-	return QString::fromLatin1("mkv");
+	QString outPath = QString("%1/%2.%3").arg(path, name, fext);
+
+	if(QFileInfo(outPath).exists())
+	{
+		int i = 2;
+		while(QFileInfo(outPath).exists())
+		{
+			outPath = QString("%1/%2 (%3).%4").arg(path, name, QString::number(i++), fext);
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+
+static const struct
+{
+	const char *pcExt;
+	const char *pcStr;
+}
+FILE_TYPE_FILTERS[] =
+{
+	{ "mkv", "Matroska Files (*.mkv)" },
+	{ "mp4", "MPEG-4 Part 14 Container (*.mp4)" },
+	{ "264", "H.264 Elementary Stream (*.264)"},
+	{ NULL, NULL }
+};
+
+QString AddJobDialog::getFilterExt(const int filterIndex)
+{
+	int count = 0;
+	while((FILE_TYPE_FILTERS[count].pcExt) && (FILE_TYPE_FILTERS[count].pcStr)) count++;
+
+	if((filterIndex >= 0) && (filterIndex < count))
+	{
+		return QString::fromLatin1(FILE_TYPE_FILTERS[filterIndex].pcExt);
+	}
+
+	return QString::fromLatin1(FILE_TYPE_FILTERS[0].pcExt);
+}
+
+int AddJobDialog::getFilterIdx(const QString &fileExt)
+{
+	for(int i = 0; FILE_TYPE_FILTERS[i].pcExt; i++)
+	{
+		if(fileExt.compare(QString::fromLatin1(FILE_TYPE_FILTERS[i].pcExt), Qt::CaseInsensitive) == 0)
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }

@@ -25,6 +25,7 @@
 #include "thread_ipc.h"
 #include "thread_encode.h"
 #include "win_preferences.h"
+#include "win_addJob.h"
 #include "global.h"
 
 class JobListModel;
@@ -60,6 +61,7 @@ private:
 	QList<QFile*> m_toolsList;
 	
 	PreferencesDialog::Preferences m_preferences;
+	AddJobDialog::RecentlyUsed m_recentlyUsed;
 
 	const x264_cpu_t *const m_cpuFeatures;
 	const QString m_appDir;

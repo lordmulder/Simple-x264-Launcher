@@ -199,7 +199,7 @@ public:
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder)
+AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder)
 :
 	QDialog(parent),
 	m_defaults(new OptionsModel()),
@@ -207,9 +207,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	m_x64supported(x64supported),
 	m_use10BitEncoding(use10BitEncoding),
 	m_saveToSourceFolder(saveToSourceFolder),
-	m_initialDir_src(QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))),
-	m_initialDir_out(QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation))),
-	m_lastFilterIndex(0)
+	m_recentlyUsed(recentlyUsed)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
@@ -224,12 +222,6 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 
 	//Hide optional controls
 	checkBoxApplyToAll->setVisible(false);
-
-	//Setup file type filter
-	m_types.clear();
-	m_types << tr("Matroska Files (*.mkv)");
-	m_types << tr("MPEG-4 Part 14 Container (*.mp4)");
-	m_types << tr("H.264 Elementary Stream (*.264)");
 
 	//Monitor RC mode combobox
 	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
@@ -275,13 +267,6 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, bool x64suppo
 	//Setup template selector
 	loadTemplateList();
 	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
-
-	//Load directories
-	const QString appDir = x264_data_path();
-	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
-	m_initialDir_src = settings.value("path/directory_openFrom", m_initialDir_src).toString();
-	m_initialDir_out = settings.value("path/directory_saveTo", m_initialDir_out).toString();
-	m_lastFilterIndex = settings.value("path/filterIndex", m_lastFilterIndex).toInt();
 }
 
 AddJobDialog::~AddJobDialog(void)
@@ -322,12 +307,10 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	QDialog::showEvent(event);
 	templateSelected();
 
-	if(!editSource->text().isEmpty()) m_initialDir_src = QFileInfo(QDir::fromNativeSeparators(editSource->text())).path();
-	if(!editOutput->text().isEmpty()) m_initialDir_out = QFileInfo(QDir::fromNativeSeparators(editOutput->text())).path();
-
 	if((!editSource->text().isEmpty()) && editOutput->text().isEmpty())
 	{
-		generateOutputFileName(QDir::fromNativeSeparators(editSource->text()));
+		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(editSource->text()), m_recentlyUsed->outputDirectory, m_recentlyUsed->filterIndex, m_saveToSourceFolder);
+		editOutput->setText(QDir::toNativeSeparators(outPath));
 		buttonAccept->setFocus();
 	}
 
@@ -410,7 +393,7 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 	if(!droppedFile.isEmpty())
 	{
 		editSource->setText(QDir::toNativeSeparators(droppedFile));
-		generateOutputFileName(droppedFile);
+		generateOutputFileName(droppedFile, m_recentlyUsed->outputDirectory, m_recentlyUsed->filterIndex, m_saveToSourceFolder);
 	}
 }
 
@@ -426,33 +409,36 @@ void AddJobDialog::modeIndexChanged(int index)
 
 void AddJobDialog::accept(void)
 {
+	//Selection complete?
 	if(editSource->text().trimmed().isEmpty())
 	{
 		QMessageBox::warning(this, tr("Not Found!"), tr("Please select a valid source file first!"));
 		return;
 	}
-	
 	if(editOutput->text().trimmed().isEmpty())
 	{
 		QMessageBox::warning(this, tr("Not Selected!"), tr("<nobr>Please select a valid output file first!</nobr>"));
 		return;
 	}
 
-	QFileInfo sourceFile = QFileInfo(editSource->text());
+	//Does source exist?
+	QFileInfo sourceFile = QFileInfo(this->sourceFile());
 	if(!(sourceFile.exists() && sourceFile.isFile()))
 	{
 		QMessageBox::warning(this, tr("Not Found!"), tr("<nobr>The selected source file could not be found!</nobr>"));
 		return;
 	}
 
-	QFileInfo outputDir = QFileInfo(QFileInfo(editOutput->text()).path());
+	//Is destination dir writable?
+	QFileInfo outputDir = QFileInfo(QFileInfo(this->outputFile()).absolutePath());
 	if(!(outputDir.exists() && outputDir.isDir() && outputDir.isWritable()))
 	{
 		QMessageBox::warning(this, tr("Not Writable!"), tr("<nobr>Output directory does not exist or is not writable!</nobr>"));
 		return;
 	}
 
-	QFileInfo outputFile = QFileInfo(editOutput->text());
+	//Does output file already exist?
+	QFileInfo outputFile = QFileInfo(this->outputFile());
 	if(outputFile.exists() && outputFile.isFile())
 	{
 		int ret = QMessageBox::question(this, tr("Already Exists!"), tr("<nobr>Output file already exists! Overwrite?</nobr>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
@@ -463,23 +449,21 @@ void AddJobDialog::accept(void)
 		QMessageBox::warning(this, tr("Not a File!"), tr("<nobr>Selected output file does not appear to be a valid file!</nobr>"));
 		return;
 	}
+
+	//Custom parameters okay?
 	if(!editCustomX264Params->hasAcceptableInput())
 	{
 		int ret = QMessageBox::warning(this, tr("Invalid Params"), tr("<nobr>Your custom parameters are invalid and will be discarded!</nobr>"), QMessageBox::Ignore | QMessageBox::Cancel, QMessageBox::Cancel);
 		if(ret != QMessageBox::Ignore) return;
 	}
 
-	//Save directories
-	const QString appDir = x264_data_path();
-	QSettings settings(QString("%1/last.ini").arg(appDir), QSettings::IniFormat);
-	if(settings.isWritable())
-	{
-		settings.setValue("path/directory_saveTo", m_initialDir_out);
-		settings.setValue("path/directory_openFrom", m_initialDir_src);
-		settings.setValue("path/filterIndex", m_lastFilterIndex);
-		settings.sync();
-	}
+	//Update recently used
+	m_recentlyUsed->sourceDirectory = sourceFile.canonicalPath();
+	m_recentlyUsed->outputDirectory = outputFile.canonicalPath();
+	m_recentlyUsed->filterIndex = qMax(0, getFilterIdx(outputFile.suffix()));
+	saveRecentlyUsed(m_recentlyUsed);
 
+	//Save options
 	saveOptions(m_options);
 	QDialog::accept();
 }
@@ -488,39 +472,40 @@ void AddJobDialog::browseButtonClicked(void)
 {
 	if(QObject::sender() == buttonBrowseSource)
 	{
-		QString initDir = VALID_DIR(m_initialDir_src) ? m_initialDir_src : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
-		if(!editSource->text().isEmpty()) initDir = QString("%1/%2").arg(initDir, QFileInfo(QDir::fromNativeSeparators(editSource->text())).fileName());
+		QString initDir = m_recentlyUsed->sourceDirectory;
+		if(!editSource->text().isEmpty())
+		{
+			QString tempDir = QFileInfo(QDir::fromNativeSeparators(editSource->text())).canonicalPath();
+			if(VALID_DIR(tempDir)) initDir = tempDir;
+		}
 
-		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initDir, makeFileFilter(), NULL, QFileDialog::DontUseNativeDialog);
+		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initDir, getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
 			editSource->setText(QDir::toNativeSeparators(filePath));
-			generateOutputFileName(filePath);
-			m_initialDir_src = QFileInfo(filePath).path();
+			QString destPath = generateOutputFileName(filePath, m_recentlyUsed->outputDirectory, m_recentlyUsed->filterIndex, m_saveToSourceFolder);
+			editOutput->setText(QDir::toNativeSeparators(destPath));
 		}
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
 	{
-		QString initDir = VALID_DIR(m_initialDir_out) ? m_initialDir_out : QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
-		if(!editOutput->text().isEmpty()) initDir = QString("%1/%2").arg(initDir, QFileInfo(QDir::fromNativeSeparators(editOutput->text())).completeBaseName());
-		int filterIdx = getFilterIndex(QFileInfo(QDir::fromNativeSeparators(editOutput->text())).suffix());
-		QString selectedType = m_types.at((filterIdx >= 0) ? filterIdx : m_lastFilterIndex);
+		QString initDir = m_recentlyUsed->outputDirectory;
+		if(!editOutput->text().isEmpty())
+		{
+			QString tempDir = QFileInfo(QDir::fromNativeSeparators(editOutput->text())).canonicalPath();
+			if(VALID_DIR(tempDir)) initDir = tempDir;
+		}
 
-		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initDir, m_types.join(";;"), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
+		QString selectedType = getFilterStr(m_recentlyUsed->filterIndex);
+		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initDir, getFilterLst(), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			if(getFilterIndex(QFileInfo(filePath).suffix()) < 0)
+			if(getFilterIdx(QFileInfo(filePath).suffix()) < 0)
 			{
-				filterIdx = m_types.indexOf(selectedType);
-				if(filterIdx >= 0)
-				{
-					filePath = QString("%1.%2").arg(filePath, getFilterExt(filterIdx));
-				}
+				filePath = QString("%1.%2").arg(filePath, getFilterExt(m_recentlyUsed->filterIndex));
 			}
 			editOutput->setText(QDir::toNativeSeparators(filePath));
-			m_lastFilterIndex = getFilterIndex(QFileInfo(filePath).suffix());
-			m_initialDir_out = QFileInfo(filePath).path();
 		}
 	}
 }
@@ -823,43 +808,6 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setCustomAvs2YUV(editCustomAvs2YUVParams->hasAcceptableInput() ? editCustomAvs2YUVParams->text().simplified() : QString());
 }
 
-QString AddJobDialog::makeFileFilter(void)
-{
-	static const struct
-	{
-		const char *name;
-		const char *fext;
-	}
-	s_filters[] =
-	{
-		{"Avisynth Scripts", "avs"},
-		{"Matroska Files", "mkv"},
-		{"MPEG-4 Part 14 Container", "mp4"},
-		{"Audio Video Interleaved", "avi"},
-		{"Flash Video", "flv"},
-		{"YUV4MPEG2 Stream", "y4m"},
-		{"Uncompresses YUV Data", "yuv"},
-		{NULL, NULL}
-	};
-
-	QString filters("All supported files (");
-
-	for(size_t index = 0; s_filters[index].name && s_filters[index].fext; index++)
-	{
-		filters += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(s_filters[index].fext));
-	}
-
-	filters += QString(");;");
-
-	for(size_t index = 0; s_filters[index].name && s_filters[index].fext; index++)
-	{
-		filters += QString("%1 (*.%2);;").arg(QString::fromLatin1(s_filters[index].name), QString::fromLatin1(s_filters[index].fext));
-	}
-		
-	filters += QString("All files (*.*)");
-	return filters;
-}
-
 /*
 void AddJobDialog::generateOutputFileName(const QString &filePath)
 {
@@ -951,20 +899,20 @@ QString AddJobDialog::generateOutputFileName(const QString &sourceFilePath, cons
 	
 	if(!VALID_DIR(path))
 	{
-		RecentlyUsed defaults; initRecentlyUsed(&defaults);
+		RecentlyUsed defaults;
+		initRecentlyUsed(&defaults);
 		path = defaults.outputDirectory;
 	}
 
 	QString outPath = QString("%1/%2.%3").arg(path, name, fext);
 
-	if(QFileInfo(outPath).exists())
+	int n = 2;
+	while(QFileInfo(outPath).exists())
 	{
-		int i = 2;
-		while(QFileInfo(outPath).exists())
-		{
-			outPath = QString("%1/%2 (%3).%4").arg(path, name, QString::number(i++), fext);
-		}
+		outPath = QString("%1/%2 (%3).%4").arg(path, name, QString::number(n++), fext);
 	}
+
+	return outPath;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -976,9 +924,9 @@ static const struct
 }
 FILE_TYPE_FILTERS[] =
 {
-	{ "mkv", "Matroska Files (*.mkv)" },
-	{ "mp4", "MPEG-4 Part 14 Container (*.mp4)" },
-	{ "264", "H.264 Elementary Stream (*.264)"},
+	{ "mkv", "Matroska Files" },
+	{ "mp4", "MPEG-4 Part 14 Container" },
+	{ "264", "H.264 Elementary Stream"},
 	{ NULL, NULL }
 };
 
@@ -997,7 +945,7 @@ QString AddJobDialog::getFilterExt(const int filterIndex)
 
 int AddJobDialog::getFilterIdx(const QString &fileExt)
 {
-	for(int i = 0; FILE_TYPE_FILTERS[i].pcExt; i++)
+	for(int i = 0; (FILE_TYPE_FILTERS[i].pcExt && FILE_TYPE_FILTERS[i].pcStr); i++)
 	{
 		if(fileExt.compare(QString::fromLatin1(FILE_TYPE_FILTERS[i].pcExt), Qt::CaseInsensitive) == 0)
 		{
@@ -1006,4 +954,66 @@ int AddJobDialog::getFilterIdx(const QString &fileExt)
 	}
 
 	return -1;
+}
+
+QString AddJobDialog::getFilterStr(const int filterIndex)
+{
+	int count = 0;
+	while((FILE_TYPE_FILTERS[count].pcExt) && (FILE_TYPE_FILTERS[count].pcStr)) count++;
+
+	if((filterIndex >= 0) && (filterIndex < count))
+	{
+		return QString("%1 (*.%2)").arg(QString::fromLatin1(FILE_TYPE_FILTERS[filterIndex].pcStr), QString::fromLatin1(FILE_TYPE_FILTERS[filterIndex].pcExt));
+	}
+
+	return QString("%1 (*.%2)").arg(QString::fromLatin1(FILE_TYPE_FILTERS[0].pcStr), QString::fromLatin1(FILE_TYPE_FILTERS[0].pcExt));
+}
+
+QString AddJobDialog::getFilterLst(void)
+{
+	QStringList filters;
+	
+	for(int i = 0; (FILE_TYPE_FILTERS[i].pcExt && FILE_TYPE_FILTERS[i].pcStr); i++)
+	{
+		filters << QString("%1 (*.%2)").arg(QString::fromLatin1(FILE_TYPE_FILTERS[i].pcStr), QString::fromLatin1(FILE_TYPE_FILTERS[i].pcExt));
+	}
+
+	return filters.join(";;");
+}
+
+QString AddJobDialog::getInputFilterLst(void)
+{
+	static const struct
+	{
+		const char *name;
+		const char *fext;
+	}
+	s_filters[] =
+	{
+		{"Avisynth Scripts", "avs"},
+		{"Matroska Files", "mkv"},
+		{"MPEG-4 Part 14 Container", "mp4"},
+		{"Audio Video Interleaved", "avi"},
+		{"Flash Video", "flv"},
+		{"YUV4MPEG2 Stream", "y4m"},
+		{"Uncompresses YUV Data", "yuv"},
+		{NULL, NULL}
+	};
+
+	QString filters("All supported files (");
+
+	for(size_t index = 0; (s_filters[index].name && s_filters[index].fext); index++)
+	{
+		filters += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(s_filters[index].fext));
+	}
+
+	filters += QString(");;");
+
+	for(size_t index = 0; s_filters[index].name && s_filters[index].fext; index++)
+	{
+		filters += QString("%1 (*.%2);;").arg(QString::fromLatin1(s_filters[index].name), QString::fromLatin1(s_filters[index].fext));
+	}
+		
+	filters += QString("All files (*.*)");
+	return filters;
 }

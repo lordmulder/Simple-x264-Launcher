@@ -23,8 +23,6 @@
 
 #include "model_jobList.h"
 #include "model_options.h"
-#include "win_addJob.h"
-#include "win_preferences.h"
 #include "thread_avisynth.h"
 #include "taskbar7.h"
 #include "resource.h"
@@ -82,6 +80,10 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Load preferences
 	PreferencesDialog::initPreferences(&m_preferences);
 	PreferencesDialog::loadPreferences(&m_preferences);
+
+	//Load recently used
+	AddJobDialog::initRecentlyUsed(&m_recentlyUsed);
+	AddJobDialog::loadRecentlyUsed(&m_recentlyUsed);
 
 	//Create options object
 	m_options = new OptionsModel();
@@ -1010,7 +1012,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart, int fileNo, int fileTotal, bool *applyToAll)
 {
 	bool okay = false;
-	AddJobDialog *addDialog = new AddJobDialog(this, options, m_cpuFeatures->x64, m_preferences.use10BitEncoding, m_preferences.saveToSourcePath);
+	AddJobDialog *addDialog = new AddJobDialog(this, options, &m_recentlyUsed, m_cpuFeatures->x64, m_preferences.use10BitEncoding, m_preferences.saveToSourcePath);
 
 	addDialog->setRunImmediately(runImmediately);
 	if(!sourceFileName.isEmpty()) addDialog->setSourceFile(sourceFileName);

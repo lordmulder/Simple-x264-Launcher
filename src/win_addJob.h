@@ -32,9 +32,6 @@ class AddJobDialog : public QDialog, private Ui::AddJobDialog
 	Q_OBJECT
 
 public:
-	AddJobDialog(QWidget *parent, OptionsModel *options, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder);
-	~AddJobDialog(void);
-
 	typedef struct
 	{
 		QString sourceDirectory;
@@ -42,6 +39,9 @@ public:
 		int filterIndex;
 	}
 	RecentlyUsed;
+
+	AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder);
+	~AddJobDialog(void);
 
 	QString sourceFile(void);
 	QString outputFile(void);
@@ -64,18 +64,18 @@ public:
 	static QString generateOutputFileName(const QString &sourceFilePath, const QString &destinationDirectory, const int filterIndex, const bool saveToSourceDir);
 	static int getFilterIdx(const QString &fileExt);
 	static QString getFilterExt(const int filterIndex);
+	static QString AddJobDialog::getFilterStr(const int filterIndex);
+	static QString getFilterLst(void);
+	static QString getInputFilterLst(void);
 
 protected:
 	OptionsModel *m_options;
 	OptionsModel *m_defaults;
-
 	RecentlyUsed *m_recentlyUsed;
 
 	const bool m_x64supported;
 	const bool m_use10BitEncoding;
 	const bool m_saveToSourceFolder;
-
-	QStringList m_types;
 
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
@@ -100,6 +100,4 @@ private:
 	void restoreOptions(OptionsModel *options);
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *cbox, const QString &text);
-	QString makeFileFilter(void);
-	void generateOutputFileName(const QString &filePath);
 };

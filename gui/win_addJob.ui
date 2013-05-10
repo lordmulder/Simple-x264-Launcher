@@ -1231,7 +1231,7 @@
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>12</width>
+         <width>4</width>
          <height>20</height>
         </size>
        </property>
@@ -1240,7 +1240,7 @@
      <item>
       <widget class="QCheckBox" name="checkBoxApplyToAll">
        <property name="text">
-        <string>Apply Configuration To All Files</string>
+        <string>Apply To All Selected Files</string>
        </property>
       </widget>
      </item>
@@ -1261,7 +1261,7 @@
       <widget class="QPushButton" name="buttonAccept">
        <property name="minimumSize">
         <size>
-         <width>128</width>
+         <width>112</width>
          <height>0</height>
         </size>
        </property>
@@ -1278,7 +1278,7 @@
       <widget class="QPushButton" name="buttonCancel">
        <property name="minimumSize">
         <size>
-         <width>128</width>
+         <width>112</width>
          <height>0</height>
         </size>
        </property>

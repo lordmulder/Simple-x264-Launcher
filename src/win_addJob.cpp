@@ -41,6 +41,7 @@
 #include <QClipboard>
 #include <QToolTip>
 
+#define ARRAY_SIZE(ARRAY) (sizeof((ARRAY))/sizeof((ARRAY[0])))
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
 #define REMOVE_USAFED_ITEM \
@@ -392,8 +393,9 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 	
 	if(!droppedFile.isEmpty())
 	{
+		const QString outFileName = generateOutputFileName(droppedFile, currentOutputPath(), currentOutputIndx(), m_saveToSourceFolder);
 		editSource->setText(QDir::toNativeSeparators(droppedFile));
-		generateOutputFileName(droppedFile, m_recentlyUsed->outputDirectory, m_recentlyUsed->filterIndex, m_saveToSourceFolder);
+		editOutput->setText(QDir::toNativeSeparators(outFileName));
 	}
 }
 
@@ -429,14 +431,6 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
-	//Is destination dir writable?
-	QFileInfo outputDir = QFileInfo(QFileInfo(this->outputFile()).absolutePath());
-	if(!(outputDir.exists() && outputDir.isDir() && outputDir.isWritable()))
-	{
-		QMessageBox::warning(this, tr("Not Writable!"), tr("<nobr>Output directory does not exist or is not writable!</nobr>"));
-		return;
-	}
-
 	//Does output file already exist?
 	QFileInfo outputFile = QFileInfo(this->outputFile());
 	if(outputFile.exists() && outputFile.isFile())
@@ -450,6 +444,14 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
+	//Is destination dir writable?
+	QFileInfo outputDir = QFileInfo(outputFile.absolutePath());
+	if(!(outputDir.exists() && outputDir.isDir() && outputDir.isWritable()))
+	{
+		QMessageBox::warning(this, tr("Not Writable!"), tr("<nobr>Output directory does not exist or is not writable!</nobr>"));
+		return;
+	}
+
 	//Custom parameters okay?
 	if(!editCustomX264Params->hasAcceptableInput())
 	{
@@ -458,9 +460,9 @@ void AddJobDialog::accept(void)
 	}
 
 	//Update recently used
-	m_recentlyUsed->sourceDirectory = sourceFile.canonicalPath();
-	m_recentlyUsed->outputDirectory = outputFile.canonicalPath();
-	m_recentlyUsed->filterIndex = qMax(0, getFilterIdx(outputFile.suffix()));
+	m_recentlyUsed->filterIndex = currentOutputIndx();
+	m_recentlyUsed->sourceDirectory = currentSourcePath();
+	m_recentlyUsed->outputDirectory = currentOutputPath();
 	saveRecentlyUsed(m_recentlyUsed);
 
 	//Save options
@@ -472,38 +474,34 @@ void AddJobDialog::browseButtonClicked(void)
 {
 	if(QObject::sender() == buttonBrowseSource)
 	{
-		QString initDir = m_recentlyUsed->sourceDirectory;
-		if(!editSource->text().isEmpty())
-		{
-			QString tempDir = QFileInfo(QDir::fromNativeSeparators(editSource->text())).canonicalPath();
-			if(VALID_DIR(tempDir)) initDir = tempDir;
-		}
-
-		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), initDir, getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
+		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), currentSourcePath(true), getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
+			QString destFile = generateOutputFileName(filePath, currentOutputPath(), currentOutputIndx(), m_saveToSourceFolder);
 			editSource->setText(QDir::toNativeSeparators(filePath));
-			QString destPath = generateOutputFileName(filePath, m_recentlyUsed->outputDirectory, m_recentlyUsed->filterIndex, m_saveToSourceFolder);
-			editOutput->setText(QDir::toNativeSeparators(destPath));
+			editOutput->setText(QDir::toNativeSeparators(destFile));
 		}
 	}
 	else if(QObject::sender() == buttonBrowseOutput)
 	{
-		QString initDir = m_recentlyUsed->outputDirectory;
-		if(!editOutput->text().isEmpty())
-		{
-			QString tempDir = QFileInfo(QDir::fromNativeSeparators(editOutput->text())).canonicalPath();
-			if(VALID_DIR(tempDir)) initDir = tempDir;
-		}
-
-		QString selectedType = getFilterStr(m_recentlyUsed->filterIndex);
-		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), initDir, getFilterLst(), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
+		QString selectedType = getFilterStr(currentOutputIndx());
+		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), currentOutputPath(true), getFilterLst(), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
 
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
 			if(getFilterIdx(QFileInfo(filePath).suffix()) < 0)
 			{
-				filePath = QString("%1.%2").arg(filePath, getFilterExt(m_recentlyUsed->filterIndex));
+				int tempIndex = -1;
+				QRegExp regExp("\\(\\*\\.(\\w+)\\)");
+				if(regExp.lastIndexIn(selectedType) >= 0)
+				{
+					tempIndex = getFilterIdx(regExp.cap(1));
+				}
+				if(tempIndex < 0)
+				{
+					tempIndex = m_recentlyUsed->filterIndex;
+				}
+				filePath = QString("%1.%2").arg(filePath, getFilterExt(tempIndex));
 			}
 			editOutput->setText(QDir::toNativeSeparators(filePath));
 		}
@@ -808,47 +806,65 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setCustomAvs2YUV(editCustomAvs2YUVParams->hasAcceptableInput() ? editCustomAvs2YUVParams->text().simplified() : QString());
 }
 
-/*
-void AddJobDialog::generateOutputFileName(const QString &filePath)
+QString AddJobDialog::currentSourcePath(const bool bWithName)
 {
-	QString name = QFileInfo(filePath).completeBaseName();
-	QString path = m_saveToSourceFolder ? QFileInfo(filePath).canonicalPath() : (VALID_DIR(m_initialDir_out) ? m_initialDir_out : QFileInfo(filePath).path());
-	QString fext = getFilterExt(m_lastFilterIndex);
-			
-	QString outPath = QString("%1/%2.%3").arg(path, name, fext);
-
-	if(QFileInfo(outPath).exists())
+	QString path = m_recentlyUsed->sourceDirectory;
+	QString currentSourceFile = this->sourceFile();
+	
+	if(!currentSourceFile.isEmpty())
 	{
-		int i = 2;
-		while(QFileInfo(outPath).exists())
+		QString currentSourceDir = QFileInfo(currentSourceFile).absolutePath();
+		if(VALID_DIR(currentSourceDir))
 		{
-			outPath = QString("%1/%2 (%3).%4").arg(path, name, QString::number(i++), fext);
+			path = currentSourceDir;
+		}
+		if(bWithName)
+		{
+			path.append("/").append(QFileInfo(currentSourceFile).fileName());
 		}
 	}
 
-	editOutput->setText(QDir::toNativeSeparators(outPath));
+	return path;
 }
 
-int AddJobDialog::getFilterIndex(const QString &fileExt)
+QString AddJobDialog::currentOutputPath(const bool bWithName)
 {
-	if(!fileExt.isEmpty())
+	QString path = m_recentlyUsed->outputDirectory;
+	QString currentOutputFile = this->outputFile();
+	
+	if(!currentOutputFile.isEmpty())
 	{
-		QRegExp ext("\\(\\*\\.(.+)\\)");
-		for(int i = 0; i < m_types.count(); i++)
+		QString currentOutputDir = QFileInfo(currentOutputFile).absolutePath();
+		if(VALID_DIR(currentOutputDir))
 		{
-			if(ext.lastIndexIn(m_types.at(i)) >= 0)
-			{
-				if(fileExt.compare(ext.cap(1), Qt::CaseInsensitive) == 0)
-				{
-					return i;
-				}
-			}
+			path = currentOutputDir;
+		}
+		if(bWithName)
+		{
+			path.append("/").append(QFileInfo(currentOutputFile).fileName());
 		}
 	}
 
-	return -1;
+	return path;
 }
-*/
+
+int AddJobDialog::currentOutputIndx(void)
+{
+	int index = m_recentlyUsed->filterIndex;
+	QString currentOutputFile = this->outputFile();
+	
+	if(!currentOutputFile.isEmpty())
+	{
+		const QString currentOutputExtn = QFileInfo(currentOutputFile).suffix();
+		const int tempIndex = getFilterIdx(currentOutputExtn);
+		if(tempIndex >= 0)
+		{
+			index = tempIndex;
+		}
+	}
+
+	return index;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Static functions
@@ -857,6 +873,20 @@ int AddJobDialog::getFilterIndex(const QString &fileExt)
 static const char *KEY_FILTER_IDX = "path/filterIndex";
 static const char *KEY_SOURCE_DIR = "path/directory_openFrom";
 static const char *KEY_OUTPUT_DIR = "path/directory_saveTo";
+
+static const struct
+{
+	const char *pcExt;
+	const char *pcStr;
+}
+FILE_TYPE_FILTERS[] =
+{
+	{ "mkv", "Matroska Files" },
+	{ "mp4", "MPEG-4 Part 14 Container" },
+	{ "264", "H.264 Elementary Stream"},
+};
+
+/* ------------------------------------------------------------------------- */
 
 void AddJobDialog::initRecentlyUsed(RecentlyUsed *recentlyUsed)
 {
@@ -877,6 +907,7 @@ void AddJobDialog::loadRecentlyUsed(RecentlyUsed *recentlyUsed)
 
 	if(!VALID_DIR(recentlyUsed->sourceDirectory)) recentlyUsed->sourceDirectory = defaults.sourceDirectory;
 	if(!VALID_DIR(recentlyUsed->outputDirectory)) recentlyUsed->outputDirectory = defaults.outputDirectory;
+	recentlyUsed->filterIndex = qBound(0, recentlyUsed->filterIndex, int(ARRAY_SIZE(FILE_TYPE_FILTERS)-1));
 }
 
 void AddJobDialog::saveRecentlyUsed(RecentlyUsed *recentlyUsed)
@@ -917,23 +948,9 @@ QString AddJobDialog::generateOutputFileName(const QString &sourceFilePath, cons
 
 /* ------------------------------------------------------------------------- */
 
-static const struct
-{
-	const char *pcExt;
-	const char *pcStr;
-}
-FILE_TYPE_FILTERS[] =
-{
-	{ "mkv", "Matroska Files" },
-	{ "mp4", "MPEG-4 Part 14 Container" },
-	{ "264", "H.264 Elementary Stream"},
-	{ NULL, NULL }
-};
-
 QString AddJobDialog::getFilterExt(const int filterIndex)
 {
-	int count = 0;
-	while((FILE_TYPE_FILTERS[count].pcExt) && (FILE_TYPE_FILTERS[count].pcStr)) count++;
+	const int count = ARRAY_SIZE(FILE_TYPE_FILTERS);
 
 	if((filterIndex >= 0) && (filterIndex < count))
 	{
@@ -945,7 +962,9 @@ QString AddJobDialog::getFilterExt(const int filterIndex)
 
 int AddJobDialog::getFilterIdx(const QString &fileExt)
 {
-	for(int i = 0; (FILE_TYPE_FILTERS[i].pcExt && FILE_TYPE_FILTERS[i].pcStr); i++)
+	const int count = ARRAY_SIZE(FILE_TYPE_FILTERS);
+
+	for(int i = 0; i < count; i++)
 	{
 		if(fileExt.compare(QString::fromLatin1(FILE_TYPE_FILTERS[i].pcExt), Qt::CaseInsensitive) == 0)
 		{
@@ -958,8 +977,7 @@ int AddJobDialog::getFilterIdx(const QString &fileExt)
 
 QString AddJobDialog::getFilterStr(const int filterIndex)
 {
-	int count = 0;
-	while((FILE_TYPE_FILTERS[count].pcExt) && (FILE_TYPE_FILTERS[count].pcStr)) count++;
+	const int count = ARRAY_SIZE(FILE_TYPE_FILTERS);
 
 	if((filterIndex >= 0) && (filterIndex < count))
 	{
@@ -972,8 +990,9 @@ QString AddJobDialog::getFilterStr(const int filterIndex)
 QString AddJobDialog::getFilterLst(void)
 {
 	QStringList filters;
+	const int count = ARRAY_SIZE(FILE_TYPE_FILTERS);
 	
-	for(int i = 0; (FILE_TYPE_FILTERS[i].pcExt && FILE_TYPE_FILTERS[i].pcStr); i++)
+	for(int i = 0; i < count; i++)
 	{
 		filters << QString("%1 (*.%2)").arg(QString::fromLatin1(FILE_TYPE_FILTERS[i].pcStr), QString::fromLatin1(FILE_TYPE_FILTERS[i].pcExt));
 	}
@@ -997,23 +1016,25 @@ QString AddJobDialog::getInputFilterLst(void)
 		{"Flash Video", "flv"},
 		{"YUV4MPEG2 Stream", "y4m"},
 		{"Uncompresses YUV Data", "yuv"},
-		{NULL, NULL}
 	};
 
-	QString filters("All supported files (");
+	const int count = ARRAY_SIZE(FILE_TYPE_FILTERS);
 
-	for(size_t index = 0; (s_filters[index].name && s_filters[index].fext); index++)
+	QString allTypes;
+	for(size_t index = 0; index < count; index++)
 	{
-		filters += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(s_filters[index].fext));
+
+		allTypes += QString((index > 0) ? " *.%1" : "*.%1").arg(QString::fromLatin1(s_filters[index].fext));
 	}
+	
+	QStringList filters;
+	filters << QString("All supported files (%1)").arg(allTypes);
 
-	filters += QString(");;");
-
-	for(size_t index = 0; s_filters[index].name && s_filters[index].fext; index++)
+	for(size_t index = 0; index < count; index++)
 	{
-		filters += QString("%1 (*.%2);;").arg(QString::fromLatin1(s_filters[index].name), QString::fromLatin1(s_filters[index].fext));
+		filters << QString("%1 (*.%2)").arg(QString::fromLatin1(s_filters[index].name), QString::fromLatin1(s_filters[index].fext));
 	}
 		
-	filters += QString("All files (*.*)");
-	return filters;
+	filters << QString("All files (*.*)");
+	return filters.join(";;");
 }

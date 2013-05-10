@@ -321,6 +321,8 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionOpen"/>
+    <addaction name="separator"/>
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -591,6 +593,15 @@
    </property>
    <property name="text">
     <string>Help and Support</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/folder_add.png</normaloff>:/buttons/folder_add.png</iconset>
+   </property>
+   <property name="text">
+    <string>Open...</string>
    </property>
   </action>
  </widget>

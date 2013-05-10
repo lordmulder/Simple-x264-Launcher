@@ -100,4 +100,8 @@ private:
 	void restoreOptions(OptionsModel *options);
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *cbox, const QString &text);
+
+	QString currentSourcePath(const bool bWithName = false);
+	QString currentOutputPath(const bool bWithName = false);
+	int currentOutputIndx(void);
 };

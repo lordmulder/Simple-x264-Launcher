@@ -77,6 +77,7 @@ private:
 
 private slots:
 	void addButtonPressed();
+	void openActionTriggered();
 	void abortButtonPressed(void);
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);

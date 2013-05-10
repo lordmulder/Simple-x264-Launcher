@@ -40,10 +40,11 @@
 #include <QScrollBar>
 #include <QTextStream>
 #include <QSettings>
+#include <QFileDialog>
 
 #include <Mmsystem.h>
 
-const char *home_url = "http://mulder.brhack.net/";
+const char *home_url = "http://muldersoft.com/";
 const char *update_url = "http://code.google.com/p/mulder/downloads/list";
 const char *tpl_last = "<LAST_USED>";
 
@@ -143,6 +144,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	connect(actionJob_Browse, SIGNAL(triggered()), this, SLOT(browseButtonPressed()));
 
 	//Enable menu
+	connect(actionOpen, SIGNAL(triggered()), this, SLOT(openActionTriggered()));
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
 	connect(actionWebMulder, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
@@ -219,6 +221,31 @@ void MainWindow::addButtonPressed()
 	if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
 	{
 		appendJob(sourceFileName, outputFileName, m_options, runImmediately);
+	}
+}
+
+/*
+ * The "open" action was triggered
+ */
+void MainWindow::openActionTriggered()
+{
+	QStringList fileList = QFileDialog::getOpenFileNames(this, tr("Open Source File(s)"), m_recentlyUsed.sourceDirectory, AddJobDialog::getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
+	if(!fileList.empty())
+	{
+		m_recentlyUsed.sourceDirectory = QFileInfo(fileList.last()).absolutePath();
+		if(fileList.count() > 1)
+		{
+			createJobMultiple(fileList);
+		}
+		else
+		{
+			bool runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+			QString sourceFileName(fileList.first()), outputFileName;
+			if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
+			{
+				appendJob(sourceFileName, outputFileName, m_options, runImmediately);
+			}
+		}
 	}
 }
 
@@ -428,7 +455,7 @@ void MainWindow::showAbout(void)
 		case 0:
 			{
 				QString text2;
-				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (c) 2003-2012 x264 project.<br>");
+				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (c) 2003-2013 x264 project.<br>");
 				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
 				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a commercial x264 license.<br>").arg("http://x264licensing.com/");
@@ -785,16 +812,9 @@ void MainWindow::init(void)
 			files << QFileInfo(current).canonicalFilePath();
 		}
 	}
-	if(int totalFiles = files.count())
+	if(files.count() > 0)
 	{
-		bool ok = true; int n = 0;
-		while((!files.isEmpty()) && ok)
-		{
-			QString currentFile = files.takeFirst();
-			qDebug("Adding file: %s", currentFile.toUtf8().constData());
-			/*TODO: Add multiple files!*/
-			//ok = createJob(currentFile, QString(), NULL, n++, totalFiles);
-		}
+		createJobMultiple(files);
 	}
 
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
@@ -834,17 +854,7 @@ void MainWindow::handleDroppedFiles(void)
 	{
 		QStringList droppedFiles(*m_droppedFiles);
 		m_droppedFiles->clear();
-		/*
-		int totalFiles = droppedFiles.count();
-		bool ok = true; int n = 0;
-		while((!droppedFiles.isEmpty()) && ok)
-		{
-			QString currentFile = droppedFiles.takeFirst();
-			qDebug("Adding file: %s", currentFile.toUtf8().constData());
-			ok = createJob(currentFile, QString(), NULL, n++, totalFiles);
-		}
-		*/
-		//createJobMultiple(droppedFiles);
+		createJobMultiple(droppedFiles);
 	}
 	qDebug("Leave from MainWindow::handleDroppedFiles!");
 }
@@ -1044,6 +1054,48 @@ bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, Opt
 }
 
 /*
+ * Creates a new job from *multiple* files
+ */
+bool MainWindow::createJobMultiple(const QStringList &filePathIn)
+{
+	QStringList::ConstIterator iter;
+	bool applyToAll = false, runImmediately = false;
+	int counter = 0;
+
+	//Add files individually
+	for(iter = filePathIn.constBegin(); iter != filePathIn.constEnd(); iter++)
+	{
+		runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+		QString sourceFileName(*iter), outputFileName;
+		if(createJob(sourceFileName, outputFileName, m_options, runImmediately, false, counter++, filePathIn.count(), &applyToAll))
+		{
+			if(appendJob(sourceFileName, outputFileName, m_options, runImmediately))
+			{
+				if(applyToAll) break;
+				continue;
+			}
+		}
+		return false;
+	}
+
+	//Add remaining files
+	while(applyToAll && (iter != filePathIn.constEnd()))
+	{
+		const bool runImmediatelyTmp = runImmediately && (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+		const QString sourceFileName = *iter;
+		const QString outputFileName = AddJobDialog::generateOutputFileName(sourceFileName, m_recentlyUsed.outputDirectory, m_recentlyUsed.filterIndex, m_preferences.saveToSourcePath);
+		if(!appendJob(sourceFileName, outputFileName, m_options, runImmediatelyTmp))
+		{
+			return false;
+		}
+		iter++;
+	}
+
+	return true;
+}
+
+
+/*
  * Append a new job
  */
 bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputFileName, OptionsModel *options, const bool runImmediately)
@@ -1077,48 +1129,6 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 
 	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 	return okay;
-}
-
-/*
- * Creates a new job
- */
-bool MainWindow::createJobMultiple(const QStringList &filePathIn)
-{
-	//bool ok = true, force = false; int counter = 0;
-	//
-	////Add files
-	//QStringList::ConstIterator iter = filePathIn.constBegin();
-	//while(ok && (!force) && (iter != filePathIn.constEnd()))
-	//{
-	//	ok = createJob(*iter, QString(), NULL, ++counter, filePathIn.count(), &force);
-	//	iter++;
-	//}
-
-	//if(force) qWarning("Force mode!");
-
-	////Add remaining files
-	//if(force && (iter != filePathIn.constEnd()))
-	//{
-	//	QSettings settings(QString("%1/last.ini").arg(x264_data_path()), QSettings::IniFormat);
-	//	QString outDirectory = settings.value("path/directory_saveTo", QDesktopServices::storageLocation(QDesktopServices::MoviesLocation)).toString();
-	//	
-	//	while(iter != filePathIn.constEnd())
-	//	{
-	//		int n = 2;
-	//		QString outBaseName = QFileInfo(*iter).completeBaseName();
-	//		QString outPath = QString("%1/%2.mkv").arg(outDirectory, outBaseName);
-	//		while(QFileInfo(outPath).exists())
-	//		{
-	//			outPath = QString("%1/%2 (%3).mkv").arg(outDirectory, outBaseName, QString::number(n++));
-	//		}
-	//		ok = createJob(*iter, outPath, NULL, ++counter, filePathIn.count(), &force);
-	//		iter++;
-	//	}
-	//}
-
-	//return ok;
-
-	return true;
 }
 
 /*

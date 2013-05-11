@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,10 +25,14 @@
 #include <QIcon>
 #include <QApplication>
 #include <QClipboard>
+#include <QDir>
 
-LogFileModel::LogFileModel(void)
+LogFileModel::LogFileModel(const QString &sourceName, const QString &outputName, const QString &configName)
 {
-	m_lines << "Job not started yet.";
+	m_lines << "Job not started yet." << QString();
+	m_lines << QString("Scheduled source: %1").arg(QDir::toNativeSeparators(sourceName));
+	m_lines << QString("Scheduled output: %1").arg(QDir::toNativeSeparators(outputName));
+	m_lines << QString("Scheduled config: %1").arg(configName);
 	m_firstLine = true;
 }
 

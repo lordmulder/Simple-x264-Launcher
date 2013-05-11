@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ class LogFileModel : public QAbstractItemModel
 	Q_OBJECT
 		
 public:
-	LogFileModel(void);
+	LogFileModel(const QString &sourceName, const QString &outputName, const QString &configName);
 	~LogFileModel(void);
 
 	virtual int columnCount(const QModelIndex &parent) const;

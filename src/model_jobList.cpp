@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -222,7 +222,6 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 QModelIndex JobListModel::insertJob(EncodeThread *thread)
 {
 	QUuid id = thread->getId();
-	LogFileModel *logFile = NULL;
 
 	if(m_jobs.contains(id))
 	{
@@ -268,14 +267,16 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		}
 		break;
 	}
-
+	
+	LogFileModel *logFile = new LogFileModel(thread->sourceFileName(), thread->outputFileName(), config);
+	
 	beginInsertRows(QModelIndex(), m_jobs.count(), m_jobs.count());
 	m_jobs.append(id);
 	m_name.insert(id, jobName);
 	m_status.insert(id, EncodeThread::JobStatus_Enqueued);
 	m_progress.insert(id, 0);
 	m_threads.insert(id, thread);
-	m_logFile.insert(id, (logFile = new LogFileModel));
+	m_logFile.insert(id, logFile);
 	m_details.insert(id, tr("Not started yet."));
 	endInsertRows();
 

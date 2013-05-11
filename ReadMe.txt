@@ -1,5 +1,5 @@
 Simple x264 Launcher - use 64-Bit x264 with 32-Bit Avisynth
-Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
+Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 
 
 1. Introduction

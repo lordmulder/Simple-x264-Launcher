@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -1063,7 +1063,7 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	int counter = 0;
 
 	//Add files individually
-	for(iter = filePathIn.constBegin(); iter != filePathIn.constEnd(); iter++)
+	for(iter = filePathIn.constBegin(); (iter != filePathIn.constEnd()) && (!applyToAll); iter++)
 	{
 		runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
 		QString sourceFileName(*iter), outputFileName;
@@ -1071,7 +1071,6 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 		{
 			if(appendJob(sourceFileName, outputFileName, m_options, runImmediately))
 			{
-				if(applyToAll) break;
 				continue;
 			}
 		}

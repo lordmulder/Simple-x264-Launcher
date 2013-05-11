@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2012 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -203,8 +203,8 @@ void EncodeThread::encode(void)
 	//Print some basic info
 	log(tr("Simple x264 Launcher (Build #%1), built %2\n").arg(QString::number(x264_version_build()), x264_version_date().toString(Qt::ISODate)));
 	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
-	log(tr("Source file: %1").arg(m_sourceFileName));
-	log(tr("Output file: %1").arg(m_outputFileName));
+	log(tr("Source file: %1").arg(QDir::toNativeSeparators(m_sourceFileName)));
+	log(tr("Output file: %1").arg(QDir::toNativeSeparators(m_outputFileName)));
 	
 	//Print encoder settings
 	log(tr("\n--- SETTINGS ---\n"));

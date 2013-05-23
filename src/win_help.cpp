@@ -26,7 +26,8 @@
 #include <QScrollBar>
 #include <QTimer>
 
-#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/x264_%2_%3.exe").arg((BIN_DIR), ((IS_10BIT) ? "10bit" : "8bit"), ((IS_X64) ? "x64" : "x86"))
+#define AVS2_BINARY(BIN_DIR, IS_X64) QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"))
+#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit"))
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -81,7 +82,7 @@ void HelpDialog::showEvent(QShowEvent *event)
 	}
 	else
 	{
-		m_process->start(QString("%1/%2.exe").arg(m_appDir, m_x64supported ? "avs2yuv_x64" : "avs2yuv_x86"), QStringList());
+		m_process->start(AVS2_BINARY(m_appDir, m_x64supported), QStringList());
 	}
 
 	if(!m_process->waitForStarted())

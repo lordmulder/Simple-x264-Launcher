@@ -92,7 +92,7 @@ while(0)
 while(0)
 
 #define AVS2_BINARY(BIN_DIR, IS_X64) QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"))
-#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR),  ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit"))
+#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit"))
 
 /*
  * Static vars

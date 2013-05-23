@@ -198,19 +198,14 @@ For convenience, the string "--audiofile $(INPUT)" may be used.
 11. OpenCL Support
 -----------------------
 
-Newer builds of x264 now support OpenCL Lookahead, which can be enabled
-with the "--opencl" parameter. However, even if you do NOT want to use
-this feature, x264 will still depend on the OpenCL library (OpenCL.DLL)
-and it will NOT even start, if the OpenCL DLL is missing! For this
-reason, the Simple x264 Launcher ships with a "dummy" OpenCL library to
-make x264 start on systems that do NOT support OpenCL. As a side effect
-of this workaround, any OpenCL functions in x264 will not work at all!
+Newer builds of x264 now support OpenCL Lookahead, i.e. GPU accelerated
+encoding. This can be enabled with the "--opencl" custom parameter. But
+OpenCL Lookahead will only work if you have an OpenCL-capable graphics
+card *and* if you have an up-to-date video driver installed!
 
-If your video hardware supports OpenCL *and* if you have an up-to-date
-video driver with OpenCL support installed *and* if you which to use
-the OpenCL Lookahead function, then please remove the dummy OpenCL.DLL
-from the Simple x264 Launcher directory, so x264 can load the system's
-OpenCL.DLL (from system directory), provided by the video driver.
+Note that x264 will now *only* try to load the OpenCL.DLL if you really
+use the "--opencl" option. Therefore, the "dummy" OpenCL.DLL included
+in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 
 
 12. Command-line Syntax

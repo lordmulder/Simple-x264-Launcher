@@ -1018,7 +1018,7 @@ QString AddJobDialog::getInputFilterLst(void)
 		{"Uncompresses YUV Data", "yuv"},
 	};
 
-	const int count = ARRAY_SIZE(FILE_TYPE_FILTERS);
+	const int count = ARRAY_SIZE(s_filters);
 
 	QString allTypes;
 	for(size_t index = 0; index < count; index++)

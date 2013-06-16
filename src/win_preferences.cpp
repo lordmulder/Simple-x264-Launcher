@@ -75,7 +75,8 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	checkUse10BitEncoding->blockSignals(false);
 
 	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount);
-	
+	comboBoxPriority->setCurrentIndex(qBound(0U, m_preferences->processPriority, 2U));
+
 	checkUse64BitAvs2YUV->setEnabled(m_x64);
 	labelUse64BitAvs2YUV->setEnabled(m_x64);
 }
@@ -120,6 +121,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->saveLogFiles = checkSaveLogFiles->isChecked();
 	m_preferences->saveToSourcePath = checkSaveToSourceFolder->isChecked();
 	m_preferences->maxRunningJobCount = spinBoxJobCount->value();
+	m_preferences->processPriority = comboBoxPriority->currentIndex();
 
 	savePreferences(m_preferences);
 	QDialog::done(n);
@@ -162,6 +164,7 @@ void PreferencesDialog::initPreferences(Preferences *preferences)
 	preferences->useAvisyth64Bit = false;
 	preferences->saveLogFiles = false;
 	preferences->saveToSourcePath = false;
+	preferences->processPriority = X264_PRIORITY_BELOWNORMAL;
 }
 
 void PreferencesDialog::loadPreferences(Preferences *preferences)
@@ -180,6 +183,7 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 	preferences->useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(defaults.useAvisyth64Bit)).toBool();
 	preferences->saveLogFiles = settings.value("save_log_files", QVariant(defaults.saveLogFiles)).toBool();
 	preferences->saveToSourcePath = settings.value("save_to_source_path", QVariant(defaults.saveToSourcePath)).toBool();
+	preferences->processPriority = settings.value("process_priority", QVariant(defaults.processPriority)).toUInt();
 }
 
 void PreferencesDialog::savePreferences(Preferences *preferences)
@@ -195,6 +199,6 @@ void PreferencesDialog::savePreferences(Preferences *preferences)
 	settings.setValue("use_64bit_avisynth", preferences->useAvisyth64Bit);
 	settings.setValue("save_log_files", preferences->saveLogFiles);
 	settings.setValue("save_to_source_path", preferences->saveToSourcePath);
+	settings.setValue("process_priority", preferences->processPriority);
 	settings.sync();
 }
-

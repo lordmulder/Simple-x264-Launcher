@@ -23,6 +23,7 @@
 
 #include "global.h"
 #include "model_options.h"
+#include "win_preferences.h"
 #include "version.h"
 
 #include <QDate>
@@ -103,7 +104,7 @@ static const unsigned int REV_MULT = 10000;
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, unsigned int processPriroity)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
@@ -113,6 +114,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_x264_x64(x264_x64),
 	m_x264_10bit(x264_10bit),
 	m_avs2yuv_x64(avs2yuv_x64),
+	m_processPriority(processPriroity),
 	m_handle_jobObject(NULL),
 	m_semaphorePaused(0)
 {
@@ -1115,9 +1117,20 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 		AssignProcessToJobObject(m_handle_jobObject, process.pid()->hProcess);
 		if(pid != NULL)
 		{
-			if(!SetPriorityClass(process.pid()->hProcess, BELOW_NORMAL_PRIORITY_CLASS))
+			switch(m_processPriority)
 			{
+			case PreferencesDialog::X264_PRIORITY_NORMAL:
+				SetPriorityClass(process.pid()->hProcess, NORMAL_PRIORITY_CLASS);
+				break;
+			case PreferencesDialog::X264_PRIORITY_BELOWNORMAL:
+				if(!SetPriorityClass(process.pid()->hProcess, BELOW_NORMAL_PRIORITY_CLASS))
+				{
+					SetPriorityClass(process.pid()->hProcess, IDLE_PRIORITY_CLASS);
+				}
+				break;
+			case PreferencesDialog::X264_PRIORITY_IDLE:
 				SetPriorityClass(process.pid()->hProcess, IDLE_PRIORITY_CLASS);
+				break;
 			}
 		}
 		

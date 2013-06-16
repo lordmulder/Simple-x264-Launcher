@@ -1109,7 +1109,8 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		QString("%1/toolset").arg(m_appDir),
 		m_cpuFeatures->x64,
 		m_preferences.use10BitEncoding,
-		m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit
+		m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit,
+		m_preferences.processPriority
 	);
 
 	QModelIndex newIndex = m_jobList->insertJob(thrd);

@@ -28,6 +28,14 @@ class PreferencesDialog : public QDialog, private Ui::PreferencesDialog
 	Q_OBJECT
 
 public:
+	enum
+	{
+		X264_PRIORITY_NORMAL = 0,
+		X264_PRIORITY_BELOWNORMAL = 1,
+		X264_PRIORITY_IDLE = 2,
+	}
+	x264_priority_t;
+	
 	typedef struct
 	{
 		bool autoRunNextJob;
@@ -37,6 +45,7 @@ public:
 		bool useAvisyth64Bit;
 		bool saveLogFiles;
 		bool saveToSourcePath;
+		unsigned int processPriority;
 	}
 	Preferences;
 

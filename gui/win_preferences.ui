@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>379</width>
-    <height>325</height>
+    <height>366</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,6 +34,22 @@
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
        <layout class="QGridLayout" name="gridLayout">
+        <item row="13" column="1" colspan="5">
+         <spacer name="verticalSpacer_8">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>8</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
         <item row="2" column="2" colspan="2">
          <widget class="QLabel" name="labelJobCount">
           <property name="enabled">
@@ -47,7 +63,7 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0" rowspan="12">
+        <item row="1" column="0" rowspan="13">
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -63,7 +79,7 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="6" rowspan="12">
+        <item row="1" column="6" rowspan="13">
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -185,7 +201,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="13" column="1" colspan="5">
+        <item row="15" column="1" colspan="5">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -315,6 +331,51 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
          <widget class="QCheckBox" name="checkSaveToSourceFolder">
           <property name="text">
            <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="4">
+         <widget class="QComboBox" name="comboBoxPriority">
+          <property name="editable">
+           <bool>false</bool>
+          </property>
+          <property name="frame">
+           <bool>true</bool>
+          </property>
+          <item>
+           <property name="text">
+            <string>Normal</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Below Normal</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Idle</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="14" column="5">
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="14" column="2" colspan="2">
+         <widget class="QLabel" name="labelProcessPriority">
+          <property name="text">
+           <string>Priority for encoder processes:</string>
           </property>
          </widget>
         </item>

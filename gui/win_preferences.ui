@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>379</width>
-    <height>366</height>
+    <height>399</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,38 +62,6 @@
            <string>Maximum number of running jobs:</string>
           </property>
          </widget>
-        </item>
-        <item row="1" column="0" rowspan="13">
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>8</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="6" rowspan="13">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>12</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
         </item>
         <item row="1" column="2" colspan="4">
          <widget class="QLabel" name="labelRunNextJob">
@@ -201,7 +169,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="15" column="1" colspan="5">
+        <item row="17" column="1" colspan="5">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -378,6 +346,68 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
            <string>Priority for encoder processes:</string>
           </property>
          </widget>
+        </item>
+        <item row="16" column="1">
+         <widget class="QCheckBox" name="checkEnableSounds">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="2" colspan="4">
+         <widget class="QLabel" name="labelEnableSounds">
+          <property name="text">
+           <string>Enable sound effects when a job has completed or failed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="1" colspan="5">
+         <spacer name="verticalSpacer_9">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>8</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="0" rowspan="16">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>8</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="6" rowspan="16">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>12</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </item>

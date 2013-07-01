@@ -114,8 +114,10 @@ g_x264_version =
 			static const char *g_x264_version_compiler = "MSVC 2012-U1 CTP";
 		#elif (_MSC_FULL_VER < 170060315)
 			static const char *g_x264_version_compiler = "MSVC 2012-U1";
-		#elif (_MSC_FULL_VER == 170060315)
+		#elif (_MSC_FULL_VER < 170060610)
 			static const char *g_x264_version_compiler = "MSVC 2012-U2";
+		#elif (_MSC_FULL_VER == 170060610)
+			static const char *g_x264_version_compiler = "MSVC 2012-U3";
 		#else
 			#error Compiler version is not supported yet!
 		#endif

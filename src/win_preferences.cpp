@@ -49,6 +49,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, Preferences *preferences, 
 	labelShutdownComputer->installEventFilter(this);
 	labelSaveLogFiles->installEventFilter(this);
 	labelSaveToSourceFolder->installEventFilter(this);
+	labelEnableSounds->installEventFilter(this);
 
 	connect(resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
 	connect(checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
@@ -69,6 +70,7 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit);
 	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles);
 	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath);
+	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds);
 
 	checkUse10BitEncoding->blockSignals(true);
 	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding);
@@ -89,6 +91,7 @@ bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 	emulateMouseEvent(o, e, labelUse64BitAvs2YUV, checkUse64BitAvs2YUV);
 	emulateMouseEvent(o, e, labelSaveLogFiles, checkSaveLogFiles);
 	emulateMouseEvent(o, e, labelSaveToSourceFolder, checkSaveToSourceFolder);
+	emulateMouseEvent(o, e, labelEnableSounds, checkEnableSounds);
 	return false;
 }
 
@@ -122,6 +125,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->saveToSourcePath = checkSaveToSourceFolder->isChecked();
 	m_preferences->maxRunningJobCount = spinBoxJobCount->value();
 	m_preferences->processPriority = comboBoxPriority->currentIndex();
+	m_preferences->enableSounds = checkEnableSounds->isChecked();
 
 	savePreferences(m_preferences);
 	QDialog::done(n);
@@ -165,6 +169,7 @@ void PreferencesDialog::initPreferences(Preferences *preferences)
 	preferences->saveLogFiles = false;
 	preferences->saveToSourcePath = false;
 	preferences->processPriority = X264_PRIORITY_BELOWNORMAL;
+	preferences->enableSounds = false;
 }
 
 void PreferencesDialog::loadPreferences(Preferences *preferences)
@@ -184,6 +189,7 @@ void PreferencesDialog::loadPreferences(Preferences *preferences)
 	preferences->saveLogFiles = settings.value("save_log_files", QVariant(defaults.saveLogFiles)).toBool();
 	preferences->saveToSourcePath = settings.value("save_to_source_path", QVariant(defaults.saveToSourcePath)).toBool();
 	preferences->processPriority = settings.value("process_priority", QVariant(defaults.processPriority)).toUInt();
+	preferences->enableSounds = settings.value("enable_sounds", QVariant(defaults.enableSounds)).toBool();
 }
 
 void PreferencesDialog::savePreferences(Preferences *preferences)
@@ -200,5 +206,6 @@ void PreferencesDialog::savePreferences(Preferences *preferences)
 	settings.setValue("save_log_files", preferences->saveLogFiles);
 	settings.setValue("save_to_source_path", preferences->saveToSourcePath);
 	settings.setValue("process_priority", preferences->processPriority);
+	settings.setValue("enable_sounds", preferences->enableSounds);
 	settings.sync();
 }

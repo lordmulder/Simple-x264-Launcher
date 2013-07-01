@@ -19,16 +19,20 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "model_jobList.h"
 #include "global.h"
+#include "model_jobList.h"
 #include "thread_encode.h"
 #include "model_options.h"
+#include "resource.h"
 
 #include <QIcon>
 #include <QFileInfo>
 
-JobListModel::JobListModel(void)
+#include <Mmsystem.h>
+
+JobListModel::JobListModel(PreferencesDialog::Preferences *preferences)
 {
+	m_preferences = preferences;
 }
 
 JobListModel::~JobListModel(void)
@@ -482,6 +486,22 @@ void JobListModel::updateStatus(const QUuid &jobId, EncodeThread::JobStatus newS
 	{
 		m_status.insert(jobId, newStatus);
 		emit dataChanged(createIndex(index, 0), createIndex(index, 1));
+
+		if(m_preferences->enableSounds)
+		{
+			switch(newStatus)
+			{
+			case EncodeThread::JobStatus_Completed:
+				PlaySound(MAKEINTRESOURCE(IDR_WAVE4), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
+				break;
+			case EncodeThread::JobStatus_Aborted:
+				PlaySound(MAKEINTRESOURCE(IDR_WAVE5), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
+				break;
+			case EncodeThread::JobStatus_Failed:
+				PlaySound(MAKEINTRESOURCE(IDR_WAVE6), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
+				break;
+			}
+		}
 	}
 }
 

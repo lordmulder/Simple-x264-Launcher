@@ -113,7 +113,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	}
 	
 	//Create model
-	m_jobList = new JobListModel();
+	m_jobList = new JobListModel(&m_preferences);
 	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
 	jobsView->setModel(m_jobList);
 	

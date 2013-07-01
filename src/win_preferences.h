@@ -46,6 +46,7 @@ public:
 		bool saveLogFiles;
 		bool saveToSourcePath;
 		unsigned int processPriority;
+		bool enableSounds;
 	}
 	Preferences;
 

@@ -44,6 +44,12 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	setFixedSize(minimumSize());
 
+	if(WId hWindow = this->winId())
+	{
+		HMENU hMenu = GetSystemMenu(hWindow, 0);
+		EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+	}
+	
 	labelRunNextJob->installEventFilter(this);
 	labelUse10BitEncoding->installEventFilter(this);
 	labelUse64BitAvs2YUV->installEventFilter(this);

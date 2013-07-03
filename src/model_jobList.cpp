@@ -285,7 +285,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 	m_details.insert(id, tr("Not started yet."));
 	endInsertRows();
 
-	connect(thread, SIGNAL(statusChanged(QUuid, EncodeThread::JobStatus)), this, SLOT(updateStatus(QUuid, EncodeThread::JobStatus)), Qt::QueuedConnection);
+	connect(thread, SIGNAL(statusChanged(QUuid, JobStatus)), this, SLOT(updateStatus(QUuid, JobStatus)), Qt::QueuedConnection);
 	connect(thread, SIGNAL(progressChanged(QUuid, unsigned int)), this, SLOT(updateProgress(QUuid, unsigned int)), Qt::QueuedConnection);
 	connect(thread, SIGNAL(messageLogged(QUuid, QString)), logFile, SLOT(addLogMessage(QUuid, QString)), Qt::QueuedConnection);
 	connect(thread, SIGNAL(detailsChanged(QUuid, QString)), this, SLOT(updateDetails(QUuid, QString)), Qt::QueuedConnection);

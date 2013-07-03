@@ -84,7 +84,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Register meta types
 	qRegisterMetaType<QUuid>("QUuid");
 	qRegisterMetaType<QUuid>("DWORD");
-	qRegisterMetaType<JobStatus>("EncodeThread::JobStatus");
+	qRegisterMetaType<JobStatus>("JobStatus");
 
 	//Load preferences
 	m_preferences = new PreferencesModel();

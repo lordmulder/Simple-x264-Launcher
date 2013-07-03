@@ -23,19 +23,20 @@
 
 #include "thread_encode.h"
 #include "model_logFile.h"
-#include "win_preferences.h"
 
 #include "QAbstractItemModel"
 #include <QUuid>
 #include <QList>
 #include <QMap>
 
+class PreferencesModel;
+
 class JobListModel : public QAbstractItemModel
 {
 	Q_OBJECT
 		
 public:
-	JobListModel(PreferencesDialog::Preferences *preferences);
+	JobListModel(PreferencesModel *preferences);
 	~JobListModel(void);
 
 	virtual int columnCount(const QModelIndex &parent) const;
@@ -67,7 +68,7 @@ protected:
 	QMap<QUuid, unsigned int> m_progress;
 	QMap<QUuid, LogFileModel*> m_logFile;
 	QMap<QUuid, QString> m_details;
-	PreferencesDialog::Preferences *m_preferences;
+	PreferencesModel *m_preferences;
 
 public slots:
 	void updateStatus(const QUuid &jobId, EncodeThread::JobStatus newStatus);

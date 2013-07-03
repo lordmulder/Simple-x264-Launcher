@@ -312,6 +312,11 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
           <item>
            <property name="text">
+            <string>Above Normal</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
             <string>Normal</string>
            </property>
           </item>

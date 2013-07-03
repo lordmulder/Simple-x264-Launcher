@@ -21,31 +21,41 @@
 
 #pragma once
 
-#include "uic_win_preferences.h"
+#include <QString>
 
-class PreferencesModel;
-
-class PreferencesDialog : public QDialog, private Ui::PreferencesDialog
+static const struct
 {
-	Q_OBJECT
+	const char *pcExt;
+	const char *pcStr;
+}
+X264_FILE_TYPE_FILTERS[] =
+{
+	{ "mkv", "Matroska Files" },
+	{ "mp4", "MPEG-4 Part 14 Container" },
+	{ "264", "H.264 Elementary Stream"},
+};
 
+class RecentlyUsed
+{
 public:
-	PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64);
-	~PreferencesDialog(void);
+	RecentlyUsed(void);
 
-	const bool m_x64;
+	static void initRecentlyUsed(RecentlyUsed *recentlyUsed);
+	static void loadRecentlyUsed(RecentlyUsed *recentlyUsed);
+	static void saveRecentlyUsed(RecentlyUsed *recentlyUsed);
+
+	//Getter
+	QString sourceDirectory(void) { return m_sourceDirectory; }
+	QString outputDirectory(void) { return m_outputDirectory; }
+	int filterIndex(void) { return m_filterIndex; }
+
+	//Setter
+	void setSourceDirectory(const QString &sourceDirectory) { m_sourceDirectory = sourceDirectory; }
+	void setOutputDirectory(const QString &outputDirectory) { m_outputDirectory = outputDirectory; }
+	void setFilterIndex(const int filterIndex) { m_filterIndex = filterIndex; }
 
 protected:
-	virtual void done(int n);
-	virtual void showEvent(QShowEvent *event);
-	virtual bool eventFilter(QObject *o, QEvent *e);
-
-	void emulateMouseEvent(QObject *object, QEvent *event, QWidget *source, QWidget *target);
-
-private:
-	PreferencesModel *m_preferences;
-
-private slots:
-	void resetButtonPressed(void);
-	void use10BitEncodingToggled(bool checked);
+	QString m_sourceDirectory;
+	QString m_outputDirectory;
+	int m_filterIndex;
 };

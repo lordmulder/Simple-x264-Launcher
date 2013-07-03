@@ -23,6 +23,7 @@
 #include "model_jobList.h"
 #include "thread_encode.h"
 #include "model_options.h"
+#include "model_preferences.h"
 #include "resource.h"
 
 #include <QIcon>
@@ -30,7 +31,7 @@
 
 #include <Mmsystem.h>
 
-JobListModel::JobListModel(PreferencesDialog::Preferences *preferences)
+JobListModel::JobListModel(PreferencesModel *preferences)
 {
 	m_preferences = preferences;
 }
@@ -487,7 +488,7 @@ void JobListModel::updateStatus(const QUuid &jobId, EncodeThread::JobStatus newS
 		m_status.insert(jobId, newStatus);
 		emit dataChanged(createIndex(index, 0), createIndex(index, 1));
 
-		if(m_preferences->enableSounds)
+		if(m_preferences->enableSounds())
 		{
 			switch(newStatus)
 			{

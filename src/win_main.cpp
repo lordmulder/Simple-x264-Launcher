@@ -23,8 +23,12 @@
 
 #include "model_jobList.h"
 #include "model_options.h"
+#include "model_preferences.h"
+#include "model_recently.h"
 #include "thread_avisynth.h"
 #include "taskbar7.h"
+#include "win_addJob.h"
+#include "win_preferences.h"
 #include "resource.h"
 
 #include <QDate>
@@ -67,6 +71,8 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_options(NULL),
 	m_jobList(NULL),
 	m_droppedFiles(NULL),
+	m_preferences(NULL),
+	m_recentlyUsed(NULL),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -79,12 +85,12 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	qRegisterMetaType<EncodeThread::JobStatus>("EncodeThread::JobStatus");
 
 	//Load preferences
-	PreferencesDialog::initPreferences(&m_preferences);
-	PreferencesDialog::loadPreferences(&m_preferences);
+	m_preferences = new PreferencesModel();
+	PreferencesModel::loadPreferences(m_preferences);
 
 	//Load recently used
-	AddJobDialog::initRecentlyUsed(&m_recentlyUsed);
-	AddJobDialog::loadRecentlyUsed(&m_recentlyUsed);
+	m_recentlyUsed = new RecentlyUsed();
+	RecentlyUsed::loadRecentlyUsed(m_recentlyUsed);
 
 	//Create options object
 	m_options = new OptionsModel();
@@ -113,7 +119,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	}
 	
 	//Create model
-	m_jobList = new JobListModel(&m_preferences);
+	m_jobList = new JobListModel(m_preferences);
 	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
 	jobsView->setModel(m_jobList);
 	
@@ -203,6 +209,8 @@ MainWindow::~MainWindow(void)
 
 	X264_DELETE(m_ipcThread);
 	AvisynthCheckThread::unload();
+	X264_DELETE(m_preferences);
+	X264_DELETE(m_recentlyUsed);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -215,7 +223,7 @@ MainWindow::~MainWindow(void)
 void MainWindow::addButtonPressed()
 {
 	qDebug("MainWindow::addButtonPressed");
-	bool runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+	bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
 	QString sourceFileName, outputFileName;
 	
 	if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
@@ -229,17 +237,17 @@ void MainWindow::addButtonPressed()
  */
 void MainWindow::openActionTriggered()
 {
-	QStringList fileList = QFileDialog::getOpenFileNames(this, tr("Open Source File(s)"), m_recentlyUsed.sourceDirectory, AddJobDialog::getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
+	QStringList fileList = QFileDialog::getOpenFileNames(this, tr("Open Source File(s)"), m_recentlyUsed->sourceDirectory(), AddJobDialog::getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 	if(!fileList.empty())
 	{
-		m_recentlyUsed.sourceDirectory = QFileInfo(fileList.last()).absolutePath();
+		m_recentlyUsed->setSourceDirectory(QFileInfo(fileList.last()).absolutePath());
 		if(fileList.count() > 1)
 		{
 			createJobMultiple(fileList);
 		}
 		else
 		{
-			bool runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+			bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
 			QString sourceFileName(fileList.first()), outputFileName;
 			if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
 			{
@@ -384,9 +392,9 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			}
 			if((status == EncodeThread::JobStatus_Completed) || (status == EncodeThread::JobStatus_Failed))
 			{
-				if(m_preferences.autoRunNextJob) QTimer::singleShot(0, this, SLOT(launchNextJob()));
-				if(m_preferences.shutdownComputer) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
-				if(m_preferences.saveLogFiles) saveLogFile(m_jobList->index(i, 1, QModelIndex()));
+				if(m_preferences->autoRunNextJob()) QTimer::singleShot(0, this, SLOT(launchNextJob()));
+				if(m_preferences->shutdownComputer()) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
+				if(m_preferences->saveLogFiles()) saveLogFile(m_jobList->index(i, 1, QModelIndex()));
 			}
 		}
 	}
@@ -521,7 +529,7 @@ void MainWindow::showWebLink(void)
  */
 void MainWindow::showPreferences(void)
 {
-	PreferencesDialog *preferences = new PreferencesDialog(this, &m_preferences, m_cpuFeatures->x64);
+	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences, m_cpuFeatures->x64);
 	preferences->exec();
 	X264_DELETE(preferences);
 }
@@ -535,7 +543,7 @@ void MainWindow::launchNextJob(void)
 	
 	const int rows = m_jobList->rowCount(QModelIndex());
 
-	if(countRunningJobs() >= m_preferences.maxRunningJobCount)
+	if(countRunningJobs() >= m_preferences->maxRunningJobCount())
 	{
 		qDebug("Still have too many jobs running, won't launch next one yet!");
 		return;
@@ -1022,7 +1030,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart, int fileNo, int fileTotal, bool *applyToAll)
 {
 	bool okay = false;
-	AddJobDialog *addDialog = new AddJobDialog(this, options, &m_recentlyUsed, m_cpuFeatures->x64, m_preferences.use10BitEncoding, m_preferences.saveToSourcePath);
+	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed, m_cpuFeatures->x64, m_preferences->use10BitEncoding(), m_preferences->saveToSourcePath());
 
 	addDialog->setRunImmediately(runImmediately);
 	if(!sourceFileName.isEmpty()) addDialog->setSourceFile(sourceFileName);
@@ -1065,7 +1073,7 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	//Add files individually
 	for(iter = filePathIn.constBegin(); (iter != filePathIn.constEnd()) && (!applyToAll); iter++)
 	{
-		runImmediately = (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+		runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
 		QString sourceFileName(*iter), outputFileName;
 		if(createJob(sourceFileName, outputFileName, m_options, runImmediately, false, counter++, filePathIn.count(), &applyToAll))
 		{
@@ -1080,9 +1088,9 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	//Add remaining files
 	while(applyToAll && (iter != filePathIn.constEnd()))
 	{
-		const bool runImmediatelyTmp = runImmediately && (countRunningJobs() < (m_preferences.autoRunNextJob ? m_preferences.maxRunningJobCount : 1));
+		const bool runImmediatelyTmp = runImmediately && (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
 		const QString sourceFileName = *iter;
-		const QString outputFileName = AddJobDialog::generateOutputFileName(sourceFileName, m_recentlyUsed.outputDirectory, m_recentlyUsed.filterIndex, m_preferences.saveToSourcePath);
+		const QString outputFileName = AddJobDialog::generateOutputFileName(sourceFileName, m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->saveToSourcePath());
 		if(!appendJob(sourceFileName, outputFileName, m_options, runImmediatelyTmp))
 		{
 			return false;
@@ -1108,9 +1116,9 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		options,
 		QString("%1/toolset").arg(m_appDir),
 		m_cpuFeatures->x64,
-		m_preferences.use10BitEncoding,
-		m_cpuFeatures->x64 && m_preferences.useAvisyth64Bit,
-		m_preferences.processPriority
+		m_preferences->use10BitEncoding(),
+		m_cpuFeatures->x64 && m_preferences->useAvisyth64Bit(),
+		m_preferences->processPriority()
 	);
 
 	QModelIndex newIndex = m_jobList->insertJob(thrd);

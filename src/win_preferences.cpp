@@ -22,6 +22,7 @@
 #include "win_preferences.h"
 
 #include "global.h"
+#include "model_preferences.h"
 
 #include <QSettings>
 #include <QDesktopServices>
@@ -34,7 +35,7 @@
 	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->setChecked(VALUE); \
 }
 
-PreferencesDialog::PreferencesDialog(QWidget *parent, Preferences *preferences, bool x64)
+PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64)
 :
 	QDialog(parent),
 	m_x64(x64)
@@ -65,19 +66,19 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 {
 	if(event) QDialog::showEvent(event);
 	
-	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob);
-	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer);
-	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit);
-	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles);
-	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath);
-	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds);
+	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob());
+	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer());
+	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit());
+	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles());
+	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath());
+	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds());
 
 	checkUse10BitEncoding->blockSignals(true);
-	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding);
+	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding());
 	checkUse10BitEncoding->blockSignals(false);
 
-	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount);
-	comboBoxPriority->setCurrentIndex(qBound(0U, m_preferences->processPriority, 2U));
+	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
+	comboBoxPriority->setCurrentIndex(qBound(0, m_preferences->processPriority(), comboBoxPriority->count()-1));
 
 	checkUse64BitAvs2YUV->setEnabled(m_x64);
 	labelUse64BitAvs2YUV->setEnabled(m_x64);
@@ -117,23 +118,23 @@ void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidge
 
 void PreferencesDialog::done(int n)
 {
-	m_preferences->autoRunNextJob = checkRunNextJob->isChecked();
-	m_preferences->shutdownComputer = checkShutdownComputer->isChecked();
-	m_preferences->use10BitEncoding = checkUse10BitEncoding->isChecked();
-	m_preferences->useAvisyth64Bit = checkUse64BitAvs2YUV->isChecked();
-	m_preferences->saveLogFiles = checkSaveLogFiles->isChecked();
-	m_preferences->saveToSourcePath = checkSaveToSourceFolder->isChecked();
-	m_preferences->maxRunningJobCount = spinBoxJobCount->value();
-	m_preferences->processPriority = comboBoxPriority->currentIndex();
-	m_preferences->enableSounds = checkEnableSounds->isChecked();
+	m_preferences->setAutoRunNextJob(checkRunNextJob->isChecked());
+	m_preferences->setShutdownComputer(checkShutdownComputer->isChecked());
+	m_preferences->setUse10BitEncoding(checkUse10BitEncoding->isChecked());
+	m_preferences->setUseAvisyth64Bit(checkUse64BitAvs2YUV->isChecked());
+	m_preferences->setSaveLogFiles(checkSaveLogFiles->isChecked());
+	m_preferences->setSaveToSourcePath(checkSaveToSourceFolder->isChecked());
+	m_preferences->setMaxRunningJobCount(spinBoxJobCount->value());
+	m_preferences->setProcessPriority(comboBoxPriority->currentIndex());
+	m_preferences->setEnableSounds(checkEnableSounds->isChecked());
 
-	savePreferences(m_preferences);
+	PreferencesModel::savePreferences(m_preferences);
 	QDialog::done(n);
 }
 
 void PreferencesDialog::resetButtonPressed(void)
 {
-	initPreferences(m_preferences);
+	PreferencesModel::initPreferences(m_preferences);
 	showEvent(NULL);
 }
 
@@ -151,61 +152,4 @@ void PreferencesDialog::use10BitEncodingToggled(bool checked)
 			UPDATE_CHECKBOX(checkUse10BitEncoding, false);
 		}
 	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Static Functions
-///////////////////////////////////////////////////////////////////////////////
-
-void PreferencesDialog::initPreferences(Preferences *preferences)
-{
-	memset(preferences, 0, sizeof(Preferences));
-
-	preferences->autoRunNextJob = true;
-	preferences->maxRunningJobCount = 1;
-	preferences->shutdownComputer = false;
-	preferences->use10BitEncoding = false;
-	preferences->useAvisyth64Bit = false;
-	preferences->saveLogFiles = false;
-	preferences->saveToSourcePath = false;
-	preferences->processPriority = X264_PRIORITY_BELOWNORMAL;
-	preferences->enableSounds = false;
-}
-
-void PreferencesDialog::loadPreferences(Preferences *preferences)
-{
-	const QString appDir = x264_data_path();
-	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
-
-	Preferences defaults;
-	initPreferences(&defaults);
-
-	settings.beginGroup("preferences");
-	preferences->autoRunNextJob = settings.value("auto_run_next_job", QVariant(defaults.autoRunNextJob)).toBool();
-	preferences->maxRunningJobCount = qBound(1U, settings.value("max_running_job_count", QVariant(defaults.maxRunningJobCount)).toUInt(), 16U);
-	preferences->shutdownComputer = settings.value("shutdown_computer_on_completion", QVariant(defaults.shutdownComputer)).toBool();
-	preferences->use10BitEncoding = settings.value("use_10bit_encoding", QVariant(defaults.use10BitEncoding)).toBool();
-	preferences->useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(defaults.useAvisyth64Bit)).toBool();
-	preferences->saveLogFiles = settings.value("save_log_files", QVariant(defaults.saveLogFiles)).toBool();
-	preferences->saveToSourcePath = settings.value("save_to_source_path", QVariant(defaults.saveToSourcePath)).toBool();
-	preferences->processPriority = settings.value("process_priority", QVariant(defaults.processPriority)).toUInt();
-	preferences->enableSounds = settings.value("enable_sounds", QVariant(defaults.enableSounds)).toBool();
-}
-
-void PreferencesDialog::savePreferences(Preferences *preferences)
-{
-	const QString appDir = x264_data_path();
-	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
-
-	settings.beginGroup("preferences");
-	settings.setValue("auto_run_next_job", preferences->autoRunNextJob);
-	settings.setValue("shutdown_computer_on_completion", preferences->shutdownComputer);
-	settings.setValue("max_running_job_count", preferences->maxRunningJobCount);
-	settings.setValue("use_10bit_encoding", preferences->use10BitEncoding);
-	settings.setValue("use_64bit_avisynth", preferences->useAvisyth64Bit);
-	settings.setValue("save_log_files", preferences->saveLogFiles);
-	settings.setValue("save_to_source_path", preferences->saveToSourcePath);
-	settings.setValue("process_priority", preferences->processPriority);
-	settings.setValue("enable_sounds", preferences->enableSounds);
-	settings.sync();
 }

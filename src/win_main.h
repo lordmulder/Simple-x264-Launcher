@@ -24,14 +24,13 @@
 #include "uic_win_main.h"
 #include "thread_ipc.h"
 #include "thread_encode.h"
-#include "win_preferences.h"
-#include "win_addJob.h"
-#include "global.h"
 
 class JobListModel;
 class OptionsModel;
 class QFile;
 class QLibrary;
+class PreferencesModel;
+class RecentlyUsed;
 
 class MainWindow: public QMainWindow, private Ui::MainWindow
 {
@@ -60,8 +59,8 @@ private:
 	QStringList *m_droppedFiles;
 	QList<QFile*> m_toolsList;
 	
-	PreferencesDialog::Preferences m_preferences;
-	AddJobDialog::RecentlyUsed m_recentlyUsed;
+	PreferencesModel *m_preferences;
+	RecentlyUsed *m_recentlyUsed;
 
 	const x264_cpu_t *const m_cpuFeatures;
 	const QString m_appDir;

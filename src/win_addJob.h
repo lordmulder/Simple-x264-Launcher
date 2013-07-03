@@ -26,20 +26,13 @@
 #include <QDir>
 
 class OptionsModel;
+class RecentlyUsed;
 
 class AddJobDialog : public QDialog, private Ui::AddJobDialog
 {
 	Q_OBJECT
 
 public:
-	typedef struct
-	{
-		QString sourceDirectory;
-		QString outputDirectory;
-		int filterIndex;
-	}
-	RecentlyUsed;
-
 	AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder);
 	~AddJobDialog(void);
 
@@ -56,10 +49,6 @@ public:
 	void setOutputFile(const QString &path) { editOutput->setText(QDir::toNativeSeparators(path)); }
 	void setSourceEditable(const bool editable) { buttonBrowseSource->setEnabled(editable); }
 	void setApplyToAllVisible(const bool visible) { checkBoxApplyToAll->setVisible(visible); }
-
-	static void initRecentlyUsed(RecentlyUsed *recentlyUsed);
-	static void loadRecentlyUsed(RecentlyUsed *recentlyUsed);
-	static void saveRecentlyUsed(RecentlyUsed *recentlyUsed);
 	
 	static QString generateOutputFileName(const QString &sourceFilePath, const QString &destinationDirectory, const int filterIndex, const bool saveToSourceDir);
 	static int getFilterIdx(const QString &fileExt);

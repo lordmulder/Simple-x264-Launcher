@@ -285,6 +285,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="src\model_options.h" />
     <ClInclude Include="src\model_preferences.h" />
     <ClInclude Include="src\model_recently.h" />
+    <ClInclude Include="src\model_status.h" />
     <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\taskbar7.h" />
     <CustomBuild Include="src\thread_ipc.h">

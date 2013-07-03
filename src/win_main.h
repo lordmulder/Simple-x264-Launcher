@@ -22,8 +22,9 @@
 #pragma once
 
 #include "uic_win_main.h"
-#include "thread_ipc.h"
-#include "thread_encode.h"
+
+#include "global.h"
+#include "model_status.h"
 
 class JobListModel;
 class OptionsModel;
@@ -31,6 +32,7 @@ class QFile;
 class QLibrary;
 class PreferencesModel;
 class RecentlyUsed;
+class IPCThread;
 
 class MainWindow: public QMainWindow, private Ui::MainWindow
 {
@@ -69,8 +71,8 @@ private:
 	bool createJobMultiple(const QStringList &filePathIn);
 
 	bool appendJob(const QString &sourceFileName, const QString &outputFileName, OptionsModel *options, const bool runImmediately);
-	void updateButtons(EncodeThread::JobStatus status);
-	void updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon);
+	void updateButtons(JobStatus status);
+	void updateTaskbar(JobStatus status, const QIcon &icon);
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
 

@@ -19,13 +19,22 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 1
-#define VER_X264_PATCH 5
-#define VER_X264_BUILD 497
+#pragma once
 
-#define VER_X264_MINIMUM_REV 2282
-#define VER_X264_CURRENT_API 133
-#define VER_X264_AVS2YUV_VER 242
-
-#define VER_X264_PRE_RELEASE (0)
+enum JobStatus
+{
+	JobStatus_Enqueued = 0,
+	JobStatus_Starting = 1,
+	JobStatus_Indexing = 2,
+	JobStatus_Running = 3,
+	JobStatus_Running_Pass1 = 4,
+	JobStatus_Running_Pass2 = 5,
+	JobStatus_Completed = 6,
+	JobStatus_Failed = 7,
+	JobStatus_Pausing = 8,
+	JobStatus_Paused = 9,
+	JobStatus_Resuming = 10,
+	JobStatus_Aborting = 11,
+	JobStatus_Aborted = 12,
+	JobStatus_Undefined = 666
+};

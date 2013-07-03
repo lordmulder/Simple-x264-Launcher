@@ -55,7 +55,7 @@ public:
 	LogFileModel *getLogFile(const QModelIndex &index);
 	const QString &getJobSourceFile(const QModelIndex &index);
 	const QString &getJobOutputFile(const QModelIndex &index);
-	EncodeThread::JobStatus getJobStatus(const QModelIndex &index);
+	JobStatus getJobStatus(const QModelIndex &index);
 	unsigned int getJobProgress(const QModelIndex &index);
 	const OptionsModel *getJobOptions(const QModelIndex &index);
 	QModelIndex getJobIndexById(const QUuid &id);
@@ -64,14 +64,14 @@ protected:
 	QList<QUuid> m_jobs;
 	QMap<QUuid, QString> m_name;
 	QMap<QUuid, EncodeThread*> m_threads;
-	QMap<QUuid, EncodeThread::JobStatus> m_status;
+	QMap<QUuid, JobStatus> m_status;
 	QMap<QUuid, unsigned int> m_progress;
 	QMap<QUuid, LogFileModel*> m_logFile;
 	QMap<QUuid, QString> m_details;
 	PreferencesModel *m_preferences;
 
 public slots:
-	void updateStatus(const QUuid &jobId, EncodeThread::JobStatus newStatus);
+	void updateStatus(const QUuid &jobId, JobStatus newStatus);
 	void updateProgress(const QUuid &jobId, unsigned int newProgress);
 	void updateDetails(const QUuid &jobId, const QString &details);
 };

@@ -26,6 +26,8 @@
 #include "model_preferences.h"
 #include "model_recently.h"
 #include "thread_avisynth.h"
+#include "thread_ipc.h"
+#include "thread_encode.h"
 #include "taskbar7.h"
 #include "win_addJob.h"
 #include "win_preferences.h"
@@ -82,7 +84,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Register meta types
 	qRegisterMetaType<QUuid>("QUuid");
 	qRegisterMetaType<QUuid>("DWORD");
-	qRegisterMetaType<EncodeThread::JobStatus>("EncodeThread::JobStatus");
+	qRegisterMetaType<JobStatus>("EncodeThread::JobStatus");
 
 	//Load preferences
 	m_preferences = new PreferencesModel();
@@ -365,8 +367,8 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 		logView->actions().first()->setEnabled(false);
 		progressBar->setValue(0);
 		editDetails->clear();
-		updateButtons(EncodeThread::JobStatus_Undefined);
-		updateTaskbar(EncodeThread::JobStatus_Undefined, QIcon());
+		updateButtons(JobStatus_Undefined);
+		updateTaskbar(JobStatus_Undefined, QIcon());
 	}
 
 	progressBar->repaint();
@@ -383,14 +385,14 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 	{
 		for(int i = topLeft.row(); i <= bottomRight.row(); i++)
 		{
-			EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+			JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
 			if(i == selected)
 			{
 				qDebug("Current job changed status!");
 				updateButtons(status);
 				updateTaskbar(status, m_jobList->data(m_jobList->index(i, 0, QModelIndex()), Qt::DecorationRole).value<QIcon>());
 			}
-			if((status == EncodeThread::JobStatus_Completed) || (status == EncodeThread::JobStatus_Failed))
+			if((status == JobStatus_Completed) || (status == JobStatus_Failed))
 			{
 				if(m_preferences->autoRunNextJob()) QTimer::singleShot(0, this, SLOT(launchNextJob()));
 				if(m_preferences->shutdownComputer()) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
@@ -554,8 +556,8 @@ void MainWindow::launchNextJob(void)
 	for(int i = 0; i < rows; i++)
 	{
 		int currentIdx = (i + startIdx) % rows;
-		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(currentIdx, 0, QModelIndex()));
-		if(status == EncodeThread::JobStatus_Enqueued)
+		JobStatus status = m_jobList->getJobStatus(m_jobList->index(currentIdx, 0, QModelIndex()));
+		if(status == JobStatus_Enqueued)
 		{
 			if(m_jobList->startJob(m_jobList->index(currentIdx, 0, QModelIndex())))
 			{
@@ -1149,8 +1151,8 @@ unsigned int MainWindow::countPendingJobs(void)
 
 	for(int i = 0; i < rows; i++)
 	{
-		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
-		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed)
+		JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status != JobStatus_Completed && status != JobStatus_Aborted && status != JobStatus_Failed)
 		{
 			count++;
 		}
@@ -1169,8 +1171,8 @@ unsigned int MainWindow::countRunningJobs(void)
 
 	for(int i = 0; i < rows; i++)
 	{
-		EncodeThread::JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
-		if(status != EncodeThread::JobStatus_Completed && status != EncodeThread::JobStatus_Aborted && status != EncodeThread::JobStatus_Failed && status != EncodeThread::JobStatus_Enqueued)
+		JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+		if(status != JobStatus_Completed && status != JobStatus_Aborted && status != JobStatus_Failed && status != JobStatus_Enqueued)
 		{
 			count++;
 		}
@@ -1182,50 +1184,50 @@ unsigned int MainWindow::countRunningJobs(void)
 /*
  * Update all buttons with respect to current job status
  */
-void MainWindow::updateButtons(EncodeThread::JobStatus status)
+void MainWindow::updateButtons(JobStatus status)
 {
 	qDebug("MainWindow::updateButtons(void)");
 
-	buttonStartJob->setEnabled(status == EncodeThread::JobStatus_Enqueued);
-	buttonAbortJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2 || status == EncodeThread::JobStatus_Paused);
-	buttonPauseJob->setEnabled(status == EncodeThread::JobStatus_Indexing || status == EncodeThread::JobStatus_Running || status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Running_Pass1 || status == EncodeThread::JobStatus_Running_Pass2);
-	buttonPauseJob->setChecked(status == EncodeThread::JobStatus_Paused || status == EncodeThread::JobStatus_Pausing);
+	buttonStartJob->setEnabled(status == JobStatus_Enqueued);
+	buttonAbortJob->setEnabled(status == JobStatus_Indexing || status == JobStatus_Running || status == JobStatus_Running_Pass1 || status == JobStatus_Running_Pass2 || status == JobStatus_Paused);
+	buttonPauseJob->setEnabled(status == JobStatus_Indexing || status == JobStatus_Running || status == JobStatus_Paused || status == JobStatus_Running_Pass1 || status == JobStatus_Running_Pass2);
+	buttonPauseJob->setChecked(status == JobStatus_Paused || status == JobStatus_Pausing);
 
-	actionJob_Delete->setEnabled(status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Aborted || status == EncodeThread::JobStatus_Failed || status == EncodeThread::JobStatus_Enqueued);
-	actionJob_Restart->setEnabled(status == EncodeThread::JobStatus_Completed || status == EncodeThread::JobStatus_Aborted || status == EncodeThread::JobStatus_Failed || status == EncodeThread::JobStatus_Enqueued);
-	actionJob_Browse->setEnabled(status == EncodeThread::JobStatus_Completed);
+	actionJob_Delete->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
+	actionJob_Restart->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
+	actionJob_Browse->setEnabled(status == JobStatus_Completed);
 
 	actionJob_Start->setEnabled(buttonStartJob->isEnabled());
 	actionJob_Abort->setEnabled(buttonAbortJob->isEnabled());
 	actionJob_Pause->setEnabled(buttonPauseJob->isEnabled());
 	actionJob_Pause->setChecked(buttonPauseJob->isChecked());
 
-	editDetails->setEnabled(status != EncodeThread::JobStatus_Paused);
+	editDetails->setEnabled(status != JobStatus_Paused);
 }
 
 /*
  * Update the taskbar with current job status
  */
-void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon)
+void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 {
 	qDebug("MainWindow::updateTaskbar(void)");
 
 	switch(status)
 	{
-	case EncodeThread::JobStatus_Undefined:
+	case JobStatus_Undefined:
 		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarNoState);
 		break;
-	case EncodeThread::JobStatus_Aborting:
-	case EncodeThread::JobStatus_Starting:
-	case EncodeThread::JobStatus_Pausing:
-	case EncodeThread::JobStatus_Resuming:
+	case JobStatus_Aborting:
+	case JobStatus_Starting:
+	case JobStatus_Pausing:
+	case JobStatus_Resuming:
 		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarIndeterminateState);
 		break;
-	case EncodeThread::JobStatus_Aborted:
-	case EncodeThread::JobStatus_Failed:
+	case JobStatus_Aborted:
+	case JobStatus_Failed:
 		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarErrorState);
 		break;
-	case EncodeThread::JobStatus_Paused:
+	case JobStatus_Paused:
 		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarPausedState);
 		break;
 	default:
@@ -1235,10 +1237,10 @@ void MainWindow::updateTaskbar(EncodeThread::JobStatus status, const QIcon &icon
 
 	switch(status)
 	{
-	case EncodeThread::JobStatus_Aborting:
-	case EncodeThread::JobStatus_Starting:
-	case EncodeThread::JobStatus_Pausing:
-	case EncodeThread::JobStatus_Resuming:
+	case JobStatus_Aborting:
+	case JobStatus_Starting:
+	case JobStatus_Pausing:
+	case JobStatus_Resuming:
 		break;
 	default:
 		WinSevenTaskbar::setTaskbarProgress(this, progressBar->value(), progressBar->maximum());

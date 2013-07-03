@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "model_status.h"
+
 #include <QThread>
 #include <QUuid>
 #include <QMutex>
@@ -35,24 +37,6 @@ class EncodeThread : public QThread
 	Q_OBJECT
 
 public:
-	enum JobStatus
-	{
-		JobStatus_Enqueued = 0,
-		JobStatus_Starting = 1,
-		JobStatus_Indexing = 2,
-		JobStatus_Running = 3,
-		JobStatus_Running_Pass1 = 4,
-		JobStatus_Running_Pass2 = 5,
-		JobStatus_Completed = 6,
-		JobStatus_Failed = 7,
-		JobStatus_Pausing = 8,
-		JobStatus_Paused = 9,
-		JobStatus_Resuming = 10,
-		JobStatus_Aborting = 11,
-		JobStatus_Aborted = 12,
-		JobStatus_Undefined = 666
-	};
-	
 	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int processPriroity);
 	~EncodeThread(void);
 
@@ -136,7 +120,7 @@ protected:
 	static void setPorcessPriority(void *processId, int priroity);
 
 signals:
-	void statusChanged(const QUuid &jobId, EncodeThread::JobStatus newStatus);
+	void statusChanged(const QUuid &jobId, JobStatus newStatus);
 	void progressChanged(const QUuid &jobId, unsigned int newProgress);
 	void messageLogged(const QUuid &jobId, const QString &text);
 	void detailsChanged(const QUuid &jobId, const QString &details);

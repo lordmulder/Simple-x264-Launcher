@@ -37,7 +37,7 @@ class EncodeThread : public QThread
 	Q_OBJECT
 
 public:
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int processPriroity);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -76,6 +76,7 @@ protected:
 	const bool m_x264_x64;
 	const bool m_x264_10bit;
 	const bool m_avs2yuv_x64;
+	const bool m_skipVersionTest;
 	const int m_processPriority;
 
 	//Flags

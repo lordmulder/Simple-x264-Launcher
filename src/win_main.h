@@ -53,6 +53,7 @@ protected:
 
 private:
 	bool m_firstShow;
+	bool m_skipVersionTest;
 	QLabel *m_label;
 	IPCThread *m_ipcThread;
 

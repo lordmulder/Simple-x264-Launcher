@@ -75,6 +75,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_droppedFiles(NULL),
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
+	m_skipVersionTest(false),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -712,7 +713,7 @@ void MainWindow::init(void)
 			}
 			if(!binaryTypeOkay)
 			{
-				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
+				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
 				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
 				close(); qApp->exit(-1); return;
 			}
@@ -721,7 +722,7 @@ void MainWindow::init(void)
 		else
 		{
 			X264_DELETE(file);
-			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br>%1<br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
+			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
 			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
 			close(); qApp->exit(-1); return;
 		}
@@ -767,6 +768,13 @@ void MainWindow::init(void)
 		if(val != 1) { close(); qApp->exit(-1); return; }
 	}
 
+	//Skip version check (not recommended!)
+	if(qApp->arguments().contains("--skip-x264-version-check", Qt::CaseInsensitive))
+	{
+		qWarning("x264 version check disabled, you have been warned!\n");
+		m_skipVersionTest = true;
+	}
+	
 	//Check for Avisynth support
 	if(!qApp->arguments().contains("--skip-avisynth-check", Qt::CaseInsensitive))
 	{
@@ -1120,6 +1128,7 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		m_cpuFeatures->x64,
 		m_preferences->use10BitEncoding(),
 		m_cpuFeatures->x64 && m_preferences->useAvisyth64Bit(),
+		m_skipVersionTest,
 		m_preferences->processPriority()
 	);
 

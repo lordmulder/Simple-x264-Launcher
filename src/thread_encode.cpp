@@ -104,7 +104,7 @@ static const unsigned int REV_MULT = 10000;
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int processPriroity)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
@@ -114,6 +114,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_x264_x64(x264_x64),
 	m_x264_10bit(x264_10bit),
 	m_avs2yuv_x64(avs2yuv_x64),
+	m_skipVersionTest(skipVersionTest),
 	m_processPriority(processPriroity),
 	m_handle_jobObject(NULL),
 	m_semaphorePaused(0)
@@ -629,6 +630,12 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 
 unsigned int EncodeThread::checkVersionX264(bool use_x64, bool use_10bit, bool &modified)
 {
+	if(m_skipVersionTest)
+	{
+		log("Warning: Skipping x264 version check this time!");
+		return (999 * REV_MULT) + (9999 % REV_MULT);
+	}
+
 	QProcess process;
 	QStringList cmdLine = QStringList() << "--version";
 

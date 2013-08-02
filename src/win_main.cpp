@@ -820,7 +820,7 @@ void MainWindow::init(void)
 			if(okay)
 			{
 				qDebug("VapourSynth support enabled.");
-				m_vapoursynthPath = QFileInfo(vpsExePath->fileName()).canonicalFilePath();
+				m_vapoursynthPath = QFileInfo(vpsExePath->fileName()).canonicalPath();
 				m_toolsList << vpsExePath;
 				m_toolsList << vpsDllPath;
 			}
@@ -1164,6 +1164,7 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		outputFileName,
 		options,
 		QString("%1/toolset").arg(m_appDir),
+		m_vapoursynthPath,
 		m_cpuFeatures->x64,
 		m_preferences->use10BitEncoding(),
 		m_cpuFeatures->x64 && m_preferences->useAvisyth64Bit(),

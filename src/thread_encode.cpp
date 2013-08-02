@@ -99,18 +99,20 @@ while(0)
  * Static vars
  */
 static const unsigned int REV_MULT = 10000;
+static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core()\nv = core.std.BlankClip()\nv.set_output()\n";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
 	m_outputFileName(outputFileName),
 	m_options(new OptionsModel(*options)),
 	m_binDir(binDir),
+	m_vpsDir(vpsDir),
 	m_x264_x64(x264_x64),
 	m_x264_10bit(x264_10bit),
 	m_avs2yuv_x64(avs2yuv_x64),
@@ -140,6 +142,7 @@ EncodeThread::~EncodeThread(void)
 
 void EncodeThread::run(void)
 {
+#if !defined(_DEBUG)
 	__try
 	{
 		checkedRun();
@@ -148,6 +151,9 @@ void EncodeThread::run(void)
 	{
 		qWarning("STRUCTURED EXCEPTION ERROR IN ENCODE THREAD !!!");
 	}
+#else
+	checkedRun();
+#endif
 
 	if(m_handle_jobObject)
 	{
@@ -217,11 +223,13 @@ void EncodeThread::encode(void)
 	log(tr("Profile: %1").arg(m_options->profile()));
 	log(tr("Custom:  %1").arg(m_options->customX264().isEmpty() ? tr("(None)") : m_options->customX264()));
 	
+	log(m_binDir);
+
 	bool ok = false;
 	unsigned int frames = 0;
 
-	//Use Avisynth?
-	const bool usePipe = (QFileInfo(m_sourceFileName).suffix().compare("avs", Qt::CaseInsensitive) == 0);
+	//Seletct type of input
+	const int inputType = getInputType(QFileInfo(m_sourceFileName).suffix());
 	const QString indexFile = QString("%1/%2.ffindex").arg(QDir::tempPath(), m_jobId.toString());
 
 	//Checking x264 version
@@ -233,10 +241,16 @@ void EncodeThread::encode(void)
 	
 	//Checking avs2yuv version
 	unsigned int revision_avs2yuv = UINT_MAX;
-	if(usePipe)
+	switch(inputType)
 	{
+	case INPUT_AVISYN:
 		ok = ((revision_avs2yuv = checkVersionAvs2yuv(m_avs2yuv_x64)) != UINT_MAX);
 		CHECK_STATUS(m_abort, ok);
+		break;
+	case INPUT_VAPOUR:
+		ok = checkVersionVapoursynth(QString("%1/vspipe.exe").arg(m_vpsDir));
+		CHECK_STATUS(m_abort, ok);
+		break;
 	}
 
 	//Print versions
@@ -264,11 +278,20 @@ void EncodeThread::encode(void)
 	}
 
 	//Detect source info
-	if(usePipe)
+	if(inputType != INPUT_NATIVE)
 	{
-		log(tr("\n--- AVS INFO ---\n"));
-		ok = checkProperties(m_avs2yuv_x64, frames);
-		CHECK_STATUS(m_abort, ok);
+		log(tr("\n--- SOURCE INFO ---\n"));
+		switch(inputType)
+		{
+		case INPUT_AVISYN:
+			ok = checkPropertiesAvisynth(m_avs2yuv_x64, frames);
+			CHECK_STATUS(m_abort, ok);
+			break;
+		case INPUT_VAPOUR:
+			ok = checkPropertiesVapoursynth(QString("%1/vspipe.exe").arg(m_vpsDir), frames);
+			CHECK_STATUS(m_abort, ok);
+			break;
+		}
 	}
 
 	//Run encoding passes
@@ -287,17 +310,17 @@ void EncodeThread::encode(void)
 		}
 		
 		log(tr("\n--- PASS 1 ---\n"));
-		ok = runEncodingPass(m_x264_x64, m_x264_10bit, m_avs2yuv_x64, usePipe, frames, indexFile, 1, passLogFile);
+		ok = runEncodingPass(m_x264_x64, m_x264_10bit, m_avs2yuv_x64, inputType, frames, indexFile, 1, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 
 		log(tr("\n--- PASS 2 ---\n"));
-		ok = runEncodingPass(m_x264_x64, m_x264_10bit, m_avs2yuv_x64, usePipe, frames, indexFile, 2, passLogFile);
+		ok = runEncodingPass(m_x264_x64, m_x264_10bit, m_avs2yuv_x64, inputType, frames, indexFile, 2, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 	else
 	{
 		log(tr("\n--- ENCODING ---\n"));
-		ok = runEncodingPass(m_x264_x64, m_x264_10bit, m_avs2yuv_x64, usePipe, frames, indexFile);
+		ok = runEncodingPass(m_x264_x64, m_x264_10bit, m_avs2yuv_x64, inputType, frames, indexFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 
@@ -308,29 +331,44 @@ void EncodeThread::encode(void)
 	setStatus(JobStatus_Completed);
 }
 
-bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool usePipe, unsigned int frames, const QString &indexFile, int pass, const QString &passLogFile)
+bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int inputType, unsigned int frames, const QString &indexFile, int pass, const QString &passLogFile)
 {
-	QProcess processEncode, processAvisynth;
+	QProcess processEncode, processInput;
 	
-	if(usePipe)
+	if(inputType != INPUT_NATIVE)
 	{
-		QStringList cmdLine_Avisynth;
-		if(!m_options->customAvs2YUV().isEmpty())
+		QStringList cmdLine_Input;
+		processInput.setStandardOutputProcess(&processEncode);
+		switch(inputType)
 		{
-			cmdLine_Avisynth.append(splitParams(m_options->customAvs2YUV()));
-		}
-		cmdLine_Avisynth << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
-		cmdLine_Avisynth << "-";
-		processAvisynth.setStandardOutputProcess(&processEncode);
-
-		log("Creating Avisynth process:");
-		if(!startProcess(processAvisynth, AVS2_BINARY(m_binDir, avs2yuv_x64), cmdLine_Avisynth, false))
-		{
-			return false;
+		case INPUT_AVISYN:
+			if(!m_options->customAvs2YUV().isEmpty())
+			{
+				cmdLine_Input.append(splitParams(m_options->customAvs2YUV()));
+			}
+			cmdLine_Input << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << "-";
+			log("Creating Avisynth process:");
+			if(!startProcess(processInput, AVS2_BINARY(m_binDir, avs2yuv_x64), cmdLine_Input, false))
+			{
+				return false;
+			}
+			break;
+		case INPUT_VAPOUR:
+			cmdLine_Input << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << "-" << "-y4m";
+			log("Creating Vapoursynth process:");
+			if(!startProcess(processInput, QString("%1/vspipe.exe").arg(m_vpsDir), cmdLine_Input, false))
+			{
+				return false;
+			}
+			break;
+		default:
+			throw "Bad input type encontered!";
 		}
 	}
 
-	QStringList cmdLine_Encode = buildCommandLine(usePipe, x264_10bit, frames, indexFile, pass, passLogFile);
+	QStringList cmdLine_Encode = buildCommandLine((inputType != INPUT_NATIVE), x264_10bit, frames, indexFile, pass, passLogFile);
 
 	log("Creating x264 process:");
 	if(!startProcess(processEncode, X264_BINARY(m_binDir, x264_10bit, x264_x64), cmdLine_Encode))
@@ -362,7 +400,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			if(m_abort)
 			{
 				processEncode.kill();
-				processAvisynth.kill();
+				processInput.kill();
 				bAborted = true;
 				break;
 			}
@@ -372,7 +410,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 				setStatus(JobStatus_Paused);
 				log(tr("Job paused by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 				bool ok[2] = {false, false};
-				Q_PID pid[2] = {processEncode.pid(), processAvisynth.pid()};
+				Q_PID pid[2] = {processEncode.pid(), processInput.pid()};
 				if(pid[0]) { ok[0] = (SuspendThread(pid[0]->hThread) != (DWORD)(-1)); }
 				if(pid[1]) { ok[1] = (SuspendThread(pid[1]->hThread) != (DWORD)(-1)); }
 				while(m_pause) m_semaphorePaused.tryAcquire(1, 5000);
@@ -475,27 +513,35 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 		processEncode.waitForFinished(-1);
 	}
 	
-	processAvisynth.waitForFinished(5000);
-	if(processAvisynth.state() != QProcess::NotRunning)
+	processInput.waitForFinished(5000);
+	if(processInput.state() != QProcess::NotRunning)
 	{
-		qWarning("Avisynth process still running, going to kill it!");
-		processAvisynth.kill();
-		processAvisynth.waitForFinished(-1);
+		qWarning("Input process still running, going to kill it!");
+		processInput.kill();
+		processInput.waitForFinished(-1);
 	}
 
 	if(!(bTimeout || bAborted))
 	{
-		while(processAvisynth.bytesAvailable() > 0)
+		while(processInput.bytesAvailable() > 0)
 		{
-			log(tr("av2y [info]: %1").arg(QString::fromUtf8(processAvisynth.readLine()).simplified()));
+			switch(inputType)
+			{
+			case INPUT_AVISYN:
+				log(tr("av2y [info]: %1").arg(QString::fromUtf8(processInput.readLine()).simplified()));
+				break;
+			case INPUT_VAPOUR:
+				log(tr("vpyp [info]: %1").arg(QString::fromUtf8(processInput.readLine()).simplified()));
+				break;
+			}
 		}
 	}
 
-	if(usePipe && (processAvisynth.exitCode() != EXIT_SUCCESS))
+	if((inputType != INPUT_NATIVE) && (processInput.exitCode() != EXIT_SUCCESS))
 	{
 		if(!(bTimeout || bAborted))
 		{
-			log(tr("\nWARNING: Avisynth process exited with error code: %1").arg(QString::number(processAvisynth.exitCode())));
+			log(tr("\nWARNING: Input process exited with error code: %1").arg(QString::number(processInput.exitCode())));
 		}
 	}
 
@@ -506,7 +552,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(processEncode.exitCode())));
 		}
 		processEncode.close();
-		processAvisynth.close();
+		processInput.close();
 		return false;
 	}
 
@@ -534,7 +580,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 
 	setProgress(100);
 	processEncode.close();
-	processAvisynth.close();
+	processInput.close();
 	return true;
 }
 
@@ -831,7 +877,86 @@ unsigned int EncodeThread::checkVersionAvs2yuv(bool x64)
 	return (ver_maj * REV_MULT) + ((ver_min % REV_MULT) * 10) + (ver_mod % 10);
 }
 
-bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
+bool EncodeThread::checkVersionVapoursynth(const QString &vspipePath)
+{
+	QProcess process;
+
+	log("\nCreating process:");
+	if(!startProcess(process, vspipePath, QStringList()))
+	{
+		return false;;
+	}
+
+	QRegExp regExpSignature("\\bVSPipe\\s+usage\\b", Qt::CaseInsensitive);
+	
+	bool bTimeout = false;
+	bool bAborted = false;
+
+	bool vspipeSignature = false;
+
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(m_abort)
+		{
+			process.kill();
+			bAborted = true;
+			break;
+		}
+		if(!process.waitForReadyRead())
+		{
+			if(process.state() == QProcess::Running)
+			{
+				process.kill();
+				qWarning("VSPipe process timed out <-- killing!");
+				log("\nPROCESS TIMEOUT !!!");
+				bTimeout = true;
+				break;
+			}
+		}
+		while(process.bytesAvailable() > 0)
+		{
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
+			{
+				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				if(regExpSignature.lastIndexIn(text) >= 0)
+				{
+					vspipeSignature = true;
+				}
+				if(!text.isEmpty())
+				{
+					log(text);
+				}
+			}
+		}
+	}
+
+	process.waitForFinished();
+	if(process.state() != QProcess::NotRunning)
+	{
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	if(bTimeout || bAborted || ((process.exitCode() != EXIT_SUCCESS) && (process.exitCode() != 1)))
+	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
+		return false;
+	}
+
+	if(!vspipeSignature)
+	{
+		log(tr("\nFAILED TO DETECT VSPIPE SIGNATURE !!!"));
+		return false;
+	}
+	
+	return vspipeSignature;
+}
+
+bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 {
 	QProcess process;
 	QStringList cmdLine;
@@ -985,6 +1110,137 @@ bool EncodeThread::checkProperties(bool x64, unsigned int &frames)
 	if((fpsNom > 0) && (fpsDen == 0))
 	{
 		log(tr("Frame Rate: %1").arg(QString::number(fpsNom)));
+	}
+	if(frames > 0)
+	{
+		log(tr("No. Frames: %1").arg(QString::number(frames)));
+	}
+
+	return true;
+}
+
+bool EncodeThread::checkPropertiesVapoursynth(const QString &vspipePath, unsigned int &frames)
+{
+	QProcess process;
+	QStringList cmdLine;
+
+	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+	cmdLine << "-" << "-info";
+
+	log("Creating process:");
+	if(!startProcess(process, vspipePath, cmdLine))
+	{
+		return false;;
+	}
+
+	QRegExp regExpFrm("\\bFrames:\\s+(\\d+)\\b");
+	QRegExp regExpSzW("\\bWidth:\\s+(\\d+)\\b");
+	QRegExp regExpSzH("\\bHeight:\\s+(\\d+)\\b");
+	
+	QTextCodec *localCodec = QTextCodec::codecForName("System");
+
+	bool bTimeout = false;
+	bool bAborted = false;
+
+	frames = 0;
+	
+	unsigned int fSizeW = 0;
+	unsigned int fSizeH = 0;
+	
+	unsigned int waitCounter = 0;
+
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(m_abort)
+		{
+			process.kill();
+			bAborted = true;
+			break;
+		}
+		if(!process.waitForReadyRead(m_processTimeoutInterval))
+		{
+			if(process.state() == QProcess::Running)
+			{
+				if(waitCounter++ > m_processTimeoutMaxCounter)
+				{
+					process.kill();
+					qWarning("VSPipe process timed out <-- killing!");
+					log("\nPROCESS TIMEOUT !!!");
+					log("\nVapoursynth has encountered a deadlock or your script takes EXTREMELY long to initialize!");
+					bTimeout = true;
+					break;
+				}
+				else if(waitCounter == m_processTimeoutWarning)
+				{
+					unsigned int timeOut = (waitCounter * m_processTimeoutInterval) / 1000U;
+					log(tr("Warning: nVapoursynth did not respond for %1 seconds, potential deadlock...").arg(QString::number(timeOut)));
+				}
+			}
+			continue;
+		}
+		
+		waitCounter = 0;
+		
+		while(process.bytesAvailable() > 0)
+		{
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
+			{
+				QString text = localCodec->toUnicode(lines.takeFirst().constData()).simplified();
+				int offset = -1;
+				if((offset = regExpFrm.lastIndexIn(text)) >= 0)
+				{
+					bool ok = false;
+					unsigned int temp = regExpFrm.cap(1).toUInt(&ok);
+					if(ok) frames = temp;
+				}
+				if((offset = regExpSzW.lastIndexIn(text)) >= 0)
+				{
+					bool ok = false;
+					unsigned int temp = regExpSzW.cap(1).toUInt(&ok);
+					if(ok) fSizeW = temp;
+				}
+				if((offset = regExpSzH.lastIndexIn(text)) >= 0)
+				{
+					bool ok = false;
+					unsigned int temp = regExpSzH.cap(1).toUInt(&ok);
+					if(ok) fSizeH = temp;
+				}
+				if(!text.isEmpty())
+				{
+					log(text);
+				}
+			}
+		}
+	}
+
+	process.waitForFinished();
+	if(process.state() != QProcess::NotRunning)
+	{
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
+	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
+		return false;
+	}
+
+	if(frames == 0)
+	{
+		log(tr("\nFAILED TO DETERMINE VPY PROPERTIES !!!"));
+		return false;
+	}
+	
+	log("");
+
+	if((fSizeW > 0) && (fSizeH > 0))
+	{
+		log(tr("Resolution: %1x%2").arg(QString::number(fSizeW), QString::number(fSizeH)));
 	}
 	if(frames > 0)
 	{
@@ -1218,6 +1474,16 @@ QString EncodeThread::sizeToString(qint64 size)
 	}
 
 	return tr("N/A");
+}
+
+int EncodeThread::getInputType(const QString &fileExt)
+{
+	int type = INPUT_NATIVE;
+	if(fileExt.compare("avs", Qt::CaseInsensitive) == 0)       type = INPUT_AVISYN;
+	else if(fileExt.compare("avsi", Qt::CaseInsensitive) == 0) type = INPUT_AVISYN;
+	else if(fileExt.compare("vpy", Qt::CaseInsensitive) == 0)  type = INPUT_VAPOUR;
+	else if(fileExt.compare("py", Qt::CaseInsensitive) == 0)   type = INPUT_VAPOUR;
+	return type;
 }
 
 void EncodeThread::setPorcessPriority(void *processId, int priroity)

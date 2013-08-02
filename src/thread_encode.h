@@ -37,7 +37,7 @@ class EncodeThread : public QThread
 	Q_OBJECT
 
 public:
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -73,11 +73,20 @@ protected:
 	const QString m_outputFileName;
 	const OptionsModel *m_options;
 	const QString m_binDir;
+	const QString m_vpsDir;
 	const bool m_x264_x64;
 	const bool m_x264_10bit;
 	const bool m_avs2yuv_x64;
 	const bool m_skipVersionTest;
 	const int m_processPriority;
+
+	//Types
+	enum inputType_t
+	{
+		INPUT_NATIVE = 0,
+		INPUT_AVISYN = 1,
+		INPUT_VAPOUR = 2
+	};
 
 	//Flags
 	volatile bool m_abort;
@@ -99,11 +108,13 @@ protected:
 	
 	//Encode functions
 	void encode(void);
-	bool runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool usePipe, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
+	bool runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int inputType, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
 	QStringList buildCommandLine(bool usePipe, bool use10Bit, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
 	unsigned int checkVersionX264(bool use_x64, bool use_10bit, bool &modified);
 	unsigned int checkVersionAvs2yuv(bool x64);
-	bool checkProperties(bool x64, unsigned int &frames);
+	bool checkVersionVapoursynth(const QString &vspipePath);
+	bool checkPropertiesAvisynth(bool x64, unsigned int &frames);
+	bool checkPropertiesVapoursynth(const QString &vspipePath, unsigned int &frames);
 
 	//Auxiallary Stuff
 	void log(const QString &text) { emit messageLogged(m_jobId, text); }
@@ -119,6 +130,7 @@ protected:
 	static QString commandline2string(const QString &program, const QStringList &arguments);
 	static QString sizeToString(qint64 size);
 	static void setPorcessPriority(void *processId, int priroity);
+	static int getInputType(const QString &fileExt);
 
 signals:
 	void statusChanged(const QUuid &jobId, JobStatus newStatus);

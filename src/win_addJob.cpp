@@ -958,6 +958,7 @@ QString AddJobDialog::getInputFilterLst(void)
 	s_filters[] =
 	{
 		{"Avisynth Scripts", "avs"},
+		{"VapourSynth Scripts", "vpy"},
 		{"Matroska Files", "mkv"},
 		{"MPEG-4 Part 14 Container", "mp4"},
 		{"Audio Video Interleaved", "avi"},

@@ -797,6 +797,45 @@ void MainWindow::init(void)
 		qDebug("");
 	}
 
+	//Check for Vapoursynth support
+	if(!qApp->arguments().contains("--skip-vapoursynth-check", Qt::CaseInsensitive))
+	{
+		qDebug("[Check for VapourSynth support]");
+		const QString vapursynthPath = getVapoursynthLocation();
+		if(!vapursynthPath.isEmpty())
+		{
+			bool okay = false;
+			QFile *vpsExePath = new QFile(QString("%1/core/vspipe.exe").arg(vapursynthPath));
+			QFile *vpsDllPath = new QFile(QString("%1/core/vapoursynth.dll").arg(vapursynthPath));
+			qDebug("VapourSynth EXE: %s", vpsExePath->fileName().toUtf8().constData());
+			qDebug("VapourSynth DLL: %s", vpsDllPath->fileName().toUtf8().constData());
+			if(vpsExePath->open(QIODevice::ReadOnly) && vpsDllPath->open(QIODevice::ReadOnly))
+			{
+				DWORD binaryType;
+				if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(vpsExePath->fileName())), &binaryType))
+				{
+					okay = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
+				}
+			}
+			if(okay)
+			{
+				qDebug("VapourSynth support enabled.");
+				m_vapoursynthPath = QFileInfo(vpsExePath->fileName()).canonicalFilePath();
+				m_toolsList << vpsExePath;
+				m_toolsList << vpsDllPath;
+			}
+			else
+			{
+				qDebug("VapourSynth binaries not found -> disable Vapousynth support!");
+				X264_DELETE(vpsExePath);
+				X264_DELETE(vpsDllPath);
+				int val = QMessageBox::warning(this, tr("VapourSynth Missing"), tr("<nobr>It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!<br><br>Please download and install VapourSynth (r19 or later) here:<br><a href=\"http://www.vapoursynth.com/\">http://www.vapoursynth.com/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+				if(val != 1) { close(); qApp->exit(-1); return; }
+			}
+		}
+		qDebug("");
+	}
+
 	//Check for expiration
 	if(x264_version_date().addMonths(6) < QDate::currentDate())
 	{
@@ -1257,4 +1296,35 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 	}
 
 	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
+}
+
+/*
+ * Read Vapursynth location from registry
+ */
+QString MainWindow::getVapoursynthLocation(void)
+{
+	QString vapoursynthPath;
+	static const wchar_t *VPS_REG_KEY = L"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
+	HKEY hKey = NULL;
+	if(RegOpenKey(HKEY_LOCAL_MACHINE, VPS_REG_KEY, &hKey) == ERROR_SUCCESS)
+	{
+		const size_t DATA_LEN = 2048;
+		wchar_t data[DATA_LEN];
+		DWORD type = REG_NONE, size = sizeof(wchar_t) * DATA_LEN;
+		if(RegQueryValueEx(hKey, L"InstallLocation", NULL, &type, ((BYTE*)&data[0]), &size) == ERROR_SUCCESS)
+		{
+			if((type == REG_SZ) || (type == REG_EXPAND_SZ))
+			{
+				vapoursynthPath = QDir::fromNativeSeparators(QString::fromUtf16((const ushort*)&data[0]));
+				while(vapoursynthPath.endsWith("/")) { vapoursynthPath.chop(1); }
+				qDebug("Vapoursynth location: %s", vapoursynthPath.toUtf8().constData());
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	else
+	{
+		qDebug("Vapoursynth registry key not found -> not installed!");
+	}
+	return vapoursynthPath;
 }

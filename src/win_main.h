@@ -64,6 +64,7 @@ private:
 	
 	PreferencesModel *m_preferences;
 	RecentlyUsed *m_recentlyUsed;
+	QString m_vapoursynthPath;
 
 	const x264_cpu_t *const m_cpuFeatures;
 	const QString m_appDir;
@@ -76,6 +77,8 @@ private:
 	void updateTaskbar(JobStatus status, const QIcon &icon);
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
+
+	static QString getVapoursynthLocation(void);
 
 private slots:
 	void addButtonPressed();

@@ -54,6 +54,8 @@ protected:
 private:
 	bool m_firstShow;
 	bool m_skipVersionTest;
+	bool m_abortOnTimeout;
+
 	QLabel *m_label;
 	IPCThread *m_ipcThread;
 
@@ -64,6 +66,7 @@ private:
 	
 	PreferencesModel *m_preferences;
 	RecentlyUsed *m_recentlyUsed;
+
 	QString m_vapoursynthPath;
 
 	const x264_cpu_t *const m_cpuFeatures;
@@ -79,6 +82,7 @@ private:
 	unsigned int countRunningJobs(void);
 
 	static QString getVapoursynthLocation(void);
+	static bool checkVapourSynth(QFile *vpsExePath, QFile *vpsDllPath);
 
 private slots:
 	void addButtonPressed();

@@ -92,8 +92,9 @@ while(0)
 } \
 while(0)
 
-#define AVS2_BINARY(BIN_DIR, IS_X64) QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"))
-#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit"))
+#define AVS2_BINARY(BIN_DIR, IS_X64) (QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86")))
+#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) (QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit")))
+#define VPSP_BINARY(VPS_DIR) (QString("%1/vspipe.exe").arg((VPS_DIR)))
 
 /*
  * Static vars
@@ -105,7 +106,7 @@ static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, const bool &x264_x64, const bool &x264_10bit, const bool &avs2yuv_x64, const bool &skipVersionTest, const int &processPriroity, const bool &abortOnTimeout)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
@@ -118,6 +119,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_avs2yuv_x64(avs2yuv_x64),
 	m_skipVersionTest(skipVersionTest),
 	m_processPriority(processPriroity),
+	m_abortOnTimeout(abortOnTimeout),
 	m_handle_jobObject(NULL),
 	m_semaphorePaused(0)
 {
@@ -248,7 +250,7 @@ void EncodeThread::encode(void)
 		CHECK_STATUS(m_abort, ok);
 		break;
 	case INPUT_VAPOUR:
-		ok = checkVersionVapoursynth(QString("%1/vspipe.exe").arg(m_vpsDir));
+		ok = checkVersionVapoursynth();
 		CHECK_STATUS(m_abort, ok);
 		break;
 	}
@@ -288,7 +290,7 @@ void EncodeThread::encode(void)
 			CHECK_STATUS(m_abort, ok);
 			break;
 		case INPUT_VAPOUR:
-			ok = checkPropertiesVapoursynth(QString("%1/vspipe.exe").arg(m_vpsDir), frames);
+			ok = checkPropertiesVapoursynth(frames);
 			CHECK_STATUS(m_abort, ok);
 			break;
 		}
@@ -358,7 +360,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			cmdLine_Input << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
 			cmdLine_Input << "-" << "-y4m";
 			log("Creating Vapoursynth process:");
-			if(!startProcess(processInput, QString("%1/vspipe.exe").arg(m_vpsDir), cmdLine_Input, false))
+			if(!startProcess(processInput, VPSP_BINARY(m_vpsDir), cmdLine_Input, false))
 			{
 				return false;
 			}
@@ -426,13 +428,16 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			{
 				if(processEncode.state() == QProcess::Running)
 				{
-					if(waitCounter++ > m_processTimeoutMaxCounter)
+					if(++waitCounter > m_processTimeoutMaxCounter)
 					{
-						processEncode.kill();
-						qWarning("x264 process timed out <-- killing!");
-						log("\nPROCESS TIMEOUT !!!");
-						bTimeout = true;
-						break;
+						if(m_abortOnTimeout)
+						{
+							processEncode.kill();
+							qWarning("x264 process timed out <-- killing!");
+							log("\nPROCESS TIMEOUT !!!");
+							bTimeout = true;
+							break;
+						}
 					}
 					else if(waitCounter == m_processTimeoutWarning)
 					{
@@ -877,12 +882,19 @@ unsigned int EncodeThread::checkVersionAvs2yuv(bool x64)
 	return (ver_maj * REV_MULT) + ((ver_min % REV_MULT) * 10) + (ver_mod % 10);
 }
 
-bool EncodeThread::checkVersionVapoursynth(const QString &vspipePath)
+bool EncodeThread::checkVersionVapoursynth(/*const QString &vspipePath*/)
 {
+	//Is VapourSynth available at all?
+	if(m_vpsDir.isEmpty() || (!QFileInfo(VPSP_BINARY(m_vpsDir)).isFile()))
+	{
+		log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
+		return false;
+	}
+
 	QProcess process;
 
 	log("\nCreating process:");
-	if(!startProcess(process, vspipePath, QStringList()))
+	if(!startProcess(process, VPSP_BINARY(m_vpsDir), QStringList()))
 	{
 		return false;;
 	}
@@ -1004,14 +1016,17 @@ bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 		{
 			if(process.state() == QProcess::Running)
 			{
-				if(waitCounter++ > m_processTimeoutMaxCounter)
+				if(++waitCounter > m_processTimeoutMaxCounter)
 				{
-					process.kill();
-					qWarning("Avs2YUV process timed out <-- killing!");
-					log("\nPROCESS TIMEOUT !!!");
-					log("\nAvisynth has encountered a deadlock or your script takes EXTREMELY long to initialize!");
-					bTimeout = true;
-					break;
+					if(m_abortOnTimeout)
+					{
+						process.kill();
+						qWarning("Avs2YUV process timed out <-- killing!");
+						log("\nPROCESS TIMEOUT !!!");
+						log("\nAvisynth has encountered a deadlock or your script takes EXTREMELY long to initialize!");
+						bTimeout = true;
+						break;
+					}
 				}
 				else if(waitCounter == m_processTimeoutWarning)
 				{
@@ -1119,7 +1134,7 @@ bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 	return true;
 }
 
-bool EncodeThread::checkPropertiesVapoursynth(const QString &vspipePath, unsigned int &frames)
+bool EncodeThread::checkPropertiesVapoursynth(/*const QString &vspipePath,*/ unsigned int &frames)
 {
 	QProcess process;
 	QStringList cmdLine;
@@ -1128,7 +1143,7 @@ bool EncodeThread::checkPropertiesVapoursynth(const QString &vspipePath, unsigne
 	cmdLine << "-" << "-info";
 
 	log("Creating process:");
-	if(!startProcess(process, vspipePath, cmdLine))
+	if(!startProcess(process, VPSP_BINARY(m_vpsDir), cmdLine))
 	{
 		return false;;
 	}
@@ -1161,14 +1176,17 @@ bool EncodeThread::checkPropertiesVapoursynth(const QString &vspipePath, unsigne
 		{
 			if(process.state() == QProcess::Running)
 			{
-				if(waitCounter++ > m_processTimeoutMaxCounter)
+				if(++waitCounter > m_processTimeoutMaxCounter)
 				{
-					process.kill();
-					qWarning("VSPipe process timed out <-- killing!");
-					log("\nPROCESS TIMEOUT !!!");
-					log("\nVapoursynth has encountered a deadlock or your script takes EXTREMELY long to initialize!");
-					bTimeout = true;
-					break;
+					if(m_abortOnTimeout)
+					{
+						process.kill();
+						qWarning("VSPipe process timed out <-- killing!");
+						log("\nPROCESS TIMEOUT !!!");
+						log("\nVapoursynth has encountered a deadlock or your script takes EXTREMELY long to initialize!");
+						bTimeout = true;
+						break;
+					}
 				}
 				else if(waitCounter == m_processTimeoutWarning)
 				{

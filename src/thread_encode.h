@@ -37,7 +37,7 @@ class EncodeThread : public QThread
 	Q_OBJECT
 
 public:
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, bool x264_x64, bool x264_10bit, bool avs2yuv_x64, bool const skipVersionTest, int processPriroity);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, const bool &x264_x64, const bool &x264_10bit, const bool &avs2yuv_x64, const bool &skipVersionTest, const int &processPriroity, const bool &abortOnTimeout);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -79,6 +79,7 @@ protected:
 	const bool m_avs2yuv_x64;
 	const bool m_skipVersionTest;
 	const int m_processPriority;
+	const bool m_abortOnTimeout;
 
 	//Types
 	enum inputType_t
@@ -112,9 +113,9 @@ protected:
 	QStringList buildCommandLine(bool usePipe, bool use10Bit, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
 	unsigned int checkVersionX264(bool use_x64, bool use_10bit, bool &modified);
 	unsigned int checkVersionAvs2yuv(bool x64);
-	bool checkVersionVapoursynth(const QString &vspipePath);
+	bool checkVersionVapoursynth(void);
 	bool checkPropertiesAvisynth(bool x64, unsigned int &frames);
-	bool checkPropertiesVapoursynth(const QString &vspipePath, unsigned int &frames);
+	bool checkPropertiesVapoursynth(unsigned int &frames);
 
 	//Auxiallary Stuff
 	void log(const QString &text) { emit messageLogged(m_jobId, text); }

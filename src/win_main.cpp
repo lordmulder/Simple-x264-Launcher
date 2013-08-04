@@ -76,6 +76,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
 	m_skipVersionTest(false),
+	m_abortOnTimeout(true),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -775,6 +776,13 @@ void MainWindow::init(void)
 		m_skipVersionTest = true;
 	}
 	
+	//Don't abort encoding process on timeout (not recommended!)
+	if(qApp->arguments().contains("--no-deadlock-detection", Qt::CaseInsensitive))
+	{
+		qWarning("Deadlock detection disabled, you have been warned!\n");
+		m_abortOnTimeout = false;
+	}
+
 	//Check for Avisynth support
 	if(!qApp->arguments().contains("--skip-avisynth-check", Qt::CaseInsensitive))
 	{
@@ -804,20 +812,11 @@ void MainWindow::init(void)
 		const QString vapursynthPath = getVapoursynthLocation();
 		if(!vapursynthPath.isEmpty())
 		{
-			bool okay = false;
 			QFile *vpsExePath = new QFile(QString("%1/core/vspipe.exe").arg(vapursynthPath));
 			QFile *vpsDllPath = new QFile(QString("%1/core/vapoursynth.dll").arg(vapursynthPath));
 			qDebug("VapourSynth EXE: %s", vpsExePath->fileName().toUtf8().constData());
 			qDebug("VapourSynth DLL: %s", vpsDllPath->fileName().toUtf8().constData());
-			if(vpsExePath->open(QIODevice::ReadOnly) && vpsDllPath->open(QIODevice::ReadOnly))
-			{
-				DWORD binaryType;
-				if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(vpsExePath->fileName())), &binaryType))
-				{
-					okay = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
-				}
-			}
-			if(okay)
+			if(checkVapourSynth(vpsExePath, vpsDllPath))
 			{
 				qDebug("VapourSynth support enabled.");
 				m_vapoursynthPath = QFileInfo(vpsExePath->fileName()).canonicalPath();
@@ -826,7 +825,7 @@ void MainWindow::init(void)
 			}
 			else
 			{
-				qDebug("VapourSynth binaries not found -> disable Vapousynth support!");
+				qDebug("VapourSynth not avilable -> disable Vapousynth support!");
 				X264_DELETE(vpsExePath);
 				X264_DELETE(vpsDllPath);
 				int val = QMessageBox::warning(this, tr("VapourSynth Missing"), tr("<nobr>It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!<br><br>Please download and install VapourSynth (r19 or later) here:<br><a href=\"http://www.vapoursynth.com/\">http://www.vapoursynth.com/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
@@ -1169,7 +1168,8 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		m_preferences->use10BitEncoding(),
 		m_cpuFeatures->x64 && m_preferences->useAvisyth64Bit(),
 		m_skipVersionTest,
-		m_preferences->processPriority()
+		m_preferences->processPriority(),
+		m_abortOnTimeout
 	);
 
 	QModelIndex newIndex = m_jobList->insertJob(thrd);
@@ -1307,6 +1307,7 @@ QString MainWindow::getVapoursynthLocation(void)
 	QString vapoursynthPath;
 	static const wchar_t *VPS_REG_KEY = L"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
 	HKEY hKey = NULL;
+
 	if(RegOpenKey(HKEY_LOCAL_MACHINE, VPS_REG_KEY, &hKey) == ERROR_SUCCESS)
 	{
 		const size_t DATA_LEN = 2048;
@@ -1325,7 +1326,46 @@ QString MainWindow::getVapoursynthLocation(void)
 	}
 	else
 	{
-		qDebug("Vapoursynth registry key not found -> not installed!");
+		qWarning("Vapoursynth registry key not found -> not installed!");
 	}
+
 	return vapoursynthPath;
+}
+
+bool MainWindow::checkVapourSynth(QFile *vpsExePath, QFile *vpsDllPath)
+{
+	bool okay = false;
+	static const char *VSSCRIPT_ENTRY = "_vsscript_init@0";
+
+	if(vpsExePath->open(QIODevice::ReadOnly) && vpsDllPath->open(QIODevice::ReadOnly))
+	{
+		DWORD binaryType;
+		if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(vpsExePath->fileName())), &binaryType))
+		{
+			okay = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
+		}
+	}
+
+	if(okay)
+	{
+		qDebug("VapourSynth binaries found -> load VSSCRIPT.DLL");
+		QLibrary vspLibrary("vsscript.dll");
+		if(okay = vspLibrary.load())
+		{
+			if(!(okay = (vspLibrary.resolve(VSSCRIPT_ENTRY) != NULL)))
+			{
+				qWarning("Entrypoint '%s' not found in VSSCRIPT.DLL !!!", VSSCRIPT_ENTRY);
+			}
+		}
+		else
+		{
+			qWarning("Failed to load VSSCRIPT.DLL !!!");
+		}
+	}
+	else
+	{
+		qWarning("VapourSynth binaries could not be found !!!");
+	}
+
+	return okay;
 }

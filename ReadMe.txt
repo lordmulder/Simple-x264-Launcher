@@ -213,12 +213,14 @@ in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 
 The following command-line switches are available:
 
---add <file> [<file>] ... Create new job(s) from files(s)
---console ............... Show the "debug" console
---no-console ............ Don't show the "debug" console
---no-style .............. Don't use the Qt "Plastique" style
---skip-avisynth-check ... Skip Avisynth check (not recommended!)
---force-cpu-no-64bit .... Forcefully disable 64-Bit support
+--add <file> [<file>] ..... Create new job(s) from files(s)
+--console ................. Show the "debug" console
+--no-console .............. Don't show the "debug" console
+--no-style ................ Don't use the Qt "Plastique" style
+--skip-avisynth-check ..... Skip Avisynth check, disable .AVS input
+--skip-vapoursynth-check .. Skip VapourSynth check, disables .VPY input
+--force-cpu-no-64bit ...... Forcefully disable 64-Bit support
+--no-deadlock-detection ... Don't abort processes on timeout/deadlock
 
 These are parameters you can pass to Simple x264 Launcher, they can NOT
 be passed to x264 itself as "custom" parameters!

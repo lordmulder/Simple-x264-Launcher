@@ -339,21 +339,33 @@
       <iconset resource="../res/resources.qrc">
        <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
      </property>
-     <addaction name="actionWebJarod"/>
+     <addaction name="actionWebVideoLAN"/>
      <addaction name="actionWebKomisar"/>
      <addaction name="actionWebJEEB"/>
+    </widget>
+    <widget class="QMenu" name="menuDownloadAvisynth">
+     <property name="title">
+      <string>Download Avisynth</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../res/resources.qrc">
+       <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
+     </property>
+     <addaction name="actionWebAvisynth32"/>
+     <addaction name="actionWebAvisynth64"/>
     </widget>
     <addaction name="actionWebMulder"/>
     <addaction name="actionWebX264"/>
     <addaction name="actionWebSupport"/>
     <addaction name="separator"/>
     <addaction name="menuDownloadX264"/>
-    <addaction name="actionWebAvisynth32"/>
-    <addaction name="actionWebAvisynth64"/>
+    <addaction name="menuDownloadAvisynth"/>
+    <addaction name="actionWebVapourSynth"/>
     <addaction name="separator"/>
     <addaction name="actionWebWiki"/>
     <addaction name="actionWebBluRay"/>
     <addaction name="actionWebAvsWiki"/>
+    <addaction name="actionWebVapourSynthDocs"/>
     <addaction name="actionWebSecret"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
@@ -421,13 +433,13 @@
     <string>Komisar's Web-Site</string>
    </property>
   </action>
-  <action name="actionWebJarod">
+  <action name="actionWebVideoLAN">
    <property name="icon">
     <iconset resource="../res/resources.qrc">
      <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
    </property>
    <property name="text">
-    <string>Jarod's Web-Site</string>
+    <string>VideoLAN Builds</string>
    </property>
   </action>
   <action name="actionWebWiki">
@@ -532,19 +544,19 @@
   <action name="actionWebAvisynth32">
    <property name="icon">
     <iconset resource="../res/resources.qrc">
-     <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
    </property>
    <property name="text">
-    <string>Download Avisynth (32-Bit)</string>
+    <string>32-Bit Avisynth (Stable)</string>
    </property>
   </action>
   <action name="actionWebAvisynth64">
    <property name="icon">
     <iconset resource="../res/resources.qrc">
-     <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
    </property>
    <property name="text">
-    <string>Download Avisynth (64-Bit)</string>
+    <string>64-Bit Avisynth (Experimental)</string>
    </property>
   </action>
   <action name="actionWebJEEB">
@@ -562,7 +574,7 @@
      <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
    </property>
    <property name="text">
-    <string>Secret Recipe  - Shush!</string>
+    <string>Secret Recipe - Shush!</string>
    </property>
   </action>
   <action name="actionWebAvsWiki">
@@ -602,6 +614,34 @@
    </property>
    <property name="text">
     <string>Open...</string>
+   </property>
+  </action>
+  <action name="actionDownload_Avisynth">
+   <property name="text">
+    <string>Download Avisynth</string>
+   </property>
+  </action>
+  <action name="actionUtz">
+   <property name="text">
+    <string>utz</string>
+   </property>
+  </action>
+  <action name="actionWebVapourSynth">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
+   </property>
+   <property name="text">
+    <string>Download VapourSynth</string>
+   </property>
+  </action>
+  <action name="actionWebVapourSynthDocs">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
+   </property>
+   <property name="text">
+    <string>VapourSynth Manual</string>
    </property>
   </action>
  </widget>

@@ -161,10 +161,12 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	connect(actionWebMulder, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebJarod, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebVideoLAN, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebJEEB, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebAvisynth32, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebVapourSynth, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(actionWebVapourSynthDocs, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(actionWebAvsWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
@@ -493,7 +495,7 @@ void MainWindow::showAbout(void)
 				text2 += tr("Copyright (c) 2000 Ben Rudiak-Gould and all subsequent developers.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
 				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://avisynth.org/");
-				text2 += tr("Read the <a href=\"%1\">guide</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://avisynth.org/mediawiki/First_script", "http://forum.doom9.org/forumdisplay.php?f=33");
+				text2 += tr("Read the <a href=\"%1\">guide</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://avisynth.nl/index.php/First_script", "http://forum.doom9.org/forumdisplay.php?f=33");
 
 				QMessageBox x264Box(this);
 				x264Box.setIconPixmap(QIcon(":/images/avisynth.png").pixmap(48,67));
@@ -536,18 +538,20 @@ void MainWindow::showAbout(void)
  */
 void MainWindow::showWebLink(void)
 {
-	if(QObject::sender() == actionWebMulder)     QDesktopServices::openUrl(QUrl(home_url));
-	if(QObject::sender() == actionWebX264)       QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
-	if(QObject::sender() == actionWebKomisar)    QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
-	if(QObject::sender() == actionWebJarod)      QDesktopServices::openUrl(QUrl("http://www.x264.nl/"));
-	if(QObject::sender() == actionWebJEEB)       QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
-	if(QObject::sender() == actionWebAvisynth32) QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
-	if(QObject::sender() == actionWebAvisynth64) QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
-	if(QObject::sender() == actionWebWiki)       QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
-	if(QObject::sender() == actionWebBluRay)     QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
-	if(QObject::sender() == actionWebAvsWiki)    QDesktopServices::openUrl(QUrl("http://avisynth.org/mediawiki/Main_Page#Usage"));
-	if(QObject::sender() == actionWebSupport)    QDesktopServices::openUrl(QUrl("http://forum.doom9.org/showthread.php?t=144140"));
-	if(QObject::sender() == actionWebSecret)     QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
+	if(QObject::sender() == actionWebMulder)          QDesktopServices::openUrl(QUrl(home_url));
+	if(QObject::sender() == actionWebX264)            QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
+	if(QObject::sender() == actionWebKomisar)         QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
+	if(QObject::sender() == actionWebVideoLAN)        QDesktopServices::openUrl(QUrl("http://download.videolan.org/pub/x264/binaries/"));
+	if(QObject::sender() == actionWebJEEB)            QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
+	if(QObject::sender() == actionWebAvisynth32)      QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
+	if(QObject::sender() == actionWebAvisynth64)      QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
+	if(QObject::sender() == actionWebVapourSynth)     QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/"));
+	if(QObject::sender() == actionWebVapourSynthDocs) QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/doc/"));
+	if(QObject::sender() == actionWebWiki)            QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
+	if(QObject::sender() == actionWebBluRay)          QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
+	if(QObject::sender() == actionWebAvsWiki)         QDesktopServices::openUrl(QUrl("http://avisynth.nl/index.php/Main_Page#Usage"));
+	if(QObject::sender() == actionWebSupport)         QDesktopServices::openUrl(QUrl("http://forum.doom9.org/showthread.php?t=144140"));
+	if(QObject::sender() == actionWebSecret)          QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
 }
 
 /*

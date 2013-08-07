@@ -81,9 +81,6 @@ private:
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
 
-	static QString getVapoursynthLocation(void);
-	static bool checkVapourSynth(QFile *vpsExePath, QFile *vpsDllPath);
-
 private slots:
 	void addButtonPressed();
 	void openActionTriggered();

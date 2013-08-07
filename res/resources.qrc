@@ -40,6 +40,7 @@
     <file>buttons/x264.png</file>
     <file>images/avisynth.png</file>
     <file>images/movie.png</file>
+    <file>images/python.png</file>
     <file>images/update.png</file>
     <file>images/x264.png</file>
   </qresource>

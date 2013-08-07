@@ -94,7 +94,7 @@ while(0)
 
 #define AVS2_BINARY(BIN_DIR, IS_X64) (QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86")))
 #define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) (QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit")))
-#define VPSP_BINARY(VPS_DIR) (QString("%1/vspipe.exe").arg((VPS_DIR)))
+#define VPSP_BINARY(VPS_DIR) (QString("%1/core/vspipe.exe").arg((VPS_DIR)))
 
 /*
  * Static vars
@@ -217,6 +217,8 @@ void EncodeThread::encode(void)
 	log(tr("Source file: %1").arg(QDir::toNativeSeparators(m_sourceFileName)));
 	log(tr("Output file: %1").arg(QDir::toNativeSeparators(m_outputFileName)));
 	
+	log(tr("VPS Path: %1").arg(m_vpsDir));
+
 	//Print encoder settings
 	log(tr("\n--- SETTINGS ---\n"));
 	log(tr("RC Mode: %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));

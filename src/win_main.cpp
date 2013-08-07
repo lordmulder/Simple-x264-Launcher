@@ -26,6 +26,7 @@
 #include "model_preferences.h"
 #include "model_recently.h"
 #include "thread_avisynth.h"
+#include "thread_vapoursynth.h"
 #include "thread_ipc.h"
 #include "thread_encode.h"
 #include "taskbar7.h"
@@ -56,6 +57,7 @@ const char *tpl_last = "<LAST_USED>";
 
 #define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
 #define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
+#define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
 
 static int exceptionFilter(_EXCEPTION_RECORD *dst, _EXCEPTION_POINTERS *src) { memcpy(dst, src->ExceptionRecord, sizeof(_EXCEPTION_RECORD)); return EXCEPTION_EXECUTE_HANDLER; }
 
@@ -212,9 +214,10 @@ MainWindow::~MainWindow(void)
 	}
 
 	X264_DELETE(m_ipcThread);
-	AvisynthCheckThread::unload();
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
+	VapourSynthCheckThread::unload();
+	AvisynthCheckThread::unload();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -456,6 +459,7 @@ void MainWindow::showAbout(void)
 	aboutBox.setText(text.replace("-", "&minus;"));
 	aboutBox.addButton(tr("About x264"), QMessageBox::NoRole);
 	aboutBox.addButton(tr("About AVS"), QMessageBox::NoRole);
+	aboutBox.addButton(tr("About VPY"), QMessageBox::NoRole);
 	aboutBox.addButton(tr("About Qt"), QMessageBox::NoRole);
 	aboutBox.setEscapeButton(aboutBox.addButton(tr("Close"), QMessageBox::NoRole));
 		
@@ -501,6 +505,24 @@ void MainWindow::showAbout(void)
 			}
 			break;
 		case 2:
+			{
+				QString text2;
+				text2 += tr("<nobr><tt>VapourSynth - application for video manipulation based on Python.<br>");
+				text2 += tr("Copyright (c) 2012 Fredrik Mellbin.<br>");
+				text2 += tr("Released under the terms of the GNU Lesser General Public.<br><br>");
+				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://www.vapoursynth.com/");
+				text2 += tr("Read the <a href=\"%1\">documentation</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://www.vapoursynth.com/doc/", "http://forum.doom9.org/showthread.php?t=165771");
+
+				QMessageBox x264Box(this);
+				x264Box.setIconPixmap(QIcon(":/images/python.png").pixmap(48,48));
+				x264Box.setWindowTitle(tr("About VapourSynth"));
+				x264Box.setText(text2.replace("-", "&minus;"));
+				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
+				MessageBeep(MB_ICONINFORMATION);
+				x264Box.exec();
+			}
+			break;
+		case 3:
 			QMessageBox::aboutQt(this);
 			break;
 		default:
@@ -799,7 +821,7 @@ void MainWindow::init(void)
 		}
 		if((!result) || (avisynthVersion < 2.5))
 		{
-			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br><a href=\"http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/\">http://sourceforge.net/projects/avisynth2/files/AviSynth 2.5/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br>" LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/") "</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
 		qDebug("");
@@ -808,29 +830,21 @@ void MainWindow::init(void)
 	//Check for Vapoursynth support
 	if(!qApp->arguments().contains("--skip-vapoursynth-check", Qt::CaseInsensitive))
 	{
-		qDebug("[Check for VapourSynth support]");
-		const QString vapursynthPath = getVapoursynthLocation();
-		if(!vapursynthPath.isEmpty())
+		qDebug("[Check for Vapoursynth support]");
+		volatile double avisynthVersion = 0.0;
+		const int result = VapourSynthCheckThread::detect(m_vapoursynthPath);
+		if(result < 0)
 		{
-			QFile *vpsExePath = new QFile(QString("%1/core/vspipe.exe").arg(vapursynthPath));
-			QFile *vpsDllPath = new QFile(QString("%1/core/vapoursynth.dll").arg(vapursynthPath));
-			qDebug("VapourSynth EXE: %s", vpsExePath->fileName().toUtf8().constData());
-			qDebug("VapourSynth DLL: %s", vpsDllPath->fileName().toUtf8().constData());
-			if(checkVapourSynth(vpsExePath, vpsDllPath))
-			{
-				qDebug("VapourSynth support enabled.");
-				m_vapoursynthPath = QFileInfo(vpsExePath->fileName()).canonicalPath();
-				m_toolsList << vpsExePath;
-				m_toolsList << vpsDllPath;
-			}
-			else
-			{
-				qDebug("VapourSynth not avilable -> disable Vapousynth support!");
-				X264_DELETE(vpsExePath);
-				X264_DELETE(vpsDllPath);
-				int val = QMessageBox::warning(this, tr("VapourSynth Missing"), tr("<nobr>It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!<br><br>Please download and install VapourSynth (r19 or later) here:<br><a href=\"http://www.vapoursynth.com/\">http://www.vapoursynth.com/</a></nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-				if(val != 1) { close(); qApp->exit(-1); return; }
-			}
+			QString text = tr("A critical error was encountered while checking your Vapoursynth installation.").append("<br>");
+			text += tr("This is most likely caused by an erroneous Vapoursynth Plugin, please try to clean your Filters folder!").append("<br>");
+			text += tr("We suggest to move all .dll files out of your Vapoursynth Filters folder and try again.");
+			int val = QMessageBox::critical(this, tr("Vapoursynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			if(val != 1) { close(); qApp->exit(-1); return; }
+		}
+		if((!result) || (m_vapoursynthPath.isEmpty()))
+		{
+			int val = QMessageBox::warning(this, tr("Vapoursynth Missing"), tr("<nobr>It appears that Vapoursynth is <b>not</b> currently installed on your computer.<br>Therefore Vapoursynth (.vpy) input will <b>not</b> be working at all!<br><br>Please download and install Vapoursynth R19 or later:<br>" LINK("http://www.vapoursynth.com/") "</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
 		qDebug("");
 	}
@@ -1297,75 +1311,4 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 	}
 
 	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
-}
-
-/*
- * Read Vapursynth location from registry
- */
-QString MainWindow::getVapoursynthLocation(void)
-{
-	QString vapoursynthPath;
-	static const wchar_t *VPS_REG_KEY = L"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
-	HKEY hKey = NULL;
-
-	if(RegOpenKey(HKEY_LOCAL_MACHINE, VPS_REG_KEY, &hKey) == ERROR_SUCCESS)
-	{
-		const size_t DATA_LEN = 2048;
-		wchar_t data[DATA_LEN];
-		DWORD type = REG_NONE, size = sizeof(wchar_t) * DATA_LEN;
-		if(RegQueryValueEx(hKey, L"InstallLocation", NULL, &type, ((BYTE*)&data[0]), &size) == ERROR_SUCCESS)
-		{
-			if((type == REG_SZ) || (type == REG_EXPAND_SZ))
-			{
-				vapoursynthPath = QDir::fromNativeSeparators(QString::fromUtf16((const ushort*)&data[0]));
-				while(vapoursynthPath.endsWith("/")) { vapoursynthPath.chop(1); }
-				qDebug("Vapoursynth location: %s", vapoursynthPath.toUtf8().constData());
-			}
-		}
-		RegCloseKey(hKey);
-	}
-	else
-	{
-		qWarning("Vapoursynth registry key not found -> not installed!");
-	}
-
-	return vapoursynthPath;
-}
-
-bool MainWindow::checkVapourSynth(QFile *vpsExePath, QFile *vpsDllPath)
-{
-	bool okay = false;
-	static const char *VSSCRIPT_ENTRY = "_vsscript_init@0";
-
-	if(vpsExePath->open(QIODevice::ReadOnly) && vpsDllPath->open(QIODevice::ReadOnly))
-	{
-		DWORD binaryType;
-		if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(vpsExePath->fileName())), &binaryType))
-		{
-			okay = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
-		}
-	}
-
-	if(okay)
-	{
-		qDebug("VapourSynth binaries found -> load VSSCRIPT.DLL");
-		QLibrary vspLibrary("vsscript.dll");
-		if(okay = vspLibrary.load())
-		{
-			if(!(okay = (vspLibrary.resolve(VSSCRIPT_ENTRY) != NULL)))
-			{
-				qWarning("Entrypoint '%s' not found in VSSCRIPT.DLL !!!", VSSCRIPT_ENTRY);
-			}
-		}
-		else
-		{
-			qWarning("Failed to load VSSCRIPT.DLL !!!");
-		}
-	}
-	else
-	{
-		qWarning("VapourSynth binaries could not be found !!!");
-	}
-
-	return okay;
 }

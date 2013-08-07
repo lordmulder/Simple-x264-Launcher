@@ -25,22 +25,23 @@
 #include <QMutex>
 
 class QLibrary;
+class QFile;
 
-class AvisynthCheckThread : public QThread
+class VapourSynthCheckThread : public QThread
 {
 	Q_OBJECT
 
 public:
-	static int detect(volatile double *version);
+	static int detect(QString &path);
 	static void unload(void);
 
 protected:
-	AvisynthCheckThread(void);
-	~AvisynthCheckThread(void);
+	VapourSynthCheckThread(void);
+	~VapourSynthCheckThread(void);
 
 	bool getSuccess(void) { return m_success; }
 	bool getException(void) { return m_exception; }
-	double getVersion(void) { return m_version; }
+	QString getPath(void) { return m_vpsPath; }
 
 private slots:
 	void start(Priority priority = InheritPriority) { QThread::start(priority); }
@@ -48,16 +49,18 @@ private slots:
 private:
 	volatile bool m_exception;
 	volatile bool m_success;
-	volatile double m_version;
+	QString m_vpsPath;
 
-	static QMutex m_avsLock;
-	static QLibrary *m_avsLib;
+	static QMutex m_vpsLock;
+	static QFile *m_vpsExePath;
+	static QFile *m_vpsDllPath;
+	static QLibrary *m_vpsLib;
 	
 	//Entry point
 	virtual void run(void);
 
 	//Functions
-	static bool detectAvisynthVersion1(volatile double *version_number, volatile bool *exception);
-	static bool detectAvisynthVersion2(volatile double *version_number, volatile bool *exception);
-	static bool detectAvisynthVersion3(volatile double *version_number);
+	static bool detectVapourSynthPath1(QString &path, volatile bool *exception);
+	static bool detectVapourSynthPath2(QString &path, volatile bool *exception);
+	static bool detectVapourSynthPath3(QString &path);
 };

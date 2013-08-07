@@ -57,6 +57,9 @@
     <ClInclude Include="src\model_status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\thread_vapoursynth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -142,6 +145,12 @@
     </ClCompile>
     <ClCompile Include="src\model_recently.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_vapoursynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_thread_vapoursynth.cpp">
+      <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

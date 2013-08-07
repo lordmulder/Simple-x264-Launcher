@@ -33,16 +33,9 @@
 QMutex AvisynthCheckThread::m_avsLock;
 QLibrary *AvisynthCheckThread::m_avsLib = NULL;
 
-AvisynthCheckThread::AvisynthCheckThread(void)
-{
-	m_success = false;
-	m_exception = false;
-	m_version = 0.0;
-}
-
-AvisynthCheckThread::~AvisynthCheckThread(void)
-{
-}
+//-------------------------------------
+// External API
+//-------------------------------------
 
 int AvisynthCheckThread::detect(volatile double *version)
 {
@@ -103,12 +96,29 @@ void AvisynthCheckThread::unload(void)
 		{
 			m_avsLib->unload();
 		}
-		X264_DELETE(m_avsLib);
 	}
+
+	X264_DELETE(m_avsLib);
+}
+
+//-------------------------------------
+// Thread class
+//-------------------------------------
+
+AvisynthCheckThread::AvisynthCheckThread(void)
+{
+	m_success = false;
+	m_exception = false;
+	m_version = 0.0;
+}
+
+AvisynthCheckThread::~AvisynthCheckThread(void)
+{
 }
 
 void AvisynthCheckThread::run(void)
 {
+	m_exception = m_success = false;
 	m_success = detectAvisynthVersion1(&m_version, &m_exception);
 }
 

@@ -6,29 +6,48 @@ Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 ---------------
 
 This program is a simple GUI front-end for the x264 H.264/AVC encoder.
-Thanks to Avs2YUV, this program can use the 64-Bit version of x264 with
-the 32-Bit version of Avisynth. This way you can keep on using your
-favorite 32-Bit Avisynth plug-ins (e.g. DGDecodeNV) and still benefit
-from the speed improvements of 64-Bit x264. Of course you can also use
-64-Bit Avisynth, which is still considered experimental, if desired.
-And of course you can use x264's built-in LAVF/FFMS input instead of
-Avisynth just as well. Moreover this program provides full batch
-encoding support. This means that you can run several encoding jobs in
-parallel. Or you can let them run in sequence - one by one.
+
+For information about the x264 encoder software, please see:
+http://en.wikipedia.org/wiki/X264
+
+For information about Graphical User Interfaces (GUI), please see:
+http://en.wikipedia.org/wiki/Graphical_user_interface
 
 
-2. System Requirements
+2. List of Features
+-------------------
+
+(a) Support for 32-Bit and 64-Bit x264 (64-Bit is used where supported)
+(b) Support for 8-Bit and 10-Bit H.264 encoding (default is 8-Bit)
+(c) Support for easy configuration using the x264 Preset/Tuning system
+    - Support for custom configuration Templates
+    - Support for custom x264 and Avs2YUV parameters
+(d) Support for native FFmpegSource2 input (AVI, MKV, MP4, FLV, etc.)
+(e) Support for batch encoding, i.e. enqueuing multiple encoding jobs
+    - Support for running multiple encoding jobs in parallel
+    - Support for shutting down the computer when all jobs are done
+(f) Support for Avisynth (.AVS) input
+    - Support for 32-Bit and 64-Bit Avisynth (default is 32-Bit)
+    - Support for using 64-Bit x264 in conjunction with 32-Bit Avisynth
+(g) Support for VapurSynth (.VPY) input
+(h) Support for MP4 and MKV output as well as "raw" H.264
+(i) Support for running the program in "portable" mode [see section 6]
+
+
+3. System Requirements
 ----------------------
 
-This program runs on Windows XP with Service Pack 2 and later.
-64-Bit Windows is highly recommended, but 32-Bit Windows works as well.
-The CPU should support at least the MMX and SSE1 instruction sets.
-Avisynth 2.5.x must be installed in order to use Avisynth (.avs) input.
-YV16/YV24 color spaces only supported by Avisynth 2.6 [see section 9].
-Audio encoding NOT officially supported by x264 yet [see section 10].
+(a) Windows XP with Service Pack 2 and later 
+(b) 64-Bit Windows is highly recommended, but 32-Bit Windows is okay
+(c) The CPU must support at least the MMX and SSE-1 instruction sets
+(d) Avisynth input only available with Avisynth 2.5+ installed
+(e) VapourSynth input only available with VapourSynth R19+ installed
+(f) YV16/YV24 color spaces require Avisynth 2.6 [see section 10]
+
+100% standalone, does *not* require Mircrosoft.NET or other runtimes
 
 
-3. Anti-Virus Warning
+4. Anti-Virus Warning
 ---------------------
 
 Occasionally your Antivirus program may mistakenly detect "malware"
@@ -54,7 +73,7 @@ DON´T SUBMIT ANY VIRUS/TROJAN REPORTS, UNLESS YOU HAVE VERIFIED THE
 INFECTION WITH MULTIPLE ANTIVIRUS ENGNINES. THANKS!
 
 
-4. License
+5. License
 ----------
 
 This program is free software; you can redistribute it and/or modify
@@ -74,7 +93,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 http://www.gnu.org/licenses/gpl-2.0.txt
 
 
-5. Portable Mode
+6. Portable Mode
 ----------------
 
 This application can be run in "portable" mode. Just rename the EXE
@@ -85,7 +104,7 @@ application directly from your USB stick on different computers. Note,
 however, that in portable mode the install folder must be writable!
 
 
-6. Updating Your x264 Binaries
+7. Updating Your x264 Binaries
 ------------------------------
 
 This application works best with the x264 binaries that are included in
@@ -103,7 +122,7 @@ Using old/outdated x264 binaries with this application is NOT supported
 or intended. Report bugs rather than reverting to an old version!
 
 
-7. Timeout Warning
+8. Timeout Warning
 ------------------
 
 This application provides "deadlock" prevention. This means that if an
@@ -120,7 +139,7 @@ long time to index the source file. In that case, we recommend to index
 the source file beforehand, e.g. by using the 'ffmsindex' tool.
 
 
-8. Custom Parameters
+9. Custom Parameters
 --------------------
 
 This application provides a "Custom Parameters" edit box. All command-
@@ -141,8 +160,8 @@ the "Custom Parameters" edit box and choose "Open the Text-Editor".
 This will open a multi-line text editor for easier parameter handling.
 
 
-9. Color Spaces / Chroma Subsampling
-------------------------------------
+10. Color Spaces / Chroma Subsampling
+-------------------------------------
 
 Avs2YUV converts the output of your Avisynth script to the YV12 format,
 i.e. YUV data with 4:2:0 chroma subsampling and 8-Bit precision.
@@ -165,7 +184,7 @@ In short, to encode YUY2 from Avisynth, you have to pass "-csp I422" to
 Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 
-10. Audio Processing/Encoding
+11. Audio Processing/Encoding
 -----------------------------
 
 This application is a front-end to the x264 encoder. And, as x264 does
@@ -195,7 +214,7 @@ if you want to encode audio from an Avisynth script, you must pass the
 For convenience, the string "--audiofile $(INPUT)" may be used.
 
 
-11. OpenCL Support
+12. OpenCL Support
 -----------------------
 
 Newer builds of x264 now support OpenCL Lookahead, i.e. GPU accelerated
@@ -208,7 +227,7 @@ use the "--opencl" option. Therefore, the "dummy" OpenCL.DLL included
 in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 
 
-12. Command-line Syntax
+13. Command-line Syntax
 -----------------------
 
 The following command-line switches are available:
@@ -222,11 +241,11 @@ The following command-line switches are available:
 --force-cpu-no-64bit ...... Forcefully disable 64-Bit support
 --no-deadlock-detection ... Don't abort processes on timeout/deadlock
 
-These are parameters you can pass to Simple x264 Launcher, they can NOT
-be passed to x264 itself as "custom" parameters!
+PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher,
+they can *not* be passed to x264 itself as "custom" parameters!
 
 
-13. Help & Support
+14. Help & Support
 ------------------
 
 For help and support, please join the discussion at:

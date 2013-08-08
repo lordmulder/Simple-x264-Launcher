@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>379</width>
-    <height>399</height>
+    <height>432</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -169,7 +169,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="17" column="1" colspan="5">
+        <item row="19" column="1" colspan="5">
          <spacer name="verticalSpacer_3">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -382,23 +382,37 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </property>
          </spacer>
         </item>
-        <item row="1" column="0" rowspan="16">
-         <spacer name="horizontalSpacer_2">
+        <item row="18" column="2" colspan="4">
+         <widget class="QLabel" name="labelDisableWarnings">
+          <property name="text">
+           <string>Never show warning about missing Avisynth or VapourSynth</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="1">
+         <widget class="QCheckBox" name="checkDisableWarnings">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="1" colspan="5">
+         <spacer name="verticalSpacer_10">
           <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+           <enum>Qt::Vertical</enum>
           </property>
           <property name="sizeType">
            <enum>QSizePolicy::Fixed</enum>
           </property>
           <property name="sizeHint" stdset="0">
            <size>
-            <width>8</width>
-            <height>20</height>
+            <width>20</width>
+            <height>8</height>
            </size>
           </property>
          </spacer>
         </item>
-        <item row="1" column="6" rowspan="16">
+        <item row="1" column="6" rowspan="18">
          <spacer name="horizontalSpacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -409,6 +423,22 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           <property name="sizeHint" stdset="0">
            <size>
             <width>12</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="0" rowspan="18">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>8</width>
             <height>20</height>
            </size>
           </property>

@@ -57,6 +57,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	labelSaveLogFiles->installEventFilter(this);
 	labelSaveToSourceFolder->installEventFilter(this);
 	labelEnableSounds->installEventFilter(this);
+	labelDisableWarnings->installEventFilter(this);
 
 	connect(resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
 	connect(checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
@@ -78,6 +79,7 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles());
 	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath());
 	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds());
+	UPDATE_CHECKBOX(checkDisableWarnings, m_preferences->disableWarnings());
 
 	checkUse10BitEncoding->blockSignals(true);
 	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding());
@@ -99,6 +101,7 @@ bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 	emulateMouseEvent(o, e, labelSaveLogFiles, checkSaveLogFiles);
 	emulateMouseEvent(o, e, labelSaveToSourceFolder, checkSaveToSourceFolder);
 	emulateMouseEvent(o, e, labelEnableSounds, checkEnableSounds);
+	emulateMouseEvent(o, e, labelDisableWarnings, checkDisableWarnings);
 	return false;
 }
 
@@ -133,6 +136,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->setMaxRunningJobCount(spinBoxJobCount->value());
 	m_preferences->setProcessPriority(comboBoxPriority->currentIndex());
 	m_preferences->setEnableSounds(checkEnableSounds->isChecked());
+	m_preferences->setDisableWarnings(checkDisableWarnings->isChecked());
 
 	PreferencesModel::savePreferences(m_preferences);
 	QDialog::done(n);

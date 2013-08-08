@@ -48,6 +48,7 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 	preferences->m_saveToSourcePath = false;
 	preferences->m_processPriority = X264_PRIORITY_BELOWNORMAL;
 	preferences->m_enableSounds = false;
+	preferences->m_disableWarnings = false;
 }
 
 void PreferencesModel::loadPreferences(PreferencesModel *preferences)
@@ -67,6 +68,7 @@ void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 	preferences->m_saveToSourcePath = settings.value("save_to_source_path", QVariant(defaults.m_saveToSourcePath)).toBool();
 	preferences->m_processPriority = settings.value("process_priority", QVariant(defaults.m_processPriority)).toInt();
 	preferences->m_enableSounds = settings.value("enable_sounds", QVariant(defaults.m_enableSounds)).toBool();
+	preferences->m_disableWarnings = settings.value("disable_warnings", QVariant(defaults.m_disableWarnings)).toBool();
 }
 
 void PreferencesModel::savePreferences(PreferencesModel *preferences)
@@ -84,5 +86,6 @@ void PreferencesModel::savePreferences(PreferencesModel *preferences)
 	settings.setValue("save_to_source_path", preferences->m_saveToSourcePath);
 	settings.setValue("process_priority", preferences->m_processPriority);
 	settings.setValue("enable_sounds", preferences->m_enableSounds);
+	settings.setValue("disable_warnings", preferences->m_disableWarnings);
 	settings.sync();
 }

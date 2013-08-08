@@ -825,8 +825,13 @@ void MainWindow::init(void)
 		}
 		if((!result) || (avisynthVersion < 2.5))
 		{
-			int val = QMessageBox::warning(this, tr("Avisynth Missing"), tr("<nobr>It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!<br><br>Please download and install Avisynth:<br>" LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/") "</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-			if(val != 1) { close(); qApp->exit(-1); return; }
+			if(!m_preferences->disableWarnings())
+			{
+				QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
+				text += tr("Please download and install Avisynth:").append("<br>").append(LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
+				int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+				if(val != 1) { close(); qApp->exit(-1); return; }
+			}
 		}
 		qDebug("");
 	}
@@ -847,8 +852,13 @@ void MainWindow::init(void)
 		}
 		if((!result) || (m_vapoursynthPath.isEmpty()))
 		{
-			int val = QMessageBox::warning(this, tr("Vapoursynth Missing"), tr("<nobr>It appears that Vapoursynth is <b>not</b> currently installed on your computer.<br>Therefore Vapoursynth (.vpy) input will <b>not</b> be working at all!<br><br>Please download and install Vapoursynth R19 or later:<br>" LINK("http://www.vapoursynth.com/") "</nobr>").replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-			if(val != 1) { close(); qApp->exit(-1); return; }
+			if(!m_preferences->disableWarnings())
+			{
+				QString text = tr("It appears that Vapoursynth is <b>not</b> currently installed on your computer.<br>Therefore Vapoursynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
+				text += tr("Please download and install Vapoursynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/"));
+				int val = QMessageBox::warning(this, tr("Vapoursynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+				if(val != 1) { close(); qApp->exit(-1); return; }
+			}
 		}
 		qDebug("");
 	}

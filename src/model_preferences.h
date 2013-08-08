@@ -45,6 +45,7 @@ public:
 	bool saveToSourcePath(void) { return m_saveToSourcePath; }
 	int processPriority(void) { return m_processPriority; }
 	bool enableSounds(void) { return m_enableSounds; }
+	bool disableWarnings(void) { return m_disableWarnings; }
 
 	//Setter
 	void setAutoRunNextJob(const bool autoRunNextJob) { m_autoRunNextJob = autoRunNextJob; }
@@ -56,6 +57,7 @@ public:
 	void setSaveToSourcePath(const bool saveToSourcePath) { m_saveToSourcePath = saveToSourcePath; }
 	void setProcessPriority(const int processPriority) { m_processPriority = processPriority; }
 	void setEnableSounds(const bool enableSounds) { m_enableSounds = enableSounds; }
+	void setDisableWarnings(const bool disableWarnings) { m_disableWarnings = disableWarnings; }
 
 	//Static
 	static void initPreferences(PreferencesModel *preferences);
@@ -72,4 +74,5 @@ protected:
 	bool m_saveToSourcePath;
 	int m_processPriority;
 	bool m_enableSounds;
+	bool m_disableWarnings;
 };

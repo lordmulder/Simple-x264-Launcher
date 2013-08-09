@@ -48,4 +48,5 @@ private:
 private slots:
 	void resetButtonPressed(void);
 	void use10BitEncodingToggled(bool checked);
+	void disableWarningsToggled(bool checked);
 };

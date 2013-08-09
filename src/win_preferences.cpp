@@ -29,10 +29,12 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 
-#define UPDATE_CHECKBOX(CHKBOX, VALUE) \
+#define UPDATE_CHECKBOX(CHKBOX, VALUE, BLOCK) \
 { \
+	if((BLOCK)) { (CHKBOX)->blockSignals(true); } \
 	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->click(); \
 	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->setChecked(VALUE); \
+	if((BLOCK)) { (CHKBOX)->blockSignals(false); } \
 }
 
 PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64)
@@ -61,7 +63,8 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 
 	connect(resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
 	connect(checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
-
+	connect(checkDisableWarnings, SIGNAL(toggled(bool)), this, SLOT(disableWarningsToggled(bool)));
+	
 	m_preferences = preferences;
 }
 
@@ -73,17 +76,14 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 {
 	if(event) QDialog::showEvent(event);
 	
-	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob());
-	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer());
-	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit());
-	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles());
-	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath());
-	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds());
-	UPDATE_CHECKBOX(checkDisableWarnings, m_preferences->disableWarnings());
-
-	checkUse10BitEncoding->blockSignals(true);
-	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding());
-	checkUse10BitEncoding->blockSignals(false);
+	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob(), false);
+	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer(), false);
+	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit(), false);
+	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles(), false);
+	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath(), false);
+	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds(), false);
+	UPDATE_CHECKBOX(checkDisableWarnings, m_preferences->disableWarnings(), true);
+	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding(), true);
 
 	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
 	comboBoxPriority->setCurrentIndex(qBound(0, m_preferences->processPriority(), comboBoxPriority->count()-1));
@@ -153,13 +153,28 @@ void PreferencesDialog::use10BitEncodingToggled(bool checked)
 	if(checked)
 	{
 		QString text;
-		text += tr("<nobr>Please note that 10&minus;Bit H.264 streams are <b>not</b> currently supported by hardware (standalone) players!</nobr><br>");
-		text += tr("<nobr>To play such streams, you will need an <i>up&minus;to&minus;date</i> ffdshow&minus;tryouts, CoreAVC 3.x or another supported s/w decoder.</nobr><br>");
-		text += tr("<nobr>Also be aware that hardware&minus;acceleration (CUDA, DXVA, etc) usually will <b>not</b> work with 10&minus;Bit H.264 streams.</nobr><br>");
+		text += QString("<nobr>%1</nobr><br>").arg(tr("Please note that 10&minus;Bit H.264 streams are <b>not</b> currently supported by hardware (standalone) players!"));
+		text += QString("<nobr>%1</nobr><br>").arg(tr("To play such streams, you will need an <i>up&minus;to&minus;date</i> ffdshow&minus;tryouts, CoreAVC 3.x or another supported s/w decoder."));
+		text += QString("<nobr>%1</nobr><br>").arg(tr("Also be aware that hardware&minus;acceleration (CUDA, DXVA, etc) usually will <b>not</b> work with 10&minus;Bit H.264 streams."));
 		
-		if(QMessageBox::warning(this, tr("10-Bit Encoding"), text, tr("Continue"), tr("Revert"), QString(), 1) != 0)
+		if(QMessageBox::warning(this, tr("10-Bit Encoding"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
 		{
-			UPDATE_CHECKBOX(checkUse10BitEncoding, false);
+			UPDATE_CHECKBOX(checkUse10BitEncoding, false, true);
+		}
+	}
+}
+
+void PreferencesDialog::disableWarningsToggled(bool checked)
+{
+	if(checked)
+	{
+		QString text;
+		text += QString("<nobr>%1</nobr><br>").arg(tr("Please note that Avisynth and/or VapourSynth support might be unavailable <b>without</b> any notice!"));
+		text += QString("<nobr>%1</nobr><br>").arg(tr("Also note that the CLI option <tt>--console</tt> may be used to get more diagnostic infomation."));
+
+		if(QMessageBox::warning(this, tr("Avisynth/VapourSynth Warnings"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
+		{
+			UPDATE_CHECKBOX(checkDisableWarnings, false, true);
 		}
 	}
 }

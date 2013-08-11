@@ -836,27 +836,28 @@ void MainWindow::init(void)
 		qDebug("");
 	}
 
-	//Check for Vapoursynth support
+	//Check for VapourSynth support
 	if(!qApp->arguments().contains("--skip-vapoursynth-check", Qt::CaseInsensitive))
 	{
-		qDebug("[Check for Vapoursynth support]");
+		qDebug("[Check for VapourSynth support]");
 		volatile double avisynthVersion = 0.0;
 		const int result = VapourSynthCheckThread::detect(m_vapoursynthPath);
 		if(result < 0)
 		{
-			QString text = tr("A critical error was encountered while checking your Vapoursynth installation.").append("<br>");
-			text += tr("This is most likely caused by an erroneous Vapoursynth Plugin, please try to clean your Filters folder!").append("<br>");
-			text += tr("We suggest to move all .dll files out of your Vapoursynth Filters folder and try again.");
-			int val = QMessageBox::critical(this, tr("Vapoursynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			QString text = tr("A critical error was encountered while checking your VapourSynth installation.").append("<br>");
+			text += tr("This is most likely caused by an erroneous VapourSynth Plugin, please try to clean your Filters folder!").append("<br>");
+			text += tr("We suggest to move all .dll files out of your VapourSynth Filters folder and try again.");
+			int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) { close(); qApp->exit(-1); return; }
 		}
 		if((!result) || (m_vapoursynthPath.isEmpty()))
 		{
 			if(!m_preferences->disableWarnings())
 			{
-				QString text = tr("It appears that Vapoursynth is <b>not</b> currently installed on your computer.<br>Therefore Vapoursynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install Vapoursynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/"));
-				int val = QMessageBox::warning(this, tr("Vapoursynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
+				text += tr("Please download and install VapourSynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/")).append("<br><br>");
+				text += tr("Note that Python 3.3 (x86) is a prerequisite for installing VapourSynth:").append("<br>").append(LINK("http://www.python.org/getit/")).append("<br>");
+				int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 				if(val != 1) { close(); qApp->exit(-1); return; }
 			}
 		}

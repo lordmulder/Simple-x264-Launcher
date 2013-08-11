@@ -20,9 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #define VER_X264_MAJOR 2
-#define VER_X264_MINOR 1
-#define VER_X264_PATCH 9
-#define VER_X264_BUILD 564
+#define VER_X264_MINOR 2
+#define VER_X264_PATCH 0
+#define VER_X264_BUILD 568
 
 #define VER_X264_MINIMUM_REV 2339
 #define VER_X264_CURRENT_API 135

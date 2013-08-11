@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
+    <width>569</width>
     <height>614</height>
    </rect>
   </property>
@@ -50,10 +50,10 @@
         <item>
          <widget class="QLabel" name="label">
           <property name="toolTip">
-           <string>Select the source video file. This can be an Avisynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
+           <string>Select the source video file. This can be an Avisynth/VapourSynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
           </property>
           <property name="text">
-           <string>Source Media/Avisynth File:</string>
+           <string>Source Media/Avisynth/VapourSynth File:</string>
           </property>
          </widget>
         </item>
@@ -62,7 +62,7 @@
           <item>
            <widget class="QLineEdit" name="editSource">
             <property name="toolTip">
-             <string>Select the source video file. This can be an Avisynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
+             <string>Select the source video file. This can be an Avisynth/VapourSynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
             </property>
             <property name="readOnly">
              <bool>true</bool>
@@ -110,7 +110,7 @@
            <string>Select the output H.264/AVC file. This can be a Matroska (MKV,) MPEG-4 Part-14 (MP4) or &quot;raw&quot; H.264 file.</string>
           </property>
           <property name="text">
-           <string>Output AVC/H.264 File:</string>
+           <string>Output H.264/MP4/MKV File:</string>
           </property>
          </widget>
         </item>
@@ -170,7 +170,7 @@
         <item>
          <widget class="QLabel" name="label_9">
           <property name="toolTip">
-           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new profile.</string>
+           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new template.</string>
           </property>
           <property name="text">
            <string>Template:</string>
@@ -192,7 +192,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new profile.</string>
+           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new template.</string>
           </property>
           <property name="currentIndex">
            <number>-1</number>

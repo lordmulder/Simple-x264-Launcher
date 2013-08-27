@@ -1381,6 +1381,8 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 		}
 	}
 
+	process.setWorkingDirectory(QDir::tempPath());
+
 	if(mergeChannels)
 	{
 		process.setProcessChannelMode(QProcess::MergedChannels);

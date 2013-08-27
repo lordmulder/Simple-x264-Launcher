@@ -178,7 +178,7 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	X264_DELETE(m_vpsDllPath);
 	path.clear();
 
-	static const wchar_t *VPS_REG_KEY = L"SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
+	static const wchar_t *VPS_REG_KEY = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
 
 	//Determine the VapourSynth install path from registry
 	QString vapoursynthPath; HKEY hKey = NULL;

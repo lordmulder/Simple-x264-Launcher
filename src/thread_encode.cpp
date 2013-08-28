@@ -35,6 +35,7 @@
 #include <QMutex>
 #include <QTextCodec>
 #include <QLocale>
+#include <QCryptographicHash>
 
 /*
  * Static vars
@@ -217,7 +218,10 @@ void EncodeThread::encode(void)
 	log(tr("Source file: %1").arg(QDir::toNativeSeparators(m_sourceFileName)));
 	log(tr("Output file: %1").arg(QDir::toNativeSeparators(m_outputFileName)));
 	
-	log(tr("VPS Path: %1").arg(m_vpsDir));
+	if(!m_vpsDir.isEmpty())
+	{
+		log(tr("\nVapourSynth: %1").arg(m_vpsDir));
+	}
 
 	//Print encoder settings
 	log(tr("\n--- SETTINGS ---\n"));
@@ -234,7 +238,7 @@ void EncodeThread::encode(void)
 
 	//Seletct type of input
 	const int inputType = getInputType(QFileInfo(m_sourceFileName).suffix());
-	const QString indexFile = QString("%1/%2.ffindex").arg(QDir::tempPath(), m_jobId.toString());
+	const QString indexFile = QString("%1/x264_%2.ffindex").arg(QDir::tempPath(), stringToHash(m_sourceFileName));
 
 	//Checking x264 version
 	log(tr("\n--- CHECK VERSION ---\n"));
@@ -329,7 +333,6 @@ void EncodeThread::encode(void)
 	}
 
 	log(tr("\n--- DONE ---\n"));
-	if(QFileInfo(indexFile).exists()) QFile::remove(indexFile);
 	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
 	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
@@ -350,7 +353,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			{
 				cmdLine_Input.append(splitParams(m_options->customAvs2YUV()));
 			}
-			cmdLine_Input << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName));
 			cmdLine_Input << "-";
 			log("Creating Avisynth process:");
 			if(!startProcess(processInput, AVS2_BINARY(m_binDir, avs2yuv_x64), cmdLine_Input, false))
@@ -359,7 +362,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			}
 			break;
 		case INPUT_VAPOUR:
-			cmdLine_Input << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName));
 			cmdLine_Input << "-" << "-y4m";
 			log("Creating Vapoursynth process:");
 			if(!startProcess(processInput, VPSP_BINARY(m_vpsDir), cmdLine_Input, false))
@@ -617,7 +620,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 	if((pass == 1) || (pass == 2))
 	{
 		cmdLine << "--pass" << QString::number(pass);
-		cmdLine << "--stats" << pathToLocal(QDir::toNativeSeparators(passLogFile), true);
+		cmdLine << "--stats" << QDir::toNativeSeparators(passLogFile);
 	}
 
 	cmdLine << "--preset" << m_options->preset().toLower();
@@ -663,7 +666,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 		cmdLine.append(customArgs);
 	}
 
-	cmdLine << "--output" << pathToLocal(QDir::toNativeSeparators(m_outputFileName), true);
+	cmdLine << "--output" << QDir::toNativeSeparators(m_outputFileName);
 	
 	if(usePipe)
 	{
@@ -674,8 +677,8 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 	}
 	else
 	{
-		cmdLine << "--index" << pathToLocal(QDir::toNativeSeparators(indexFile), true, false);
-		cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+		cmdLine << "--index" << QDir::toNativeSeparators(indexFile);
+		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
 	}
 
 	return cmdLine;
@@ -981,7 +984,7 @@ bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 	}
 
 	cmdLine << "-frames" << "1";
-	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
+	cmdLine << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
 
 	log("Creating process:");
 	if(!startProcess(process, AVS2_BINARY(m_binDir, x64), cmdLine))
@@ -1141,7 +1144,7 @@ bool EncodeThread::checkPropertiesVapoursynth(/*const QString &vspipePath,*/ uns
 	QProcess process;
 	QStringList cmdLine;
 
-	cmdLine << pathToLocal(QDir::toNativeSeparators(m_sourceFileName));
+	cmdLine << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName));
 	cmdLine << "-" << "-info";
 
 	log("Creating process:");
@@ -1309,25 +1312,10 @@ void EncodeThread::setDetails(const QString &text)
 	emit detailsChanged(m_jobId, text);
 }
 
-QString EncodeThread::pathToLocal(const QString &longPath, bool create, bool keep)
+QString EncodeThread::pathToAnsi(const QString &longPath)
 {
-	QTextCodec *localCodec = QTextCodec::codecForName("System");
+	QString shortPath = longPath;
 	
-	//Do NOT convert to short, if path can be represented in local Codepage
-	if(localCodec->toUnicode(localCodec->fromUnicode(longPath)).compare(longPath, Qt::CaseInsensitive) == 0)
-	{
-		return longPath;
-	}
-	
-	//Create dummy file, if required (only existing files can have a short path!)
-	QFile tempFile;
-	if((!QFileInfo(longPath).exists()) && create)
-	{
-		tempFile.setFileName(longPath);
-		tempFile.open(QIODevice::WriteOnly);
-	}
-	
-	QString shortPath;
 	DWORD buffSize = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), NULL, NULL);
 	
 	if(buffSize > 0)
@@ -1335,28 +1323,34 @@ QString EncodeThread::pathToLocal(const QString &longPath, bool create, bool kee
 		wchar_t *buffer = new wchar_t[buffSize];
 		DWORD result = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), buffer, buffSize);
 
-		if(result > 0 && result < buffSize)
+		if((result > 0) && (result < buffSize))
 		{
-			shortPath = QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer));
+			shortPath = QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer), result);
 		}
 
 		delete[] buffer;
 		buffer = NULL;
 	}
 
-	//Remove the dummy file now (FFMS2 fails, if index file does exist but is empty!)
-	if(tempFile.isOpen())
+	return shortPath;
+}
+
+QString EncodeThread::stringToHash(const QString &string)
+{
+	QByteArray result(10, char(0));
+	const QByteArray hash = QCryptographicHash::hash(string.toUtf8(), QCryptographicHash::Sha1);
+
+	if((hash.size() == 20) && (result.size() == 10))
 	{
-		if(!keep) tempFile.remove();
-		tempFile.close();
+		unsigned char *out = reinterpret_cast<unsigned char*>(result.data());
+		const unsigned char *in = reinterpret_cast<const unsigned char*>(hash.constData());
+		for(int i = 0; i < 10; i++)
+		{
+			out[i] = (in[i] ^ in[10+i]);
+		}
 	}
 
-	if(shortPath.isEmpty())
-	{
-		log(tr("Warning: Failed to convert path \"%1\" to short!\n").arg(longPath));
-	}
-
-	return (shortPath.isEmpty() ? longPath : shortPath);
+	return QString::fromLatin1(result.toHex().constData());
 }
 
 bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)

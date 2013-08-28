@@ -123,7 +123,6 @@ protected:
 	inline void setProgress(unsigned int newProgress);
 	inline void setDetails(const QString &text);
 	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
-	QString pathToLocal(const QString &longPath, bool create = false, bool keep = true);
 	QStringList splitParams(const QString &params);
 	qint64 estimateSize(int progress);
 
@@ -132,6 +131,8 @@ protected:
 	static QString sizeToString(qint64 size);
 	static void setPorcessPriority(void *processId, int priroity);
 	static int getInputType(const QString &fileExt);
+	static QString pathToAnsi(const QString &longPath);
+	static QString stringToHash(const QString &string);
 
 signals:
 	void statusChanged(const QUuid &jobId, JobStatus newStatus);

@@ -334,7 +334,7 @@ void MainWindow::restartButtonPressed(void)
 
 	if((options) && (!sourceFileName.isEmpty()) && (!outputFileName.isEmpty()))
 	{
-		bool runImmediately = true;
+		bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1)); //bool runImmediately = true;
 		OptionsModel *tempOptions = new OptionsModel(*options);
 		if(createJob(sourceFileName, outputFileName, tempOptions, runImmediately, true))
 		{

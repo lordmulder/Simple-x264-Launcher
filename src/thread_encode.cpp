@@ -338,6 +338,22 @@ void EncodeThread::encode(void)
 	setStatus(JobStatus_Completed);
 }
 
+#define X264_UPDATE_PROGRESS(X) do \
+{ \
+	bool ok = false; \
+	unsigned int progress = (X).cap(1).toUInt(&ok); \
+	setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running)); \
+	if(ok && ((progress > last_progress) || (last_progress == UINT_MAX))) \
+	{ \
+		setProgress(progress); \
+		size_estimate = estimateSize(progress); \
+		last_progress = progress; \
+	} \
+	setDetails(tr("%1, est. file size %2").arg(text.mid(offset).trimmed(), sizeToString(size_estimate))); \
+	last_indexing = UINT_MAX; \
+} \
+while(0)
+
 bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int inputType, unsigned int frames, const QString &indexFile, int pass, const QString &passLogFile)
 {
 	QProcess processEncode, processInput;
@@ -385,6 +401,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 
 	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.(\\d+)%\\]");
 	QRegExp regExpProgress("\\[(\\d+)\\.(\\d+)%\\].+frames");
+	QRegExp regExpModified("\\[\\s*(\\d+)\\.(\\d+)%\\]\\s+(\\d+)/(\\d+)\\s(\\d+).(\\d+)\\s(\\d+).(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+):(\\d+):(\\d+)");
 	QRegExp regExpFrameCnt("^(\\d+) frames:");
 	
 	QTextCodec *localCodec = QTextCodec::codecForName("System");
@@ -475,17 +492,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 				int offset = -1;
 				if((offset = regExpProgress.lastIndexIn(text)) >= 0)
 				{
-					bool ok = false;
-					unsigned int progress = regExpProgress.cap(1).toUInt(&ok);
-					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
-					if(ok && ((progress > last_progress) || (last_progress == UINT_MAX)))
-					{
-						setProgress(progress);
-						size_estimate = estimateSize(progress);
-						last_progress = progress;
-					}
-					setDetails(tr("%1, est. file size %2").arg(text.mid(offset).trimmed(), sizeToString(size_estimate)));
-					last_indexing = UINT_MAX;
+					X264_UPDATE_PROGRESS(regExpProgress);
 				}
 				else if((offset = regExpIndexing.lastIndexIn(text)) >= 0)
 				{
@@ -505,6 +512,10 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 					last_progress = last_indexing = UINT_MAX;
 					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
 					setDetails(text.mid(offset).trimmed());
+				}
+				else if((offset = regExpModified.lastIndexIn(text)) >= 0)
+				{
+					X264_UPDATE_PROGRESS(regExpModified);
 				}
 				else if(!text.isEmpty())
 				{

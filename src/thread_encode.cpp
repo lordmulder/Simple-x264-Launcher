@@ -334,7 +334,7 @@ void EncodeThread::encode(void)
 
 	log(tr("\n--- DONE ---\n"));
 	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
-	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
+	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
 }
 

@@ -1359,13 +1359,8 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 	
 	if(process.waitForStarted())
 	{
-		Q_PID pid = process.pid();
-		if((pid != NULL) && (m_jobObject != NULL))
-		{
-			m_jobObject->addProcessToJob(&process);
-			x264_change_process_priority(&process, m_processPriority);
-		}
-		
+		m_jobObject->addProcessToJob(&process);
+		x264_change_process_priority(&process, m_processPriority);
 		lock.unlock();
 		return true;
 	}

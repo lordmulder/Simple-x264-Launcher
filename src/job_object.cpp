@@ -72,21 +72,38 @@ JobObject::~JobObject(void)
 
 bool JobObject::addProcessToJob(const QProcess *proc)
 {
-	if(m_hJobObject)
+	if(!m_hJobObject)
 	{
-		if(AssignProcessToJobObject(m_hJobObject, proc->pid()->hProcess))
+		qWarning("Cannot assign process to job: No job bject available!");
+		return false;
+	}
+
+	if(Q_PID pid = proc->pid())
+	{
+		DWORD exitCode;
+		if(!GetExitCodeProcess(pid->hProcess, &exitCode))
 		{
-			return true;
+			qWarning("Cannot assign process to job: Failed to query process status!");
+			return false;
 		}
-		else
+
+		if(exitCode != STILL_ACTIVE)
+		{
+			qWarning("Cannot assign process to job: Process is not running anymore!");
+			return false;
+		}
+
+		if(!AssignProcessToJobObject(m_hJobObject, pid->hProcess))
 		{
 			qWarning("Failed to assign process to job object!");
 			return false;
 		}
+
+		return true;
 	}
 	else
 	{
-		qWarning("Cannot assign process to job: No job bject available!");
+		qWarning("Cannot assign process to job: Process handle not available!");
 		return false;
 	}
 }

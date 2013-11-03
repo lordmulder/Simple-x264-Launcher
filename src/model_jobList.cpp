@@ -29,8 +29,6 @@
 #include <QIcon>
 #include <QFileInfo>
 
-#include <Mmsystem.h>
-
 JobListModel::JobListModel(PreferencesModel *preferences)
 {
 	m_preferences = preferences;
@@ -493,13 +491,13 @@ void JobListModel::updateStatus(const QUuid &jobId, JobStatus newStatus)
 			switch(newStatus)
 			{
 			case JobStatus_Completed:
-				PlaySound(MAKEINTRESOURCE(IDR_WAVE4), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
+				x264_play_sound(IDR_WAVE4, true);
 				break;
 			case JobStatus_Aborted:
-				PlaySound(MAKEINTRESOURCE(IDR_WAVE5), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
+				x264_play_sound(IDR_WAVE5, true);
 				break;
 			case JobStatus_Failed:
-				PlaySound(MAKEINTRESOURCE(IDR_WAVE6), GetModuleHandle(NULL), SND_RESOURCE | SND_ASYNC);
+				x264_play_sound(IDR_WAVE6, true);
 				break;
 			}
 		}

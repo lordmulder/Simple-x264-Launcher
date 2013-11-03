@@ -39,7 +39,7 @@ public:
 	bool initialize(bool *firstInstance = NULL);
 
 signals:
-	void instanceCreated(DWORD pid);
+	void instanceCreated(unsigned int pid);
 
 public slots:
 	void start(Priority priority = InheritPriority);

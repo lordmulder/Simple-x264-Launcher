@@ -178,33 +178,12 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	X264_DELETE(m_vpsDllPath);
 	path.clear();
 
-	static const wchar_t *VPS_REG_KEY = L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
+	static const char *VPS_REG_KEY = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
 
-	//Determine the VapourSynth install path from registry
-	QString vapoursynthPath; HKEY hKey = NULL;
-	if(RegOpenKey(HKEY_LOCAL_MACHINE, VPS_REG_KEY, &hKey) == ERROR_SUCCESS)
+	QString vapoursynthPath = x264_query_reg_string(false, VPS_REG_KEY, "InstallLocation");
+	if(vapoursynthPath.isEmpty())
 	{
-		const size_t DATA_LEN = 2048;
-		wchar_t data[DATA_LEN];
-		DWORD type = REG_NONE, size = sizeof(wchar_t) * DATA_LEN;
-		if(RegQueryValueEx(hKey, L"InstallLocation", NULL, &type, ((BYTE*)&data[0]), &size) == ERROR_SUCCESS)
-		{
-			if((type == REG_SZ) || (type == REG_EXPAND_SZ))
-			{
-				vapoursynthPath = QDir::fromNativeSeparators(QString::fromUtf16((const ushort*)&data[0]));
-				while(vapoursynthPath.endsWith("/")) { vapoursynthPath.chop(1); }
-				qDebug("Vapoursynth location: %s", vapoursynthPath.toUtf8().constData());
-			}
-		}
-		if(vapoursynthPath.isEmpty())
-		{
-			qWarning("Vapoursynth install location entry not found -> not installed!");
-		}
-		RegCloseKey(hKey);
-	}
-	else
-	{
-		qWarning("Vapoursynth registry key not found -> not installed!");
+		qWarning("Vapoursynth install location entry not found -> not installed!");
 	}
 
 	//Make sure that 'vapoursynth.dll' and 'vspipe.exe' are available
@@ -217,11 +196,7 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 		qDebug("VapourSynth DLL: %s", m_vpsDllPath->fileName().toUtf8().constData());
 		if(m_vpsExePath->open(QIODevice::ReadOnly) && m_vpsDllPath->open(QIODevice::ReadOnly))
 		{
-			DWORD binaryType;
-			if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(m_vpsExePath->fileName())), &binaryType))
-			{
-				vapoursynthComplete = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
-			}
+			vapoursynthComplete = x264_is_executable(m_vpsExePath->fileName());
 		}
 		if(!vapoursynthComplete)
 		{

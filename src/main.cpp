@@ -28,6 +28,11 @@
 #include <QDate>
 #include <QPlastiqueStyle>
 
+//Windows includes
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
 ///////////////////////////////////////////////////////////////////////////////
@@ -104,6 +109,9 @@ static int x264_main(int argc, char* argv[])
 ///////////////////////////////////////////////////////////////////////////////
 // Applicaton entry point
 ///////////////////////////////////////////////////////////////////////////////
+
+LONG WINAPI x264_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInfo);
+void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t);
 
 static int _main(int argc, char* argv[])
 {

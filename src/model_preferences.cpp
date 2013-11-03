@@ -46,7 +46,7 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 	preferences->m_useAvisyth64Bit = false;
 	preferences->m_saveLogFiles = false;
 	preferences->m_saveToSourcePath = false;
-	preferences->m_processPriority = X264_PRIORITY_BELOWNORMAL;
+	preferences->m_processPriority = -1;
 	preferences->m_enableSounds = false;
 	preferences->m_disableWarnings = false;
 }

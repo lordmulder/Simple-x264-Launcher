@@ -96,7 +96,7 @@ void HelpDialog::closeEvent(QCloseEvent *e)
 	if(m_process->state() != QProcess::NotRunning)
 	{
 		e->ignore();
-		MessageBeep(MB_ICONWARNING);
+		x264_beep(x264_beep_warning);
 		return;
 	}
 

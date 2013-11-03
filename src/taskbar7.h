@@ -44,7 +44,7 @@ public:
 	};
 	
 	//Public interface
-	static bool handleWinEvent(MSG *message, long *result);
+	static bool handleWinEvent(void *message, long *result);
 	static bool setTaskbarState(QWidget *window, WinSevenTaskbarState state);
 	static void setTaskbarProgress(QWidget *window, unsigned __int64 currentValue, unsigned __int64 maximumValue);
 	static void setOverlayIcon(QWidget *window, const QIcon *icon);
@@ -53,7 +53,5 @@ public:
 	static void uninit(void);
 
 private:
-	static ITaskbarList3 *m_ptbl;
-	static UINT m_winMsg;
 	static void createInterface(void);
 };

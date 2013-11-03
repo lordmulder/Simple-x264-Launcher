@@ -26,15 +26,6 @@ class PreferencesModel
 public:
 	PreferencesModel(void);
 
-	enum
-	{
-		X264_PRIORITY_ABOVENORMAL = 0,
-		X264_PRIORITY_NORMAL = 1,
-		X264_PRIORITY_BELOWNORMAL = 2,
-		X264_PRIORITY_IDLE = 3,
-	}
-	x264_priority_t;
-
 	//Getter
 	bool autoRunNextJob(void) { return m_autoRunNextJob; }
 	unsigned int maxRunningJobCount(void) { return m_maxRunningJobCount; }

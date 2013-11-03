@@ -57,6 +57,9 @@
     <ClInclude Include="src\model_status.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\job_object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -148,6 +151,9 @@
     </ClCompile>
     <ClCompile Include="tmp\moc\moc_thread_vapoursynth.cpp">
       <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\job_object.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

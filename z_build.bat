@@ -2,9 +2,9 @@
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
-set "MSVC_PATH=C:\Program Files\Microsoft Visual Studio 10.0\VC"
+set "MSVC_PATH=C:\Program Files\Microsoft Visual Studio 12.0\VC"
 set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
-set "QTVC_PATH=C:\Qt\4.8.4"
+set "QTVC_PATH=C:\Qt\4.8.5"
 set "UPX3_PATH=C:\Program Files\UPX"
 
 REM ###############################################
@@ -60,9 +60,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD
 echo ---------------------------------------------------------------------
-MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2012.sln"
+MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2013.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2012.sln"
+MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2013.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -95,7 +95,7 @@ copy "%~dp0\*.txt" "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
 REM ///////////////////////////////////////////////////////////////////////////
-for %%i in (100, 110) do (
+for %%i in (100, 110, 120) do (
 	if exist "%MSVC_PATH%\redist\x86\Microsoft.VC%%i.CRT\*.dll" (
 		copy "%MSVC_PATH%\redist\x86\Microsoft.VC%%i.CRT\msvc?%%i.dll" "%PACK_PATH%"
 	)

@@ -54,10 +54,10 @@ bool IPCThread::initialize(bool *firstInstance)
 	{
 		if((m_semaphore_r->error() == 0) && (m_semaphore_w->error() == 0) && (m_sharedMem->error() == 0))
 		{
-			if(m_sharedMem->create(sizeof(DWORD), QSharedMemory::ReadWrite))
+			if(m_sharedMem->create(sizeof(size_t), QSharedMemory::ReadWrite))
 			{
 				m_firstInstance = m_ipcReady = true;
-				memset(m_sharedMem->data(), 0, sizeof(DWORD));
+				memset(m_sharedMem->data(), 0, sizeof(size_t));
 			}
 			else
 			{
@@ -104,8 +104,8 @@ void IPCThread::run(void)
 	if(!m_firstInstance)
 	{
 		m_semaphore_w->acquire();
-		DWORD *pidPtr = reinterpret_cast<DWORD*>(m_sharedMem->data());
-		*pidPtr = GetCurrentProcessId();
+		size_t *pidPtr = reinterpret_cast<size_t*>(m_sharedMem->data());
+		*pidPtr = x264_process_id();
 		m_semaphore_r->release();
 		return;
 	}
@@ -122,7 +122,7 @@ void IPCThread::run(void)
 		{
 			break;
 		}
-		const DWORD procId = *reinterpret_cast<const DWORD*>(m_sharedMem->constData());
+		const size_t procId = *reinterpret_cast<const size_t*>(m_sharedMem->constData());
 		m_semaphore_w->release();
 		emit instanceCreated(procId);
 	}

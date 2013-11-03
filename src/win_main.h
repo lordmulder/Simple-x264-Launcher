@@ -90,7 +90,7 @@ private slots:
 	void copyLogToClipboard(bool checked);
 	void handleDroppedFiles(void);
 	void init(void);
-	void instanceCreated(DWORD pid);
+	void instanceCreated(unsigned int pid);
 	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);

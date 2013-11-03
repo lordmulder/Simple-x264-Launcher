@@ -20,6 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "global.h"
+#include "targetver.h"
 #include "version.h"
 
 //Windows includes
@@ -28,6 +29,15 @@
 #include <Windows.h>
 #include <MMSystem.h>
 #include <ShellAPI.h>
+
+//C++ includes
+#include <stdio.h>
+#include <string.h>
+#include <iostream>
+#include <time.h>
+
+//VLD
+#include <vld.h>
 
 //Qt includes
 #include <QApplication>
@@ -56,6 +66,7 @@
 #include <QEvent>
 #include <QReadLocker>
 #include <QWriteLocker>
+#include <QProcess>
 
 //CRT includes
 #include <fstream>
@@ -1369,6 +1380,258 @@ bool x264_init_qt(int argc, char* argv[])
 }
 
 /*
+ * Suspend or resume process
+ */
+bool x264_suspendProcess(const QProcess *proc, const bool suspend)
+{
+	if(Q_PID pid = proc->pid())
+	{
+		if(suspend)
+		{
+			return (SuspendThread(pid->hThread) != ((DWORD) -1));
+		}
+		else
+		{
+			return (ResumeThread(pid->hThread) != ((DWORD) -1));
+		}
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ * Convert path to short/ANSI path
+ */
+QString x264_path2ansi(const QString &longPath)
+{
+	QString shortPath = longPath;
+	
+	DWORD buffSize = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), NULL, NULL);
+	
+	if(buffSize > 0)
+	{
+		wchar_t *buffer = new wchar_t[buffSize];
+		DWORD result = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), buffer, buffSize);
+
+		if((result > 0) && (result < buffSize))
+		{
+			shortPath = QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer), result);
+		}
+
+		delete[] buffer;
+		buffer = NULL;
+	}
+
+	return shortPath;
+}
+
+/*
+ * Set the process priority class for current process
+ */
+bool x264_change_process_priority(const int priority)
+{
+	return x264_change_process_priority(GetCurrentProcess(), priority);
+}
+
+/*
+ * Set the process priority class for specified process
+ */
+bool x264_change_process_priority(const QProcess *proc, const int priority)
+{
+	if(Q_PID qPid = proc->pid())
+	{
+		return x264_change_process_priority(qPid->hProcess, priority);
+	}
+	else
+	{
+		return false;
+	}
+}
+
+/*
+ * Set the process priority class for specified process
+ */
+bool x264_change_process_priority(void *hProcess, const int priority)
+{
+	bool ok = false;
+
+	switch(qBound(-2, priority, 2))
+	{
+	case 2:
+		ok = (SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS) == TRUE);
+		break;
+	case 1:
+		if(!(ok = (SetPriorityClass(hProcess, ABOVE_NORMAL_PRIORITY_CLASS) == TRUE)))
+		{
+			ok = (SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS) == TRUE);
+		}
+		break;
+	case 0:
+		ok = (SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS) == TRUE);
+		break;
+	case -1:
+		if(!(ok = (SetPriorityClass(hProcess, BELOW_NORMAL_PRIORITY_CLASS) == TRUE)))
+		{
+			ok = (SetPriorityClass(hProcess, IDLE_PRIORITY_CLASS) == TRUE);
+		}
+		break;
+	case -2:
+		ok = (SetPriorityClass(hProcess, IDLE_PRIORITY_CLASS) == TRUE);
+		break;
+	}
+
+	return ok;
+}
+
+/*
+ * Play a sound (from resources)
+ */
+bool x264_play_sound(const unsigned short uiSoundIdx, const bool bAsync, const wchar_t *alias)
+{
+	if(alias)
+	{
+		return PlaySound(alias, GetModuleHandle(NULL), (SND_ALIAS | (bAsync ? SND_ASYNC : SND_SYNC))) == TRUE;
+	}
+	else
+	{
+		return PlaySound(MAKEINTRESOURCE(uiSoundIdx), GetModuleHandle(NULL), (SND_RESOURCE | (bAsync ? SND_ASYNC : SND_SYNC))) == TRUE;
+	}
+}
+
+/*
+ * Current process ID
+ */
+unsigned int x264_process_id(void)
+{
+	return GetCurrentProcessId();
+}
+
+/*
+ * Make a window blink (to draw user's attention)
+ */
+void x264_blink_window(QWidget *poWindow, unsigned int count, unsigned int delay)
+{
+	static QMutex blinkMutex;
+
+	const double maxOpac = 1.0;
+	const double minOpac = 0.3;
+	const double delOpac = 0.1;
+
+	if(!blinkMutex.tryLock())
+	{
+		qWarning("Blinking is already in progress, skipping!");
+		return;
+	}
+	
+	try
+	{
+		const int steps = static_cast<int>(ceil(maxOpac - minOpac) / delOpac);
+		const int sleep = static_cast<int>(floor(static_cast<double>(delay) / static_cast<double>(steps)));
+		const double opacity = poWindow->windowOpacity();
+	
+		for(unsigned int i = 0; i < count; i++)
+		{
+			for(double x = maxOpac; x >= minOpac; x -= delOpac)
+			{
+				poWindow->setWindowOpacity(x);
+				QApplication::processEvents();
+				Sleep(sleep);
+			}
+
+			for(double x = minOpac; x <= maxOpac; x += delOpac)
+			{
+				poWindow->setWindowOpacity(x);
+				QApplication::processEvents();
+				Sleep(sleep);
+			}
+		}
+
+		poWindow->setWindowOpacity(opacity);
+		QApplication::processEvents();
+		blinkMutex.unlock();
+	}
+	catch(...)
+	{
+		blinkMutex.unlock();
+		qWarning("Exception error while blinking!");
+	}
+}
+
+/*
+ * Bring the specifed window to the front
+ */
+bool x264_bring_to_front(const QWidget *win)
+{
+	const bool ret = (SetForegroundWindow(win->winId()) == TRUE);
+	SwitchToThisWindow(win->winId(), TRUE);
+	return ret;
+}
+
+/*
+ * Check if file is a valid Win32/Win64 executable
+ */
+bool x264_is_executable(const QString &path)
+{
+	bool bIsExecutable = false;
+	DWORD binaryType;
+	if(GetBinaryType(QWCHAR(QDir::toNativeSeparators(path)), &binaryType))
+	{
+		bIsExecutable = (binaryType == SCS_32BIT_BINARY || binaryType == SCS_64BIT_BINARY);
+	}
+	return bIsExecutable;
+}
+
+/*
+ * Read value from registry
+ */
+QString x264_query_reg_string(const bool bUser, const QString &path, const QString &name)
+{
+	QString result; HKEY hKey = NULL;
+	if(RegOpenKey((bUser ? HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE), QWCHAR(path), &hKey) == ERROR_SUCCESS)
+	{
+		const size_t DATA_LEN = 2048; wchar_t data[DATA_LEN];
+		DWORD type = REG_NONE, size = sizeof(wchar_t) * DATA_LEN;
+		if(RegQueryValueEx(hKey, QWCHAR(name), NULL, &type, ((BYTE*)&data[0]), &size) == ERROR_SUCCESS)
+		{
+			if((type == REG_SZ) || (type == REG_EXPAND_SZ))
+			{
+				result = WCHAR2QSTR(&data[0]);
+			}
+		}
+		RegCloseKey(hKey);
+	}
+	return result;
+}
+
+/*
+ * Display the window's close button
+ */
+bool x264_enable_close_button(const QWidget *win, const bool bEnable)
+{
+	bool ok = false;
+
+	if(HMENU hMenu = GetSystemMenu(win->winId(), FALSE))
+	{
+		ok = (EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | (bEnable ? MF_ENABLED : MF_GRAYED)) == TRUE);
+	}
+
+	return ok;
+}
+
+bool x264_beep(int beepType)
+{
+	switch(beepType)
+	{
+		case x264_beep_info:    return MessageBeep(MB_ICONASTERISK) == TRUE;    break;
+		case x264_beep_warning: return MessageBeep(MB_ICONEXCLAMATION) == TRUE; break;
+		case x264_beep_error:   return MessageBeep(MB_ICONHAND) == TRUE;        break;
+		default: return false;
+	}
+}
+
+/*
  * Shutdown the computer
  */
 bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown)
@@ -1534,7 +1797,7 @@ static const HANDLE g_debug_thread = X264_DEBUG ? NULL : x264_debug_thread_init(
 /*
  * Get number private bytes [debug only]
  */
-SIZE_T x264_dbg_private_bytes(void)
+size_t x264_dbg_private_bytes(void)
 {
 #if X264_DEBUG
 	PROCESS_MEMORY_COUNTERS_EX memoryCounters;

@@ -31,6 +31,7 @@
 
 class OptionsModel;
 class QProcess;
+class JobObject;
 
 class EncodeThread : public QThread
 {
@@ -96,8 +97,8 @@ protected:
 	//Synchronization
 	QSemaphore m_semaphorePaused;
 
-	//Job handle
-	void *m_handle_jobObject;
+	//Job Object
+	JobObject *m_jobObject;
 
 	//Internal status values
 	JobStatus m_status;
@@ -129,9 +130,7 @@ protected:
 	//Static functions
 	static QString commandline2string(const QString &program, const QStringList &arguments);
 	static QString sizeToString(qint64 size);
-	static void setPorcessPriority(void *processId, int priroity);
 	static int getInputType(const QString &fileExt);
-	static QString pathToAnsi(const QString &longPath);
 	static QString stringToHash(const QString &string);
 
 signals:

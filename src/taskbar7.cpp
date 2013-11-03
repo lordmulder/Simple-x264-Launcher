@@ -25,8 +25,8 @@
 #include <QIcon>
 #include <ShObjIdl.h>
 
-UINT WinSevenTaskbar::m_winMsg = 0;
-ITaskbarList3 *WinSevenTaskbar::m_ptbl = NULL;
+static UINT s_winMsg = 0;
+static ITaskbarList3 *s_ptbl = NULL;
 
 WinSevenTaskbar::WinSevenTaskbar(void)
 {
@@ -43,27 +43,27 @@ WinSevenTaskbar::~WinSevenTaskbar(void)
 
 void WinSevenTaskbar::init(void)
 {
-	m_winMsg = RegisterWindowMessageW(L"TaskbarButtonCreated");
-	m_ptbl = NULL;
+	s_winMsg = RegisterWindowMessageW(L"TaskbarButtonCreated");
+	s_ptbl = NULL;
 }
 	
 void WinSevenTaskbar::uninit(void)
 {
-	if(m_ptbl)
+	if(s_ptbl)
 	{
-		m_ptbl->Release();
-		m_ptbl = NULL;
+		s_ptbl->Release();
+		s_ptbl = NULL;
 	}
 }
 
-bool WinSevenTaskbar::handleWinEvent(MSG *message, long *result)
+bool WinSevenTaskbar::handleWinEvent(void *message, long *result)
 {
 	bool stopEvent = false;
 
-	if(message->message == m_winMsg)
+	if(((MSG*)message)->message == s_winMsg)
 	{
-		if(!m_ptbl) createInterface();
-		*result = (m_ptbl) ? S_OK : S_FALSE;
+		if(!s_ptbl) createInterface();
+		*result = (s_ptbl) ? S_OK : S_FALSE;
 		stopEvent = true;
 	}
 
@@ -72,7 +72,7 @@ bool WinSevenTaskbar::handleWinEvent(MSG *message, long *result)
 
 void WinSevenTaskbar::createInterface(void)
 {
-	if(!m_ptbl)
+	if(!s_ptbl)
 	{
 		ITaskbarList3 *ptbl = NULL;
 		HRESULT hr = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&ptbl));
@@ -82,7 +82,7 @@ void WinSevenTaskbar::createInterface(void)
 			HRESULT hr2 = ptbl->HrInit();
 			if(SUCCEEDED(hr2))
 			{
-				m_ptbl = ptbl;
+				s_ptbl = ptbl;
 				/*qDebug("ITaskbarList3::HrInit() succeeded.");*/
 			}
 			else
@@ -102,26 +102,26 @@ bool WinSevenTaskbar::setTaskbarState(QWidget *window, WinSevenTaskbarState stat
 {
 	bool result = false;
 	
-	if(m_ptbl && window)
+	if(s_ptbl && window)
 	{
 		HRESULT hr = HRESULT(-1);
 
 		switch(state)
 		{
 		case WinSevenTaskbarNoState:
-			hr = m_ptbl->SetProgressState(window->winId(), TBPF_NOPROGRESS);
+			hr = s_ptbl->SetProgressState(window->winId(), TBPF_NOPROGRESS);
 			break;
 		case WinSevenTaskbarNormalState:
-			hr = m_ptbl->SetProgressState(window->winId(), TBPF_NORMAL);
+			hr = s_ptbl->SetProgressState(window->winId(), TBPF_NORMAL);
 			break;
 		case WinSevenTaskbarIndeterminateState:
-			hr = m_ptbl->SetProgressState(window->winId(), TBPF_INDETERMINATE);
+			hr = s_ptbl->SetProgressState(window->winId(), TBPF_INDETERMINATE);
 			break;
 		case WinSevenTaskbarErrorState:
-			hr = m_ptbl->SetProgressState(window->winId(), TBPF_ERROR);
+			hr = s_ptbl->SetProgressState(window->winId(), TBPF_ERROR);
 			break;
 		case WinSevenTaskbarPausedState:
-			hr = m_ptbl->SetProgressState(window->winId(), TBPF_PAUSED);
+			hr = s_ptbl->SetProgressState(window->winId(), TBPF_PAUSED);
 			break;
 		}
 
@@ -133,17 +133,17 @@ bool WinSevenTaskbar::setTaskbarState(QWidget *window, WinSevenTaskbarState stat
 
 void WinSevenTaskbar::setTaskbarProgress(QWidget *window, unsigned __int64 currentValue, unsigned __int64 maximumValue)
 {
-	if(m_ptbl && window)
+	if(s_ptbl && window)
 	{
-		m_ptbl->SetProgressValue(window->winId(), currentValue, maximumValue);
+		s_ptbl->SetProgressValue(window->winId(), currentValue, maximumValue);
 	}
 }
 
 void WinSevenTaskbar::setOverlayIcon(QWidget *window, const QIcon *icon)
 {
-	if(m_ptbl && window)
+	if(s_ptbl && window)
 	{
-		m_ptbl->SetOverlayIcon(window->winId(), (icon ? icon->pixmap(16,16).toWinHICON() : NULL), L"Simple x264 Launcher");
+		s_ptbl->SetOverlayIcon(window->winId(), (icon ? icon->pixmap(16,16).toWinHICON() : NULL), L"Simple x264 Launcher");
 	}
 }
 

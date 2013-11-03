@@ -45,12 +45,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	setFixedSize(minimumSize());
-
-	if(WId hWindow = this->winId())
-	{
-		HMENU hMenu = GetSystemMenu(hWindow, 0);
-		EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
-	}
+	x264_enable_close_button(this, false);
 	
 	labelRunNextJob->installEventFilter(this);
 	labelUse10BitEncoding->installEventFilter(this);
@@ -86,7 +81,7 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding(), true);
 
 	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
-	comboBoxPriority->setCurrentIndex(qBound(0, m_preferences->processPriority(), comboBoxPriority->count()-1));
+	comboBoxPriority->setCurrentIndex(qBound(0, m_preferences->processPriority() + 2, comboBoxPriority->count()-1));
 
 	checkUse64BitAvs2YUV->setEnabled(m_x64);
 	labelUse64BitAvs2YUV->setEnabled(m_x64);
@@ -134,7 +129,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->setSaveLogFiles(checkSaveLogFiles->isChecked());
 	m_preferences->setSaveToSourcePath(checkSaveToSourceFolder->isChecked());
 	m_preferences->setMaxRunningJobCount(spinBoxJobCount->value());
-	m_preferences->setProcessPriority(comboBoxPriority->currentIndex());
+	m_preferences->setProcessPriority(comboBoxPriority->currentIndex() - 2);
 	m_preferences->setEnableSounds(checkEnableSounds->isChecked());
 	m_preferences->setDisableWarnings(checkDisableWarnings->isChecked());
 

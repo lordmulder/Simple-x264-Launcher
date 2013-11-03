@@ -24,6 +24,7 @@
 #include "global.h"
 #include "model_options.h"
 #include "model_preferences.h"
+#include "job_object.h"
 #include "version.h"
 
 #include <QDate>
@@ -121,7 +122,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_skipVersionTest(skipVersionTest),
 	m_processPriority(processPriroity),
 	m_abortOnTimeout(abortOnTimeout),
-	m_handle_jobObject(NULL),
+	m_jobObject(new JobObject),
 	m_semaphorePaused(0)
 {
 	m_abort = false;
@@ -131,12 +132,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 EncodeThread::~EncodeThread(void)
 {
 	X264_DELETE(m_options);
-	
-	if(m_handle_jobObject)
-	{
-		CloseHandle(m_handle_jobObject);
-		m_handle_jobObject = NULL;
-	}
+	X264_DELETE(m_jobObject);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,10 +154,10 @@ void EncodeThread::run(void)
 	checkedRun();
 #endif
 
-	if(m_handle_jobObject)
+	if(m_jobObject)
 	{
-		TerminateJobObject(m_handle_jobObject, 42);
-		m_handle_jobObject = NULL;
+		m_jobObject->terminateJob(42);
+		X264_DELETE(m_jobObject);
 	}
 }
 
@@ -189,7 +185,7 @@ void EncodeThread::checkedRun(void)
 	}
 	catch(...)
 	{
-		RaiseException(EXCEPTION_ACCESS_VIOLATION, 0, 0, NULL);
+		x264_fatal_exit(L"Unhandeled exception error in encode thread!");
 	}
 }
 
@@ -369,7 +365,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			{
 				cmdLine_Input.append(splitParams(m_options->customAvs2YUV()));
 			}
-			cmdLine_Input << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName));
 			cmdLine_Input << "-";
 			log("Creating Avisynth process:");
 			if(!startProcess(processInput, AVS2_BINARY(m_binDir, avs2yuv_x64), cmdLine_Input, false))
@@ -378,7 +374,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			}
 			break;
 		case INPUT_VAPOUR:
-			cmdLine_Input << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName));
 			cmdLine_Input << "-" << "-y4m";
 			log("Creating Vapoursynth process:");
 			if(!startProcess(processInput, VPSP_BINARY(m_vpsDir), cmdLine_Input, false))
@@ -434,13 +430,13 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 				setStatus(JobStatus_Paused);
 				log(tr("Job paused by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 				bool ok[2] = {false, false};
-				Q_PID pid[2] = {processEncode.pid(), processInput.pid()};
-				if(pid[0]) { ok[0] = (SuspendThread(pid[0]->hThread) != (DWORD)(-1)); }
-				if(pid[1]) { ok[1] = (SuspendThread(pid[1]->hThread) != (DWORD)(-1)); }
+				QProcess *proc[2] = { &processEncode, &processInput };
+				ok[0] = x264_suspendProcess(proc[0], true);
+				ok[1] = x264_suspendProcess(proc[1], true);
 				while(m_pause) m_semaphorePaused.tryAcquire(1, 5000);
 				while(m_semaphorePaused.tryAcquire(1, 0));
-				if(pid[0]) { if(ok[0]) ResumeThread(pid[0]->hThread); }
-				if(pid[1]) { if(ok[1]) ResumeThread(pid[1]->hThread); }
+				ok[0] = x264_suspendProcess(proc[0], false);
+				ok[1] = x264_suspendProcess(proc[1], false);
 				if(!m_abort) setStatus(previousStatus);
 				log(tr("Job resumed by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 				waitCounter = 0;
@@ -995,7 +991,7 @@ bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 	}
 
 	cmdLine << "-frames" << "1";
-	cmdLine << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
+	cmdLine << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
 
 	log("Creating process:");
 	if(!startProcess(process, AVS2_BINARY(m_binDir, x64), cmdLine))
@@ -1155,7 +1151,7 @@ bool EncodeThread::checkPropertiesVapoursynth(/*const QString &vspipePath,*/ uns
 	QProcess process;
 	QStringList cmdLine;
 
-	cmdLine << pathToAnsi(QDir::toNativeSeparators(m_sourceFileName));
+	cmdLine << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName));
 	cmdLine << "-" << "-info";
 
 	log("Creating process:");
@@ -1323,29 +1319,6 @@ void EncodeThread::setDetails(const QString &text)
 	emit detailsChanged(m_jobId, text);
 }
 
-QString EncodeThread::pathToAnsi(const QString &longPath)
-{
-	QString shortPath = longPath;
-	
-	DWORD buffSize = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), NULL, NULL);
-	
-	if(buffSize > 0)
-	{
-		wchar_t *buffer = new wchar_t[buffSize];
-		DWORD result = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), buffer, buffSize);
-
-		if((result > 0) && (result < buffSize))
-		{
-			shortPath = QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer), result);
-		}
-
-		delete[] buffer;
-		buffer = NULL;
-	}
-
-	return shortPath;
-}
-
 QString EncodeThread::stringToHash(const QString &string)
 {
 	QByteArray result(10, char(0));
@@ -1369,23 +1342,6 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 	QMutexLocker lock(&m_mutex_startProcess);
 	log(commandline2string(program, args) + "\n");
 
-	//Create a new job object, if not done yet
-	if(!m_handle_jobObject)
-	{
-		m_handle_jobObject = CreateJobObject(NULL, NULL);
-		if(m_handle_jobObject == INVALID_HANDLE_VALUE)
-		{
-			m_handle_jobObject = NULL;
-		}
-		if(m_handle_jobObject)
-		{
-			JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedLimitInfo;
-			memset(&jobExtendedLimitInfo, 0, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-			jobExtendedLimitInfo.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE | JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION;
-			SetInformationJobObject(m_handle_jobObject, JobObjectExtendedLimitInformation, &jobExtendedLimitInfo, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-		}
-	}
-
 	process.setWorkingDirectory(QDir::tempPath());
 
 	if(mergeChannels)
@@ -1404,10 +1360,10 @@ bool EncodeThread::startProcess(QProcess &process, const QString &program, const
 	if(process.waitForStarted())
 	{
 		Q_PID pid = process.pid();
-		if(pid != NULL)
+		if((pid != NULL) && (m_jobObject != NULL))
 		{
-			AssignProcessToJobObject(m_handle_jobObject, process.pid()->hProcess);
-			setPorcessPriority(process.pid()->hProcess, m_processPriority);
+			m_jobObject->addProcessToJob(&process);
+			x264_change_process_priority(&process, m_processPriority);
 		}
 		
 		lock.unlock();
@@ -1511,29 +1467,4 @@ int EncodeThread::getInputType(const QString &fileExt)
 	else if(fileExt.compare("vpy", Qt::CaseInsensitive) == 0)  type = INPUT_VAPOUR;
 	else if(fileExt.compare("py", Qt::CaseInsensitive) == 0)   type = INPUT_VAPOUR;
 	return type;
-}
-
-void EncodeThread::setPorcessPriority(void *processId, int priroity)
-{
-	switch(priroity)
-	{
-	case PreferencesModel::X264_PRIORITY_ABOVENORMAL:
-		if(!SetPriorityClass(processId, ABOVE_NORMAL_PRIORITY_CLASS))
-		{
-			SetPriorityClass(processId, NORMAL_PRIORITY_CLASS);
-		}
-		break;
-	case PreferencesModel::X264_PRIORITY_NORMAL:
-		SetPriorityClass(processId, NORMAL_PRIORITY_CLASS);
-		break;
-	case PreferencesModel::X264_PRIORITY_BELOWNORMAL:
-		if(!SetPriorityClass(processId, BELOW_NORMAL_PRIORITY_CLASS))
-		{
-			SetPriorityClass(processId, IDLE_PRIORITY_CLASS);
-		}
-		break;
-	case PreferencesModel::X264_PRIORITY_IDLE:
-		SetPriorityClass(processId, IDLE_PRIORITY_CLASS);
-		break;
-	}
 }

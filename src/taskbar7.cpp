@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// LameXP - Audio Encoder Front-End
+// Simple x264 Launcher
 // Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
@@ -143,13 +143,13 @@ void WinSevenTaskbar::setOverlayIcon(QWidget *window, const QIcon *icon)
 {
 	if(m_ptbl && window)
 	{
-		m_ptbl->SetOverlayIcon(window->winId(), (icon ? icon->pixmap(16,16).toWinHICON() : NULL), L"LameXP");
+		m_ptbl->SetOverlayIcon(window->winId(), (icon ? icon->pixmap(16,16).toWinHICON() : NULL), L"Simple x264 Launcher");
 	}
 }
 
 #else //__ITaskbarList3_INTERFACE_DEFINED__
 
-LAMEXP_COMPILER_WARNING("ITaskbarList3 not defined. Compiling *without* support for Win7 taskbar!")
+X264_COMPILER_WARNING("ITaskbarList3 not defined. Compiling *without* support for Win7 taskbar!")
 void WinSevenTaskbar::init(void) {}
 void WinSevenTaskbar::uninit(void) {}
 bool WinSevenTaskbar::handleWinEvent(MSG *message, long *result) { return false; }

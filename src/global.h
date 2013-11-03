@@ -67,6 +67,8 @@
 
 //Helper macros
 #define QWCHAR(STR) reinterpret_cast<const wchar_t*>(STR.utf16())
+#define QUTF8(STR) ((STR).toUtf8().constData())
+#define WCHAR2QSTR(STR) (QString::fromUtf16(reinterpret_cast<const unsigned short*>((STR))))
 #define X264_BOOL(X) ((X) ? "1" : "0")
 #define X264_DELETE(PTR) if(PTR) { delete PTR; PTR = NULL; }
 #define X264_DELETE_ARRAY(PTR) if(PTR) { delete [] PTR; PTR = NULL; }
@@ -104,6 +106,32 @@ typedef struct
 }
 x264_cpu_t;
 
+//OS version number
+typedef struct _x264_os_version_t
+{
+	unsigned int versionMajor;
+	unsigned int versionMinor;
+	bool overrideFlag;
+
+	//comparision operators
+	inline bool operator== (const _x264_os_version_t &rhs) const { return (versionMajor == rhs.versionMajor) && (versionMinor == rhs.versionMinor); }
+	inline bool operator!= (const _x264_os_version_t &rhs) const { return (versionMajor != rhs.versionMajor) || (versionMinor != rhs.versionMinor); }
+	inline bool operator>  (const _x264_os_version_t &rhs) const { return (versionMajor > rhs.versionMajor) || ((versionMajor == rhs.versionMajor) && (versionMinor >  rhs.versionMinor)); }
+	inline bool operator>= (const _x264_os_version_t &rhs) const { return (versionMajor > rhs.versionMajor) || ((versionMajor == rhs.versionMajor) && (versionMinor >= rhs.versionMinor)); }
+	inline bool operator<  (const _x264_os_version_t &rhs) const { return (versionMajor < rhs.versionMajor) || ((versionMajor == rhs.versionMajor) && (versionMinor <  rhs.versionMinor)); }
+	inline bool operator<= (const _x264_os_version_t &rhs) const { return (versionMajor < rhs.versionMajor) || ((versionMajor == rhs.versionMajor) && (versionMinor <= rhs.versionMinor)); }
+}
+x264_os_version_t;
+
+//Known Windows versions
+extern const x264_os_version_t x264_winver_win2k;
+extern const x264_os_version_t x264_winver_winxp;
+extern const x264_os_version_t x264_winver_xpx64;
+extern const x264_os_version_t x264_winver_vista;
+extern const x264_os_version_t x264_winver_win70;
+extern const x264_os_version_t x264_winver_win80;
+extern const x264_os_version_t x264_winver_win81;
+
 //Functions
 LONG WINAPI x264_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInfo);
 void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t);
@@ -120,8 +148,10 @@ const char *x264_version_compiler(void);
 const char *x264_version_arch(void);
 void x264_init_console(int argc, char* argv[]);
 bool x264_init_qt(int argc, char* argv[]);
-const x264_cpu_t x264_detect_cpu_features(int argc, char **argv);
+x264_cpu_t x264_detect_cpu_features(const QStringList &argv);
 bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown);
 void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage = NULL);
+void x264_sleep(const unsigned int delay);
+const QStringList &x264_arguments(void);
 SIZE_T x264_dbg_private_bytes(void);
 void x264_finalization(void);

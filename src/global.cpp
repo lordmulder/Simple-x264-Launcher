@@ -22,6 +22,13 @@
 #include "global.h"
 #include "version.h"
 
+//Windows includes
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <MMSystem.h>
+#include <ShellAPI.h>
+
 //Qt includes
 #include <QApplication>
 #include <QMessageBox>
@@ -47,12 +54,15 @@
 #include <QTimer>
 #include <QLibraryInfo>
 #include <QEvent>
+#include <QReadLocker>
+#include <QWriteLocker>
 
 //CRT includes
 #include <fstream>
 #include <io.h>
 #include <fcntl.h>
 #include <intrin.h>
+#include <process.h>
 
 //Debug only includes
 #if X264_DEBUG
@@ -90,13 +100,86 @@ g_x264_version =
 	__TIME__
 };
 
+//CLI Arguments
+static struct
+{
+	QStringList *list;
+	QReadWriteLock lock;
+}
+g_x264_argv;
+
+//OS Version
+static struct
+{
+	bool bInitialized;
+	x264_os_version_t version;
+	QReadWriteLock lock;
+}
+g_x264_os_version;
+
+//Portable Mode
+static struct
+{
+	bool bInitialized;
+	bool bPortableModeEnabled;
+	QReadWriteLock lock;
+}
+g_x264_portable;
+
+//Known Windows versions - maps marketing names to the actual Windows NT versions
+const x264_os_version_t x264_winver_win2k = {5,0};
+const x264_os_version_t x264_winver_winxp = {5,1};
+const x264_os_version_t x264_winver_xpx64 = {5,2};
+const x264_os_version_t x264_winver_vista = {6,0};
+const x264_os_version_t x264_winver_win70 = {6,1};
+const x264_os_version_t x264_winver_win80 = {6,2};
+const x264_os_version_t x264_winver_win81 = {6,3};
+
+//GURU MEDITATION
+static const char *GURU_MEDITATION = "\n\nGURU MEDITATION !!!\n\n";
+
+///////////////////////////////////////////////////////////////////////////////
+// MACROS
+///////////////////////////////////////////////////////////////////////////////
+
+//String helper
+#define CLEAN_OUTPUT_STRING(STR) do \
+{ \
+	const char CTRL_CHARS[3] = { '\r', '\n', '\t' }; \
+	for(size_t i = 0; i < 3; i++) \
+	{ \
+		while(char *pos = strchr((STR), CTRL_CHARS[i])) *pos = char(0x20); \
+	} \
+} \
+while(0)
+
+//String helper
+#define TRIM_LEFT(STR) do \
+{ \
+	const char WHITE_SPACE[4] = { char(0x20), '\r', '\n', '\t' }; \
+	for(size_t i = 0; i < 4; i++) \
+	{ \
+		while(*(STR) == WHITE_SPACE[i]) (STR)++; \
+	} \
+} \
+while(0)
+
+#define X264_ZERO_MEMORY(X) SecureZeroMemory(&X, sizeof(X))
+
+///////////////////////////////////////////////////////////////////////////////
+// COMPILER INFO
+///////////////////////////////////////////////////////////////////////////////
+
+/*
+ * Disclaimer: Parts of the following code were borrowed from MPC-HC project: http://mpc-hc.sf.net/
+ */
+
 //Compiler detection
-//The following code was borrowed from MPC-HC project: http://mpc-hc.sf.net/
 #if defined(__INTEL_COMPILER)
 	#if (__INTEL_COMPILER >= 1300)
-		static const char *g_x264_version_compiler = "ICL 13." LAMEXP_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
+		static const char *g_x264_version_compiler = "ICL 13." X264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
 	#elif (__INTEL_COMPILER >= 1200)
-		static const char *g_x264_version_compiler = "ICL 12." LAMEXP_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
+		static const char *g_x264_version_compiler = "ICL 12." X264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
 	#elif (__INTEL_COMPILER >= 1100)
 		static const char *g_x264_version_compiler = "ICL 11.x";
 	#elif (__INTEL_COMPILER >= 1000)
@@ -105,25 +188,33 @@ g_x264_version =
 		#error Compiler is not supported!
 	#endif
 #elif defined(_MSC_VER)
-	#if (_MSC_VER == 1700)
+	#if (_MSC_VER == 1800)
+		#if (_MSC_FULL_VER < 180021005)
+			static const char *g_x264_version_compiler = "MSVC 2013-Beta";
+		#elif (_MSC_FULL_VER == 180021005)
+			static const char *g_x264_version_compiler = "MSVC 2013";
+		#else
+			#error Compiler version is not supported yet!
+		#endif
+	#elif (_MSC_VER == 1700)
 		#if (_MSC_FULL_VER < 170050727)
 			static const char *g_x264_version_compiler = "MSVC 2012-Beta";
 		#elif (_MSC_FULL_VER < 170051020)
-			static const char *g_x264_version_compiler = "MSVC 2012-RTM";
+			static const char *g_x264_version_compiler = "MSVC 2012";
 		#elif (_MSC_FULL_VER < 170051106)
-			static const char *g_x264_version_compiler = "MSVC 2012-U1 CTP";
+			static const char *g_x264_version_compiler = "MSVC 2012.1-CTP";
 		#elif (_MSC_FULL_VER < 170060315)
-			static const char *g_x264_version_compiler = "MSVC 2012-U1";
+			static const char *g_x264_version_compiler = "MSVC 2012.1";
 		#elif (_MSC_FULL_VER < 170060610)
-			static const char *g_x264_version_compiler = "MSVC 2012-U2";
+			static const char *g_x264_version_compiler = "MSVC 2012.2";
 		#elif (_MSC_FULL_VER == 170060610)
-			static const char *g_x264_version_compiler = "MSVC 2012-U3";
+			static const char *g_x264_version_compiler = "MSVC 2012.3";
 		#else
 			#error Compiler version is not supported yet!
 		#endif
 	#elif (_MSC_VER == 1600)
 		#if (_MSC_FULL_VER < 160040219)
-			static const char *g_x264_version_compiler = "MSVC 2010-RTM";
+			static const char *g_x264_version_compiler = "MSVC 2010";
 		#elif (_MSC_FULL_VER == 160040219)
 			static const char *g_x264_version_compiler = "MSVC 2010-SP1";
 		#else
@@ -144,7 +235,7 @@ g_x264_version =
 		#if (_M_IX86_FP == 1)
 			X264_COMPILER_WARNING("SSE instruction set is enabled!")
 		#elif (_M_IX86_FP == 2)
-			X264_COMPILER_WARNING("SSE2 instruction set is enabled!")
+			X264_COMPILER_WARNING("SSE2 (or higher) instruction set is enabled!")
 		#endif
 	#endif
 #else
@@ -159,6 +250,20 @@ g_x264_version =
 #else
 	#error Architecture is not supported!
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+// GLOBAL FUNCTIONS
+///////////////////////////////////////////////////////////////////////////////
+
+static __forceinline bool x264_check_for_debugger(void);
+
+/*
+ * Suspend calling thread for N milliseconds
+ */
+inline void x264_sleep(const unsigned int delay)
+{
+	Sleep(delay);
+}
 
 /*
  * Global exception handler
@@ -202,81 +307,241 @@ static void x264_console_color(FILE* file, WORD attributes)
 }
 
 /*
- * Qt message handler
+ * Output logging message to console
  */
-void x264_message_handler(QtMsgType type, const char *msg)
-{
-	static const char *GURU_MEDITATION = "\n\nGURU MEDITATION !!!\n\n";
-	
-	QMutexLocker lock(&g_x264_message_mutex);
-
-	if(g_x264_log_file)
+static void x264_write_console(const int type, const char *msg)
+{	
+	__try
 	{
-		static char prefix[] = "DWCF";
-		int index = qBound(0, static_cast<int>(type), 3);
-		unsigned int timestamp = static_cast<unsigned int>(_time64(NULL) % 3600I64);
-		QString str = QString::fromUtf8(msg).trimmed().replace('\n', '\t');
-		fprintf(g_x264_log_file, "[%c][%04u] %s\r\n", prefix[index], timestamp, str.toUtf8().constData());
-		fflush(g_x264_log_file);
-	}
-
-	if(g_x264_console_attached)
-	{
-		UINT oldOutputCP = GetConsoleOutputCP();
-		if(oldOutputCP != CP_UTF8) SetConsoleOutputCP(CP_UTF8);
-
-		switch(type)
+		if(_isatty(_fileno(stderr)))
 		{
-		case QtCriticalMsg:
-		case QtFatalMsg:
-			fflush(stdout);
-			fflush(stderr);
-			x264_console_color(stderr, FOREGROUND_RED | FOREGROUND_INTENSITY);
-			fprintf(stderr, GURU_MEDITATION);
-			fprintf(stderr, "%s\n", msg);
-			fflush(stderr);
-			break;
-		case QtWarningMsg:
-			x264_console_color(stderr, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
-			fprintf(stderr, "%s\n", msg);
-			fflush(stderr);
-			break;
-		default:
-			x264_console_color(stderr, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
-			fprintf(stderr, "%s\n", msg);
-			fflush(stderr);
-			break;
-		}
+			UINT oldOutputCP = GetConsoleOutputCP();
+			if(oldOutputCP != CP_UTF8) SetConsoleOutputCP(CP_UTF8);
+
+			switch(type)
+			{
+			case QtCriticalMsg:
+			case QtFatalMsg:
+				x264_console_color(stderr, FOREGROUND_RED | FOREGROUND_INTENSITY);
+				fprintf(stderr, GURU_MEDITATION);
+				fprintf(stderr, "%s\n", msg);
+				fflush(stderr);
+				break;
+			case QtWarningMsg:
+				x264_console_color(stderr, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
+				fprintf(stderr, "%s\n", msg);
+				fflush(stderr);
+				break;
+			default:
+				x264_console_color(stderr, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
+				fprintf(stderr, "%s\n", msg);
+				fflush(stderr);
+				break;
+			}
 	
-		x264_console_color(stderr, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
-		if(oldOutputCP != CP_UTF8) SetConsoleOutputCP(oldOutputCP);
+			x264_console_color(stderr, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+			if(oldOutputCP != CP_UTF8) SetConsoleOutputCP(oldOutputCP);
+		}
 	}
-	else
+	__except(1)
 	{
-		QString temp("[x264][%1] %2");
+		/*ignore any exception that might occur here!*/
+	}
+}
+
+/*
+ * Output logging message to debugger
+ */
+static void x264_write_dbg_out(const int type, const char *msg)
+{	
+	const char *FORMAT = "[sx264l][%c] %s\n";
+
+	__try
+	{
+		char buffer[512];
+		const char* input = msg;
+		TRIM_LEFT(input);
 		
 		switch(type)
 		{
 		case QtCriticalMsg:
 		case QtFatalMsg:
-			temp = temp.arg("C", QString::fromUtf8(msg));
+			_snprintf_s(buffer, 512, _TRUNCATE, FORMAT, 'C', input);
 			break;
 		case QtWarningMsg:
-			temp = temp.arg("W", QString::fromUtf8(msg));
+			_snprintf_s(buffer, 512, _TRUNCATE, FORMAT, 'W', input);
 			break;
 		default:
-			temp = temp.arg("I", QString::fromUtf8(msg));
+			_snprintf_s(buffer, 512, _TRUNCATE, FORMAT, 'I', input);
 			break;
 		}
 
-		temp.replace("\n", "\t").append("\n");
-		OutputDebugStringA(temp.toLatin1().constData());
+		char *temp = &buffer[0];
+		CLEAN_OUTPUT_STRING(temp);
+		OutputDebugStringA(temp);
+	}
+	__except(1)
+	{
+		/*ignore any exception that might occur here!*/
+	}
+}
+
+/*
+ * Output logging message to logfile
+ */
+static void x264_write_logfile(const int type, const char *msg)
+{	
+	const char *FORMAT = "[%c][%04u] %s\r\n";
+
+	__try
+	{
+		if(g_x264_log_file)
+		{
+			char buffer[512];
+			strncpy_s(buffer, 512, msg, _TRUNCATE);
+
+			char *temp = &buffer[0];
+			TRIM_LEFT(temp);
+			CLEAN_OUTPUT_STRING(temp);
+			
+			const unsigned int timestamp = static_cast<unsigned int>(_time64(NULL) % 3600I64);
+
+			switch(type)
+			{
+			case QtCriticalMsg:
+			case QtFatalMsg:
+				fprintf(g_x264_log_file, FORMAT, 'C', timestamp, temp);
+				break;
+			case QtWarningMsg:
+				fprintf(g_x264_log_file, FORMAT, 'W', timestamp, temp);
+				break;
+			default:
+				fprintf(g_x264_log_file, FORMAT, 'I', timestamp, temp);
+				break;
+			}
+
+			fflush(g_x264_log_file);
+		}
+	}
+	__except(1)
+	{
+		/*ignore any exception that might occur here!*/
+	}
+}
+
+/*
+ * Qt message handler
+ */
+void x264_message_handler(QtMsgType type, const char *msg)
+{
+	if((!msg) || (!(msg[0])))
+	{
+		return;
 	}
 
-	if(type == QtCriticalMsg || type == QtFatalMsg)
+	QMutexLocker lock(&g_x264_message_mutex);
+
+	if(g_x264_log_file)
+	{
+		x264_write_logfile(type, msg);
+	}
+
+	if(g_x264_console_attached)
+	{
+		x264_write_console(type, msg);
+	}
+	else
+	{
+		x264_write_dbg_out(type, msg);
+	}
+
+	if((type == QtCriticalMsg) || (type == QtFatalMsg))
 	{
 		lock.unlock();
 		x264_fatal_exit(L"The application has encountered a critical error and will exit now!", QWCHAR(QString::fromUtf8(msg)));
+	}
+}
+
+/*
+ * Initialize the console
+ */
+void x264_init_console(const QStringList &argv)
+{
+	bool enableConsole = x264_is_prerelease() || (X264_DEBUG);
+
+	if(_environ)
+	{
+		wchar_t *logfile = NULL;
+		size_t logfile_len = 0;
+		if(!_wdupenv_s(&logfile, &logfile_len, L"X264_LOGFILE"))
+		{
+			if(logfile && (logfile_len > 0))
+			{
+				FILE *temp = NULL;
+				if(!_wfopen_s(&temp, logfile, L"wb"))
+				{
+					fprintf(temp, "%c%c%c", char(0xEF), char(0xBB), char(0xBF));
+					g_x264_log_file = temp;
+				}
+				free(logfile);
+			}
+		}
+	}
+
+	if(!X264_DEBUG)
+	{
+		for(int i = 0; i < argv.count(); i++)
+		{
+			if(!argv.at(i).compare("--console", Qt::CaseInsensitive))
+			{
+				enableConsole = true;
+			}
+			else if(!argv.at(i).compare("--no-console", Qt::CaseInsensitive))
+			{
+				enableConsole = false;
+			}
+		}
+	}
+
+	if(enableConsole)
+	{
+		if(!g_x264_console_attached)
+		{
+			if(AllocConsole() != FALSE)
+			{
+				SetConsoleCtrlHandler(NULL, TRUE);
+				SetConsoleTitle(L"Simple x264 Launcher | Debug Console");
+				SetConsoleOutputCP(CP_UTF8);
+				g_x264_console_attached = true;
+			}
+		}
+		
+		if(g_x264_console_attached)
+		{
+			//-------------------------------------------------------------------
+			//See: http://support.microsoft.com/default.aspx?scid=kb;en-us;105305
+			//-------------------------------------------------------------------
+			const int flags = _O_WRONLY | _O_U8TEXT;
+			int hCrtStdOut = _open_osfhandle((intptr_t) GetStdHandle(STD_OUTPUT_HANDLE), flags);
+			int hCrtStdErr = _open_osfhandle((intptr_t) GetStdHandle(STD_ERROR_HANDLE),  flags);
+			FILE *hfStdOut = (hCrtStdOut >= 0) ? _fdopen(hCrtStdOut, "wb") : NULL;
+			FILE *hfStdErr = (hCrtStdErr >= 0) ? _fdopen(hCrtStdErr, "wb") : NULL;
+			if(hfStdOut) { *stdout = *hfStdOut; std::cout.rdbuf(new std::filebuf(hfStdOut)); }
+			if(hfStdErr) { *stderr = *hfStdErr; std::cerr.rdbuf(new std::filebuf(hfStdErr)); }
+		}
+
+		HWND hwndConsole = GetConsoleWindow();
+
+		if((hwndConsole != NULL) && (hwndConsole != INVALID_HANDLE_VALUE))
+		{
+			HMENU hMenu = GetSystemMenu(hwndConsole, 0);
+			EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+			RemoveMenu(hMenu, SC_CLOSE, MF_BYCOMMAND);
+
+			SetWindowPos(hwndConsole, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+			SetWindowLong(hwndConsole, GWL_STYLE, GetWindowLong(hwndConsole, GWL_STYLE) & (~WS_MAXIMIZEBOX) & (~WS_MINIMIZEBOX));
+			SetWindowPos(hwndConsole, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
+		}
 	}
 }
 
@@ -392,22 +657,72 @@ const char *x264_version_arch(void)
 }
 
 /*
+ * Get CLI arguments
+ */
+const QStringList &x264_arguments(void)
+{
+	QReadLocker readLock(&g_x264_argv.lock);
+
+	if(!g_x264_argv.list)
+	{
+		readLock.unlock();
+		QWriteLocker writeLock(&g_x264_argv.lock);
+
+		g_x264_argv.list = new QStringList;
+
+		int nArgs = 0;
+		LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+
+		if(NULL != szArglist)
+		{
+			for(int i = 0; i < nArgs; i++)
+			{
+				(*g_x264_argv.list) << WCHAR2QSTR(szArglist[i]);
+			}
+			LocalFree(szArglist);
+		}
+		else
+		{
+			qWarning("CommandLineToArgvW() has failed !!!");
+		}
+	}
+
+	return (*g_x264_argv.list);
+}
+
+/*
  * Check for portable mode
  */
 bool x264_portable(void)
 {
-	static bool detected = false;
-	static bool portable = false;
+	QReadLocker readLock(&g_x264_portable.lock);
 
-	if(!detected)
+	if(g_x264_portable.bInitialized)
 	{
-		portable = portable || QFileInfo(QApplication::applicationFilePath()).baseName().contains(QRegExp("^portable[^A-Za-z0-9]", Qt::CaseInsensitive));
-		portable = portable || QFileInfo(QApplication::applicationFilePath()).baseName().contains(QRegExp("[^A-Za-z0-9]portable[^A-Za-z0-9]", Qt::CaseInsensitive));
-		portable = portable || QFileInfo(QApplication::applicationFilePath()).baseName().contains(QRegExp("[^A-Za-z0-9]portable$", Qt::CaseInsensitive));
-		detected = true;
+		return g_x264_portable.bPortableModeEnabled;
 	}
+	
+	readLock.unlock();
+	QWriteLocker writeLock(&g_x264_portable.lock);
 
-	return portable;
+	if(!g_x264_portable.bInitialized)
+	{
+		if(VER_X264_PORTABLE_EDITION)
+		{
+			qWarning("Simple x264 Launcher portable edition!\n");
+			g_x264_portable.bPortableModeEnabled = true;
+		}
+		else
+		{
+			QString baseName = QFileInfo(QApplication::applicationFilePath()).completeBaseName();
+			int idx1 = baseName.indexOf("x264", 0, Qt::CaseInsensitive);
+			int idx2 = baseName.lastIndexOf("portable", -1, Qt::CaseInsensitive);
+			g_x264_portable.bPortableModeEnabled = (idx1 >= 0) && (idx2 >= 0) && (idx1 < idx2);
+		}
+		g_x264_portable.bInitialized = true;
+	}
+	
+	return g_x264_portable.bPortableModeEnabled;
 }
 
 /*
@@ -495,13 +810,9 @@ extern "C"
 /*
  * Detect CPU features
  */
-const x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
+x264_cpu_t x264_detect_cpu_features(const QStringList &argv)
 {
 	typedef BOOL (WINAPI *IsWow64ProcessFun)(__in HANDLE hProcess, __out PBOOL Wow64Process);
-	typedef VOID (WINAPI *GetNativeSystemInfoFun)(__out LPSYSTEM_INFO lpSystemInfo);
-	
-	static IsWow64ProcessFun IsWow64ProcessPtr = NULL;
-	static GetNativeSystemInfoFun GetNativeSystemInfoPtr = NULL;
 
 	x264_cpu_t features;
 	SYSTEM_INFO systemInfo;
@@ -515,48 +826,48 @@ const x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 	memset(CPUBrandString, 0, sizeof(CPUBrandString));
 	
 	x264_cpu_cpuid(0, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
-	memcpy(CPUIdentificationString, &CPUInfo[1], 4);
-	memcpy(CPUIdentificationString + 4, &CPUInfo[3], 4);
-	memcpy(CPUIdentificationString + 8, &CPUInfo[2], 4);
+	memcpy(CPUIdentificationString, &CPUInfo[1], sizeof(int));
+	memcpy(CPUIdentificationString + 4, &CPUInfo[3], sizeof(int));
+	memcpy(CPUIdentificationString + 8, &CPUInfo[2], sizeof(int));
 	features.intel = (_stricmp(CPUIdentificationString, "GenuineIntel") == 0);
 	strncpy_s(features.vendor, 0x40, CPUIdentificationString, _TRUNCATE);
 
 	if(CPUInfo[0] >= 1)
 	{
 		x264_cpu_cpuid(1, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
-		features.mmx = (CPUInfo[3] & 0x800000U) || false;
-		features.sse = (CPUInfo[3] & 0x2000000U) || false;
-		features.sse2 = (CPUInfo[3] & 0x4000000U) || false;
-		features.ssse3 = (CPUInfo[2] & 0x200U) || false;
-		features.sse3 = (CPUInfo[2] & 0x1U) || false;
-		features.ssse3 = (CPUInfo[2] & 0x200U) || false;
+		features.mmx = (CPUInfo[3] & 0x800000) || false;
+		features.sse = (CPUInfo[3] & 0x2000000) || false;
+		features.sse2 = (CPUInfo[3] & 0x4000000) || false;
+		features.ssse3 = (CPUInfo[2] & 0x200) || false;
+		features.sse3 = (CPUInfo[2] & 0x1) || false;
+		features.ssse3 = (CPUInfo[2] & 0x200) || false;
 		features.stepping = CPUInfo[0] & 0xf;
 		features.model = ((CPUInfo[0] >> 4) & 0xf) + (((CPUInfo[0] >> 16) & 0xf) << 4);
 		features.family = ((CPUInfo[0] >> 8) & 0xf) + ((CPUInfo[0] >> 20) & 0xff);
 		if(features.sse) features.mmx2 = true; //MMXEXT is a subset of SSE!
 	}
 
-	x264_cpu_cpuid(0x80000000U, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
-	unsigned int nExIds = qBound(0x80000000U, CPUInfo[0], 0x80000004U);
+	x264_cpu_cpuid(0x80000000, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
+	int nExIds = qMax<int>(qMin<int>(CPUInfo[0], 0x80000004), 0x80000000);
 
 	if((_stricmp(CPUIdentificationString, "AuthenticAMD") == 0) && (nExIds >= 0x80000001U))
 	{
-		x264_cpu_cpuid(0x80000001U, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
+		x264_cpu_cpuid(0x80000001, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
 		features.mmx2 = features.mmx2 || (CPUInfo[3] & 0x00400000U);
 	}
 
-	for(unsigned int i = 0x80000002U; i <= nExIds; ++i)
+	for(int i = 0x80000002; i <= nExIds; ++i)
 	{
 		x264_cpu_cpuid(i, &CPUInfo[0], &CPUInfo[1], &CPUInfo[2], &CPUInfo[3]);
 		switch(i)
 		{
-		case 0x80000002U:
+		case 0x80000002:
 			memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
 			break;
-		case 0x80000003U:
+		case 0x80000003:
 			memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
 			break;
-		case 0x80000004U:
+		case 0x80000004:
 			memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
 			break;
 		}
@@ -567,52 +878,42 @@ const x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 	if(strlen(features.brand) < 1) strncpy_s(features.brand, 0x40, "Unknown", _TRUNCATE);
 	if(strlen(features.vendor) < 1) strncpy_s(features.vendor, 0x40, "Unknown", _TRUNCATE);
 
-#if !defined(_M_X64 ) && !defined(_M_IA64)
-	if(!IsWow64ProcessPtr || !GetNativeSystemInfoPtr)
+#if (!(defined(_M_X64) || defined(_M_IA64)))
+	QLibrary Kernel32Lib("kernel32.dll");
+	if(IsWow64ProcessFun IsWow64ProcessPtr = (IsWow64ProcessFun) Kernel32Lib.resolve("IsWow64Process"))
 	{
-		QLibrary Kernel32Lib("kernel32.dll");
-		IsWow64ProcessPtr = (IsWow64ProcessFun) Kernel32Lib.resolve("IsWow64Process");
-		GetNativeSystemInfoPtr = (GetNativeSystemInfoFun) Kernel32Lib.resolve("GetNativeSystemInfo");
-	}
-	if(IsWow64ProcessPtr)
-	{
-		BOOL x64 = FALSE;
-		if(IsWow64ProcessPtr(GetCurrentProcess(), &x64))
+		BOOL x64flag = FALSE;
+		if(IsWow64ProcessPtr(GetCurrentProcess(), &x64flag))
 		{
-			features.x64 = x64;
+			features.x64 = (x64flag == TRUE);
 		}
 	}
-	if(GetNativeSystemInfoPtr)
-	{
-		GetNativeSystemInfoPtr(&systemInfo);
-	}
-	else
-	{
-		GetSystemInfo(&systemInfo);
-	}
-	features.count = qBound(1UL, systemInfo.dwNumberOfProcessors, 64UL);
 #else
-	GetNativeSystemInfo(&systemInfo);
-	features.count = systemInfo.dwNumberOfProcessors;
 	features.x64 = true;
 #endif
 
-	if((argv != NULL) && (argc > 0))
+	DWORD_PTR procAffinity, sysAffinity;
+	if(GetProcessAffinityMask(GetCurrentProcess(), &procAffinity, &sysAffinity))
+	{
+		for(DWORD_PTR mask = 1; mask; mask <<= 1)
+		{
+			features.count += ((sysAffinity & mask) ? (1) : (0));
+		}
+	}
+	if(features.count < 1)
+	{
+		GetNativeSystemInfo(&systemInfo);
+		features.count = qBound(1UL, systemInfo.dwNumberOfProcessors, 64UL);
+	}
+
+	if(argv.count() > 0)
 	{
 		bool flag = false;
-		for(int i = 0; i < argc; i++)
+		for(int i = 0; i < argv.count(); i++)
 		{
-			if(!_stricmp("--force-cpu-no-64bit", argv[i])) { flag = true; features.x64 = false; }
-			if(!_stricmp("--force-cpu-no-mmx", argv[i])) { flag = true; features.mmx = false; }
-			if(!_stricmp("--force-cpu-no-mmx2", argv[i])) { flag = true; features.mmx2 = false; }
-			if(!_stricmp("--force-cpu-no-sse", argv[i])) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
-			if(!_stricmp("--force-cpu-no-intel", argv[i])) { flag = true; features.intel = false; }
-			
-			if(!_stricmp("--force-cpu-have-64bit", argv[i])) { flag = true; features.x64 = true; }
-			if(!_stricmp("--force-cpu-have-mmx", argv[i])) { flag = true; features.mmx = true; }
-			if(!_stricmp("--force-cpu-have-mmx2", argv[i])) { flag = true; features.mmx2 = true; }
-			if(!_stricmp("--force-cpu-have-sse", argv[i])) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = true; }
-			if(!_stricmp("--force-cpu-have-intel", argv[i])) { flag = true; features.intel = true; }
+			if(!argv[i].compare("--force-cpu-no-64bit", Qt::CaseInsensitive)) { flag = true; features.x64 = false; }
+			if(!argv[i].compare("--force-cpu-no-sse", Qt::CaseInsensitive)) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
+			if(!argv[i].compare("--force-cpu-no-intel", Qt::CaseInsensitive)) { flag = true; features.intel = false; }
 		}
 		if(flag) qWarning("CPU flags overwritten by user-defined parameters. Take care!\n");
 	}
@@ -621,25 +922,136 @@ const x264_cpu_t x264_detect_cpu_features(int argc, char **argv)
 }
 
 /*
- * Get the native operating system version
+ * Verify a specific Windows version
  */
-DWORD x264_get_os_version(void)
+static bool x264_verify_os_version(const DWORD major, const DWORD minor)
 {
-	OSVERSIONINFO osVerInfo;
-	memset(&osVerInfo, 0, sizeof(OSVERSIONINFO));
-	osVerInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	DWORD version = 0;
-	
-	if(GetVersionEx(&osVerInfo) == TRUE)
+	OSVERSIONINFOEXW osvi;
+	DWORDLONG dwlConditionMask = 0;
+
+	//Initialize the OSVERSIONINFOEX structure
+	memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+	osvi.dwMajorVersion = major;
+	osvi.dwMinorVersion = minor;
+	osvi.dwPlatformId = VER_PLATFORM_WIN32_NT;
+
+	//Initialize the condition mask
+	VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, VER_GREATER_EQUAL);
+	VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, VER_GREATER_EQUAL);
+	VER_SET_CONDITION(dwlConditionMask, VER_PLATFORMID, VER_EQUAL);
+
+	// Perform the test
+	const BOOL ret = VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_PLATFORMID, dwlConditionMask);
+
+	//Error checking
+	if(!ret)
 	{
-		if(osVerInfo.dwPlatformId != VER_PLATFORM_WIN32_NT)
+		if(GetLastError() != ERROR_OLD_WIN_VERSION)
 		{
-			throw "Ouuups: Not running under Windows NT. This is not supposed to happen!";
+			qWarning("VerifyVersionInfo() system call has failed!");
 		}
-		version = (DWORD)((osVerInfo.dwMajorVersion << 16) | (osVerInfo.dwMinorVersion & 0xffff));
 	}
 
-	return version;
+	return (ret != FALSE);
+}
+
+/*
+ * Determine the *real* Windows version
+ */
+static bool x264_get_real_os_version(unsigned int *major, unsigned int *minor, bool *pbOverride)
+{
+	*major = *minor = 0;
+	*pbOverride = false;
+	
+	//Initialize local variables
+	OSVERSIONINFOEXW osvi;
+	memset(&osvi, 0, sizeof(OSVERSIONINFOEXW));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+
+	//Try GetVersionEx() first
+	if(GetVersionExW((LPOSVERSIONINFOW)&osvi) == FALSE)
+	{
+		qWarning("GetVersionEx() has failed, cannot detect Windows version!");
+		return false;
+	}
+
+	//Make sure we are running on NT
+	if(osvi.dwPlatformId == VER_PLATFORM_WIN32_NT)
+	{
+		*major = osvi.dwMajorVersion;
+		*minor = osvi.dwMinorVersion;
+	}
+	else
+	{
+		qWarning("Not running on Windows NT, unsupported operating system!");
+		return false;
+	}
+
+	//Determine the real *major* version first
+	forever
+	{
+		const DWORD nextMajor = (*major) + 1;
+		if(x264_verify_os_version(nextMajor, 0))
+		{
+			*pbOverride = true;
+			*major = nextMajor;
+			*minor = 0;
+			continue;
+		}
+		break;
+	}
+
+	//Now also determine the real *minor* version
+	forever
+	{
+		const DWORD nextMinor = (*minor) + 1;
+		if(x264_verify_os_version((*major), nextMinor))
+		{
+			*pbOverride = true;
+			*minor = nextMinor;
+			continue;
+		}
+		break;
+	}
+
+	return true;
+}
+
+/*
+ * Get the native operating system version
+ */
+const x264_os_version_t &x264_get_os_version(void)
+{
+	QReadLocker readLock(&g_x264_os_version.lock);
+
+	//Already initialized?
+	if(g_x264_os_version.bInitialized)
+	{
+		return g_x264_os_version.version;
+	}
+	
+	readLock.unlock();
+	QWriteLocker writeLock(&g_x264_os_version.lock);
+
+	//Detect OS version
+	if(!g_x264_os_version.bInitialized)
+	{
+		unsigned int major, minor; bool oflag;
+		if(x264_get_real_os_version(&major, &minor, &oflag))
+		{
+			g_x264_os_version.version.versionMajor = major;
+			g_x264_os_version.version.versionMinor = minor;
+			g_x264_os_version.version.overrideFlag = oflag;
+			g_x264_os_version.bInitialized = true;
+		}
+		else
+		{
+			qWarning("Failed to determin the operating system version!");
+		}
+	}
+
+	return g_x264_os_version.version;
 }
 
 /*
@@ -660,6 +1072,68 @@ static bool x264_check_compatibility_mode(const char *exportName, const char *ex
 	}
 
 	return true;
+}
+
+/*
+ * Check if we are running under wine
+ */
+bool x264_detect_wine(void)
+{
+	static bool isWine = false;
+	static bool isWine_initialized = false;
+
+	if(!isWine_initialized)
+	{
+		QLibrary ntdll("ntdll.dll");
+		if(ntdll.load())
+		{
+			if(ntdll.resolve("wine_nt_to_unix_file_name") != NULL) isWine = true;
+			if(ntdll.resolve("wine_get_version") != NULL) isWine = true;
+			ntdll.unload();
+		}
+		isWine_initialized = true;
+	}
+
+	return isWine;
+}
+
+/*
+ * Qt event filter
+ */
+static bool x264_event_filter(void *message, long *result)
+{ 
+	if((!(X264_DEBUG)) && x264_check_for_debugger())
+	{
+		x264_fatal_exit(L"Not a debug build. Please unload debugger and try again!");
+	}
+	
+	//switch(reinterpret_cast<MSG*>(message)->message)
+	//{
+	//case WM_QUERYENDSESSION:
+	//	qWarning("WM_QUERYENDSESSION message received!");
+	//	*result = x264_broadcast(x264_event_queryendsession, false) ? TRUE : FALSE;
+	//	return true;
+	//case WM_ENDSESSION:
+	//	qWarning("WM_ENDSESSION message received!");
+	//	if(reinterpret_cast<MSG*>(message)->wParam == TRUE)
+	//	{
+	//		x264_broadcast(x264_event_endsession, false);
+	//		if(QApplication *app = reinterpret_cast<QApplication*>(QApplication::instance()))
+	//		{
+	//			app->closeAllWindows();
+	//			app->quit();
+	//		}
+	//		x264_finalization();
+	//		exit(1);
+	//	}
+	//	*result = 0;
+	//	return true;
+	//default:
+	//	/*ignore this message and let Qt handle it*/
+	//	return false;
+	//}
+
+	return false;
 }
 
 /*
@@ -712,105 +1186,133 @@ static bool x264_check_elevation(void)
 bool x264_init_qt(int argc, char* argv[])
 {
 	static bool qt_initialized = false;
-	bool isWine = false;
 	typedef BOOL (WINAPI *SetDllDirectoryProc)(WCHAR *lpPathName);
+	const QStringList &arguments = x264_arguments();
 
 	//Don't initialized again, if done already
 	if(qt_initialized)
 	{
 		return true;
 	}
-	
+
 	//Secure DLL loading
 	QLibrary kernel32("kernel32.dll");
 	if(kernel32.load())
 	{
 		SetDllDirectoryProc pSetDllDirectory = (SetDllDirectoryProc) kernel32.resolve("SetDllDirectoryW");
 		if(pSetDllDirectory != NULL) pSetDllDirectory(L"");
-		kernel32.unload();
 	}
 
 	//Extract executable name from argv[] array
-	char *executableName = argv[0];
-	while(char *temp = strpbrk(executableName, "\\/:?"))
+	QString executableName = QLatin1String("x264_launcher.exe");
+	if(arguments.count() > 0)
 	{
-		executableName = temp + 1;
+		static const char *delimiters = "\\/:?";
+		executableName = arguments[0].trimmed();
+		for(int i = 0; delimiters[i]; i++)
+		{
+			int temp = executableName.lastIndexOf(QChar(delimiters[i]));
+			if(temp >= 0) executableName = executableName.mid(temp + 1);
+		}
+		executableName = executableName.trimmed();
+		if(executableName.isEmpty())
+		{
+			executableName = QLatin1String("x264_launcher.exe");
+		}
 	}
 
 	//Check Qt version
+#ifdef QT_BUILD_KEY
 	qDebug("Using Qt v%s [%s], %s, %s", qVersion(), QLibraryInfo::buildDate().toString(Qt::ISODate).toLatin1().constData(), (qSharedBuild() ? "DLL" : "Static"), QLibraryInfo::buildKey().toLatin1().constData());
 	qDebug("Compiled with Qt v%s [%s], %s\n", QT_VERSION_STR, QT_PACKAGEDATE_STR, QT_BUILD_KEY);
 	if(_stricmp(qVersion(), QT_VERSION_STR))
 	{
-		qFatal("%s", QApplication::tr("Executable '%1' requires Qt v%2, but found Qt v%3.").arg(QString::fromLatin1(executableName), QString::fromLatin1(QT_VERSION_STR), QString::fromLatin1(qVersion())).toLatin1().constData());
+		qFatal("%s", QApplication::tr("Executable '%1' requires Qt v%2, but found Qt v%3.").arg(executableName, QString::fromLatin1(QT_VERSION_STR), QString::fromLatin1(qVersion())).toLatin1().constData());
 		return false;
 	}
 	if(QLibraryInfo::buildKey().compare(QString::fromLatin1(QT_BUILD_KEY), Qt::CaseInsensitive))
 	{
-		qFatal("%s", QApplication::tr("Executable '%1' was built for Qt '%2', but found Qt '%3'.").arg(QString::fromLatin1(executableName), QString::fromLatin1(QT_BUILD_KEY), QLibraryInfo::buildKey()).toLatin1().constData());
+		qFatal("%s", QApplication::tr("Executable '%1' was built for Qt '%2', but found Qt '%3'.").arg(executableName, QString::fromLatin1(QT_BUILD_KEY), QLibraryInfo::buildKey()).toLatin1().constData());
 		return false;
 	}
+#else
+	qDebug("Using Qt v%s [%s], %s", qVersion(), QLibraryInfo::buildDate().toString(Qt::ISODate).toLatin1().constData(), (qSharedBuild() ? "DLL" : "Static"));
+	qDebug("Compiled with Qt v%s [%s]\n", QT_VERSION_STR, QT_PACKAGEDATE_STR);
+#endif
 
 	//Check the Windows version
-	switch(QSysInfo::windowsVersion() & QSysInfo::WV_NT_based)
+	const x264_os_version_t &osVersionNo = x264_get_os_version();
+	if(osVersionNo < x264_winver_winxp)
 	{
-	case 0:
-	case QSysInfo::WV_NT:
-	case QSysInfo::WV_2000:
-		qFatal("%s", QApplication::tr("Executable '%1' requires Windows XP or later.").arg(QString::fromLatin1(executableName)).toLatin1().constData());
-		break;
-		//qDebug("Running on Windows 2000 (not officially supported!).\n");
-		//x264_check_compatibility_mode("GetNativeSystemInfo", executableName);
-	case QSysInfo::WV_XP:
-		qDebug("Running on Windows XP.\n");
-		x264_check_compatibility_mode("GetLargePageMinimum", executableName);
-		break;
-	case QSysInfo::WV_2003:
-		qDebug("Running on Windows Server 2003 or Windows XP x64-Edition.\n");
-		x264_check_compatibility_mode("GetLocaleInfoEx", executableName);
-		break;
-	case QSysInfo::WV_VISTA:
-		qDebug("Running on Windows Vista or Windows Server 2008.\n");
-		x264_check_compatibility_mode("CreateRemoteThreadEx", executableName);
-		break;
-	case QSysInfo::WV_WINDOWS7:
-		qDebug("Running on Windows 7 or Windows Server 2008 R2.\n");
-		x264_check_compatibility_mode(NULL, executableName);
-		break;
-	default:
+		qFatal("%s", QApplication::tr("Executable '%1' requires Windows XP or later.").arg(executableName).toLatin1().constData());
+	}
+
+	//Supported Windows version?
+	if(osVersionNo == x264_winver_winxp)
+	{
+		qDebug("Running on Windows XP or Windows XP Media Center Edition.\n");						//x264_check_compatibility_mode("GetLargePageMinimum", executableName);
+	}
+	else if(osVersionNo == x264_winver_xpx64)
+	{
+		qDebug("Running on Windows Server 2003, Windows Server 2003 R2 or Windows XP x64.\n");		//x264_check_compatibility_mode("GetLocaleInfoEx", executableName);
+	}
+	else if(osVersionNo == x264_winver_vista)
+	{
+		qDebug("Running on Windows Vista or Windows Server 2008.\n");								//x264_check_compatibility_mode("CreateRemoteThreadEx", executableName*/);
+	}
+	else if(osVersionNo == x264_winver_win70)
+	{
+		qDebug("Running on Windows 7 or Windows Server 2008 R2.\n");								//x264_check_compatibility_mode("CreateFile2", executableName);
+	}
+	else if(osVersionNo == x264_winver_win80)
+	{
+		qDebug("Running on Windows 8 or Windows Server 2012.\n");									//x264_check_compatibility_mode("FindPackagesByPackageFamily", executableName);
+	}
+	else if(osVersionNo == x264_winver_win81)
+	{
+		qDebug("Running on Windows 8.1 or Windows Server 2012 R2.\n");								//x264_check_compatibility_mode(NULL, executableName);
+	}
+	else
+	{
+		const QString message = QString().sprintf("Running on an unknown WindowsNT-based system (v%u.%u).", osVersionNo.versionMajor, osVersionNo.versionMinor);
+		qWarning("%s\n", QUTF8(message));
+		MessageBoxW(NULL, QWCHAR(message), L"Simple x264 Launcher", MB_OK | MB_TOPMOST | MB_ICONWARNING);
+	}
+
+	//Check for compat mode
+	if(osVersionNo.overrideFlag && (osVersionNo <= x264_winver_win81))
+	{
+		qWarning("Windows compatibility mode detected!");
+		if(!arguments.contains("--ignore-compat-mode", Qt::CaseInsensitive))
 		{
-			DWORD osVersionNo = x264_get_os_version();
-			qWarning("Running on an unknown/untested WinNT-based OS (v%u.%u).\n", HIWORD(osVersionNo), LOWORD(osVersionNo));
+			qFatal("%s", QApplication::tr("Executable '%1' doesn't support Windows compatibility mode.").arg(executableName).toLatin1().constData());
+			return false;
 		}
-		break;
 	}
 
 	//Check for Wine
-	QLibrary ntdll("ntdll.dll");
-	if(ntdll.load())
+	if(x264_detect_wine())
 	{
-		if(ntdll.resolve("wine_nt_to_unix_file_name") != NULL) isWine = true;
-		if(ntdll.resolve("wine_get_version") != NULL) isWine = true;
-		if(isWine) qWarning("It appears we are running under Wine, unexpected things might happen!\n");
-		ntdll.unload();
+		qWarning("It appears we are running under Wine, unexpected things might happen!\n");
 	}
 
-	//Create Qt application instance and setup version info
+	//Set text Codec for locale
+	QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+
+	//Create Qt application instance
 	QApplication *application = new QApplication(argc, argv);
+
+	//Load plugins from application directory
+	QCoreApplication::setLibraryPaths(QStringList() << QApplication::applicationDirPath());
+	qDebug("Library Path:\n%s\n", QUTF8(QApplication::libraryPaths().first()));
+
+	//Create Qt application instance and setup version info
 	application->setApplicationName("Simple x264 Launcher");
 	application->setApplicationVersion(QString().sprintf("%d.%02d", x264_version_major(), x264_version_minor())); 
 	application->setOrganizationName("LoRd_MuldeR");
 	application->setOrganizationDomain("mulder.at.gg");
 	application->setWindowIcon(QIcon(":/icons/movie.ico"));
-	
-	//application->setEventFilter(x264_event_filter);
-
-	//Set text Codec for locale
-	QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-
-	//Load plugins from application directory
-	QCoreApplication::setLibraryPaths(QStringList() << QApplication::applicationDirPath());
-	qDebug("Library Path:\n%s\n", QApplication::libraryPaths().first().toUtf8().constData());
+	application->setEventFilter(x264_event_filter);
 
 	//Check for supported image formats
 	QList<QByteArray> supportedFormats = QImageReader::supportedImageFormats();
@@ -822,32 +1324,44 @@ bool x264_init_qt(int argc, char* argv[])
 			return false;
 		}
 	}
-
+	
 	//Add default translations
-	// g_x264_translation.files.insert(x264_DEFAULT_LANGID, "");
-	// g_x264_translation.names.insert(x264_DEFAULT_LANGID, "English");
+	/*
+	QWriteLocker writeLockTranslations(&g_x264_translation.lock);
+	if(!g_x264_translation.files) g_x264_translation.files = new QMap<QString, QString>();
+	if(!g_x264_translation.names) g_x264_translation.names = new QMap<QString, QString>();
+	g_x264_translation.files->insert(X264_DEFAULT_LANGID, "");
+	g_x264_translation.names->insert(X264_DEFAULT_LANGID, "English");
+	writeLockTranslations.unlock();
+	*/
 
 	//Check for process elevation
-	if(!x264_check_elevation())
+	if((!x264_check_elevation()) && (!x264_detect_wine()))
 	{
-		if(QMessageBox::warning(NULL, "Simple x264 Launcher", "<nobr>Program was started with elevated rights. This is a potential security risk!</nobr>", "Quit Program (Recommended)", "Ignore") == 0)
+		QMessageBox messageBox(QMessageBox::Warning, "Simple x264 Launcher", "<nobr>Simple x264 Launcher was started with 'elevated' rights, altough it does not need these rights.<br>Running an applications with unnecessary rights is a potential security risk!</nobr>", QMessageBox::NoButton, NULL, Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowStaysOnTopHint);
+		messageBox.addButton("Quit Program (Recommended)", QMessageBox::NoRole);
+		messageBox.addButton("Ignore", QMessageBox::NoRole);
+		if(messageBox.exec() == 0)
 		{
 			return false;
 		}
 	}
 
 	//Update console icon, if a console is attached
-	if(g_x264_console_attached && !isWine)
+#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
+	if(g_x264_console_attached && (!x264_detect_wine()))
 	{
 		typedef DWORD (__stdcall *SetConsoleIconFun)(HICON);
 		QLibrary kernel32("kernel32.dll");
 		if(kernel32.load())
 		{
 			SetConsoleIconFun SetConsoleIconPtr = (SetConsoleIconFun) kernel32.resolve("SetConsoleIcon");
-			if(SetConsoleIconPtr != NULL) SetConsoleIconPtr(QIcon(":/icons/movie.ico").pixmap(16, 16).toWinHICON());
+			QPixmap pixmap = QIcon(":/icons/movie.ico").pixmap(16, 16);
+			if((SetConsoleIconPtr != NULL) && (!pixmap.isNull())) SetConsoleIconPtr(pixmap.toWinHICON());
 			kernel32.unload();
 		}
 	}
+#endif
 
 	//Done
 	qt_initialized = true;
@@ -884,15 +1398,23 @@ bool x264_shutdown_computer(const QString &message, const unsigned long timeout,
 /*
  * Check for debugger (detect routine)
  */
-static bool x264_check_for_debugger(void)
+static __forceinline bool x264_check_for_debugger(void)
 {
+	__try
+	{
+		CloseHandle((HANDLE)((DWORD_PTR)-3));
+	}
+	__except(1)
+	{
+		return true;
+	}
 	__try 
 	{
-		DebugBreak();
+		__debugbreak();
 	}
-	__except(GetExceptionCode() == EXCEPTION_BREAKPOINT ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) 
+	__except(1) 
 	{
-		return false;
+		return IsDebuggerPresent();
 	}
 	return true;
 }
@@ -900,29 +1422,31 @@ static bool x264_check_for_debugger(void)
 /*
  * Check for debugger (thread proc)
  */
-static void WINAPI x264_debug_thread_proc(__in LPVOID lpParameter)
+static unsigned int __stdcall x264_debug_thread_proc(LPVOID lpParameter)
 {
-	while(!(IsDebuggerPresent() || x264_check_for_debugger()))
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+	forever
 	{
-		Sleep(333);
-	}
-	for(;;)
-	{
-		TerminateProcess(GetCurrentProcess(), -1);
+		if(x264_check_for_debugger())
+		{
+			x264_fatal_exit(L"Not a debug build. Please unload debugger and try again!");
+			return 666;
+		}
+		x264_sleep(100);
 	}
 }
 
 /*
  * Check for debugger (startup routine)
  */
-static HANDLE x264_debug_thread_init(void)
+static HANDLE x264_debug_thread_init()
 {
-	if(IsDebuggerPresent() || x264_check_for_debugger())
+	if(x264_check_for_debugger())
 	{
 		x264_fatal_exit(L"Not a debug build. Please unload debugger and try again!");
 	}
-
-	return CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(&x264_debug_thread_proc), NULL, NULL, NULL);
+	const uintptr_t h = _beginthreadex(NULL, 0, x264_debug_thread_proc, NULL, 0, NULL);
+	return (HANDLE)(h^0xdeadbeef);
 }
 
 /*
@@ -952,6 +1476,53 @@ void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage)
 		{
 			TerminateProcess(GetCurrentProcess(), -1);
 		}
+	}
+}
+
+/*
+ * Entry point checks
+ */
+static DWORD x264_entry_check(void);
+static DWORD g_x264_entry_check_result = x264_entry_check();
+static DWORD g_x264_entry_check_flag = 0x789E09B2;
+static DWORD x264_entry_check(void)
+{
+	volatile DWORD retVal = 0xA199B5AF;
+	if(g_x264_entry_check_flag != 0x8761F64D)
+	{
+		x264_fatal_exit(L"Application initialization has failed, take care!");
+	}
+	return retVal;
+}
+
+/*
+ * Application entry point (runs before static initializers)
+ */
+extern "C"
+{
+	int WinMainCRTStartup(void);
+	
+	int x264_entry_point(void)
+	{
+		if((!X264_DEBUG) && x264_check_for_debugger())
+		{
+			x264_fatal_exit(L"Not a debug build. Please unload debugger and try again!");
+		}
+		if(g_x264_entry_check_flag != 0x789E09B2)
+		{
+			x264_fatal_exit(L"Application initialization has failed, take care!");
+		}
+
+		//Zero *before* constructors are called
+		X264_ZERO_MEMORY(g_x264_argv);
+		X264_ZERO_MEMORY(g_x264_os_version);
+		X264_ZERO_MEMORY(g_x264_portable);
+
+		//Make sure we will pass the check
+		g_x264_entry_check_flag = ~g_x264_entry_check_flag;
+
+		//Now initialize the C Runtime library!
+		return WinMainCRTStartup();
 	}
 }
 

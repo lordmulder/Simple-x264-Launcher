@@ -55,8 +55,11 @@ static int x264_main(int argc, char* argv[])
 		qWarning("---------------------------------------------------------\n"); 
 	}
 
+	//Get CLI arguments
+	const QStringList &arguments = x264_arguments();
+
 	//Detect CPU capabilities
-	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(argc, argv);
+	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(arguments);
 	qDebug("   CPU vendor id  :  %s (Intel: %s)", cpuFeatures.vendor, X264_BOOL(cpuFeatures.intel));
 	qDebug("CPU brand string  :  %s", cpuFeatures.brand);
 	qDebug("   CPU signature  :  Family: %d, Model: %d, Stepping: %d", cpuFeatures.family, cpuFeatures.model, cpuFeatures.stepping);

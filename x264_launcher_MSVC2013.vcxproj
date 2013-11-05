@@ -367,6 +367,9 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
   <ItemGroup>
     <Object Include="asm\cpu-detect.obj" />
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="etc\manifest\compat.manifest" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

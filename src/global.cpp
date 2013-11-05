@@ -19,9 +19,14 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
+//x264 includes
 #include "global.h"
 #include "targetver.h"
+
+//Version
+#define ENABLE_X264_VERSION_INCLUDE
 #include "version.h"
+#undef  ENABLE_X264_VERSION_INCLUDE
 
 //Windows includes
 #define NOMINMAX
@@ -100,6 +105,9 @@ static const struct
 	unsigned int ver_build;
 	const char* ver_date;
 	const char* ver_time;
+	unsigned int ver_x264_minimum_rev;
+	unsigned int ver_x264_current_api;
+	unsigned int ver_x264_avs2yuv_ver;
 }
 g_x264_version =
 {
@@ -108,7 +116,10 @@ g_x264_version =
 	(VER_X264_PATCH),
 	(VER_X264_BUILD),
 	__DATE__,
-	__TIME__
+	__TIME__,
+	(VER_X264_MINIMUM_REV),
+	(VER_X264_CURRENT_API),
+	(VER_X264_AVS2YUV_VER)
 };
 
 //CLI Arguments
@@ -127,6 +138,15 @@ static struct
 	QReadWriteLock lock;
 }
 g_x264_os_version;
+
+//Wine detection
+static struct
+{
+	bool bInitialized;
+	bool bIsWine;
+	QReadWriteLock lock;
+}
+g_x264_wine;
 
 //Portable Mode
 static struct
@@ -667,6 +687,21 @@ const char *x264_version_arch(void)
 	return g_x264_version_arch;
 }
 
+unsigned int x264_version_x264_minimum_rev(void)
+{
+	return g_x264_version.ver_x264_minimum_rev;
+}
+
+unsigned int x264_version_x264_current_api(void)
+{
+	return g_x264_version.ver_x264_current_api;
+}
+
+unsigned int x264_version_x264_avs2yuv_ver(void)
+{
+	return g_x264_version.ver_x264_avs2yuv_ver;
+}
+
 /*
  * Get CLI arguments
  */
@@ -1090,22 +1125,31 @@ static bool x264_check_compatibility_mode(const char *exportName, const char *ex
  */
 bool x264_detect_wine(void)
 {
-	static bool isWine = false;
-	static bool isWine_initialized = false;
+	QReadLocker readLock(&g_x264_wine.lock);
 
-	if(!isWine_initialized)
+	//Already initialized?
+	if(g_x264_wine.bInitialized)
 	{
+		return g_x264_wine.bIsWine;
+	}
+	
+	readLock.unlock();
+	QWriteLocker writeLock(&g_x264_wine.lock);
+
+	if(!g_x264_wine.bInitialized)
+	{
+		g_x264_wine.bIsWine = false;
 		QLibrary ntdll("ntdll.dll");
 		if(ntdll.load())
 		{
-			if(ntdll.resolve("wine_nt_to_unix_file_name") != NULL) isWine = true;
-			if(ntdll.resolve("wine_get_version") != NULL) isWine = true;
+			if(ntdll.resolve("wine_nt_to_unix_file_name") != NULL) g_x264_wine.bIsWine = true;
+			if(ntdll.resolve("wine_get_version") != NULL) g_x264_wine.bIsWine = true;
 			ntdll.unload();
 		}
-		isWine_initialized = true;
+		g_x264_wine.bInitialized = true;
 	}
 
-	return isWine;
+	return g_x264_wine.bIsWine;
 }
 
 /*

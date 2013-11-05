@@ -25,7 +25,6 @@
 #include "model_options.h"
 #include "model_preferences.h"
 #include "job_object.h"
-#include "version.h"
 
 #include <QDate>
 #include <QTime>
@@ -262,18 +261,18 @@ void EncodeThread::encode(void)
 	if(revision_avs2yuv != UINT_MAX) log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
 
 	//Is x264 revision supported?
-	if((revision_x264 % REV_MULT) < (VER_X264_MINIMUM_REV))
+	if((revision_x264 % REV_MULT) < x264_version_x264_minimum_rev())
 	{
-		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(VER_X264_MINIMUM_REV)));
+		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(x264_version_x264_minimum_rev())));
 		setStatus(JobStatus_Failed);
 		return;
 	}
-	if((revision_x264 / REV_MULT) != (VER_X264_CURRENT_API))
+	if((revision_x264 / REV_MULT) != x264_version_x264_current_api())
 	{
 		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
-		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(VER_X264_CURRENT_API)));
+		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(x264_version_x264_current_api())));
 	}
-	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != (VER_X264_AVS2YUV_VER)))
+	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != x264_version_x264_avs2yuv_ver()))
 	{
 		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
 		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));

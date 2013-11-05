@@ -219,4 +219,9 @@
       <Filter>Assembly</Filter>
     </Object>
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="etc\manifest\compat.manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
+  </ItemGroup>
 </Project>

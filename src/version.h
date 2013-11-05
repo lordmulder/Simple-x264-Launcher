@@ -19,10 +19,14 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef ENABLE_X264_VERSION_INCLUDE
+#error Please do *not* inlcude "version.h" directly!
+#endif
+
 #define VER_X264_MAJOR 2
 #define VER_X264_MINOR 2
 #define VER_X264_PATCH 4
-#define VER_X264_BUILD 608
+#define VER_X264_BUILD 610
 
 #define VER_X264_MINIMUM_REV 2363
 #define VER_X264_CURRENT_API 140

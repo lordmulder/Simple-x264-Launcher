@@ -36,6 +36,21 @@ QFile *VapourSynthCheckThread::m_vpsExePath = NULL;
 QFile *VapourSynthCheckThread::m_vpsDllPath = NULL;
 QLibrary *VapourSynthCheckThread::m_vpsLib = NULL;
 
+#define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
+
+static inline QString &cleanDir(QString &path)
+{
+	if(!path.isEmpty())
+	{
+		path = QDir::fromNativeSeparators(path);
+		while(path.endsWith('/'))
+		{
+			path.chop(1);
+		}
+	}
+	return path;
+}
+
 //-------------------------------------
 // External API
 //-------------------------------------
@@ -47,16 +62,14 @@ int VapourSynthCheckThread::detect(QString &path)
 
 	QEventLoop loop;
 	VapourSynthCheckThread thread;
-	QTimer timer;
 
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
 	connect(&thread, SIGNAL(finished()), &loop, SLOT(quit()));
 	connect(&thread, SIGNAL(terminated()), &loop, SLOT(quit()));
-	connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
 	
 	thread.start();
-	timer.start(8000);
+	QTimer::singleShot(15000, &loop, SLOT(quit()));
 	
 	qDebug("VapourSynth thread has been created, please wait...");
 	loop.exec(QEventLoop::ExcludeUserInputEvents);
@@ -178,18 +191,44 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	X264_DELETE(m_vpsDllPath);
 	path.clear();
 
-	static const char *VPS_REG_KEY = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1";
-
-	QString vapoursynthPath = x264_query_reg_string(false, VPS_REG_KEY, "InstallLocation");
-	if(vapoursynthPath.isEmpty())
+	static const char *VPS_REG_KEYS[] = 
 	{
-		qWarning("Vapoursynth install location entry not found -> not installed!");
+		"SOFTWARE\\VapourSynth",
+		"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1",
+		NULL
+	};
+	static const char *VPS_REG_NAME[] =
+	{
+		"Path",
+		"InstallLocation",
+		"Inno Setup: App Path",
+		NULL
+	};
+
+	//Read VapourSynth path from registry
+	QString vapoursynthPath;
+	for(size_t i = 0; VPS_REG_KEYS[i]; i++)
+	{
+		for(size_t j = 0; VPS_REG_NAME[j]; j++)
+		{
+			vapoursynthPath = cleanDir(x264_query_reg_string(false, VPS_REG_KEYS[i], VPS_REG_NAME[j]));
+			if(VALID_DIR(vapoursynthPath)) break;
+		}
+		if(VALID_DIR(vapoursynthPath)) break;
+	}
+
+	//Make sure VapourSynth does exist
+	if(!VALID_DIR(vapoursynthPath))
+	{
+		qWarning("VapourSynth install path not found -> disable Vapousynth support!");
+		vapoursynthPath.clear();
 	}
 
 	//Make sure that 'vapoursynth.dll' and 'vspipe.exe' are available
 	bool vapoursynthComplete = false;
 	if(!vapoursynthPath.isEmpty())
 	{
+		qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
 		m_vpsExePath = new QFile(QString("%1/core/vspipe.exe").arg(vapoursynthPath));
 		m_vpsDllPath = new QFile(QString("%1/core/vapoursynth.dll").arg(vapoursynthPath));
 		qDebug("VapourSynth EXE: %s", m_vpsExePath->fileName().toUtf8().constData());

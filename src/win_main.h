@@ -55,6 +55,7 @@ private:
 	bool m_firstShow;
 	bool m_skipVersionTest;
 	bool m_abortOnTimeout;
+	bool m_initialized;
 
 	QLabel *m_label;
 	IPCThread *m_ipcThread;

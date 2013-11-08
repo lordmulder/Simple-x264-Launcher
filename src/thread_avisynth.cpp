@@ -44,16 +44,14 @@ int AvisynthCheckThread::detect(volatile double *version)
 
 	QEventLoop loop;
 	AvisynthCheckThread thread;
-	QTimer timer;
 
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
 	connect(&thread, SIGNAL(finished()), &loop, SLOT(quit()));
 	connect(&thread, SIGNAL(terminated()), &loop, SLOT(quit()));
-	connect(&timer, SIGNAL(timeout()), &loop, SLOT(quit()));
 	
 	thread.start();
-	timer.start(8000);
+	QTimer::singleShot(15000, &loop, SLOT(quit()));
 	
 	qDebug("Avisynth thread has been created, please wait...");
 	loop.exec(QEventLoop::ExcludeUserInputEvents);

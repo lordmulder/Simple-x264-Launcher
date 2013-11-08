@@ -55,9 +55,10 @@ const char *home_url = "http://muldersoft.com/";
 const char *update_url = "http://code.google.com/p/mulder/downloads/list";
 const char *tpl_last = "<LAST_USED>";
 
-#define SET_FONT_BOLD(WIDGET,BOLD) { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); }
-#define SET_TEXT_COLOR(WIDGET,COLOR) { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); }
+#define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
+#define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
 #define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
+#define INIT_ERROR_EXIT() do { m_initialized = true; close(); qApp->exit(-1); return; } while(0)
 
 //static int exceptionFilter(_EXCEPTION_RECORD *dst, _EXCEPTION_POINTERS *src) { memcpy(dst, src->ExceptionRecord, sizeof(_EXCEPTION_RECORD)); return EXCEPTION_EXECUTE_HANDLER; }
 
@@ -79,7 +80,8 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_recentlyUsed(NULL),
 	m_skipVersionTest(false),
 	m_abortOnTimeout(true),
-	m_firstShow(true)
+	m_firstShow(true),
+	m_initialized(false)
 {
 	//Init the dialog, from the .ui file
 	setupUi(this);
@@ -720,7 +722,7 @@ void MainWindow::init(void)
 				m_ipcThread->terminate();
 				m_ipcThread->wait();
 			}
-			close(); qApp->exit(-1); return;
+			INIT_ERROR_EXIT();
 		}
 	}
 
@@ -736,7 +738,7 @@ void MainWindow::init(void)
 			{
 				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
 				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
-				close(); qApp->exit(-1); return;
+				INIT_ERROR_EXIT();
 			}
 			m_toolsList << file;
 		}
@@ -745,7 +747,7 @@ void MainWindow::init(void)
 			X264_DELETE(file);
 			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
 			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
-			close(); qApp->exit(-1); return;
+			INIT_ERROR_EXIT();
 		}
 	}
 
@@ -763,7 +765,7 @@ void MainWindow::init(void)
 		if(!ok)
 		{
 			int val = QMessageBox::warning(this, tr("Write Test Failed"), tr("<nobr>The application was launched in portable mode, but the program path is <b>not</b> writable!</nobr>"), tr("Quit"), tr("Ignore"));
-			if(val != 1) { close(); qApp->exit(-1); return; }
+			if(val != 1) INIT_ERROR_EXIT();
 		}
 	}
 
@@ -772,7 +774,7 @@ void MainWindow::init(void)
 	{
 		qsrand(time(NULL)); int rnd = qrand() % 3;
 		int val = QMessageBox::information(this, tr("Pre-Release Version"), tr("Note: This is a pre-release version. Please do NOT use for production!<br>Click the button #%1 in order to continue...<br><br>(There will be no such message box in the final version of this application)").arg(QString::number(rnd + 1)), tr("(1)"), tr("(2)"), tr("(3)"), qrand() % 3);
-		if(rnd != val) { close(); qApp->exit(-1); return; }
+		if(rnd != val) INIT_ERROR_EXIT();
 	}
 
 	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
@@ -780,13 +782,13 @@ void MainWindow::init(void)
 	{
 		QMessageBox::critical(this, tr("Unsupported CPU"), tr("<nobr>Sorry, but this machine is <b>not</b> physically capable of running x264 (with assembly).<br>Please get a CPU that supports at least the MMX and MMXEXT instruction sets!</nobr>"), tr("Quit"));
 		qFatal("System does not support MMX and MMXEXT, x264 will not work !!!");
-		close(); qApp->exit(-1); return;
+		INIT_ERROR_EXIT();
 	}
 	else if(!(m_cpuFeatures->mmx && m_cpuFeatures->sse))
 	{
 		qWarning("WARNING: System does not support SSE1, most x264 builds will not work !!!\n");
 		int val = QMessageBox::warning(this, tr("Unsupported CPU"), tr("<nobr>It appears that this machine does <b>not</b> support the SSE1 instruction set.<br>Thus most builds of x264 will <b>not</b> run on this computer at all.<br><br>Please get a CPU that supports the MMX and SSE1 instruction sets!</nobr>"), tr("Quit"), tr("Ignore"));
-		if(val != 1) { close(); qApp->exit(-1); return; }
+		if(val != 1) INIT_ERROR_EXIT();
 	}
 
 	//Skip version check (not recommended!)
@@ -815,7 +817,7 @@ void MainWindow::init(void)
 			text += tr("This is most likely caused by an erroneous Avisynth Plugin, please try to clean your Plugins folder!").append("<br>");
 			text += tr("We suggest to move all .dll and .avsi files out of your Avisynth Plugins folder and try again.");
 			int val = QMessageBox::critical(this, tr("Avisynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-			if(val != 1) { close(); qApp->exit(-1); return; }
+			if(val != 1) INIT_ERROR_EXIT();
 		}
 		if((!result) || (avisynthVersion < 2.5))
 		{
@@ -824,10 +826,10 @@ void MainWindow::init(void)
 				QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
 				text += tr("Please download and install Avisynth:").append("<br>").append(LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
 				int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-				if(val != 1) { close(); qApp->exit(-1); return; }
+				if(val != 1) INIT_ERROR_EXIT();
 			}
 		}
-		qDebug("");
+		qDebug(" ");
 	}
 
 	//Check for VapourSynth support
@@ -842,7 +844,7 @@ void MainWindow::init(void)
 			text += tr("This is most likely caused by an erroneous VapourSynth Plugin, please try to clean your Filters folder!").append("<br>");
 			text += tr("We suggest to move all .dll files out of your VapourSynth Filters folder and try again.");
 			int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-			if(val != 1) { close(); qApp->exit(-1); return; }
+			if(val != 1) INIT_ERROR_EXIT();
 		}
 		if((!result) || (m_vapoursynthPath.isEmpty()))
 		{
@@ -852,10 +854,10 @@ void MainWindow::init(void)
 				text += tr("Please download and install VapourSynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/")).append("<br><br>");
 				text += tr("Note that Python 3.3 (x86) is a prerequisite for installing VapourSynth:").append("<br>").append(LINK("http://www.python.org/getit/")).append("<br>");
 				int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-				if(val != 1) { close(); qApp->exit(-1); return; }
+				if(val != 1) INIT_ERROR_EXIT();
 			}
 		}
-		qDebug("");
+		qDebug(" ");
 	}
 
 	//Check for expiration
@@ -898,6 +900,9 @@ void MainWindow::init(void)
 
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);
+
+	//Update initialized flag
+	m_initialized = true;
 }
 
 /*
@@ -971,6 +976,12 @@ void MainWindow::showEvent(QShowEvent *e)
  */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
+	if(!m_initialized)
+	{
+		e->ignore();
+		return;
+	}
+
 	if(countRunningJobs() > 0)
 	{
 		e->ignore();

@@ -116,7 +116,7 @@ bool x264_init_qt(int argc, char* argv[]);
 bool x264_is_executable(const QString &path);
 bool x264_is_prerelease(void);
 void x264_message_handler(QtMsgType type, const char *msg);
-QString x264_path2ansi(const QString &longPath);
+QString x264_path2ansi(const QString &longPath, bool makeLowercase = false);
 bool x264_play_sound(const unsigned short uiSoundIdx, const bool bAsync, const wchar_t *alias = NULL);
 bool x264_portable(void);
 unsigned int x264_process_id(void);

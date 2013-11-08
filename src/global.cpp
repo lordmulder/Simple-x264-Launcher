@@ -1448,23 +1448,30 @@ bool x264_suspendProcess(const QProcess *proc, const bool suspend)
 /*
  * Convert path to short/ANSI path
  */
-QString x264_path2ansi(const QString &longPath)
+QString x264_path2ansi(const QString &longPath, bool makeLowercase)
 {
 	QString shortPath = longPath;
 	
-	DWORD buffSize = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), NULL, NULL);
+	const QString longPathNative = QDir::toNativeSeparators(longPath);
+	DWORD buffSize = GetShortPathNameW(QWCHAR(longPathNative), NULL, NULL);
 	
 	if(buffSize > 0)
 	{
-		wchar_t *buffer = new wchar_t[buffSize];
-		DWORD result = GetShortPathNameW(reinterpret_cast<const wchar_t*>(longPath.utf16()), buffer, buffSize);
+		wchar_t *buffer = (wchar_t*) _malloca(sizeof(wchar_t) * buffSize);
+		DWORD result = GetShortPathNameW(QWCHAR(longPathNative), buffer, buffSize);
 
 		if((result > 0) && (result < buffSize))
 		{
-			shortPath = QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer), result);
+			shortPath = QDir::fromNativeSeparators(QString::fromUtf16(reinterpret_cast<const unsigned short*>(buffer), result));
+
+			if(makeLowercase)
+			{
+				QFileInfo info(shortPath);
+				shortPath = QString("%1/%2").arg(info.absolutePath(), info.fileName().toLower());
+			}
 		}
 
-		delete[] buffer;
+		_freea(buffer);
 		buffer = NULL;
 	}
 

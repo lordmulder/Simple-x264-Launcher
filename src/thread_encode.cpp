@@ -364,7 +364,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			{
 				cmdLine_Input.append(splitParams(m_options->customAvs2YUV()));
 			}
-			cmdLine_Input << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
 			cmdLine_Input << "-";
 			log("Creating Avisynth process:");
 			if(!startProcess(processInput, AVS2_BINARY(m_binDir, avs2yuv_x64), cmdLine_Input, false))
@@ -373,7 +373,7 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 			}
 			break;
 		case INPUT_VAPOUR:
-			cmdLine_Input << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName));
+			cmdLine_Input << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
 			cmdLine_Input << "-" << "-y4m";
 			log("Creating Vapoursynth process:");
 			if(!startProcess(processInput, VPSP_BINARY(m_vpsDir), cmdLine_Input, false))
@@ -990,7 +990,7 @@ bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 	}
 
 	cmdLine << "-frames" << "1";
-	cmdLine << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName)) << "NUL";
+	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true)) << "NUL";
 
 	log("Creating process:");
 	if(!startProcess(process, AVS2_BINARY(m_binDir, x64), cmdLine))
@@ -1150,7 +1150,7 @@ bool EncodeThread::checkPropertiesVapoursynth(/*const QString &vspipePath,*/ uns
 	QProcess process;
 	QStringList cmdLine;
 
-	cmdLine << x264_path2ansi(QDir::toNativeSeparators(m_sourceFileName));
+	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
 	cmdLine << "-" << "-info";
 
 	log("Creating process:");

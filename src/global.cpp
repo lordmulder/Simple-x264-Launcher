@@ -1710,6 +1710,23 @@ bool x264_shutdown_computer(const QString &message, const unsigned long timeout,
 }
 
 /*
+ * Inform the system that it is in use, thereby preventing the system from entering sleep
+ */
+bool x264_set_thread_execution_state(const bool systemRequired)
+{
+	EXECUTION_STATE state = NULL;
+	if(systemRequired)
+	{
+		state = SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED);
+	}
+	else
+	{
+		state = SetThreadExecutionState(ES_CONTINUOUS);
+	}
+	return (state != NULL);
+}
+
+/*
  * Check for debugger (detect routine)
  */
 static __forceinline bool x264_check_for_debugger(void)

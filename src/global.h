@@ -121,6 +121,7 @@ bool x264_play_sound(const unsigned short uiSoundIdx, const bool bAsync, const w
 bool x264_portable(void);
 unsigned int x264_process_id(void);
 QString x264_query_reg_string(const bool bUser, const QString &path, const QString &name);
+bool x264_set_thread_execution_state(const bool systemRequired);
 bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown);
 void x264_sleep(const unsigned int delay);
 bool x264_suspendProcess(const QProcess *proc, const bool suspend);

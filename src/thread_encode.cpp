@@ -43,6 +43,30 @@
 QMutex EncodeThread::m_mutex_startProcess;
 
 /*
+ * RAII execution state handler
+ */
+static class ExecutionStateHandler
+{
+public:
+	ExecutionStateHandler(void)
+	{
+		x264_set_thread_execution_state(true);
+	}
+	~ExecutionStateHandler(void)
+	{
+		x264_set_thread_execution_state(false);
+	}
+private:
+	//Disable copy constructor and assignment
+	ExecutionStateHandler(const ExecutionStateHandler &other) {}
+	ExecutionStateHandler &operator=(const ExecutionStateHandler &) {}
+
+	//Prevent object allocation on the heap
+	void *operator new(size_t);   void *operator new[](size_t);
+	void operator delete(void *); void operator delete[](void*);
+};
+
+/*
  * Macros
  */
 #define CHECK_STATUS(ABORT_FLAG, OK_FLAG) do \
@@ -169,6 +193,7 @@ void EncodeThread::checkedRun(void)
 	{
 		try
 		{
+			ExecutionStateHandler executionStateHandler;
 			encode();
 		}
 		catch(char *msg)

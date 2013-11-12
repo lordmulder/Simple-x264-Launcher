@@ -143,7 +143,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_x264_10bit(x264_10bit),
 	m_avs2yuv_x64(avs2yuv_x64),
 	m_skipVersionTest(skipVersionTest),
-	m_processPriority(processPriroity),
+	m_processPriority(qBound(-2, processPriroity, 1)),
 	m_abortOnTimeout(abortOnTimeout),
 	m_jobObject(new JobObject),
 	m_semaphorePaused(0)

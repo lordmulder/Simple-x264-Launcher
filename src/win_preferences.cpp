@@ -29,13 +29,31 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 
-#define UPDATE_CHECKBOX(CHKBOX, VALUE, BLOCK) \
+#define UPDATE_CHECKBOX(CHKBOX, VALUE, BLOCK) do \
 { \
 	if((BLOCK)) { (CHKBOX)->blockSignals(true); } \
 	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->click(); \
 	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->setChecked(VALUE); \
 	if((BLOCK)) { (CHKBOX)->blockSignals(false); } \
-}
+} \
+while(0)
+
+#define UPDATE_COMBOBOX(COBOX, VALUE, DEFAULT) do \
+{ \
+	const int _cnt = (COBOX)->count(); \
+	const int _val = (VALUE); \
+	const int _def = (DEFAULT); \
+	for(int _i = 0; _i < _cnt; _i++) \
+	{ \
+		const int _current = (COBOX)->itemData(_i).toInt(); \
+		if((_current == _val) || (_current == _def)) \
+		{ \
+			(COBOX)->setCurrentIndex(_i); \
+			if((_current == _val)) break; \
+		} \
+	} \
+} \
+while(0)
 
 PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64)
 :
@@ -47,6 +65,11 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	setFixedSize(minimumSize());
 	x264_enable_close_button(this, false);
 	
+	comboBoxPriority->setItemData(0, QVariant::fromValue( 1)); //Above Normal
+	comboBoxPriority->setItemData(1, QVariant::fromValue( 0)); //Normal
+	comboBoxPriority->setItemData(2, QVariant::fromValue(-1)); //Below Normal
+	comboBoxPriority->setItemData(3, QVariant::fromValue(-2)); //Idle
+
 	labelRunNextJob->installEventFilter(this);
 	labelUse10BitEncoding->installEventFilter(this);
 	labelUse64BitAvs2YUV->installEventFilter(this);
@@ -81,8 +104,9 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding(), true);
 
 	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
-	comboBoxPriority->setCurrentIndex(qBound(0, m_preferences->processPriority() + 2, comboBoxPriority->count()-1));
-
+	
+	UPDATE_COMBOBOX(comboBoxPriority, qBound(-2, m_preferences->processPriority(), 1), 0);
+	
 	checkUse64BitAvs2YUV->setEnabled(m_x64);
 	labelUse64BitAvs2YUV->setEnabled(m_x64);
 }
@@ -129,7 +153,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->setSaveLogFiles(checkSaveLogFiles->isChecked());
 	m_preferences->setSaveToSourcePath(checkSaveToSourceFolder->isChecked());
 	m_preferences->setMaxRunningJobCount(spinBoxJobCount->value());
-	m_preferences->setProcessPriority(comboBoxPriority->currentIndex() - 2);
+	m_preferences->setProcessPriority(comboBoxPriority->itemData(comboBoxPriority->currentIndex()).toInt());
 	m_preferences->setEnableSounds(checkEnableSounds->isChecked());
 	m_preferences->setDisableWarnings(checkDisableWarnings->isChecked());
 

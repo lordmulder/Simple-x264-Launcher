@@ -20,7 +20,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_main.h"
+#include "uic_win_main.h"
 
+#include "global.h"
+#include "model_status.h"
 #include "model_jobList.h"
 #include "model_options.h"
 #include "model_preferences.h"
@@ -81,10 +84,11 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	m_skipVersionTest(false),
 	m_abortOnTimeout(true),
 	m_firstShow(true),
-	m_initialized(false)
+	m_initialized(false),
+	ui(new Ui::MainWindow())
 {
 	//Init the dialog, from the .ui file
-	setupUi(this);
+	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowMaximizeButtonHint));
 
 	//Register meta types
@@ -110,11 +114,11 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 
 	//Freeze minimum size
 	setMinimumSize(size());
-	splitter->setSizes(QList<int>() << 16 << 196);
+	ui->splitter->setSizes(QList<int>() << 16 << 196);
 
 	//Update title
-	labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
-	labelBuildDate->installEventFilter(this);
+	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
+	ui->labelBuildDate->installEventFilter(this);
 	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_cpuFeatures->x64 ? "64-Bit" : "32-Bit"));
 	if(X264_DEBUG)
 	{
@@ -129,63 +133,63 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Create model
 	m_jobList = new JobListModel(m_preferences);
 	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
-	jobsView->setModel(m_jobList);
+	ui->jobsView->setModel(m_jobList);
 	
 	//Setup view
-	jobsView->horizontalHeader()->setSectionHidden(3, true);
-	jobsView->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
-	jobsView->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
-	jobsView->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
-	jobsView->horizontalHeader()->resizeSection(1, 150);
-	jobsView->horizontalHeader()->resizeSection(2, 90);
-	jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
-	connect(jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
+	ui->jobsView->horizontalHeader()->setSectionHidden(3, true);
+	ui->jobsView->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
+	ui->jobsView->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
+	ui->jobsView->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
+	ui->jobsView->horizontalHeader()->resizeSection(1, 150);
+	ui->jobsView->horizontalHeader()->resizeSection(2, 90);
+	ui->jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+	connect(ui->jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
 
 	//Create context menu
-	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), logView);
+	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), ui->logView);
 	actionClipboard->setEnabled(false);
-	logView->addAction(actionClipboard);
+	ui->logView->addAction(actionClipboard);
 	connect(actionClipboard, SIGNAL(triggered(bool)), this, SLOT(copyLogToClipboard(bool)));
-	jobsView->addActions(menuJob->actions());
+	ui->jobsView->addActions(ui->menuJob->actions());
 
 	//Enable buttons
-	connect(buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
-	connect(buttonStartJob, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
-	connect(buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
-	connect(buttonPauseJob, SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
-	connect(actionJob_Delete, SIGNAL(triggered()), this, SLOT(deleteButtonPressed()));
-	connect(actionJob_Restart, SIGNAL(triggered()), this, SLOT(restartButtonPressed()));
-	connect(actionJob_Browse, SIGNAL(triggered()), this, SLOT(browseButtonPressed()));
+	connect(ui->buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
+	connect(ui->buttonStartJob, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
+	connect(ui->buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
+	connect(ui->buttonPauseJob, SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
+	connect(ui->actionJob_Delete, SIGNAL(triggered()), this, SLOT(deleteButtonPressed()));
+	connect(ui->actionJob_Restart, SIGNAL(triggered()), this, SLOT(restartButtonPressed()));
+	connect(ui->actionJob_Browse, SIGNAL(triggered()), this, SLOT(browseButtonPressed()));
 
 	//Enable menu
-	connect(actionOpen, SIGNAL(triggered()), this, SLOT(openActionTriggered()));
-	connect(actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
-	connect(actionWebMulder, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebVideoLAN, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebJEEB, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebAvisynth32, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebVapourSynth, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebVapourSynthDocs, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebAvsWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionWebSupport, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
+	connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(openActionTriggered()));
+	connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
+	connect(ui->actionWebMulder, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebVideoLAN, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebJEEB, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebAvisynth32, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebVapourSynth, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebVapourSynthDocs, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebAvsWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebSupport, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 
 	//Create floating label
-	m_label = new QLabel(jobsView->viewport());
+	m_label = new QLabel(ui->jobsView->viewport());
 	m_label->setText(tr("No job created yet. Please click the 'Add New Job' button!"));
 	m_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	SET_TEXT_COLOR(m_label, Qt::darkGray);
 	SET_FONT_BOLD(m_label, true);
 	m_label->setVisible(true);
 	m_label->setContextMenuPolicy(Qt::ActionsContextMenu);
-	m_label->addActions(jobsView->actions());
-	connect(splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
+	m_label->addActions(ui->jobsView->actions());
+	connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
 	updateLabelPos();
 }
 
@@ -222,6 +226,8 @@ MainWindow::~MainWindow(void)
 	X264_DELETE(m_recentlyUsed);
 	VapourSynthCheckThread::unload();
 	AvisynthCheckThread::unload();
+
+	delete ui;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -273,7 +279,7 @@ void MainWindow::openActionTriggered()
  */
 void MainWindow::startButtonPressed(void)
 {
-	m_jobList->startJob(jobsView->currentIndex());
+	m_jobList->startJob(ui->jobsView->currentIndex());
 }
 
 /*
@@ -281,7 +287,7 @@ void MainWindow::startButtonPressed(void)
  */
 void MainWindow::abortButtonPressed(void)
 {
-	m_jobList->abortJob(jobsView->currentIndex());
+	m_jobList->abortJob(ui->jobsView->currentIndex());
 }
 
 /*
@@ -289,7 +295,7 @@ void MainWindow::abortButtonPressed(void)
  */
 void MainWindow::deleteButtonPressed(void)
 {
-	m_jobList->deleteJob(jobsView->currentIndex());
+	m_jobList->deleteJob(ui->jobsView->currentIndex());
 	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 }
 
@@ -298,7 +304,7 @@ void MainWindow::deleteButtonPressed(void)
  */
 void MainWindow::browseButtonPressed(void)
 {
-	QString outputFile = m_jobList->getJobOutputFile(jobsView->currentIndex());
+	QString outputFile = m_jobList->getJobOutputFile(ui->jobsView->currentIndex());
 	if((!outputFile.isEmpty()) && QFileInfo(outputFile).exists() && QFileInfo(outputFile).isFile())
 	{
 		QProcess::startDetached(QString::fromLatin1("explorer.exe"), QStringList() << QString::fromLatin1("/select,") << QDir::toNativeSeparators(outputFile), QFileInfo(outputFile).path());
@@ -316,11 +322,11 @@ void MainWindow::pauseButtonPressed(bool checked)
 {
 	if(checked)
 	{
-		m_jobList->pauseJob(jobsView->currentIndex());
+		m_jobList->pauseJob(ui->jobsView->currentIndex());
 	}
 	else
 	{
-		m_jobList->resumeJob(jobsView->currentIndex());
+		m_jobList->resumeJob(ui->jobsView->currentIndex());
 	}
 }
 
@@ -329,7 +335,7 @@ void MainWindow::pauseButtonPressed(bool checked)
  */
 void MainWindow::restartButtonPressed(void)
 {
-	const QModelIndex index = jobsView->currentIndex();
+	const QModelIndex index = ui->jobsView->currentIndex();
 	const OptionsModel *options = m_jobList->getJobOptions(index);
 	QString sourceFileName = m_jobList->getJobSourceFile(index);
 	QString outputFileName = m_jobList->getJobOutputFile(index);
@@ -353,34 +359,34 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 {
 	qDebug("Job selected: %d", current.row());
 	
-	if(logView->model())
+	if(ui->logView->model())
 	{
-		disconnect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
+		disconnect(ui->logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
 	}
 	
 	if(current.isValid())
 	{
-		logView->setModel(m_jobList->getLogFile(current));
-		connect(logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
-		logView->actions().first()->setEnabled(true);
-		QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
+		ui->logView->setModel(m_jobList->getLogFile(current));
+		connect(ui->logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
+		ui->logView->actions().first()->setEnabled(true);
+		QTimer::singleShot(0, ui->logView, SLOT(scrollToBottom()));
 
-		progressBar->setValue(m_jobList->getJobProgress(current));
-		editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
+		ui->progressBar->setValue(m_jobList->getJobProgress(current));
+		ui->editDetails->setText(m_jobList->data(m_jobList->index(current.row(), 3, QModelIndex()), Qt::DisplayRole).toString());
 		updateButtons(m_jobList->getJobStatus(current));
 		updateTaskbar(m_jobList->getJobStatus(current), m_jobList->data(m_jobList->index(current.row(), 0, QModelIndex()), Qt::DecorationRole).value<QIcon>());
 	}
 	else
 	{
-		logView->setModel(NULL);
-		logView->actions().first()->setEnabled(false);
-		progressBar->setValue(0);
-		editDetails->clear();
+		ui->logView->setModel(NULL);
+		ui->logView->actions().first()->setEnabled(false);
+		ui->progressBar->setValue(0);
+		ui->editDetails->clear();
 		updateButtons(JobStatus_Undefined);
 		updateTaskbar(JobStatus_Undefined, QIcon());
 	}
 
-	progressBar->repaint();
+	ui->progressBar->repaint();
 }
 
 /*
@@ -388,7 +394,7 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
  */
 void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &bottomRight)
 {
-	int selected = jobsView->currentIndex().row();
+	int selected = ui->jobsView->currentIndex().row();
 	
 	if(topLeft.column() <= 1 && bottomRight.column() >= 1) /*STATUS*/
 	{
@@ -415,8 +421,8 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 		{
 			if(i == selected)
 			{
-				progressBar->setValue(m_jobList->getJobProgress(m_jobList->index(i, 0, QModelIndex())));
-				WinSevenTaskbar::setTaskbarProgress(this, progressBar->value(), progressBar->maximum());
+				ui->progressBar->setValue(m_jobList->getJobProgress(m_jobList->index(i, 0, QModelIndex())));
+				WinSevenTaskbar::setTaskbarProgress(this, ui->progressBar->value(), ui->progressBar->maximum());
 				break;
 			}
 		}
@@ -427,7 +433,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 		{
 			if(i == selected)
 			{
-				editDetails->setText(m_jobList->data(m_jobList->index(i, 3, QModelIndex()), Qt::DisplayRole).toString());
+				ui->editDetails->setText(m_jobList->data(m_jobList->index(i, 3, QModelIndex()), Qt::DisplayRole).toString());
 				break;
 			}
 		}
@@ -439,7 +445,7 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
  */
 void MainWindow::jobLogExtended(const QModelIndex & parent, int start, int end)
 {
-	QTimer::singleShot(0, logView, SLOT(scrollToBottom()));
+	QTimer::singleShot(0, ui->logView, SLOT(scrollToBottom()));
 }
 
 /*
@@ -540,20 +546,20 @@ void MainWindow::showAbout(void)
  */
 void MainWindow::showWebLink(void)
 {
-	if(QObject::sender() == actionWebMulder)          QDesktopServices::openUrl(QUrl(home_url));
-	if(QObject::sender() == actionWebX264)            QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
-	if(QObject::sender() == actionWebKomisar)         QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
-	if(QObject::sender() == actionWebVideoLAN)        QDesktopServices::openUrl(QUrl("http://download.videolan.org/pub/x264/binaries/"));
-	if(QObject::sender() == actionWebJEEB)            QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
-	if(QObject::sender() == actionWebAvisynth32)      QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
-	if(QObject::sender() == actionWebAvisynth64)      QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
-	if(QObject::sender() == actionWebVapourSynth)     QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/"));
-	if(QObject::sender() == actionWebVapourSynthDocs) QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/doc/"));
-	if(QObject::sender() == actionWebWiki)            QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
-	if(QObject::sender() == actionWebBluRay)          QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
-	if(QObject::sender() == actionWebAvsWiki)         QDesktopServices::openUrl(QUrl("http://avisynth.nl/index.php/Main_Page#Usage"));
-	if(QObject::sender() == actionWebSupport)         QDesktopServices::openUrl(QUrl("http://forum.doom9.org/showthread.php?t=144140"));
-	if(QObject::sender() == actionWebSecret)          QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
+	if(QObject::sender() == ui->actionWebMulder)          QDesktopServices::openUrl(QUrl(home_url));
+	if(QObject::sender() == ui->actionWebX264)            QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
+	if(QObject::sender() == ui->actionWebKomisar)         QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
+	if(QObject::sender() == ui->actionWebVideoLAN)        QDesktopServices::openUrl(QUrl("http://download.videolan.org/pub/x264/binaries/"));
+	if(QObject::sender() == ui->actionWebJEEB)            QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
+	if(QObject::sender() == ui->actionWebAvisynth32)      QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
+	if(QObject::sender() == ui->actionWebAvisynth64)      QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
+	if(QObject::sender() == ui->actionWebVapourSynth)     QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/"));
+	if(QObject::sender() == ui->actionWebVapourSynthDocs) QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/doc/"));
+	if(QObject::sender() == ui->actionWebWiki)            QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
+	if(QObject::sender() == ui->actionWebBluRay)          QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
+	if(QObject::sender() == ui->actionWebAvsWiki)         QDesktopServices::openUrl(QUrl("http://avisynth.nl/index.php/Main_Page#Usage"));
+	if(QObject::sender() == ui->actionWebSupport)         QDesktopServices::openUrl(QUrl("http://forum.doom9.org/showthread.php?t=144140"));
+	if(QObject::sender() == ui->actionWebSecret)          QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
 }
 
 /*
@@ -581,7 +587,7 @@ void MainWindow::launchNextJob(void)
 		return;
 	}
 
-	int startIdx= jobsView->currentIndex().isValid() ? qBound(0, jobsView->currentIndex().row(), rows-1) : 0;
+	int startIdx= ui->jobsView->currentIndex().isValid() ? qBound(0, ui->jobsView->currentIndex().row(), rows-1) : 0;
 
 	for(int i = 0; i < rows; i++)
 	{
@@ -591,7 +597,7 @@ void MainWindow::launchNextJob(void)
 		{
 			if(m_jobList->startJob(m_jobList->index(currentIdx, 0, QModelIndex())))
 			{
-				jobsView->selectRow(currentIdx);
+				ui->jobsView->selectRow(currentIdx);
 				return;
 			}
 		}
@@ -910,7 +916,7 @@ void MainWindow::init(void)
  */
 void MainWindow::updateLabelPos(void)
 {
-	const QWidget *const viewPort = jobsView->viewport();
+	const QWidget *const viewPort = ui->jobsView->viewport();
 	m_label->setGeometry(0, 0, viewPort->width(), viewPort->height());
 }
 
@@ -921,7 +927,7 @@ void MainWindow::copyLogToClipboard(bool checked)
 {
 	qDebug("copyLogToClipboard");
 	
-	if(LogFileModel *log = dynamic_cast<LogFileModel*>(logView->model()))
+	if(LogFileModel *log = dynamic_cast<LogFileModel*>(ui->logView->model()))
 	{
 		log->copyToClipboard();
 		x264_beep(x264_beep_info);
@@ -1028,7 +1034,7 @@ void MainWindow::resizeEvent(QResizeEvent *e)
  */
 bool MainWindow::eventFilter(QObject *o, QEvent *e)
 {
-	if((o == labelBuildDate) && (e->type() == QEvent::MouseButtonPress))
+	if((o == ui->labelBuildDate) && (e->type() == QEvent::MouseButtonPress))
 	{
 		QTimer::singleShot(0, this, SLOT(showAbout()));
 		return true;
@@ -1204,7 +1210,7 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 	{
 		if(runImmediately)
 		{
-			jobsView->selectRow(newIndex.row());
+			ui->jobsView->selectRow(newIndex.row());
 			QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 			m_jobList->startJob(newIndex);
 		}
@@ -1263,21 +1269,21 @@ void MainWindow::updateButtons(JobStatus status)
 {
 	qDebug("MainWindow::updateButtons(void)");
 
-	buttonStartJob->setEnabled(status == JobStatus_Enqueued);
-	buttonAbortJob->setEnabled(status == JobStatus_Indexing || status == JobStatus_Running || status == JobStatus_Running_Pass1 || status == JobStatus_Running_Pass2 || status == JobStatus_Paused);
-	buttonPauseJob->setEnabled(status == JobStatus_Indexing || status == JobStatus_Running || status == JobStatus_Paused || status == JobStatus_Running_Pass1 || status == JobStatus_Running_Pass2);
-	buttonPauseJob->setChecked(status == JobStatus_Paused || status == JobStatus_Pausing);
+	ui->buttonStartJob->setEnabled(status == JobStatus_Enqueued);
+	ui->buttonAbortJob->setEnabled(status == JobStatus_Indexing || status == JobStatus_Running || status == JobStatus_Running_Pass1 || status == JobStatus_Running_Pass2 || status == JobStatus_Paused);
+	ui->buttonPauseJob->setEnabled(status == JobStatus_Indexing || status == JobStatus_Running || status == JobStatus_Paused || status == JobStatus_Running_Pass1 || status == JobStatus_Running_Pass2);
+	ui->buttonPauseJob->setChecked(status == JobStatus_Paused || status == JobStatus_Pausing);
 
-	actionJob_Delete->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
-	actionJob_Restart->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
-	actionJob_Browse->setEnabled(status == JobStatus_Completed);
+	ui->actionJob_Delete->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
+	ui->actionJob_Restart->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
+	ui->actionJob_Browse->setEnabled(status == JobStatus_Completed);
 
-	actionJob_Start->setEnabled(buttonStartJob->isEnabled());
-	actionJob_Abort->setEnabled(buttonAbortJob->isEnabled());
-	actionJob_Pause->setEnabled(buttonPauseJob->isEnabled());
-	actionJob_Pause->setChecked(buttonPauseJob->isChecked());
+	ui->actionJob_Start->setEnabled(ui->buttonStartJob->isEnabled());
+	ui->actionJob_Abort->setEnabled(ui->buttonAbortJob->isEnabled());
+	ui->actionJob_Pause->setEnabled(ui->buttonPauseJob->isEnabled());
+	ui->actionJob_Pause->setChecked(ui->buttonPauseJob->isChecked());
 
-	editDetails->setEnabled(status != JobStatus_Paused);
+	ui->editDetails->setEnabled(status != JobStatus_Paused);
 }
 
 /*
@@ -1318,7 +1324,7 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 	case JobStatus_Resuming:
 		break;
 	default:
-		WinSevenTaskbar::setTaskbarProgress(this, progressBar->value(), progressBar->maximum());
+		WinSevenTaskbar::setTaskbarProgress(this, ui->progressBar->value(), ui->progressBar->maximum());
 		break;
 	}
 

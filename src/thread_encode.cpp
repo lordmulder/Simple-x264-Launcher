@@ -45,7 +45,7 @@ QMutex EncodeThread::m_mutex_startProcess;
 /*
  * RAII execution state handler
  */
-static class ExecutionStateHandler
+class ExecutionStateHandler
 {
 public:
 	ExecutionStateHandler(void)

@@ -20,6 +20,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_help.h"
+#include "uic_win_help.h"
+
 #include "global.h"
 
 #include <QProcess>
@@ -40,10 +42,11 @@ HelpDialog::HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported, bool us
 	m_avs2yuv(avs2yuv),
 	m_x64supported(x64supported),
 	m_use10BitEncoding(use10BitEncoding),
-	m_process(new QProcess())
+	m_process(new QProcess()),
+	ui(new Ui::HelpDialog())
 {
 	//Init the dialog, from the .ui file
-	setupUi(this);
+	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 
 	//Fix size
@@ -61,6 +64,7 @@ HelpDialog::HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported, bool us
 HelpDialog::~HelpDialog(void)
 {
 	delete m_process;
+	delete ui;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -69,8 +73,8 @@ HelpDialog::~HelpDialog(void)
 
 void HelpDialog::showEvent(QShowEvent *event)
 {
-	logo_x264->setHidden(m_avs2yuv);
-	logo_avisynth->setVisible(m_avs2yuv);
+	ui->logo_x264->setHidden(m_avs2yuv);
+	ui->logo_avisynth->setVisible(m_avs2yuv);
 	
 	QDialog::showEvent(event);
 	
@@ -87,7 +91,7 @@ void HelpDialog::showEvent(QShowEvent *event)
 
 	if(!m_process->waitForStarted())
 	{
-		plainTextEdit->appendPlainText(tr("Failed to create x264 process :-("));
+		ui->plainTextEdit->appendPlainText(tr("Failed to create x264 process :-("));
 	}
 }
 
@@ -116,7 +120,7 @@ void HelpDialog::readyRead(void)
 		{
 			line = line.left(line.length() - 1);
 		}
-		plainTextEdit->appendPlainText(line);
+		ui->plainTextEdit->appendPlainText(line);
 	}
 }
 
@@ -128,16 +132,16 @@ void HelpDialog::finished(void)
 		if(!m_avs2yuv)
 		{
 			m_process->start(X264_BINARY(m_appDir, m_use10BitEncoding, m_x64supported), QStringList() << "--fullhelp");
-			plainTextEdit->appendPlainText("\n--------\n");
+			ui->plainTextEdit->appendPlainText("\n--------\n");
 
 			if(!m_process->waitForStarted())
 			{
-				plainTextEdit->appendPlainText(tr("Failed to create x264 process :-("));
+				ui->plainTextEdit->appendPlainText(tr("Failed to create x264 process :-("));
 			}
 		}
 	}
 	else
 	{
-		plainTextEdit->verticalScrollBar()->setSliderPosition(0);
+		ui->plainTextEdit->verticalScrollBar()->setSliderPosition(0);
 	}
 }

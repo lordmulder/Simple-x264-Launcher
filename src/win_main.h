@@ -21,10 +21,8 @@
 
 #pragma once
 
-#include "uic_win_main.h"
-
 #include "global.h"
-#include "model_status.h"
+#include <QMainWindow>
 
 class JobListModel;
 class OptionsModel;
@@ -33,8 +31,16 @@ class QLibrary;
 class PreferencesModel;
 class RecentlyUsed;
 class IPCThread;
+class QModelIndex;
+class QLabel;
+enum JobStatus;
 
-class MainWindow: public QMainWindow, private Ui::MainWindow
+namespace Ui
+{
+	class MainWindow;
+}
+
+class MainWindow: public QMainWindow
 {
 	Q_OBJECT
 
@@ -52,6 +58,8 @@ protected:
 	virtual bool winEvent(MSG *message, long *result);
 
 private:
+	Ui::MainWindow *const ui;
+
 	bool m_firstShow;
 	bool m_skipVersionTest;
 	bool m_abortOnTimeout;
@@ -92,7 +100,7 @@ private slots:
 	void handleDroppedFiles(void);
 	void init(void);
 	void instanceCreated(unsigned int pid);
-	void jobSelected(const QModelIndex & current, const QModelIndex & previous);
+	void jobSelected(const QModelIndex &current, const QModelIndex &previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
 	void launchNextJob();

@@ -21,11 +21,14 @@
 
 #pragma once
 
-#include "uic_win_editor.h"
+#include <QDialog>
 
-class QProcess;
+namespace Ui
+{
+	class EditorDialog;
+}
 
-class EditorDialog : public QDialog, private Ui::EditorDialog
+class EditorDialog : public QDialog
 {
 	Q_OBJECT
 
@@ -33,12 +36,10 @@ public:
 	EditorDialog(QWidget *parent);
 	~EditorDialog(void);
 
-	QString getEditText(void) { return plainTextEdit->toPlainText().simplified(); }
-	
-	void setEditText(const QString &text)
-	{
-		plainTextEdit->clear();
-		plainTextEdit->appendPlainText(text.simplified());
-	}
+	QString getEditText(void);
+	void setEditText(const QString &text);
+
+private:
+	Ui::EditorDialog *const ui;
 };
 

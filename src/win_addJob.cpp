@@ -20,6 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_addJob.h"
+#include "uic_win_addJob.h"
 
 #include "global.h"
 #include "model_options.h"
@@ -47,14 +48,14 @@
 
 #define REMOVE_USAFED_ITEM \
 { \
-	for(int i = 0; i < cbxTemplate->count(); i++) \
+	for(int i = 0; i < ui->cbxTemplate->count(); i++) \
 	{ \
-		OptionsModel* temp = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>()); \
+		OptionsModel* temp = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>()); \
 		if(temp == NULL) \
 		{ \
-			cbxTemplate->blockSignals(true); \
-			cbxTemplate->removeItem(i); \
-			cbxTemplate->blockSignals(false); \
+			ui->cbxTemplate->blockSignals(true); \
+			ui->cbxTemplate->removeItem(i); \
+			ui->cbxTemplate->blockSignals(false); \
 			break; \
 		} \
 	} \
@@ -209,95 +210,97 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed 
 	m_x64supported(x64supported),
 	m_use10BitEncoding(use10BitEncoding),
 	m_saveToSourceFolder(saveToSourceFolder),
-	m_recentlyUsed(recentlyUsed)
+	m_recentlyUsed(recentlyUsed),
+	ui(new Ui::AddJobDialog())
 {
 	//Init the dialog, from the .ui file
-	setupUi(this);
+	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	
 	//Fix dialog size
-	buttonSaveTemplate->setMaximumHeight(20);
-	buttonDeleteTemplate->setMaximumHeight(20);
+	ui->buttonSaveTemplate->setMaximumHeight(20);
+	ui->buttonDeleteTemplate->setMaximumHeight(20);
 	resize(width(), minimumHeight());
 	setMinimumSize(size());
 	setMaximumHeight(height());
 
 	//Hide optional controls
-	checkBoxApplyToAll->setVisible(false);
+	ui->checkBoxApplyToAll->setVisible(false);
 
 	//Monitor RC mode combobox
-	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
+	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
 
 	//Activate buttons
-	connect(buttonBrowseSource, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
-	connect(buttonBrowseOutput, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
-	connect(buttonSaveTemplate, SIGNAL(clicked()), this, SLOT(saveTemplateButtonClicked()));
-	connect(buttonDeleteTemplate, SIGNAL(clicked()), this, SLOT(deleteTemplateButtonClicked()));
+	connect(ui->buttonBrowseSource, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
+	connect(ui->buttonBrowseOutput, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
+	connect(ui->buttonSaveTemplate, SIGNAL(clicked()), this, SLOT(saveTemplateButtonClicked()));
+	connect(ui->buttonDeleteTemplate, SIGNAL(clicked()), this, SLOT(deleteTemplateButtonClicked()));
 
 	//Setup validator
-	editCustomX264Params->installEventFilter(this);
-	editCustomX264Params->setValidator(new StringValidatorX264(labelNotificationX264, iconNotificationX264));
-	editCustomX264Params->clear();
-	editCustomAvs2YUVParams->installEventFilter(this);
-	editCustomAvs2YUVParams->setValidator(new StringValidatorAvs2YUV(labelNotificationAvs2YUV, iconNotificationAvs2YUV));
-	editCustomAvs2YUVParams->clear();
+	ui->editCustomX264Params->installEventFilter(this);
+	ui->editCustomX264Params->setValidator(new StringValidatorX264(ui->labelNotificationX264, ui->iconNotificationX264));
+	ui->editCustomX264Params->clear();
+	ui->editCustomAvs2YUVParams->installEventFilter(this);
+	ui->editCustomAvs2YUVParams->setValidator(new StringValidatorAvs2YUV(ui->labelNotificationAvs2YUV, ui->iconNotificationAvs2YUV));
+	ui->editCustomAvs2YUVParams->clear();
 
 	//Install event filter
-	labelHelpScreenX264->installEventFilter(this);
-	labelHelpScreenAvs2YUV->installEventFilter(this);
+	ui->labelHelpScreenX264->installEventFilter(this);
+	ui->labelHelpScreenAvs2YUV->installEventFilter(this);
 
 	//Monitor for options changes
-	connect(cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
-	connect(spinQuantizer, SIGNAL(valueChanged(double)), this, SLOT(configurationChanged()));
-	connect(spinBitrate, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
-	connect(cbxPreset, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
-	connect(cbxTuning, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
-	connect(cbxProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
-	connect(editCustomX264Params, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
-	connect(editCustomAvs2YUVParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
+	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->spinQuantizer, SIGNAL(valueChanged(double)), this, SLOT(configurationChanged()));
+	connect(ui->spinBitrate, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->cbxPreset, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->cbxTuning, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->cbxProfile, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->editCustomX264Params, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
+	connect(ui->editCustomAvs2YUVParams, SIGNAL(textChanged(QString)), this, SLOT(configurationChanged()));
 
 	//Create context menus
-	ADD_CONTEXTMENU_ACTION(editCustomX264Params, QIcon(":/buttons/page_edit.png"), tr("Open the Text-Editor"), editorActionTriggered);
-	ADD_CONTEXTMENU_ACTION(editCustomAvs2YUVParams, QIcon(":/buttons/page_edit.png"), tr("Open the Text-Editor"), editorActionTriggered);
-	ADD_CONTEXTMENU_SEPARATOR(editCustomX264Params);
-	ADD_CONTEXTMENU_SEPARATOR(editCustomAvs2YUVParams);
-	ADD_CONTEXTMENU_ACTION(editCustomX264Params, QIcon(":/buttons/page_copy.png"), tr("Copy to Clipboard"), copyActionTriggered);
-	ADD_CONTEXTMENU_ACTION(editCustomAvs2YUVParams, QIcon(":/buttons/page_copy.png"), tr("Copy to Clipboard"), copyActionTriggered);
-	ADD_CONTEXTMENU_ACTION(editCustomX264Params, QIcon(":/buttons/page_paste.png"), tr("Paste from Clipboard"), pasteActionTriggered);
-	ADD_CONTEXTMENU_ACTION(editCustomAvs2YUVParams, QIcon(":/buttons/page_paste.png"), tr("Paste from Clipboard"), pasteActionTriggered);
+	ADD_CONTEXTMENU_ACTION(ui->editCustomX264Params, QIcon(":/buttons/page_edit.png"), tr("Open the Text-Editor"), editorActionTriggered);
+	ADD_CONTEXTMENU_ACTION(ui->editCustomAvs2YUVParams, QIcon(":/buttons/page_edit.png"), tr("Open the Text-Editor"), editorActionTriggered);
+	ADD_CONTEXTMENU_SEPARATOR(ui->editCustomX264Params);
+	ADD_CONTEXTMENU_SEPARATOR(ui->editCustomAvs2YUVParams);
+	ADD_CONTEXTMENU_ACTION(ui->editCustomX264Params, QIcon(":/buttons/page_copy.png"), tr("Copy to Clipboard"), copyActionTriggered);
+	ADD_CONTEXTMENU_ACTION(ui->editCustomAvs2YUVParams, QIcon(":/buttons/page_copy.png"), tr("Copy to Clipboard"), copyActionTriggered);
+	ADD_CONTEXTMENU_ACTION(ui->editCustomX264Params, QIcon(":/buttons/page_paste.png"), tr("Paste from Clipboard"), pasteActionTriggered);
+	ADD_CONTEXTMENU_ACTION(ui->editCustomAvs2YUVParams, QIcon(":/buttons/page_paste.png"), tr("Paste from Clipboard"), pasteActionTriggered);
 
 	//Setup template selector
 	loadTemplateList();
-	connect(cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
+	connect(ui->cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
 }
 
 AddJobDialog::~AddJobDialog(void)
 {
 	//Free templates
-	for(int i = 0; i < cbxTemplate->model()->rowCount(); i++)
+	for(int i = 0; i < ui->cbxTemplate->model()->rowCount(); i++)
 	{
-		if(cbxTemplate->itemText(i).startsWith("<") || cbxTemplate->itemText(i).endsWith(">"))
+		if(ui->cbxTemplate->itemText(i).startsWith("<") || ui->cbxTemplate->itemText(i).endsWith(">"))
 		{
 			continue;
 		}
-		OptionsModel *item = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
-		cbxTemplate->setItemData(i, QVariant::fromValue<void*>(NULL));
+		OptionsModel *item = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>());
+		ui->cbxTemplate->setItemData(i, QVariant::fromValue<void*>(NULL));
 		X264_DELETE(item);
 	}
 
 	//Free validators
-	if(const QValidator *tmp = editCustomX264Params->validator())
+	if(const QValidator *tmp = ui->editCustomX264Params->validator())
 	{
-		editCustomX264Params->setValidator(NULL);
+		ui->editCustomX264Params->setValidator(NULL);
 		X264_DELETE(tmp);
 	}
-	if(const QValidator *tmp = editCustomAvs2YUVParams->validator())
+	if(const QValidator *tmp = ui->editCustomAvs2YUVParams->validator())
 	{
-		editCustomAvs2YUVParams->setValidator(NULL);
+		ui->editCustomAvs2YUVParams->setValidator(NULL);
 		X264_DELETE(tmp);
 	}
 
 	X264_DELETE(m_defaults);
+	delete ui;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -309,17 +312,17 @@ void AddJobDialog::showEvent(QShowEvent *event)
 	QDialog::showEvent(event);
 	templateSelected();
 
-	if((!editSource->text().isEmpty()) && editOutput->text().isEmpty())
+	if((!ui->editSource->text().isEmpty()) && ui->editOutput->text().isEmpty())
 	{
-		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(editSource->text()), m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_saveToSourceFolder);
-		editOutput->setText(QDir::toNativeSeparators(outPath));
-		buttonAccept->setFocus();
+		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(ui->editSource->text()), m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_saveToSourceFolder);
+		ui->editOutput->setText(QDir::toNativeSeparators(outPath));
+		ui->buttonAccept->setFocus();
 	}
 
-	labelNotificationX264->hide();
-	iconNotificationX264->hide();
-	labelNotificationAvs2YUV->hide();
-	iconNotificationAvs2YUV->hide();
+	ui->labelNotificationX264->hide();
+	ui->iconNotificationX264->hide();
+	ui->labelNotificationAvs2YUV->hide();
+	ui->iconNotificationAvs2YUV->hide();
 
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);
@@ -327,25 +330,25 @@ void AddJobDialog::showEvent(QShowEvent *event)
 
 bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 {
-	if((o == labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
+	if((o == ui->labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
 	{
 		HelpDialog *helpScreen = new HelpDialog(this, false, m_x64supported, m_use10BitEncoding);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
-	else if((o == labelHelpScreenAvs2YUV) && (e->type() == QEvent::MouseButtonPress))
+	else if((o == ui->labelHelpScreenAvs2YUV) && (e->type() == QEvent::MouseButtonPress))
 	{
 		HelpDialog *helpScreen = new HelpDialog(this, true, m_x64supported, m_use10BitEncoding);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
-	else if((o == editCustomX264Params) && (e->type() == QEvent::FocusOut))
+	else if((o == ui->editCustomX264Params) && (e->type() == QEvent::FocusOut))
 	{
-		editCustomX264Params->setText(editCustomX264Params->text().simplified());
+		ui->editCustomX264Params->setText(ui->editCustomX264Params->text().simplified());
 	}
-	else if((o == editCustomAvs2YUVParams) && (e->type() == QEvent::FocusOut))
+	else if((o == ui->editCustomAvs2YUVParams) && (e->type() == QEvent::FocusOut))
 	{
-		editCustomAvs2YUVParams->setText(editCustomAvs2YUVParams->text().simplified());
+		ui->editCustomAvs2YUVParams->setText(ui->editCustomAvs2YUVParams->text().simplified());
 	}
 	return false;
 }
@@ -395,8 +398,8 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 	if(!droppedFile.isEmpty())
 	{
 		const QString outFileName = generateOutputFileName(droppedFile, currentOutputPath(), currentOutputIndx(), m_saveToSourceFolder);
-		editSource->setText(QDir::toNativeSeparators(droppedFile));
-		editOutput->setText(QDir::toNativeSeparators(outFileName));
+		ui->editSource->setText(QDir::toNativeSeparators(droppedFile));
+		ui->editOutput->setText(QDir::toNativeSeparators(outFileName));
 	}
 }
 
@@ -406,19 +409,19 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 
 void AddJobDialog::modeIndexChanged(int index)
 {
-	spinQuantizer->setEnabled(index == 0 || index == 1);
-	spinBitrate->setEnabled(index == 2 || index == 3);
+	ui->spinQuantizer->setEnabled(index == 0 || index == 1);
+	ui->spinBitrate->setEnabled(index == 2 || index == 3);
 }
 
 void AddJobDialog::accept(void)
 {
 	//Selection complete?
-	if(editSource->text().trimmed().isEmpty())
+	if(ui->editSource->text().trimmed().isEmpty())
 	{
 		QMessageBox::warning(this, tr("Not Found!"), tr("Please select a valid source file first!"));
 		return;
 	}
-	if(editOutput->text().trimmed().isEmpty())
+	if(ui->editOutput->text().trimmed().isEmpty())
 	{
 		QMessageBox::warning(this, tr("Not Selected!"), tr("<nobr>Please select a valid output file first!</nobr>"));
 		return;
@@ -454,7 +457,7 @@ void AddJobDialog::accept(void)
 	}
 
 	//Custom parameters okay?
-	if(!editCustomX264Params->hasAcceptableInput())
+	if(!ui->editCustomX264Params->hasAcceptableInput())
 	{
 		int ret = QMessageBox::warning(this, tr("Invalid Params"), tr("<nobr>Your custom parameters are invalid and will be discarded!</nobr>"), QMessageBox::Ignore | QMessageBox::Cancel, QMessageBox::Cancel);
 		if(ret != QMessageBox::Ignore) return;
@@ -473,17 +476,17 @@ void AddJobDialog::accept(void)
 
 void AddJobDialog::browseButtonClicked(void)
 {
-	if(QObject::sender() == buttonBrowseSource)
+	if(QObject::sender() == ui->buttonBrowseSource)
 	{
 		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), currentSourcePath(true), getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
 			QString destFile = generateOutputFileName(filePath, currentOutputPath(), currentOutputIndx(), m_saveToSourceFolder);
-			editSource->setText(QDir::toNativeSeparators(filePath));
-			editOutput->setText(QDir::toNativeSeparators(destFile));
+			ui->editSource->setText(QDir::toNativeSeparators(filePath));
+			ui->editOutput->setText(QDir::toNativeSeparators(destFile));
 		}
 	}
-	else if(QObject::sender() == buttonBrowseOutput)
+	else if(QObject::sender() == ui->buttonBrowseOutput)
 	{
 		QString selectedType = getFilterStr(currentOutputIndx());
 		QString filePath = QFileDialog::getSaveFileName(this, tr("Choose Output File"), currentOutputPath(true), getFilterLst(), &selectedType, QFileDialog::DontUseNativeDialog | QFileDialog::DontConfirmOverwrite);
@@ -504,26 +507,26 @@ void AddJobDialog::browseButtonClicked(void)
 				}
 				filePath = QString("%1.%2").arg(filePath, getFilterExt(tempIndex));
 			}
-			editOutput->setText(QDir::toNativeSeparators(filePath));
+			ui->editOutput->setText(QDir::toNativeSeparators(filePath));
 		}
 	}
 }
 
 void AddJobDialog::configurationChanged(void)
 {
-	OptionsModel* options = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(cbxTemplate->currentIndex()).value<void*>());
+	OptionsModel* options = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<void*>());
 	if(options)
 	{
-		cbxTemplate->blockSignals(true);
-		cbxTemplate->insertItem(0, tr("<Unsaved Configuration>"), QVariant::fromValue<void*>(NULL));
-		cbxTemplate->setCurrentIndex(0);
-		cbxTemplate->blockSignals(false);
+		ui->cbxTemplate->blockSignals(true);
+		ui->cbxTemplate->insertItem(0, tr("<Unsaved Configuration>"), QVariant::fromValue<void*>(NULL));
+		ui->cbxTemplate->setCurrentIndex(0);
+		ui->cbxTemplate->blockSignals(false);
 	}
 }
 
 void AddJobDialog::templateSelected(void)
 {
-	OptionsModel* options = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(cbxTemplate->currentIndex()).value<void*>());
+	OptionsModel* options = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<void*>());
 	if(options)
 	{
 		qDebug("Loading options!");
@@ -531,7 +534,7 @@ void AddJobDialog::templateSelected(void)
 		restoreOptions(options);
 	}
 
-	modeIndexChanged(cbxRateControlMode->currentIndex());
+	modeIndexChanged(ui->cbxRateControlMode->currentIndex());
 }
 
 void AddJobDialog::saveTemplateButtonClicked(void)
@@ -551,30 +554,30 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	if(options->equals(m_defaults))
 	{
 		QMessageBox::warning (this, tr("Oups"), tr("<nobr>It makes no sense to save the default settings!</nobr>"));
-		cbxTemplate->blockSignals(true);
-		cbxTemplate->setCurrentIndex(0);
-		cbxTemplate->blockSignals(false);
+		ui->cbxTemplate->blockSignals(true);
+		ui->cbxTemplate->setCurrentIndex(0);
+		ui->cbxTemplate->blockSignals(false);
 		REMOVE_USAFED_ITEM;
 		X264_DELETE(options);
 		return;
 	}
 
-	for(int i = 0; i < cbxTemplate->count(); i++)
+	for(int i = 0; i < ui->cbxTemplate->count(); i++)
 	{
-		const QString tempName = cbxTemplate->itemText(i);
+		const QString tempName = ui->cbxTemplate->itemText(i);
 		if(tempName.contains('<') || tempName.contains('>'))
 		{
 			continue;
 		}
-		OptionsModel* test = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
+		OptionsModel* test = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>());
 		if(test != NULL)
 		{
 			if(options->equals(test))
 			{
 				QMessageBox::warning (this, tr("Oups"), tr("<nobr>There already is a template for the current settings!</nobr>"));
-				cbxTemplate->blockSignals(true);
-				cbxTemplate->setCurrentIndex(i);
-				cbxTemplate->blockSignals(false);
+				ui->cbxTemplate->blockSignals(true);
+				ui->cbxTemplate->setCurrentIndex(i);
+				ui->cbxTemplate->blockSignals(false);
 				REMOVE_USAFED_ITEM;
 				X264_DELETE(options);
 				return;
@@ -620,33 +623,33 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		return;
 	}
 	
-	int index = cbxTemplate->model()->rowCount();
-	cbxTemplate->blockSignals(true);
-	for(int i = 0; i < cbxTemplate->count(); i++)
+	int index = ui->cbxTemplate->model()->rowCount();
+	ui->cbxTemplate->blockSignals(true);
+	for(int i = 0; i < ui->cbxTemplate->count(); i++)
 	{
-		if(cbxTemplate->itemText(i).compare(name, Qt::CaseInsensitive) == 0)
+		if(ui->cbxTemplate->itemText(i).compare(name, Qt::CaseInsensitive) == 0)
 		{
 			index = -1; //Do not append new template
-			OptionsModel *oldItem = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(i).value<void*>());
-			cbxTemplate->setItemData(i, QVariant::fromValue<void*>(options));
-			cbxTemplate->setCurrentIndex(i);
+			OptionsModel *oldItem = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>());
+			ui->cbxTemplate->setItemData(i, QVariant::fromValue<void*>(options));
+			ui->cbxTemplate->setCurrentIndex(i);
 			X264_DELETE(oldItem);
 		}
 	}
 	if(index >= 0)
 	{
-		cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
-		cbxTemplate->setCurrentIndex(index);
+		ui->cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
+		ui->cbxTemplate->setCurrentIndex(index);
 	}
-	cbxTemplate->blockSignals(false);
+	ui->cbxTemplate->blockSignals(false);
 
 	REMOVE_USAFED_ITEM;
 }
 
 void AddJobDialog::deleteTemplateButtonClicked(void)
 {
-	const int index = cbxTemplate->currentIndex();
-	QString name = cbxTemplate->itemText(index);
+	const int index = ui->cbxTemplate->currentIndex();
+	QString name = ui->cbxTemplate->itemText(index);
 
 	if(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/'))
 	{
@@ -662,8 +665,8 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 
 
 	OptionsModel::deleteTemplate(name);
-	OptionsModel *item = reinterpret_cast<OptionsModel*>(cbxTemplate->itemData(index).value<void*>());
-	cbxTemplate->removeItem(index);
+	OptionsModel *item = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(index).value<void*>());
+	ui->cbxTemplate->removeItem(index);
 	X264_DELETE(item);
 }
 
@@ -714,12 +717,66 @@ void AddJobDialog::pasteActionTriggered(void)
 
 QString AddJobDialog::sourceFile(void)
 {
-	return QDir::fromNativeSeparators(editSource->text());
+	return QDir::fromNativeSeparators(ui->editSource->text());
 }
 
 QString AddJobDialog::outputFile(void)
 {
-	return QDir::fromNativeSeparators(editOutput->text());
+	return QDir::fromNativeSeparators(ui->editOutput->text());
+}
+
+QString AddJobDialog::preset(void)
+{
+	return ui->cbxPreset->itemText(ui->cbxPreset->currentIndex());
+}
+
+QString AddJobDialog::tuning(void)
+{
+	return ui->cbxTuning->itemText(ui->cbxTuning->currentIndex());
+}
+
+QString AddJobDialog::profile(void)
+{
+	return ui->cbxProfile->itemText(ui->cbxProfile->currentIndex());
+}
+
+QString AddJobDialog::params(void)
+{
+	return ui->editCustomX264Params->text().simplified();
+}
+
+bool AddJobDialog::runImmediately(void)
+{
+	return ui->checkBoxRun->isChecked();
+}
+
+bool AddJobDialog::applyToAll(void)
+{
+	return ui->checkBoxApplyToAll->isChecked();
+}
+
+void AddJobDialog::setRunImmediately(bool run)
+{
+	ui->checkBoxRun->setChecked(run);
+}
+
+void AddJobDialog::setSourceFile(const QString &path)
+{
+	ui->editSource->setText(QDir::toNativeSeparators(path));
+}
+
+void AddJobDialog::setOutputFile(const QString &path)
+{
+	ui->editOutput->setText(QDir::toNativeSeparators(path));}
+
+void AddJobDialog::setSourceEditable(const bool editable)
+{
+	ui->buttonBrowseSource->setEnabled(editable);
+}
+
+void AddJobDialog::setApplyToAllVisible(const bool visible)
+{
+	ui->checkBoxApplyToAll->setVisible(visible);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -728,8 +785,8 @@ QString AddJobDialog::outputFile(void)
 
 void AddJobDialog::loadTemplateList(void)
 {
-	cbxTemplate->addItem(tr("<Default>"), QVariant::fromValue<void*>(m_defaults));
-	cbxTemplate->setCurrentIndex(0);
+	ui->cbxTemplate->addItem(tr("<Default>"), QVariant::fromValue<void*>(m_defaults));
+	ui->cbxTemplate->setCurrentIndex(0);
 
 	QMap<QString, OptionsModel*> templates = OptionsModel::loadAllTemplates();
 	QStringList templateNames = templates.keys();
@@ -738,18 +795,18 @@ void AddJobDialog::loadTemplateList(void)
 	while(!templateNames.isEmpty())
 	{
 		QString current = templateNames.takeFirst();
-		cbxTemplate->addItem(current, QVariant::fromValue<void*>(templates.value(current)));
+		ui->cbxTemplate->addItem(current, QVariant::fromValue<void*>(templates.value(current)));
 
 		if(templates.value(current)->equals(m_options))
 		{
-			cbxTemplate->setCurrentIndex(cbxTemplate->count() - 1);
+			ui->cbxTemplate->setCurrentIndex(ui->cbxTemplate->count() - 1);
 		}
 	}
 
-	if((cbxTemplate->currentIndex() == 0) && (!m_options->equals(m_defaults)))
+	if((ui->cbxTemplate->currentIndex() == 0) && (!m_options->equals(m_defaults)))
 	{
-		cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
-		cbxTemplate->setCurrentIndex(1);
+		ui->cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
+		ui->cbxTemplate->setCurrentIndex(1);
 	}
 }
 
@@ -767,44 +824,44 @@ void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 
 void AddJobDialog::restoreOptions(OptionsModel *options)
 {
-	cbxRateControlMode->blockSignals(true);
-	spinQuantizer->blockSignals(true);
-	spinBitrate->blockSignals(true);
-	cbxPreset->blockSignals(true);
-	cbxTuning->blockSignals(true);
-	cbxProfile->blockSignals(true);
-	editCustomX264Params->blockSignals(true);
-	editCustomAvs2YUVParams->blockSignals(true);
+	ui->cbxRateControlMode->blockSignals(true);
+	ui->spinQuantizer->blockSignals(true);
+	ui->spinBitrate->blockSignals(true);
+	ui->cbxPreset->blockSignals(true);
+	ui->cbxTuning->blockSignals(true);
+	ui->cbxProfile->blockSignals(true);
+	ui->editCustomX264Params->blockSignals(true);
+	ui->editCustomAvs2YUVParams->blockSignals(true);
 
-	cbxRateControlMode->setCurrentIndex(options->rcMode());
-	spinQuantizer->setValue(options->quantizer());
-	spinBitrate->setValue(options->bitrate());
-	updateComboBox(cbxPreset, options->preset());
-	updateComboBox(cbxTuning, options->tune());
-	updateComboBox(cbxProfile, options->profile());
-	editCustomX264Params->setText(options->customX264());
-	editCustomAvs2YUVParams->setText(options->customAvs2YUV());
+	ui->cbxRateControlMode->setCurrentIndex(options->rcMode());
+	ui->spinQuantizer->setValue(options->quantizer());
+	ui->spinBitrate->setValue(options->bitrate());
+	updateComboBox(ui->cbxPreset, options->preset());
+	updateComboBox(ui->cbxTuning, options->tune());
+	updateComboBox(ui->cbxProfile, options->profile());
+	ui->editCustomX264Params->setText(options->customX264());
+	ui->editCustomAvs2YUVParams->setText(options->customAvs2YUV());
 
-	cbxRateControlMode->blockSignals(false);
-	spinQuantizer->blockSignals(false);
-	spinBitrate->blockSignals(false);
-	cbxPreset->blockSignals(false);
-	cbxTuning->blockSignals(false);
-	cbxProfile->blockSignals(false);
-	editCustomX264Params->blockSignals(false);
-	editCustomAvs2YUVParams->blockSignals(false);
+	ui->cbxRateControlMode->blockSignals(false);
+	ui->spinQuantizer->blockSignals(false);
+	ui->spinBitrate->blockSignals(false);
+	ui->cbxPreset->blockSignals(false);
+	ui->cbxTuning->blockSignals(false);
+	ui->cbxProfile->blockSignals(false);
+	ui->editCustomX264Params->blockSignals(false);
+	ui->editCustomAvs2YUVParams->blockSignals(false);
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)
 {
-	options->setRCMode(static_cast<OptionsModel::RCMode>(cbxRateControlMode->currentIndex()));
-	options->setQuantizer(spinQuantizer->value());
-	options->setBitrate(spinBitrate->value());
-	options->setPreset(cbxPreset->model()->data(cbxPreset->model()->index(cbxPreset->currentIndex(), 0)).toString());
-	options->setTune(cbxTuning->model()->data(cbxTuning->model()->index(cbxTuning->currentIndex(), 0)).toString());
-	options->setProfile(cbxProfile->model()->data(cbxProfile->model()->index(cbxProfile->currentIndex(), 0)).toString());
-	options->setCustomX264(editCustomX264Params->hasAcceptableInput() ? editCustomX264Params->text().simplified() : QString());
-	options->setCustomAvs2YUV(editCustomAvs2YUVParams->hasAcceptableInput() ? editCustomAvs2YUVParams->text().simplified() : QString());
+	options->setRCMode(static_cast<OptionsModel::RCMode>(ui->cbxRateControlMode->currentIndex()));
+	options->setQuantizer(ui->spinQuantizer->value());
+	options->setBitrate(ui->spinBitrate->value());
+	options->setPreset(ui->cbxPreset->model()->data(ui->cbxPreset->model()->index(ui->cbxPreset->currentIndex(), 0)).toString());
+	options->setTune(ui->cbxTuning->model()->data(ui->cbxTuning->model()->index(ui->cbxTuning->currentIndex(), 0)).toString());
+	options->setProfile(ui->cbxProfile->model()->data(ui->cbxProfile->model()->index(ui->cbxProfile->currentIndex(), 0)).toString());
+	options->setCustomX264(ui->editCustomX264Params->hasAcceptableInput() ? ui->editCustomX264Params->text().simplified() : QString());
+	options->setCustomAvs2YUV(ui->editCustomAvs2YUVParams->hasAcceptableInput() ? ui->editCustomAvs2YUVParams->text().simplified() : QString());
 }
 
 QString AddJobDialog::currentSourcePath(const bool bWithName)

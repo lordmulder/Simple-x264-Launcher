@@ -21,11 +21,16 @@
 
 #pragma once
 
-#include "uic_win_preferences.h"
+#include <QDialog>
 
 class PreferencesModel;
 
-class PreferencesDialog : public QDialog, private Ui::PreferencesDialog
+namespace Ui
+{
+	class PreferencesDialog;
+}
+
+class PreferencesDialog : public QDialog
 {
 	Q_OBJECT
 
@@ -43,6 +48,7 @@ protected:
 	void emulateMouseEvent(QObject *object, QEvent *event, QWidget *source, QWidget *target);
 
 private:
+	Ui::PreferencesDialog *const ui;
 	PreferencesModel *m_preferences;
 
 private slots:

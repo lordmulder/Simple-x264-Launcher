@@ -21,14 +21,18 @@
 
 #pragma once
 
-#include "uic_win_addJob.h"
-
-#include <QDir>
+#include <QDialog>
 
 class OptionsModel;
 class RecentlyUsed;
+class QComboBox;
 
-class AddJobDialog : public QDialog, private Ui::AddJobDialog
+namespace Ui
+{
+	class AddJobDialog;
+}
+
+class AddJobDialog : public QDialog
 {
 	Q_OBJECT
 
@@ -38,17 +42,17 @@ public:
 
 	QString sourceFile(void);
 	QString outputFile(void);
-	QString preset(void) { return cbxPreset->itemText(cbxPreset->currentIndex()); }
-	QString tuning(void) { return cbxTuning->itemText(cbxTuning->currentIndex()); }
-	QString profile(void) { return cbxProfile->itemText(cbxProfile->currentIndex()); }
-	QString params(void) { return editCustomX264Params->text().simplified(); }
-	bool runImmediately(void) { return checkBoxRun->isChecked(); }
-	bool applyToAll(void) { return checkBoxApplyToAll->isChecked(); }
-	void setRunImmediately(bool run) { checkBoxRun->setChecked(run); }
-	void setSourceFile(const QString &path) { editSource->setText(QDir::toNativeSeparators(path)); }
-	void setOutputFile(const QString &path) { editOutput->setText(QDir::toNativeSeparators(path)); }
-	void setSourceEditable(const bool editable) { buttonBrowseSource->setEnabled(editable); }
-	void setApplyToAllVisible(const bool visible) { checkBoxApplyToAll->setVisible(visible); }
+	QString preset(void);
+	QString tuning(void);
+	QString profile(void);
+	QString params(void);
+	bool runImmediately(void);
+	bool applyToAll(void);
+	void setRunImmediately(bool run);
+	void setSourceFile(const QString &path);
+	void setOutputFile(const QString &path);
+	void setSourceEditable(const bool editable);
+	void setApplyToAllVisible(const bool visible);
 	
 	static QString generateOutputFileName(const QString &sourceFilePath, const QString &destinationDirectory, const int filterIndex, const bool saveToSourceDir);
 	static int getFilterIdx(const QString &fileExt);
@@ -85,6 +89,8 @@ private slots:
 	virtual void accept(void);
 
 private:
+	Ui::AddJobDialog *const ui;
+
 	void loadTemplateList(void);
 	void restoreOptions(OptionsModel *options);
 	void saveOptions(OptionsModel *options);

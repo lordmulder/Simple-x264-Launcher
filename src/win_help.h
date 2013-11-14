@@ -21,11 +21,16 @@
 
 #pragma once
 
-#include "uic_win_help.h"
+#include <QDialog>
 
 class QProcess;
 
-class HelpDialog : public QDialog, private Ui::HelpDialog
+namespace Ui
+{
+	class HelpDialog;
+}
+
+class HelpDialog : public QDialog
 {
 	Q_OBJECT
 
@@ -38,6 +43,8 @@ private slots:
 	void finished(void);
 
 private:
+	Ui::HelpDialog *const ui;
+
 	const QString m_appDir;
 	QProcess *const m_process;
 

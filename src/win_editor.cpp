@@ -20,6 +20,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_editor.h"
+#include "uic_win_editor.h"
+
 #include "global.h"
 
 #include <QProcess>
@@ -32,10 +34,11 @@
 
 EditorDialog::EditorDialog(QWidget *parent)
 :
-	QDialog(parent)
+	QDialog(parent),
+	ui(new Ui::EditorDialog())
 {
 	//Init the dialog, from the .ui file
-	setupUi(this);
+	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 
 	//Fix size
@@ -44,6 +47,22 @@ EditorDialog::EditorDialog(QWidget *parent)
 
 EditorDialog::~EditorDialog(void)
 {
+	delete ui;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Public Functions
+///////////////////////////////////////////////////////////////////////////////
+
+QString EditorDialog::getEditText(void)
+{
+	return ui->plainTextEdit->toPlainText().simplified();
+}
+	
+void EditorDialog::setEditText(const QString &text)
+{
+	ui->plainTextEdit->clear();
+	ui->plainTextEdit->appendPlainText(text.simplified());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

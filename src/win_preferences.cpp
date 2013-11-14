@@ -20,6 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_preferences.h"
+#include "uic_win_preferences.h"
 
 #include "global.h"
 #include "model_preferences.h"
@@ -29,98 +30,96 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 
-#define UPDATE_CHECKBOX(CHKBOX, VALUE, BLOCK) do \
-{ \
-	if((BLOCK)) { (CHKBOX)->blockSignals(true); } \
-	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->click(); \
-	if((CHKBOX)->isChecked() != (VALUE)) (CHKBOX)->setChecked(VALUE); \
-	if((BLOCK)) { (CHKBOX)->blockSignals(false); } \
-} \
-while(0)
+static inline void UPDATE_CHECKBOX(QCheckBox *const chkbox, const bool value, const bool block)
+{
+	if(block) { chkbox->blockSignals(true); }
+	if(chkbox->isChecked() != value) chkbox->click();
+	if(chkbox->isChecked() != value) chkbox->setChecked(value);
+	if(block) { chkbox->blockSignals(false); }
+}
 
-#define UPDATE_COMBOBOX(COBOX, VALUE, DEFAULT) do \
-{ \
-	const int _cnt = (COBOX)->count(); \
-	const int _val = (VALUE); \
-	const int _def = (DEFAULT); \
-	for(int _i = 0; _i < _cnt; _i++) \
-	{ \
-		const int _current = (COBOX)->itemData(_i).toInt(); \
-		if((_current == _val) || (_current == _def)) \
-		{ \
-			(COBOX)->setCurrentIndex(_i); \
-			if((_current == _val)) break; \
-		} \
-	} \
-} \
-while(0)
+static inline void UPDATE_COMBOBOX(QComboBox *const cobox, const int value, const int defVal)
+{
+	const int count = cobox->count();
+	for(int i = 0; i < count; i++)
+	{
+		const int current = cobox->itemData(i).toInt();
+		if((current == value) || (current == defVal))
+		{
+			cobox->setCurrentIndex(i);
+			if((current == value)) break;
+		}
+	}
+}
 
 PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64)
 :
 	QDialog(parent),
-	m_x64(x64)
+	m_x64(x64),
+	ui(new Ui::PreferencesDialog())
 {
-	setupUi(this);
+	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	setFixedSize(minimumSize());
 	x264_enable_close_button(this, false);
 	
-	comboBoxPriority->setItemData(0, QVariant::fromValue( 1)); //Above Normal
-	comboBoxPriority->setItemData(1, QVariant::fromValue( 0)); //Normal
-	comboBoxPriority->setItemData(2, QVariant::fromValue(-1)); //Below Normal
-	comboBoxPriority->setItemData(3, QVariant::fromValue(-2)); //Idle
+	ui->comboBoxPriority->setItemData(0, QVariant::fromValue( 1)); //Above Normal
+	ui->comboBoxPriority->setItemData(1, QVariant::fromValue( 0)); //Normal
+	ui->comboBoxPriority->setItemData(2, QVariant::fromValue(-1)); //Below Normal
+	ui->comboBoxPriority->setItemData(3, QVariant::fromValue(-2)); //Idle
 
-	labelRunNextJob->installEventFilter(this);
-	labelUse10BitEncoding->installEventFilter(this);
-	labelUse64BitAvs2YUV->installEventFilter(this);
-	labelShutdownComputer->installEventFilter(this);
-	labelSaveLogFiles->installEventFilter(this);
-	labelSaveToSourceFolder->installEventFilter(this);
-	labelEnableSounds->installEventFilter(this);
-	labelDisableWarnings->installEventFilter(this);
+	ui->labelRunNextJob->installEventFilter(this);
+	ui->labelUse10BitEncoding->installEventFilter(this);
+	ui->labelUse64BitAvs2YUV->installEventFilter(this);
+	ui->labelShutdownComputer->installEventFilter(this);
+	ui->labelSaveLogFiles->installEventFilter(this);
+	ui->labelSaveToSourceFolder->installEventFilter(this);
+	ui->labelEnableSounds->installEventFilter(this);
+	ui->labelDisableWarnings->installEventFilter(this);
 
-	connect(resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
-	connect(checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
-	connect(checkDisableWarnings, SIGNAL(toggled(bool)), this, SLOT(disableWarningsToggled(bool)));
+	connect(ui->resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
+	connect(ui->checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
+	connect(ui->checkDisableWarnings, SIGNAL(toggled(bool)), this, SLOT(disableWarningsToggled(bool)));
 	
 	m_preferences = preferences;
 }
 
 PreferencesDialog::~PreferencesDialog(void)
 {
+	delete ui;
 }
 
 void PreferencesDialog::showEvent(QShowEvent *event)
 {
 	if(event) QDialog::showEvent(event);
 	
-	UPDATE_CHECKBOX(checkRunNextJob, m_preferences->autoRunNextJob(), false);
-	UPDATE_CHECKBOX(checkShutdownComputer, m_preferences->shutdownComputer(), false);
-	UPDATE_CHECKBOX(checkUse64BitAvs2YUV, m_preferences->useAvisyth64Bit(), false);
-	UPDATE_CHECKBOX(checkSaveLogFiles, m_preferences->saveLogFiles(), false);
-	UPDATE_CHECKBOX(checkSaveToSourceFolder, m_preferences->saveToSourcePath(), false);
-	UPDATE_CHECKBOX(checkEnableSounds, m_preferences->enableSounds(), false);
-	UPDATE_CHECKBOX(checkDisableWarnings, m_preferences->disableWarnings(), true);
-	UPDATE_CHECKBOX(checkUse10BitEncoding, m_preferences->use10BitEncoding(), true);
+	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->autoRunNextJob(),   false);
+	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->shutdownComputer(), false);
+	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->useAvisyth64Bit(),  false);
+	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->saveLogFiles(),     false);
+	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->saveToSourcePath(), false);
+	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->enableSounds(),     false);
+	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->disableWarnings(),  true);
+	UPDATE_CHECKBOX(ui->checkUse10BitEncoding,   m_preferences->use10BitEncoding(), true);
 
-	spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
+	ui->spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
 	
-	UPDATE_COMBOBOX(comboBoxPriority, qBound(-2, m_preferences->processPriority(), 1), 0);
+	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->processPriority(), 1), 0);
 	
-	checkUse64BitAvs2YUV->setEnabled(m_x64);
-	labelUse64BitAvs2YUV->setEnabled(m_x64);
+	ui->checkUse64BitAvs2YUV->setEnabled(m_x64);
+	ui->labelUse64BitAvs2YUV->setEnabled(m_x64);
 }
 
 bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 {
-	emulateMouseEvent(o, e, labelRunNextJob, checkRunNextJob);
-	emulateMouseEvent(o, e, labelShutdownComputer, checkShutdownComputer);
-	emulateMouseEvent(o, e, labelUse10BitEncoding, checkUse10BitEncoding);
-	emulateMouseEvent(o, e, labelUse64BitAvs2YUV, checkUse64BitAvs2YUV);
-	emulateMouseEvent(o, e, labelSaveLogFiles, checkSaveLogFiles);
-	emulateMouseEvent(o, e, labelSaveToSourceFolder, checkSaveToSourceFolder);
-	emulateMouseEvent(o, e, labelEnableSounds, checkEnableSounds);
-	emulateMouseEvent(o, e, labelDisableWarnings, checkDisableWarnings);
+	emulateMouseEvent(o, e, ui->labelRunNextJob,         ui->checkRunNextJob);
+	emulateMouseEvent(o, e, ui->labelShutdownComputer,   ui->checkShutdownComputer);
+	emulateMouseEvent(o, e, ui->labelUse10BitEncoding,   ui->checkUse10BitEncoding);
+	emulateMouseEvent(o, e, ui->labelUse64BitAvs2YUV,    ui->checkUse64BitAvs2YUV);
+	emulateMouseEvent(o, e, ui->labelSaveLogFiles,       ui->checkSaveLogFiles);
+	emulateMouseEvent(o, e, ui->labelSaveToSourceFolder, ui->checkSaveToSourceFolder);
+	emulateMouseEvent(o, e, ui->labelEnableSounds,       ui->checkEnableSounds);
+	emulateMouseEvent(o, e, ui->labelDisableWarnings,    ui->checkDisableWarnings);
 	return false;
 }
 
@@ -146,16 +145,16 @@ void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidge
 
 void PreferencesDialog::done(int n)
 {
-	m_preferences->setAutoRunNextJob(checkRunNextJob->isChecked());
-	m_preferences->setShutdownComputer(checkShutdownComputer->isChecked());
-	m_preferences->setUse10BitEncoding(checkUse10BitEncoding->isChecked());
-	m_preferences->setUseAvisyth64Bit(checkUse64BitAvs2YUV->isChecked());
-	m_preferences->setSaveLogFiles(checkSaveLogFiles->isChecked());
-	m_preferences->setSaveToSourcePath(checkSaveToSourceFolder->isChecked());
-	m_preferences->setMaxRunningJobCount(spinBoxJobCount->value());
-	m_preferences->setProcessPriority(comboBoxPriority->itemData(comboBoxPriority->currentIndex()).toInt());
-	m_preferences->setEnableSounds(checkEnableSounds->isChecked());
-	m_preferences->setDisableWarnings(checkDisableWarnings->isChecked());
+	m_preferences->setAutoRunNextJob(ui->checkRunNextJob->isChecked());
+	m_preferences->setShutdownComputer(ui->checkShutdownComputer->isChecked());
+	m_preferences->setUse10BitEncoding(ui->checkUse10BitEncoding->isChecked());
+	m_preferences->setUseAvisyth64Bit(ui->checkUse64BitAvs2YUV->isChecked());
+	m_preferences->setSaveLogFiles(ui->checkSaveLogFiles->isChecked());
+	m_preferences->setSaveToSourcePath(ui->checkSaveToSourceFolder->isChecked());
+	m_preferences->setMaxRunningJobCount(ui->spinBoxJobCount->value());
+	m_preferences->setProcessPriority(ui->comboBoxPriority->itemData(ui->comboBoxPriority->currentIndex()).toInt());
+	m_preferences->setEnableSounds(ui->checkEnableSounds->isChecked());
+	m_preferences->setDisableWarnings(ui->checkDisableWarnings->isChecked());
 
 	PreferencesModel::savePreferences(m_preferences);
 	QDialog::done(n);
@@ -178,7 +177,7 @@ void PreferencesDialog::use10BitEncodingToggled(bool checked)
 		
 		if(QMessageBox::warning(this, tr("10-Bit Encoding"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
 		{
-			UPDATE_CHECKBOX(checkUse10BitEncoding, false, true);
+			UPDATE_CHECKBOX(ui->checkUse10BitEncoding, false, true);
 		}
 	}
 }
@@ -193,7 +192,7 @@ void PreferencesDialog::disableWarningsToggled(bool checked)
 
 		if(QMessageBox::warning(this, tr("Avisynth/VapourSynth Warnings"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
 		{
-			UPDATE_CHECKBOX(checkDisableWarnings, false, true);
+			UPDATE_CHECKBOX(ui->checkDisableWarnings, false, true);
 		}
 	}
 }

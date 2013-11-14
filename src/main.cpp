@@ -24,7 +24,7 @@
 #include "taskbar7.h"
 
 //Qt includes
-#include <QCoreApplication>
+#include <QApplication>
 #include <QDate>
 #include <QPlastiqueStyle>
 

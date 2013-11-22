@@ -35,6 +35,7 @@
 #include "taskbar7.h"
 #include "win_addJob.h"
 #include "win_preferences.h"
+#include "win_updater.h"
 #include "resource.h"
 
 #include <QDate>
@@ -179,6 +180,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	connect(ui->actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionWebSupport, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
+	connect(ui->actionCheckForUpdates, SIGNAL(triggered()), this, SLOT(checkUpdates()));
 
 	//Create floating label
 	m_label = new QLabel(ui->jobsView->viewport());
@@ -957,6 +959,24 @@ void MainWindow::instanceCreated(unsigned int pid)
 	x264_bring_to_front(this);
 	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 	x264_blink_window(this, 5, 125);
+}
+
+void MainWindow::checkUpdates(void)
+{
+	if(!m_initialized)
+	{
+		return;
+	}
+
+	if(countRunningJobs() > 0)
+	{
+		QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not update while there still are running jobs!"));
+		return;
+	}
+
+	UpdaterDialog *updater = new UpdaterDialog(this);
+	updater->exec();
+	X264_DELETE(updater);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

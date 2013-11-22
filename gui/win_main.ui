@@ -354,6 +354,8 @@
      <addaction name="actionWebAvisynth32"/>
      <addaction name="actionWebAvisynth64"/>
     </widget>
+    <addaction name="actionCheckForUpdates"/>
+    <addaction name="separator"/>
     <addaction name="actionWebMulder"/>
     <addaction name="actionWebX264"/>
     <addaction name="actionWebSupport"/>
@@ -642,6 +644,15 @@
    </property>
    <property name="text">
     <string>VapourSynth Manual</string>
+   </property>
+  </action>
+  <action name="actionCheckForUpdates">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/update.png</normaloff>:/buttons/update.png</iconset>
+   </property>
+   <property name="text">
+    <string>Check for Updates</string>
    </property>
   </action>
  </widget>

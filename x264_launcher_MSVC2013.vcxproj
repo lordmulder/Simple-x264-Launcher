@@ -212,6 +212,15 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\uic\uic_%(Filename).h;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\uic\uic_%(Filename).h;%(Outputs)</Outputs>
     </CustomBuild>
+    <CustomBuild Include="gui\win_updater.ui">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\uic.exe" -o "$(SolutionDir)tmp\uic\uic_%(Filename).h" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\uic.exe" -o "$(SolutionDir)tmp\uic\uic_%(Filename).h" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UIC "$(SolutionDir)tmp\uic\uic_%(Filename).h"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UIC "$(SolutionDir)tmp\uic\uic_%(Filename).h"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\uic\uic_%(Filename).h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\uic\uic_%(Filename).h;%(Outputs)</Outputs>
+    </CustomBuild>
     <None Include="ReadMe.txt" />
     <CustomBuild Include="res\resources.qrc">
       <FileType>Document</FileType>
@@ -226,6 +235,14 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <None Include="res\icons\movie.ico" />
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="src\win_updater.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\moc\moc_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\moc\moc_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <CustomBuild Include="src\win_editor.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -348,6 +365,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\win_help.cpp" />
     <ClCompile Include="src\win_main.cpp" />
     <ClCompile Include="src\win_preferences.cpp" />
+    <ClCompile Include="src\win_updater.cpp" />
     <ClCompile Include="tmp\moc\moc_model_jobList.cpp" />
     <ClCompile Include="tmp\moc\moc_model_logFile.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_avisynth.cpp" />
@@ -359,6 +377,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="tmp\moc\moc_win_help.cpp" />
     <ClCompile Include="tmp\moc\moc_win_main.cpp" />
     <ClCompile Include="tmp\moc\moc_win_preferences.cpp" />
+    <ClCompile Include="tmp\moc\moc_win_updater.cpp" />
     <ClCompile Include="tmp\qrc\qrc_resources.cpp" />
   </ItemGroup>
   <ItemGroup>

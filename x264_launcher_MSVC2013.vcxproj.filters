@@ -60,6 +60,9 @@
     <ClInclude Include="src\job_object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\win_updater.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -155,6 +158,12 @@
     <ClCompile Include="src\job_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\win_updater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_win_updater.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -207,6 +216,9 @@
     </CustomBuild>
     <CustomBuild Include="src\thread_vapoursynth.h">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_updater.ui">
+      <Filter>Dialogs</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

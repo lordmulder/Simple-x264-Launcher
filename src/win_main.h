@@ -97,6 +97,7 @@ private slots:
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);
 	void copyLogToClipboard(bool checked);
+	void checkUpdates(void);
 	void handleDroppedFiles(void);
 	void init(void);
 	void instanceCreated(unsigned int pid);

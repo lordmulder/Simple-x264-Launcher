@@ -19,19 +19,23 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 2
-#define VER_X264_PATCH 7
-#define VER_X264_BUILD 642
+#include <QDialog>
 
-#define VER_X264_MINIMUM_REV 2363
-#define VER_X264_CURRENT_API 140
-#define VER_X264_AVS2YUV_VER 242
+namespace Ui
+{
+	class UpdaterDialog;
+}
 
-#define VER_X264_PORTABLE_EDITION (0)
+class UpdaterDialog : public QDialog
+{
+	Q_OBJECT
 
-#define VER_X264_PRE_RELEASE (0)
+public:
+	UpdaterDialog(QWidget *parent);
+	~UpdaterDialog(void);
+
+private:
+	Ui::UpdaterDialog *const ui;
+};

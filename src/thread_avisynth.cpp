@@ -28,7 +28,7 @@
 #include <QApplication>
 
 #include "global.h"
-#include "avisynth_c.h"
+#include "3rd_party/avisynth_c.h"
 
 QMutex AvisynthCheckThread::m_avsLock;
 QLibrary *AvisynthCheckThread::m_avsLib = NULL;

@@ -29,7 +29,6 @@
 #include <QDir>
 
 #include "global.h"
-#include "avisynth_c.h"
 
 QMutex VapourSynthCheckThread::m_vpsLock;
 QFile *VapourSynthCheckThread::m_vpsExePath = NULL;

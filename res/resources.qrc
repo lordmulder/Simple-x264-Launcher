@@ -7,9 +7,11 @@
     <file>buttons/bomb.png</file>
     <file>buttons/book_open.png</file>
     <file>buttons/cancel.png</file>
+    <file>buttons/clock.png</file>
     <file>buttons/clock_pause.png</file>
     <file>buttons/clock_play.png</file>
     <file>buttons/clock_stop.png</file>
+    <file>buttons/computer.png</file>
     <file>buttons/control_pause.png</file>
     <file>buttons/cross.png</file>
     <file>buttons/disk.png</file>
@@ -34,7 +36,11 @@
     <file>buttons/restart.png</file>
     <file>buttons/setup.png</file>
     <file>buttons/shield_admin.png</file>
+    <file>buttons/shield_error.png</file>
+    <file>buttons/shield_exclamation.png</file>
+    <file>buttons/shield_green.png</file>
     <file>buttons/suspended.png</file>
+    <file>buttons/transmit.png</file>
     <file>buttons/trash.png</file>
     <file>buttons/update.png</file>
     <file>buttons/world_link.png</file>

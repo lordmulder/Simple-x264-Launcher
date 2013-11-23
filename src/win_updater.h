@@ -23,6 +23,8 @@
 
 #include <QDialog>
 
+class QMovie;
+
 namespace Ui
 {
 	class UpdaterDialog;
@@ -36,6 +38,18 @@ public:
 	UpdaterDialog(QWidget *parent);
 	~UpdaterDialog(void);
 
+protected:
+	virtual void showEvent(QShowEvent *event);
+	virtual void closeEvent(QCloseEvent *e);
+
+private slots:
+	void initUpdate(void);
+	void updateState(void);
+
 private:
 	Ui::UpdaterDialog *const ui;
+
+	bool m_firstShow;
+	QMovie *m_animator;
+	int m_state;
 };

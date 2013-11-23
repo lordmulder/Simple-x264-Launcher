@@ -652,7 +652,7 @@
      <normaloff>:/buttons/update.png</normaloff>:/buttons/update.png</iconset>
    </property>
    <property name="text">
-    <string>Check for Updates</string>
+    <string>Check for new Updates</string>
    </property>
   </action>
  </widget>

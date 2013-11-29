@@ -85,6 +85,15 @@ typedef enum
 }
 x264_beep_t;
 
+//Known folders
+typedef enum
+{
+	x264_folder_localappdata = 0,
+	x264_folder_programfiles = 2,
+	x264_folder_systemfolder = 3
+}
+x264_known_folder_t;
+
 //Known Windows versions
 extern const x264_os_version_t x264_winver_win2k;
 extern const x264_os_version_t x264_winver_winxp;
@@ -115,6 +124,7 @@ void x264_init_console(int argc, char* argv[]);
 bool x264_init_qt(int argc, char* argv[]);
 bool x264_is_executable(const QString &path);
 bool x264_is_prerelease(void);
+const QString &x264_known_folder(x264_known_folder_t folder_id);
 void x264_message_handler(QtMsgType type, const char *msg);
 QString x264_path2ansi(const QString &longPath, bool makeLowercase = false);
 bool x264_play_sound(const unsigned short uiSoundIdx, const bool bAsync, const wchar_t *alias = NULL);
@@ -125,6 +135,7 @@ bool x264_set_thread_execution_state(const bool systemRequired);
 bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown);
 void x264_sleep(const unsigned int delay);
 bool x264_suspendProcess(const QProcess *proc, const bool suspend);
+const QString &x264_temp_directory(void);
 const char *x264_version_arch(void);
 unsigned int x264_version_build(void);
 const char *x264_version_compiler(void);

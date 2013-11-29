@@ -34,6 +34,7 @@
 #include <Windows.h>
 #include <MMSystem.h>
 #include <ShellAPI.h>
+#include <Objbase.h>
 
 //C++ includes
 #include <stdio.h>
@@ -138,6 +139,22 @@ static struct
 	QReadWriteLock lock;
 }
 g_x264_os_version;
+
+//Special folders
+static struct
+{
+	QMap<size_t, QString> *knownFolders;
+	QReadWriteLock lock;
+}
+g_x264_known_folder;
+
+//%TEMP% folder
+static struct
+{
+	QString *path;
+	QReadWriteLock lock;
+}
+g_x264_temp_folder;
 
 //Wine detection
 static struct
@@ -734,6 +751,21 @@ const QStringList &x264_arguments(void)
 	}
 
 	return (*g_x264_argv.list);
+}
+
+/*
+ * Get a random string
+ */
+static QString x264_rand_str(const bool bLong = false)
+{
+	const QUuid uuid = QUuid::createUuid().toString();
+
+	const unsigned int u1 = uuid.data1;
+	const unsigned int u2 = (((unsigned int)(uuid.data2)) << 16) | ((unsigned int)(uuid.data3));
+	const unsigned int u3 = (((unsigned int)(uuid.data4[0])) << 24) | (((unsigned int)(uuid.data4[1])) << 16) | (((unsigned int)(uuid.data4[2])) << 8) | ((unsigned int)(uuid.data4[3]));
+	const unsigned int u4 = (((unsigned int)(uuid.data4[4])) << 24) | (((unsigned int)(uuid.data4[5])) << 16) | (((unsigned int)(uuid.data4[6])) << 8) | ((unsigned int)(uuid.data4[7]));
+
+	return bLong ? QString().sprintf("%08x%08x%08x%08x", u1, u2, u3, u4) : QString().sprintf("%08x%08x", (u1 ^ u2), (u3 ^ u4));
 }
 
 /*
@@ -1657,6 +1689,225 @@ QString x264_query_reg_string(const bool bUser, const QString &path, const QStri
 }
 
 /*
+ * Locate known folder on local system
+ */
+const QString &x264_known_folder(x264_known_folder_t folder_id)
+{
+	typedef HRESULT (WINAPI *SHGetKnownFolderPathFun)(__in const GUID &rfid, __in DWORD dwFlags, __in HANDLE hToken, __out PWSTR *ppszPath);
+	typedef HRESULT (WINAPI *SHGetFolderPathFun)(__in HWND hwndOwner, __in int nFolder, __in HANDLE hToken, __in DWORD dwFlags, __out LPWSTR pszPath);
+
+	static const int CSIDL_LOCAL_APPDATA = 0x001c;
+	static const int CSIDL_PROGRAM_FILES = 0x0026;
+	static const int CSIDL_SYSTEM_FOLDER = 0x0025;
+	static const GUID GUID_LOCAL_APPDATA = {0xF1B32785,0x6FBA,0x4FCF,{0x9D,0x55,0x7B,0x8E,0x7F,0x15,0x70,0x91}};
+	static const GUID GUID_LOCAL_APPDATA_LOW = {0xA520A1A4,0x1780,0x4FF6,{0xBD,0x18,0x16,0x73,0x43,0xC5,0xAF,0x16}};
+	static const GUID GUID_PROGRAM_FILES = {0x905e63b6,0xc1bf,0x494e,{0xb2,0x9c,0x65,0xb7,0x32,0xd3,0xd2,0x1a}};
+	static const GUID GUID_SYSTEM_FOLDER = {0x1AC14E77,0x02E7,0x4E5D,{0xB7,0x44,0x2E,0xB1,0xAE,0x51,0x98,0xB7}};
+
+	QReadLocker readLock(&g_x264_known_folder.lock);
+
+	int folderCSIDL = -1;
+	GUID folderGUID = {0x0000,0x0000,0x0000,{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}};
+	size_t folderCacheId = size_t(-1);
+
+	switch(folder_id)
+	{
+	case x264_folder_localappdata:
+		folderCacheId = 0;
+		folderCSIDL = CSIDL_LOCAL_APPDATA;
+		folderGUID = GUID_LOCAL_APPDATA;
+		break;
+	case x264_folder_programfiles:
+		folderCacheId = 1;
+		folderCSIDL = CSIDL_PROGRAM_FILES;
+		folderGUID = GUID_PROGRAM_FILES;
+		break;
+	case x264_folder_systemfolder:
+		folderCacheId = 2;
+		folderCSIDL = CSIDL_SYSTEM_FOLDER;
+		folderGUID = GUID_SYSTEM_FOLDER;
+		break;
+	default:
+		qWarning("Invalid 'known' folder was requested!");
+		return *reinterpret_cast<QString*>(NULL);
+		break;
+	}
+
+	//Already in cache?
+	if(g_x264_known_folder.knownFolders)
+	{
+		if(g_x264_known_folder.knownFolders->contains(folderCacheId))
+		{
+			return (*g_x264_known_folder.knownFolders)[folderCacheId];
+		}
+	}
+
+	//Obtain write lock to initialize
+	readLock.unlock();
+	QWriteLocker writeLock(&g_x264_known_folder.lock);
+
+	//Still not in cache?
+	if(g_x264_known_folder.knownFolders)
+	{
+		if(g_x264_known_folder.knownFolders->contains(folderCacheId))
+		{
+			return (*g_x264_known_folder.knownFolders)[folderCacheId];
+		}
+	}
+
+	static SHGetKnownFolderPathFun SHGetKnownFolderPathPtr = NULL;
+	static SHGetFolderPathFun SHGetFolderPathPtr = NULL;
+
+	//Lookup functions
+	if((!SHGetKnownFolderPathPtr) && (!SHGetFolderPathPtr))
+	{
+		QLibrary kernel32Lib("shell32.dll");
+		if(kernel32Lib.load())
+		{
+			SHGetKnownFolderPathPtr = (SHGetKnownFolderPathFun) kernel32Lib.resolve("SHGetKnownFolderPath");
+			SHGetFolderPathPtr = (SHGetFolderPathFun) kernel32Lib.resolve("SHGetFolderPathW");
+		}
+	}
+
+	QString folder;
+
+	//Now try to get the folder path!
+	if(SHGetKnownFolderPathPtr)
+	{
+		WCHAR *path = NULL;
+		if(SHGetKnownFolderPathPtr(folderGUID, 0x00008000, NULL, &path) == S_OK)
+		{
+			//MessageBoxW(0, path, L"SHGetKnownFolderPath", MB_TOPMOST);
+			QDir folderTemp = QDir(QDir::fromNativeSeparators(QString::fromUtf16(reinterpret_cast<const unsigned short*>(path))));
+			if(!folderTemp.exists())
+			{
+				folderTemp.mkpath(".");
+			}
+			if(folderTemp.exists())
+			{
+				folder = folderTemp.canonicalPath();
+			}
+			CoTaskMemFree(path);
+		}
+	}
+	else if(SHGetFolderPathPtr)
+	{
+		WCHAR *path = new WCHAR[4096];
+		if(SHGetFolderPathPtr(NULL, folderCSIDL, NULL, NULL, path) == S_OK)
+		{
+			//MessageBoxW(0, path, L"SHGetFolderPathW", MB_TOPMOST);
+			QDir folderTemp = QDir(QDir::fromNativeSeparators(QString::fromUtf16(reinterpret_cast<const unsigned short*>(path))));
+			if(!folderTemp.exists())
+			{
+				folderTemp.mkpath(".");
+			}
+			if(folderTemp.exists())
+			{
+				folder = folderTemp.canonicalPath();
+			}
+		}
+		delete [] path;
+	}
+
+	//Create cache
+	if(!g_x264_known_folder.knownFolders)
+	{
+		g_x264_known_folder.knownFolders = new QMap<size_t, QString>();
+	}
+
+	//Update cache
+	g_x264_known_folder.knownFolders->insert(folderCacheId, folder);
+	return (*g_x264_known_folder.knownFolders)[folderCacheId];
+}
+
+/*
+ * Try to initialize the folder (with *write* access)
+ */
+static QString x264_try_init_folder(const QString &folderPath)
+{
+	static const char *DATA = "Lorem ipsum dolor sit amet, consectetur, adipisci velit!";
+	
+	bool success = false;
+
+	const QFileInfo folderInfo(folderPath);
+	const QDir folderDir(folderInfo.absoluteFilePath());
+
+	//Create folder, if it does *not* exist yet
+	for(int i = 0; i < 16; i++)
+	{
+		if(folderDir.exists()) break;
+		folderDir.mkpath(".");
+	}
+
+	//Make sure folder exists now *and* is writable
+	if(folderDir.exists())
+	{
+		const QByteArray testData = QByteArray(DATA);
+		for(int i = 0; i < 32; i++)
+		{
+			QFile testFile(folderDir.absoluteFilePath(QString("~%1.tmp").arg(x264_rand_str())));
+			if(testFile.open(QIODevice::ReadWrite | QIODevice::Truncate))
+			{
+				if(testFile.write(testData) >= testData.size())
+				{
+					success = true;
+				}
+				testFile.remove();
+				testFile.close();
+			}
+			if(success) break;
+		}
+	}
+
+	return (success ? folderDir.canonicalPath() : QString());
+}
+
+/*
+ * Detect the TEMP directory
+ */
+const QString &x264_temp_directory(void)
+{
+	QReadLocker readLock(&g_x264_temp_folder.lock);
+
+	if(g_x264_temp_folder.path)
+	{
+		return *g_x264_temp_folder.path;
+	}
+
+	readLock.unlock();
+	QWriteLocker writeLock(&g_x264_temp_folder.lock);
+
+	if(!g_x264_temp_folder.path)
+	{
+		//Try %TEMP% first
+		g_x264_temp_folder.path = new QString(x264_try_init_folder(QDir::temp().absolutePath()));
+
+		//Fall back to %LOCALAPPDATA%, if %TEMP% didn't work
+		if(g_x264_temp_folder.path->isEmpty())
+		{
+			qWarning("%%TEMP%% directory not found -> falling back to %%LOCALAPPDATA%%");
+			const QString &localAppData = x264_known_folder(x264_folder_localappdata);
+			if(!localAppData.isEmpty())
+			{
+				*g_x264_temp_folder.path = x264_try_init_folder(QString("%1/Temp").arg(localAppData));
+			}
+			else
+			{
+				qWarning("%%LOCALAPPDATA%% directory could not be found!");
+			}
+		}
+
+		//Failed to init TEMP folder?
+		if(g_x264_temp_folder.path->isEmpty())
+		{
+			qWarning("Temporary directory could not be initialized !!!");
+		}
+	}
+
+	return *g_x264_temp_folder.path;
+}
+
+/*
  * Display the window's close button
  */
 bool x264_enable_close_button(const QWidget *win, const bool bEnable)
@@ -1848,6 +2099,8 @@ extern "C"
 		X264_ZERO_MEMORY(g_x264_argv);
 		X264_ZERO_MEMORY(g_x264_os_version);
 		X264_ZERO_MEMORY(g_x264_portable);
+		X264_ZERO_MEMORY(g_x264_known_folder);
+		X264_ZERO_MEMORY(g_x264_temp_folder);
 
 		//Make sure we will pass the check
 		g_x264_entry_check_flag = ~g_x264_entry_check_flag;
@@ -1900,4 +2153,11 @@ void x264_finalization(void)
 			X264_DELETE(tmp);
 		}
 	}
+	
+	//Clear CLI args
+	X264_DELETE(g_x264_argv.list);
+
+	//Clear folders cache
+	X264_DELETE(g_x264_known_folder.knownFolders);
+	X264_DELETE(g_x264_temp_folder.path);
 }

@@ -119,7 +119,7 @@ while(0)
 
 #define AVS2_BINARY(BIN_DIR, IS_X64) (QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86")))
 #define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) (QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit")))
-#define VPSP_BINARY(VPS_DIR) (QString("%1/core/vspipe.exe").arg((VPS_DIR)))
+#define VPSP_BINARY(VPS_DIR) (QString("%1/vspipe.exe").arg((VPS_DIR)))
 
 /*
  * Static vars
@@ -240,7 +240,7 @@ void EncodeThread::encode(void)
 	
 	if(!m_vpsDir.isEmpty())
 	{
-		log(tr("\nVapourSynth: %1").arg(m_vpsDir));
+		log(tr("\nVapourSynth: %1").arg(QDir::toNativeSeparators(m_vpsDir)));
 	}
 
 	//Print encoder settings
@@ -584,12 +584,12 @@ bool EncodeThread::runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_
 		{
 			const int exitCode = processInput.exitCode();
 			log(tr("\nWARNING: Input process exited with error (code: %1), your encode might be *incomplete* !!!").arg(QString::number(exitCode)));
-			if((inputType == INPUT_AVISYN) && ((exitCode < 0) || (exitCode > 2)))
+			if((inputType == INPUT_AVISYN) && ((exitCode < 0) || (exitCode >= 32)))
 			{
 				log(tr("\nIMPORTANT: The Avs2YUV process terminated abnormally. This means Avisynth or one of your Avisynth-Plugin's just crashed."));
 				log(tr("IMPORTANT: Please fix your Avisynth script and try again! If you use Avisynth-MT, try using a *stable* Avisynth instead!"));
 			}
-			if((inputType == INPUT_VAPOUR) && ((exitCode < 0) || (exitCode > 1)))
+			if((inputType == INPUT_VAPOUR) && ((exitCode < 0) || (exitCode >= 32)))
 			{
 				log(tr("\nIMPORTANT: The Vapoursynth process terminated abnormally. This means Vapoursynth or one of your Vapoursynth-Plugin's just crashed."));
 			}
@@ -1149,7 +1149,7 @@ bool EncodeThread::checkPropertiesAvisynth(bool x64, unsigned int &frames)
 		{
 			const int exitCode = process.exitCode();
 			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(exitCode)));
-			if((exitCode < 0) || (exitCode > 2))
+			if((exitCode < 0) || (exitCode >= 32))
 			{
 				log(tr("\nIMPORTANT: The Avs2YUV process terminated abnormally. This means Avisynth or one of your Avisynth-Plugin's just crashed."));
 				log(tr("IMPORTANT: Please fix your Avisynth script and try again! If you use Avisynth-MT, try using a *stable* Avisynth instead!"));
@@ -1297,7 +1297,7 @@ bool EncodeThread::checkPropertiesVapoursynth(/*const QString &vspipePath,*/ uns
 		{
 			const int exitCode = process.exitCode();
 			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(exitCode)));
-			if((exitCode < 0) || (exitCode > 1))
+			if((exitCode < 0) || (exitCode >= 32))
 			{
 				log(tr("\nIMPORTANT: The Vapoursynth process terminated abnormally. This means Vapoursynth or one of your Vapoursynth-Plugin's just crashed."));
 			}

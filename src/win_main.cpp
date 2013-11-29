@@ -913,7 +913,7 @@ void MainWindow::init(void)
 	m_initialized = true;
 
 	//FIXME
-	QTimer::singleShot(1000, this, SLOT(checkUpdates()));
+	QTimer::singleShot(333, this, SLOT(checkUpdates()));
 }
 
 /*

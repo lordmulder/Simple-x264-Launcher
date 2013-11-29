@@ -241,7 +241,10 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 				m_vpsDllPath = new QFile(vpsDllInfo.canonicalFilePath());
 				if(m_vpsExePath->open(QIODevice::ReadOnly) && m_vpsDllPath->open(QIODevice::ReadOnly))
 				{
-					vapoursynthComplete = x264_is_executable(m_vpsExePath->fileName());
+					if(vapoursynthComplete = x264_is_executable(m_vpsExePath->fileName()))
+					{
+						vapoursynthPath.append("/").append(CORE_PATH[i]);
+					}
 					break;
 				}
 				X264_DELETE(m_vpsExePath);

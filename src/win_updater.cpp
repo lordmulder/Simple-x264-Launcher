@@ -28,6 +28,7 @@
 #include <QMovie>
 #include <QCloseEvent>
 #include <QTimer>
+#include <QMessageBox>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -77,6 +78,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent)
 	ui->labelInfo->hide();
 	ui->labelUrl->hide();
 
+	/*
 	//TEST
 	QBlake2Checksum checksum;
 	checksum.update("The quick brown fox jumps over the lazy dog");
@@ -84,12 +86,15 @@ UpdaterDialog::UpdaterDialog(QWidget *parent)
 
 	//TEST
 	QBlake2Checksum checksum2;
-	QFile file("");
+	QFile file("G:\\Aktorwerkstoffe.2013-11-22.rar");
 	if(file.open(QIODevice::ReadOnly))
 	{
 		checksum2.update(file);
 		qWarning("Result: %s\n", checksum2.finalize().constData());
 	}
+	*/
+
+	QMessageBox::information(this, "Disclaimer", "Welcome to the auto-updater mockup demo!");
 }
 
 UpdaterDialog::~UpdaterDialog(void)
@@ -101,6 +106,8 @@ UpdaterDialog::~UpdaterDialog(void)
 ///////////////////////////////////////////////////////////////////////////////
 // Public Functions
 ///////////////////////////////////////////////////////////////////////////////
+
+/*None yet*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Events

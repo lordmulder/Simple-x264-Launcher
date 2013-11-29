@@ -227,14 +227,26 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	bool vapoursynthComplete = false;
 	if(!vapoursynthPath.isEmpty())
 	{
+		static const char *CORE_PATH[2] = { "core32", "core" };
 		qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
-		m_vpsExePath = new QFile(QString("%1/core/vspipe.exe").arg(vapoursynthPath));
-		m_vpsDllPath = new QFile(QString("%1/core/vapoursynth.dll").arg(vapoursynthPath));
-		qDebug("VapourSynth EXE: %s", m_vpsExePath->fileName().toUtf8().constData());
-		qDebug("VapourSynth DLL: %s", m_vpsDllPath->fileName().toUtf8().constData());
-		if(m_vpsExePath->open(QIODevice::ReadOnly) && m_vpsDllPath->open(QIODevice::ReadOnly))
+		for(int i = 0; (i < 2) && (!vapoursynthComplete); i++)
 		{
-			vapoursynthComplete = x264_is_executable(m_vpsExePath->fileName());
+			QFileInfo vpsExeInfo(QString("%1/%2/vspipe.exe"     ).arg(vapoursynthPath, CORE_PATH[i]));
+			QFileInfo vpsDllInfo(QString("%1/%2/vapoursynth.dll").arg(vapoursynthPath, CORE_PATH[i]));
+			qDebug("VapourSynth EXE: %s", vpsExeInfo.absoluteFilePath().toUtf8().constData());
+			qDebug("VapourSynth DLL: %s", vpsDllInfo.absoluteFilePath().toUtf8().constData());
+			if(vpsExeInfo.exists() && vpsDllInfo.exists())
+			{
+				m_vpsExePath = new QFile(vpsExeInfo.canonicalFilePath());
+				m_vpsDllPath = new QFile(vpsDllInfo.canonicalFilePath());
+				if(m_vpsExePath->open(QIODevice::ReadOnly) && m_vpsDllPath->open(QIODevice::ReadOnly))
+				{
+					vapoursynthComplete = x264_is_executable(m_vpsExePath->fileName());
+					break;
+				}
+				X264_DELETE(m_vpsExePath);
+				X264_DELETE(m_vpsDllPath);
+			}
 		}
 		if(!vapoursynthComplete)
 		{

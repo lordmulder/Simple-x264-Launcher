@@ -911,6 +911,9 @@ void MainWindow::init(void)
 
 	//Update initialized flag
 	m_initialized = true;
+
+	//FIXME
+	QTimer::singleShot(1000, this, SLOT(checkUpdates()));
 }
 
 /*

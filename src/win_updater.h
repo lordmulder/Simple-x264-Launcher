@@ -24,6 +24,7 @@
 #include <QDialog>
 
 class QMovie;
+class UpdateCheckThread;
 
 namespace Ui
 {
@@ -44,16 +45,17 @@ protected:
 
 private slots:
 	void initUpdate(void);
-	void updateState(void);
+	void checkForUpdates(void);
+	void threadStatusChanged(int status);
 
 private:
 	Ui::UpdaterDialog *const ui;
 
-	bool checkBinaries(void);
+	bool checkBinaries(QStringList &binaries);
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
 
 	bool m_firstShow;
 	const QString m_binDir;
+	UpdateCheckThread *m_thread;
 	QMovie *m_animator;
-	int m_state;
 };

@@ -182,6 +182,12 @@
     <ClCompile Include="src\3rd_party\blake2.c">
       <Filter>Source Files\3rd Party</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread_updater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_thread_updater.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -239,6 +245,9 @@
       <Filter>Dialogs</Filter>
     </CustomBuild>
     <CustomBuild Include="src\win_updater.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_updater.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

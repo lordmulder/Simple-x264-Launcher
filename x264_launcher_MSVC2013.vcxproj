@@ -63,7 +63,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)etc\vld\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QtCored4.lib;QtGuid4.lib;Winmm.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>QtCored4.lib;QtGuid4.lib;Winmm.lib;Psapi.lib;SensAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>x264_entry_point</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
@@ -129,7 +129,7 @@ copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QtCore4.lib;QtGui4.lib;Winmm.lib;dwmapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>QtCore4.lib;QtGui4.lib;Winmm.lib;dwmapi.lib;Psapi.lib;SensAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <EntryPointSymbol>x264_entry_point</EntryPointSymbol>
@@ -342,6 +342,14 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <CustomBuild Include="src\thread_updater.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\moc\moc_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\moc\moc_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <ClInclude Include="src\version.h" />
     <CustomBuild Include="src\win_main.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -368,6 +376,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\thread_ipc.cpp" />
+    <ClCompile Include="src\thread_updater.cpp" />
     <ClCompile Include="src\thread_vapoursynth.cpp" />
     <ClCompile Include="src\win_addJob.cpp" />
     <ClCompile Include="src\win_editor.cpp" />
@@ -380,6 +389,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="tmp\moc\moc_thread_avisynth.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_encode.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_ipc.cpp" />
+    <ClCompile Include="tmp\moc\moc_thread_updater.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_vapoursynth.cpp" />
     <ClCompile Include="tmp\moc\moc_win_addJob.cpp" />
     <ClCompile Include="tmp\moc\moc_win_editor.cpp" />

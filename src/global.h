@@ -90,9 +90,19 @@ typedef enum
 {
 	x264_folder_localappdata = 0,
 	x264_folder_programfiles = 2,
-	x264_folder_systemfolder = 3
+	x264_folder_systemfolder = 3,
+	x264_folder_systroot_dir = 4
 }
 x264_known_folder_t;
+
+//Network connection types
+typedef enum
+{
+	x264_network_err = 0,	/*unknown*/
+	x264_network_non = 1,	/*not connected*/
+	x264_network_yes = 2	/*connected*/
+}
+x264_network_t;
 
 //Known Windows versions
 extern const x264_os_version_t x264_winver_win2k;
@@ -114,6 +124,7 @@ bool x264_bring_to_front(const QWidget *win);
 bool x264_change_process_priority(const QProcess *proc, const int priority);
 bool x264_change_process_priority(const int priority);
 bool x264_change_process_priority(void *hProcess, const int priority);
+QDate x264_current_date_safe(void);
 const QString &x264_data_path(void);
 size_t x264_dbg_private_bytes(void);
 x264_cpu_t x264_detect_cpu_features(const QStringList &argv);
@@ -121,16 +132,21 @@ bool x264_enable_close_button(const QWidget *win, const bool bEnable);
 void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage = NULL);
 void x264_finalization(void);
 void x264_init_console(int argc, char* argv[]);
+void x264_init_process(QProcess &process, const QString &wokringDir, const bool bReplaceTempDir = true);
 bool x264_init_qt(int argc, char* argv[]);
 bool x264_is_executable(const QString &path);
 bool x264_is_prerelease(void);
 const QString &x264_known_folder(x264_known_folder_t folder_id);
 void x264_message_handler(QtMsgType type, const char *msg);
+int x264_network_status(void);
 QString x264_path2ansi(const QString &longPath, bool makeLowercase = false);
 bool x264_play_sound(const unsigned short uiSoundIdx, const bool bAsync, const wchar_t *alias = NULL);
 bool x264_portable(void);
 unsigned int x264_process_id(void);
 QString x264_query_reg_string(const bool bUser, const QString &path, const QString &name);
+unsigned int x264_rand(void);
+QString x264_rand_str(const bool bLong = false);
+void x264_seed_rand(void);
 bool x264_set_thread_execution_state(const bool systemRequired);
 bool x264_shutdown_computer(const QString &message, const unsigned long timeout, const bool forceShutdown);
 void x264_sleep(const unsigned int delay);

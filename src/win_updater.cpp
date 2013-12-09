@@ -23,6 +23,7 @@
 #include "uic_win_updater.h"
 
 #include "global.h"
+#include "thread_updater.h"
 #include "checksum.h"
 
 #include <QMovie>
@@ -55,7 +56,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
 	QDialog(parent),
 	ui(new Ui::UpdaterDialog()),
 	m_binDir(binDir),
-	m_state(0),
+	m_thread(NULL),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -82,7 +83,18 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
 
 UpdaterDialog::~UpdaterDialog(void)
 {
+	if(m_thread)
+	{
+		if(!m_thread->wait(1000))
+		{
+			m_thread->terminate();
+			m_thread->wait();
+		}
+	}
+
+	X264_DELETE(m_thread);
 	X264_DELETE(m_animator);
+
 	delete ui;
 }
 
@@ -119,8 +131,43 @@ void UpdaterDialog::closeEvent(QCloseEvent *e)
 
 void UpdaterDialog::initUpdate(void)
 {
-	//Restet text
-	ui->retranslateUi(this);
+
+	//Reset icons
+
+
+	//Show animation
+
+	//Check binary files
+	QStringList binaries;
+	if(!checkBinaries(binaries))
+	{
+		ui->buttonCancel->setEnabled(true);
+		QMessageBox::critical(this, tr("File Error"), tr("At least one file required by web-update is missing or corrupted.<br>Please re-install this application and then try again!"));
+		close();
+		return;
+	}
+	
+	//Create and setup thread
+	if(!m_thread)
+	{
+		m_thread = new UpdateCheckThread(binaries[0], binaries[1], binaries[2], false);
+		connect(m_thread, SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
+		connect(m_thread, SIGNAL(progressChanged(int)), this, SLOT(threadProgressChanged(int)));
+		connect(m_thread, SIGNAL(messageLogged(QString)), this, SLOT(threadMessageLogged(QString)));
+		connect(m_thread, SIGNAL(finished()), this, SLOT(threadFinished()));
+		connect(m_thread, SIGNAL(terminated()), this, SLOT(threadFinished()));
+	}
+
+	//Begin updater test run
+	QTimer::singleShot(0, this, SLOT(checkForUpdates()));
+}
+
+void UpdaterDialog::checkForUpdates(void)
+{
+	if((!m_thread) || m_thread->isRunning())
+	{
+		qWarning("Update in progress, cannot check for updates now!");
+	}
 
 	//Init buttons
 	ui->buttonCancel->setEnabled(false);
@@ -130,56 +177,61 @@ void UpdaterDialog::initUpdate(void)
 	//Hide labels
 	ui->labelInfo->hide();
 	ui->labelUrl->hide();
+	
+	//Update status
+	threadStatusChanged(UpdateCheckThread::UpdateStatus_NotStartedYet);
 
-	//Reset icons
-	UPDATE_ICON(1, "clock");
-	UPDATE_ICON(2, "clock");
-	UPDATE_ICON(3, "clock");
+	//Update cursor
+	QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+	QApplication::setOverrideCursor(Qt::WaitCursor);
 
-	//Show animation
-	SHOW_ANIMATION(true);
-
-	//Check binary files
-	if(!checkBinaries())
-	{
-		ui->buttonCancel->setEnabled(true);
-		QMessageBox::critical(this, tr("File Error"), tr("At least one file required by web-update is missing or corrupted.<br>Please re-install this application and then try again!"));
-		close();
-		return;
-	}
-
-	//Begin updater test run
-	m_state = 0;
-	QTimer::singleShot(333, this, SLOT(updateState()));
+	//Start the updater thread
+	m_thread->start();
 }
 
-void UpdaterDialog::updateState(void)
+void UpdaterDialog::threadStatusChanged(int status)
 {
-	switch(m_state++)
+	switch(status)
 	{
-	case 0:
-		UPDATE_ICON(1, "play");
-		QTimer::singleShot(6666, this, SLOT(updateState()));
+	case UpdateCheckThread::UpdateStatus_NotStartedYet:
+		UPDATE_ICON(1, "clock");
+		UPDATE_ICON(2, "clock");
+		UPDATE_ICON(3, "clock");
+		ui->retranslateUi(this);
 		break;
-	case 1:
+	case UpdateCheckThread::UpdateStatus_CheckingConnection:
+		UPDATE_ICON(1, "play");
+		break;
+	case UpdateCheckThread::UpdateStatus_FetchingUpdates:
 		UPDATE_ICON(1, "shield_green");
 		UPDATE_TEXT(1, tr("Internet connection is working."));
 		UPDATE_ICON(2, "play");
-		QTimer::singleShot(6666, this, SLOT(updateState()));
 		break;
-	case 2:
-		UPDATE_ICON(2, "shield_green");
-		UPDATE_TEXT(2, tr("Update-information was received successfully."));
-		UPDATE_ICON(3, "play");
-		QTimer::singleShot(6666, this, SLOT(updateState()));
-		break;
-	case 3:
+	case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
 		UPDATE_ICON(3, "shield_exclamation");
 		UPDATE_TEXT(3, tr("A newer version is available!"));
-		QTimer::singleShot(6666, this, SLOT(updateState()));
+		break;
+	case UpdateCheckThread::UpdateStatus_ErrorNoConnection:
+	case UpdateCheckThread::UpdateStatus_ErrorConnectionTestFailed:
+	case UpdateCheckThread::UpdateStatus_ErrorFetchUpdateInfo:
+		break;
+	default:
+		throw "Unknown status code!";
+	}
+
+	switch(status)
+	{
+	case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
+	case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
+	case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
+		UPDATE_ICON(2, "shield_green");
+		UPDATE_TEXT(2, tr("Update-information was received successfully."));
+		ui->buttonDownload->show();
+	case UpdateCheckThread::UpdateStatus_ErrorNoConnection:
+	case UpdateCheckThread::UpdateStatus_ErrorConnectionTestFailed:
+	case UpdateCheckThread::UpdateStatus_ErrorFetchUpdateInfo:
 		SHOW_ANIMATION(false);
 		ui->buttonCancel->setEnabled(true);
-		ui->buttonDownload->show();
 		break;
 	}
 }
@@ -188,7 +240,7 @@ void UpdaterDialog::updateState(void)
 // Private Functions
 ///////////////////////////////////////////////////////////////////////////////
 
-bool UpdaterDialog::checkBinaries(void)
+bool UpdaterDialog::checkBinaries(QStringList &binaries)
 {
 	qDebug("[File Verification]");
 
@@ -206,9 +258,15 @@ bool UpdaterDialog::checkBinaries(void)
 	};
 
 	bool okay = true;
+	binaries.clear();
+
 	for(size_t i = 0; FILE_INFO[i].name; i++)
 	{
-		okay = okay && checkFileHash(QString("%1/common/%2").arg(m_binDir, QString::fromLatin1(FILE_INFO[i].name)), FILE_INFO[i].hash);
+		const QString binPath = QString("%1/common/%2").arg(m_binDir, QString::fromLatin1(FILE_INFO[i].name));
+		if(okay = okay && checkFileHash(binPath, FILE_INFO[i].hash))
+		{
+			binaries << binPath;
+		}
 	}
 
 	if(okay)

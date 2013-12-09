@@ -35,6 +35,8 @@
 #include <MMSystem.h>
 #include <ShellAPI.h>
 #include <Objbase.h>
+#include <Psapi.h>
+#include <SensAPI.h>
 
 //C++ includes
 #include <stdio.h>
@@ -85,6 +87,10 @@
 #if X264_DEBUG
 #include <Psapi.h>
 #endif
+
+//Global types
+typedef HRESULT (WINAPI *SHGetKnownFolderPath_t)(const GUID &rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath);
+typedef HRESULT (WINAPI *SHGetFolderPath_t)(HWND hwndOwner, int nFolder, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath);
 
 //Global vars
 static bool g_x264_console_attached = false;
@@ -144,6 +150,8 @@ g_x264_os_version;
 static struct
 {
 	QMap<size_t, QString> *knownFolders;
+	SHGetKnownFolderPath_t getKnownFolderPath;
+	SHGetFolderPath_t getFolderPath;
 	QReadWriteLock lock;
 }
 g_x264_known_folder;
@@ -343,6 +351,74 @@ void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, 
 }
 
 /*
+ * Get a random string
+ */
+QString x264_rand_str(const bool bLong)
+{
+	const QUuid uuid = QUuid::createUuid().toString();
+
+	const unsigned int u1 = uuid.data1;
+	const unsigned int u2 = (((unsigned int)(uuid.data2)) << 16) | ((unsigned int)(uuid.data3));
+	const unsigned int u3 = (((unsigned int)(uuid.data4[0])) << 24) | (((unsigned int)(uuid.data4[1])) << 16) | (((unsigned int)(uuid.data4[2])) << 8) | ((unsigned int)(uuid.data4[3]));
+	const unsigned int u4 = (((unsigned int)(uuid.data4[4])) << 24) | (((unsigned int)(uuid.data4[5])) << 16) | (((unsigned int)(uuid.data4[6])) << 8) | ((unsigned int)(uuid.data4[7]));
+
+	return bLong ? QString().sprintf("%08x%08x%08x%08x", u1, u2, u3, u4) : QString().sprintf("%08x%08x", (u1 ^ u2), (u3 ^ u4));
+}
+
+/*
+ * Robert Jenkins' 96 bit Mix Function
+ * Source: http://www.concentric.net/~Ttwang/tech/inthash.htm
+ */
+static unsigned int x264_mix(const unsigned int x, const unsigned int y, const unsigned int z)
+{
+	unsigned int a = x;
+	unsigned int b = y;
+	unsigned int c = z;
+	
+	a=a-b;  a=a-c;  a=a^(c >> 13);
+	b=b-c;  b=b-a;  b=b^(a << 8); 
+	c=c-a;  c=c-b;  c=c^(b >> 13);
+	a=a-b;  a=a-c;  a=a^(c >> 12);
+	b=b-c;  b=b-a;  b=b^(a << 16);
+	c=c-a;  c=c-b;  c=c^(b >> 5);
+	a=a-b;  a=a-c;  a=a^(c >> 3);
+	b=b-c;  b=b-a;  b=b^(a << 10);
+	c=c-a;  c=c-b;  c=c^(b >> 15);
+
+	return c;
+}
+
+/*
+ * Seeds the random number generator
+ * Note: Altough rand_s() doesn't need a seed, this must be called pripr to lamexp_rand(), just to to be sure!
+ */
+void x264_seed_rand(void)
+{
+	qsrand(x264_mix(clock(), time(NULL), _getpid()));
+}
+
+/*
+ * Returns a randum number
+ * Note: This function uses rand_s() if available, but falls back to qrand() otherwise
+ */
+unsigned int x264_rand(void)
+{
+	quint32 rnd = 0;
+
+	if(rand_s(&rnd) == 0)
+	{
+		return rnd;
+	}
+
+	for(size_t i = 0; i < sizeof(unsigned int); i++)
+	{
+		rnd = (rnd << 8) ^ qrand();
+	}
+
+	return rnd;
+}
+
+/*
  * Change console text color
  */
 static void x264_console_color(FILE* file, WORD attributes)
@@ -352,6 +428,69 @@ static void x264_console_color(FILE* file, WORD attributes)
 	{
 		SetConsoleTextAttribute(hConsole, attributes);
 	}
+}
+
+/*
+ * Determines the current date, resistant against certain manipulations
+ */
+QDate x264_current_date_safe(void)
+{
+	const DWORD MAX_PROC = 1024;
+	DWORD *processes = new DWORD[MAX_PROC];
+	DWORD bytesReturned = 0;
+	
+	if(!EnumProcesses(processes, sizeof(DWORD) * MAX_PROC, &bytesReturned))
+	{
+		X264_DELETE_ARRAY(processes);
+		return QDate::currentDate();
+	}
+
+	const DWORD procCount = bytesReturned / sizeof(DWORD);
+	ULARGE_INTEGER lastStartTime;
+	memset(&lastStartTime, 0, sizeof(ULARGE_INTEGER));
+
+	for(DWORD i = 0; i < procCount; i++)
+	{
+		HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processes[i]);
+		if(hProc)
+		{
+			FILETIME processTime[4];
+			if(GetProcessTimes(hProc, &processTime[0], &processTime[1], &processTime[2], &processTime[3]))
+			{
+				ULARGE_INTEGER timeCreation;
+				timeCreation.LowPart = processTime[0].dwLowDateTime;
+				timeCreation.HighPart = processTime[0].dwHighDateTime;
+				if(timeCreation.QuadPart > lastStartTime.QuadPart)
+				{
+					lastStartTime.QuadPart = timeCreation.QuadPart;
+				}
+			}
+			CloseHandle(hProc);
+		}
+	}
+
+	X264_DELETE_ARRAY(processes);
+	
+	FILETIME lastStartTime_fileTime;
+	lastStartTime_fileTime.dwHighDateTime = lastStartTime.HighPart;
+	lastStartTime_fileTime.dwLowDateTime = lastStartTime.LowPart;
+
+	FILETIME lastStartTime_localTime;
+	if(!FileTimeToLocalFileTime(&lastStartTime_fileTime, &lastStartTime_localTime))
+	{
+		memcpy(&lastStartTime_localTime, &lastStartTime_fileTime, sizeof(FILETIME));
+	}
+	
+	SYSTEMTIME lastStartTime_system;
+	if(!FileTimeToSystemTime(&lastStartTime_localTime, &lastStartTime_system))
+	{
+		memset(&lastStartTime_system, 0, sizeof(SYSTEMTIME));
+		lastStartTime_system.wYear = 1970; lastStartTime_system.wMonth = lastStartTime_system.wDay = 1;
+	}
+
+	const QDate currentDate = QDate::currentDate();
+	const QDate processDate = QDate(lastStartTime_system.wYear, lastStartTime_system.wMonth, lastStartTime_system.wDay);
+	return (currentDate >= processDate) ? currentDate : processDate;
 }
 
 /*
@@ -751,21 +890,6 @@ const QStringList &x264_arguments(void)
 	}
 
 	return (*g_x264_argv.list);
-}
-
-/*
- * Get a random string
- */
-static QString x264_rand_str(const bool bLong = false)
-{
-	const QUuid uuid = QUuid::createUuid().toString();
-
-	const unsigned int u1 = uuid.data1;
-	const unsigned int u2 = (((unsigned int)(uuid.data2)) << 16) | ((unsigned int)(uuid.data3));
-	const unsigned int u3 = (((unsigned int)(uuid.data4[0])) << 24) | (((unsigned int)(uuid.data4[1])) << 16) | (((unsigned int)(uuid.data4[2])) << 8) | ((unsigned int)(uuid.data4[3]));
-	const unsigned int u4 = (((unsigned int)(uuid.data4[4])) << 24) | (((unsigned int)(uuid.data4[5])) << 16) | (((unsigned int)(uuid.data4[6])) << 8) | ((unsigned int)(uuid.data4[7]));
-
-	return bLong ? QString().sprintf("%08x%08x%08x%08x", u1, u2, u3, u4) : QString().sprintf("%08x%08x", (u1 ^ u2), (u3 ^ u4));
 }
 
 /*
@@ -1693,52 +1817,46 @@ QString x264_query_reg_string(const bool bUser, const QString &path, const QStri
  */
 const QString &x264_known_folder(x264_known_folder_t folder_id)
 {
-	typedef HRESULT (WINAPI *SHGetKnownFolderPathFun)(__in const GUID &rfid, __in DWORD dwFlags, __in HANDLE hToken, __out PWSTR *ppszPath);
-	typedef HRESULT (WINAPI *SHGetFolderPathFun)(__in HWND hwndOwner, __in int nFolder, __in HANDLE hToken, __in DWORD dwFlags, __out LPWSTR pszPath);
+	static const int CSIDL_FLAG_CREATE = 0x8000;
+	typedef enum { KF_FLAG_CREATE = 0x00008000 } kf_flags_t;
+	
+	struct
+	{
+		const int csidl;
+		const GUID guid;
+	}
+	static s_folders[] =
+	{
+		{ 0x001c, {0xF1B32785,0x6FBA,0x4FCF,{0x9D,0x55,0x7B,0x8E,0x7F,0x15,0x70,0x91}} },  //CSIDL_LOCAL_APPDATA
+		{ 0x0026, {0x905e63b6,0xc1bf,0x494e,{0xb2,0x9c,0x65,0xb7,0x32,0xd3,0xd2,0x1a}} },  //CSIDL_PROGRAM_FILES
+		{ 0x0024, {0xF38BF404,0x1D43,0x42F2,{0x93,0x05,0x67,0xDE,0x0B,0x28,0xFC,0x23}} },  //CSIDL_WINDOWS_FOLDER
+		{ 0x0025, {0x1AC14E77,0x02E7,0x4E5D,{0xB7,0x44,0x2E,0xB1,0xAE,0x51,0x98,0xB7}} },  //CSIDL_SYSTEM_FOLDER
+	};
 
-	static const int CSIDL_LOCAL_APPDATA = 0x001c;
-	static const int CSIDL_PROGRAM_FILES = 0x0026;
-	static const int CSIDL_SYSTEM_FOLDER = 0x0025;
-	static const GUID GUID_LOCAL_APPDATA = {0xF1B32785,0x6FBA,0x4FCF,{0x9D,0x55,0x7B,0x8E,0x7F,0x15,0x70,0x91}};
-	static const GUID GUID_LOCAL_APPDATA_LOW = {0xA520A1A4,0x1780,0x4FF6,{0xBD,0x18,0x16,0x73,0x43,0xC5,0xAF,0x16}};
-	static const GUID GUID_PROGRAM_FILES = {0x905e63b6,0xc1bf,0x494e,{0xb2,0x9c,0x65,0xb7,0x32,0xd3,0xd2,0x1a}};
-	static const GUID GUID_SYSTEM_FOLDER = {0x1AC14E77,0x02E7,0x4E5D,{0xB7,0x44,0x2E,0xB1,0xAE,0x51,0x98,0xB7}};
-
-	QReadLocker readLock(&g_x264_known_folder.lock);
-
-	int folderCSIDL = -1;
-	GUID folderGUID = {0x0000,0x0000,0x0000,{0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}};
-	size_t folderCacheId = size_t(-1);
+	size_t folderId = size_t(-1);
 
 	switch(folder_id)
 	{
-	case x264_folder_localappdata:
-		folderCacheId = 0;
-		folderCSIDL = CSIDL_LOCAL_APPDATA;
-		folderGUID = GUID_LOCAL_APPDATA;
-		break;
-	case x264_folder_programfiles:
-		folderCacheId = 1;
-		folderCSIDL = CSIDL_PROGRAM_FILES;
-		folderGUID = GUID_PROGRAM_FILES;
-		break;
-	case x264_folder_systemfolder:
-		folderCacheId = 2;
-		folderCSIDL = CSIDL_SYSTEM_FOLDER;
-		folderGUID = GUID_SYSTEM_FOLDER;
-		break;
-	default:
+		case x264_folder_localappdata: folderId = 0; break;
+		case x264_folder_programfiles: folderId = 1; break;
+		case x264_folder_systroot_dir: folderId = 2; break;
+		case x264_folder_systemfolder: folderId = 3; break;
+	}
+
+	if(folderId == size_t(-1))
+	{
 		qWarning("Invalid 'known' folder was requested!");
 		return *reinterpret_cast<QString*>(NULL);
-		break;
 	}
+
+	QReadLocker readLock(&g_x264_known_folder.lock);
 
 	//Already in cache?
 	if(g_x264_known_folder.knownFolders)
 	{
-		if(g_x264_known_folder.knownFolders->contains(folderCacheId))
+		if(g_x264_known_folder.knownFolders->contains(folderId))
 		{
-			return (*g_x264_known_folder.knownFolders)[folderCacheId];
+			return (*g_x264_known_folder.knownFolders)[folderId];
 		}
 	}
 
@@ -1749,75 +1867,59 @@ const QString &x264_known_folder(x264_known_folder_t folder_id)
 	//Still not in cache?
 	if(g_x264_known_folder.knownFolders)
 	{
-		if(g_x264_known_folder.knownFolders->contains(folderCacheId))
+		if(g_x264_known_folder.knownFolders->contains(folderId))
 		{
-			return (*g_x264_known_folder.knownFolders)[folderCacheId];
+			return (*g_x264_known_folder.knownFolders)[folderId];
 		}
 	}
 
-	static SHGetKnownFolderPathFun SHGetKnownFolderPathPtr = NULL;
-	static SHGetFolderPathFun SHGetFolderPathPtr = NULL;
-
-	//Lookup functions
-	if((!SHGetKnownFolderPathPtr) && (!SHGetFolderPathPtr))
+	//Initialize on first call
+	if(!g_x264_known_folder.knownFolders)
 	{
-		QLibrary kernel32Lib("shell32.dll");
-		if(kernel32Lib.load())
+		QLibrary shell32("shell32.dll");
+		if(shell32.load())
 		{
-			SHGetKnownFolderPathPtr = (SHGetKnownFolderPathFun) kernel32Lib.resolve("SHGetKnownFolderPath");
-			SHGetFolderPathPtr = (SHGetFolderPathFun) kernel32Lib.resolve("SHGetFolderPathW");
+			g_x264_known_folder.getFolderPath =      (SHGetFolderPath_t)      shell32.resolve("SHGetFolderPathW");
+			g_x264_known_folder.getKnownFolderPath = (SHGetKnownFolderPath_t) shell32.resolve("SHGetKnownFolderPath");
 		}
+		g_x264_known_folder.knownFolders = new QMap<size_t, QString>();
 	}
 
-	QString folder;
+	QString folderPath;
 
 	//Now try to get the folder path!
-	if(SHGetKnownFolderPathPtr)
+	if(g_x264_known_folder.getKnownFolderPath)
 	{
 		WCHAR *path = NULL;
-		if(SHGetKnownFolderPathPtr(folderGUID, 0x00008000, NULL, &path) == S_OK)
+		if(g_x264_known_folder.getKnownFolderPath(s_folders[folderId].guid, KF_FLAG_CREATE, NULL, &path) == S_OK)
 		{
 			//MessageBoxW(0, path, L"SHGetKnownFolderPath", MB_TOPMOST);
 			QDir folderTemp = QDir(QDir::fromNativeSeparators(QString::fromUtf16(reinterpret_cast<const unsigned short*>(path))));
-			if(!folderTemp.exists())
-			{
-				folderTemp.mkpath(".");
-			}
 			if(folderTemp.exists())
 			{
-				folder = folderTemp.canonicalPath();
+				folderPath = folderTemp.canonicalPath();
 			}
 			CoTaskMemFree(path);
 		}
 	}
-	else if(SHGetFolderPathPtr)
+	else if(g_x264_known_folder.getFolderPath)
 	{
 		WCHAR *path = new WCHAR[4096];
-		if(SHGetFolderPathPtr(NULL, folderCSIDL, NULL, NULL, path) == S_OK)
+		if(g_x264_known_folder.getFolderPath(NULL, s_folders[folderId].csidl | CSIDL_FLAG_CREATE, NULL, NULL, path) == S_OK)
 		{
 			//MessageBoxW(0, path, L"SHGetFolderPathW", MB_TOPMOST);
 			QDir folderTemp = QDir(QDir::fromNativeSeparators(QString::fromUtf16(reinterpret_cast<const unsigned short*>(path))));
-			if(!folderTemp.exists())
-			{
-				folderTemp.mkpath(".");
-			}
 			if(folderTemp.exists())
 			{
-				folder = folderTemp.canonicalPath();
+				folderPath = folderTemp.canonicalPath();
 			}
 		}
-		delete [] path;
-	}
-
-	//Create cache
-	if(!g_x264_known_folder.knownFolders)
-	{
-		g_x264_known_folder.knownFolders = new QMap<size_t, QString>();
+		X264_DELETE_ARRAY(path);
 	}
 
 	//Update cache
-	g_x264_known_folder.knownFolders->insert(folderCacheId, folder);
-	return (*g_x264_known_folder.knownFolders)[folderCacheId];
+	g_x264_known_folder.knownFolders->insert(folderId, folderPath);
+	return (*g_x264_known_folder.knownFolders)[folderId];
 }
 
 /*
@@ -1886,14 +1988,18 @@ const QString &x264_temp_directory(void)
 		if(g_x264_temp_folder.path->isEmpty())
 		{
 			qWarning("%%TEMP%% directory not found -> falling back to %%LOCALAPPDATA%%");
-			const QString &localAppData = x264_known_folder(x264_folder_localappdata);
-			if(!localAppData.isEmpty())
+			static const x264_known_folder_t folderId[2] = { x264_folder_localappdata, x264_folder_systroot_dir };
+			for(size_t id = 0; (g_x264_temp_folder.path->isEmpty() && (id < 2)); id++)
 			{
-				*g_x264_temp_folder.path = x264_try_init_folder(QString("%1/Temp").arg(localAppData));
-			}
-			else
-			{
-				qWarning("%%LOCALAPPDATA%% directory could not be found!");
+				const QString &localAppData = x264_known_folder(x264_folder_localappdata);
+				if(!localAppData.isEmpty())
+				{
+					*g_x264_temp_folder.path = x264_try_init_folder(QString("%1/Temp").arg(localAppData));
+				}
+				else
+				{
+					qWarning("%%LOCALAPPDATA%% directory could not be found!");
+				}
 			}
 		}
 
@@ -1922,6 +2028,9 @@ bool x264_enable_close_button(const QWidget *win, const bool bEnable)
 	return ok;
 }
 
+/*
+ * Play beep sound
+ */
 bool x264_beep(int beepType)
 {
 	switch(beepType)
@@ -1958,6 +2067,68 @@ bool x264_shutdown_computer(const QString &message, const unsigned long timeout,
 	}
 	
 	return false;
+}
+
+/*
+ * Check the network connection status
+ */
+int x264_network_status(void)
+{
+	DWORD dwFlags;
+	const BOOL ret = (IsNetworkAlive(&dwFlags) == TRUE);
+	if(GetLastError() == 0)
+	{
+		return (ret == TRUE) ? x264_network_yes : x264_network_non;
+	}
+	return x264_network_err;
+}
+
+/*
+ * Setup QPorcess object
+ */
+void x264_init_process(QProcess &process, const QString &wokringDir, const bool bReplaceTempDir)
+{
+	//Environment variable names
+	static const char *const s_envvar_names_temp[] =
+	{
+		"TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "HOMEPATH", NULL
+	};
+	static const char *const s_envvar_names_remove[] =
+	{
+		"WGETRC", "SYSTEM_WGETRC", "HTTP_PROXY", "FTP_PROXY", "NO_PROXY", "GNUPGHOME", "LC_ALL", "LC_COLLATE", "LC_CTYPE", "LC_MESSAGES", "LC_MONETARY", "LC_NUMERIC", "LC_TIME", "LANG", NULL
+	};
+
+	//Initialize environment
+	QProcessEnvironment env = process.processEnvironment();
+	if(env.isEmpty()) env = QProcessEnvironment::systemEnvironment();
+
+	//Clean a number of enviroment variables that might affect our tools
+	for(size_t i = 0; s_envvar_names_remove[i]; i++)
+	{
+		env.remove(QString::fromLatin1(s_envvar_names_remove[i]));
+		env.remove(QString::fromLatin1(s_envvar_names_remove[i]).toLower());
+	}
+
+	const QString tempDir = QDir::toNativeSeparators(x264_temp_directory());
+
+	//Replace TEMP directory in environment
+	if(bReplaceTempDir)
+	{
+		for(size_t i = 0; s_envvar_names_temp[i]; i++)
+		{
+			env.insert(s_envvar_names_temp[i], tempDir);
+		}
+	}
+
+	//Setup PATH variable
+	const QString path = env.value("PATH", QString()).trimmed();
+	env.insert("PATH", path.isEmpty() ? tempDir : QString("%1;%2").arg(tempDir, path));
+	
+	//Setup QPorcess object
+	process.setWorkingDirectory(wokringDir);
+	process.setProcessChannelMode(QProcess::MergedChannels);
+	process.setReadChannel(QProcess::StandardOutput);
+	process.setProcessEnvironment(env);
 }
 
 /*

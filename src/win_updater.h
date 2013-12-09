@@ -35,7 +35,7 @@ class UpdaterDialog : public QDialog
 	Q_OBJECT
 
 public:
-	UpdaterDialog(QWidget *parent);
+	UpdaterDialog(QWidget *parent, const QString &binDir);
 	~UpdaterDialog(void);
 
 protected:
@@ -49,7 +49,11 @@ private slots:
 private:
 	Ui::UpdaterDialog *const ui;
 
+	bool checkBinaries(void);
+	bool checkFileHash(const QString &filePath, const char *expectedHash);
+
 	bool m_firstShow;
+	const QString m_binDir;
 	QMovie *m_animator;
 	int m_state;
 };

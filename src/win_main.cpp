@@ -977,7 +977,7 @@ void MainWindow::checkUpdates(void)
 		return;
 	}
 
-	UpdaterDialog *updater = new UpdaterDialog(this);
+	UpdaterDialog *updater = new UpdaterDialog(this, QString("%1/toolset").arg(m_appDir));
 	updater->exec();
 	X264_DELETE(updater);
 }

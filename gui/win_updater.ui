@@ -505,8 +505,14 @@
              <underline>true</underline>
             </font>
            </property>
+           <property name="cursor">
+            <cursorShape>PointingHandCursor</cursorShape>
+           </property>
            <property name="text">
             <string>http://www.example.com/update_info.html</string>
+           </property>
+           <property name="textInteractionFlags">
+            <set>Qt::LinksAccessibleByMouse</set>
            </property>
           </widget>
          </item>

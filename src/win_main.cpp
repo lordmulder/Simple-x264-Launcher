@@ -978,7 +978,15 @@ void MainWindow::checkUpdates(void)
 	}
 
 	UpdaterDialog *updater = new UpdaterDialog(this, QString("%1/toolset").arg(m_appDir));
-	updater->exec();
+	const int ret = updater->exec();
+
+	if(ret == 42)
+	{
+		X264_DELETE(updater);
+		qWarning("Exitting to install update...");
+		close();
+	}
+
 	X264_DELETE(updater);
 }
 

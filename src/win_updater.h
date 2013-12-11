@@ -42,20 +42,29 @@ public:
 protected:
 	virtual void showEvent(QShowEvent *event);
 	virtual void closeEvent(QCloseEvent *e);
+	virtual void keyPressEvent(QKeyEvent *event);
 
 private slots:
 	void initUpdate(void);
 	void checkForUpdates(void);
 	void threadStatusChanged(int status);
+	void threadMessageLogged(const QString &message);
+	void threadFinished(void);
+	void openUrl(const QString &url);
+	void installUpdate(void);
 
 private:
 	Ui::UpdaterDialog *const ui;
 
-	bool checkBinaries(QStringList &binaries);
+	bool checkBinaries(QString &wgetBin, QString &gpgvBin);
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
 
 	bool m_firstShow;
 	const QString m_binDir;
-	UpdateCheckThread *m_thread;
 	QMovie *m_animator;
+	UpdateCheckThread *m_thread;
+	QStringList m_logFile;
+	QString m_keysFile;
+	QString m_wupdFile;
+	int m_status;
 };

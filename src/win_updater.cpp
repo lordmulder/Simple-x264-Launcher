@@ -49,6 +49,7 @@
 	ui->labelLoadingRight->setVisible((FLAG)); \
 	ui->labelInfo->setVisible(!(FLAG)); \
 	ui->labelUrl->setVisible(!(FLAG)); \
+	if((FLAG)) m_animator->start(); else m_animator->stop(); \
 } \
 while(0)
 
@@ -64,6 +65,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
 	m_binDir(binDir),
 	m_status(UpdateCheckThread::UpdateStatus_NotStartedYet),
 	m_thread(NULL),
+	m_updaterProcess(NULL),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -129,6 +131,15 @@ UpdaterDialog::~UpdaterDialog(void)
 ///////////////////////////////////////////////////////////////////////////////
 // Events
 ///////////////////////////////////////////////////////////////////////////////
+
+bool UpdaterDialog::event(QEvent *e)
+{
+	if((e->type() == QEvent::ActivationChange) && (m_updaterProcess != NULL))
+	{
+		x264_bring_process_to_front(m_updaterProcess);
+	}
+	return QDialog::event(e);
+}
 
 void UpdaterDialog::showEvent(QShowEvent *event)
 {
@@ -220,7 +231,6 @@ void UpdaterDialog::checkForUpdates(void)
 
 	//Start animation
 	SHOW_ANIMATION(true);
-	m_animator->start();
 
 	//Update cursor
 	QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -284,25 +294,27 @@ void UpdaterDialog::threadFinished(void)
 	//Restore cursor
 	QApplication::restoreOverrideCursor();
 
-	//Stop animation
-	m_animator->stop();
-
-	//Process final updater state
-	switch(m_status)
+	//If update was successfull, process final updater state
+	if(m_thread->getSuccess())
 	{
-	case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
-		UPDATE_ICON(3, "shield_exclamation");
-		UPDATE_TEXT(3, tr("A newer version is available!"));
-		ui->buttonDownload->show();
-		break;
-	case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
-		UPDATE_ICON(3, "shield_green");
-		UPDATE_TEXT(3, tr("Your version is up-to-date."));
-		break;
-	case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
-		UPDATE_ICON(3, "shield_error");
-		UPDATE_TEXT(3, tr("Your are using a pre-release version!"));
-		break;
+		switch(m_status)
+		{
+		case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
+			UPDATE_ICON(3, "shield_exclamation");
+			UPDATE_TEXT(3, tr("A newer version is available!"));
+			ui->buttonDownload->show();
+			break;
+		case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
+			UPDATE_ICON(3, "shield_green");
+			UPDATE_TEXT(3, tr("Your version is up-to-date."));
+			break;
+		case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
+			UPDATE_ICON(3, "shield_error");
+			UPDATE_TEXT(3, tr("Your are using a pre-release version!"));
+			break;
+		default:
+			qWarning("Update thread succeeded with unexpected status code: %d", m_status);
+		}
 	}
 
 	//Show update info or retry button
@@ -317,8 +329,11 @@ void UpdaterDialog::threadFinished(void)
 	case UpdateCheckThread::UpdateStatus_ErrorNoConnection:
 	case UpdateCheckThread::UpdateStatus_ErrorConnectionTestFailed:
 	case UpdateCheckThread::UpdateStatus_ErrorFetchUpdateInfo:
+		m_animator->stop();
 		ui->buttonRetry->show();
 		break;
+	default:
+		qWarning("Update thread finished with unexpected status code: %d", m_status);
 	}
 
 	//Re-enbale cancel button
@@ -345,6 +360,11 @@ void UpdaterDialog::installUpdate(void)
 		return;
 	}
 
+	QApplication::setOverrideCursor(Qt::WaitCursor);
+	ui->buttonDownload->hide();
+	ui->buttonCancel->setEnabled(false);
+	SHOW_ANIMATION(true);
+
 	const UpdateInfo *updateInfo = m_thread->getUpdateInfo();
 
 	QProcess process;
@@ -366,14 +386,15 @@ void UpdaterDialog::installUpdate(void)
 	process.start(m_wupdFile, args);
 	if(!process.waitForStarted())
 	{
+		QApplication::restoreOverrideCursor();
+		SHOW_ANIMATION(false);
 		QMessageBox::critical(this, tr("Update Failed"), tr("Sorry, failed to launch web-update program!"));
+		ui->buttonDownload->show();
+		ui->buttonCancel->setEnabled(true);
 		return;
 	}
 
-	QApplication::setOverrideCursor(Qt::WaitCursor);
-	ui->buttonDownload->hide();
-	ui->buttonCancel->setEnabled(false);
-
+	m_updaterProcess = x264_process_id(process);
 	loop.exec(QEventLoop::ExcludeUserInputEvents);
 	
 	if(!process.waitForFinished())
@@ -382,9 +403,11 @@ void UpdaterDialog::installUpdate(void)
 		process.waitForFinished();
 	}
 
+	m_updaterProcess = NULL;
 	QApplication::restoreOverrideCursor();
 	ui->buttonDownload->show();
 	ui->buttonCancel->setEnabled(true);
+	SHOW_ANIMATION(false);
 
 	if(process.exitCode() == 0)
 	{

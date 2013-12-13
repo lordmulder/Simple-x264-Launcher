@@ -1716,6 +1716,18 @@ unsigned int x264_process_id(void)
 }
 
 /*
+ * Current process ID
+ */
+unsigned int x264_process_id(QProcess &process)
+{
+	if(Q_PID pid = process.pid())
+	{
+		return pid->dwProcessId;
+	}
+	return NULL;
+}
+
+/*
  * Make a window blink (to draw user's attention)
  */
 void x264_blink_window(QWidget *poWindow, unsigned int count, unsigned int delay)
@@ -1769,11 +1781,51 @@ void x264_blink_window(QWidget *poWindow, unsigned int count, unsigned int delay
 /*
  * Bring the specifed window to the front
  */
+static bool x264_bring_to_front(const HWND hWin)
+{
+	if(hWin)
+	{
+		const bool ret = (SetForegroundWindow(hWin) != FALSE);
+		SwitchToThisWindow(hWin, TRUE);
+		return ret;
+	}
+	return false;
+}
+
+/*
+ * Bring the specifed window to the front
+ */
 bool x264_bring_to_front(const QWidget *win)
 {
-	const bool ret = (SetForegroundWindow(win->winId()) == TRUE);
-	SwitchToThisWindow(win->winId(), TRUE);
-	return ret;
+	if(win)
+	{
+		return x264_bring_to_front(win->winId());
+	}
+	return false;
+}
+
+/*
+ * Bring window of the specifed process to the front (callback)
+ */
+static BOOL CALLBACK x264_bring_process_to_front_helper(HWND hwnd, LPARAM lParam)
+{
+	DWORD processId = *reinterpret_cast<WORD*>(lParam);
+	DWORD windowProcessId = NULL;
+	GetWindowThreadProcessId(hwnd, &windowProcessId);
+	if(windowProcessId == processId)
+	{
+		x264_bring_to_front(hwnd);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+/*
+ * Bring window of the specifed process to the front
+ */
+bool x264_bring_process_to_front(const unsigned long pid)
+{
+	return EnumWindows(x264_bring_process_to_front_helper, reinterpret_cast<LPARAM>(&pid)) == TRUE;
 }
 
 /*

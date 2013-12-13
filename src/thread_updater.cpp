@@ -36,7 +36,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 static const char *header_id = "!Update";
-static const char *section_id = "x264_launcher";
+static const char *section_id = "Simple x264 Launcher";
 
 static const char *mirror_url_postfix[] = 
 {

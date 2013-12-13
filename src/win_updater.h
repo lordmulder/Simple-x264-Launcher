@@ -40,6 +40,7 @@ public:
 	~UpdaterDialog(void);
 
 protected:
+	virtual bool event(QEvent *e);
 	virtual void showEvent(QShowEvent *event);
 	virtual void closeEvent(QCloseEvent *e);
 	virtual void keyPressEvent(QKeyEvent *event);
@@ -63,6 +64,7 @@ private:
 	const QString m_binDir;
 	QMovie *m_animator;
 	UpdateCheckThread *m_thread;
+	unsigned long m_updaterProcess;
 	QStringList m_logFile;
 	QString m_keysFile;
 	QString m_wupdFile;

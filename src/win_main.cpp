@@ -985,6 +985,7 @@ void MainWindow::checkUpdates(void)
 		X264_DELETE(updater);
 		qWarning("Exitting to install update...");
 		close();
+		QApplication::quit();
 	}
 
 	X264_DELETE(updater);

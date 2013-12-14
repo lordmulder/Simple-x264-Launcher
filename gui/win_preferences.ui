@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>379</width>
-    <height>432</height>
+    <width>372</width>
+    <height>387</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,428 +21,428 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
+    <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
       <string> Preferences </string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="13" column="1" colspan="5">
-         <spacer name="verticalSpacer_8">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QCheckBox" name="checkRunNextJob">
+            <property name="text">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelRunNextJob">
+            <property name="text">
+             <string>Automatically launch next job when a running job completes</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="2" column="2" colspan="2">
-         <widget class="QLabel" name="labelJobCount">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="toolTip">
-           <string>If the specified number of jobs (or even more) is already running, the next one will NOT be launched yet.</string>
-          </property>
-          <property name="text">
-           <string>Maximum number of running jobs:</string>
-          </property>
-         </widget>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QCheckBox" name="checkBoxDummy1">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelJobCount">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="toolTip">
+             <string>If the specified number of jobs (or even more) is already running, the next one will NOT be launched yet.</string>
+            </property>
+            <property name="text">
+             <string>Maximum number of running jobs:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinBoxJobCount">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>80</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>If the specified number of jobs (or even more) is already running, the next one will NOT be launched yet.</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>16</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="1" column="2" colspan="4">
-         <widget class="QLabel" name="labelRunNextJob">
-          <property name="text">
-           <string>Automatically launch next job when a running job completes</string>
-          </property>
-         </widget>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QCheckBox" name="checkUse10BitEncoding">
+            <property name="text">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelUse10BitEncoding">
+            <property name="text">
+             <string>Use 10-Bit version of x264 → implies 'High 10' H.264 Profile</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_8">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="1" column="1">
-         <widget class="QCheckBox" name="checkRunNextJob">
-          <property name="text">
-           <string notr="true"/>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="5">
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>0</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="2" column="4">
-         <widget class="QSpinBox" name="spinBoxJobCount">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>80</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>If the specified number of jobs (or even more) is already running, the next one will NOT be launched yet.</string>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>16</number>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QCheckBox" name="checkUse64BitAvs2YUV">
-          <property name="toolTip">
-           <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QCheckBox" name="checkUse64BitAvs2YUV">
+            <property name="toolTip">
+             <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
 Please be aware that this option does NOT have any effect on 32-Bit systems.</string>
-          </property>
-          <property name="text">
-           <string notr="true"/>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1" colspan="5">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="12" column="1">
-         <widget class="QCheckBox" name="checkShutdownComputer">
-          <property name="text">
-           <string notr="true"/>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="2" colspan="4">
-         <widget class="QLabel" name="labelShutdownComputer">
-          <property name="text">
-           <string>Shutdown computer as soon as the last job has completed</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1" colspan="5">
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>12</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="19" column="1" colspan="5">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>12</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="6" column="2" colspan="4">
-         <widget class="QLabel" name="labelUse64BitAvs2YUV">
-          <property name="toolTip">
-           <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
+            </property>
+            <property name="text">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelUse64BitAvs2YUV">
+            <property name="toolTip">
+             <string>If this option is un-checked (default), then 32-Bit Avisynth will be used - even when using 64-Bit x264.
 Please be aware that this option does NOT have any effect on 32-Bit systems.</string>
-          </property>
-          <property name="text">
-           <string>Use 64-Bit Avisynth/Avs2YUV, if running on a 64-Bit machine</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="1" colspan="5">
-         <spacer name="verticalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="4" column="1">
-         <widget class="QCheckBox" name="checkUse10BitEncoding">
-          <property name="text">
-           <string notr="true"/>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2" colspan="4">
-         <widget class="QLabel" name="labelUse10BitEncoding">
-          <property name="text">
-           <string>Use 10-Bit version of x264 → implies 'High 10' H.264 Profile</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="1" colspan="5">
-         <spacer name="verticalSpacer_5">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="8" column="1">
-         <widget class="QCheckBox" name="checkSaveLogFiles">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="2" colspan="4">
-         <widget class="QLabel" name="labelSaveLogFiles">
-          <property name="text">
-           <string>Automatically save output to log file when a job has finished</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="1" colspan="5">
-         <spacer name="verticalSpacer_6">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="10" column="2" colspan="4">
-         <widget class="QLabel" name="labelSaveToSourceFolder">
-          <property name="text">
-           <string>Save output to the same folder where the source is located</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="1" colspan="5">
-         <spacer name="verticalSpacer_7">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="10" column="1">
-         <widget class="QCheckBox" name="checkSaveToSourceFolder">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="14" column="4">
-         <widget class="QComboBox" name="comboBoxPriority">
-          <property name="editable">
-           <bool>false</bool>
-          </property>
-          <property name="frame">
-           <bool>true</bool>
-          </property>
-          <item>
-           <property name="text">
-            <string>Above Normal</string>
-           </property>
+            </property>
+            <property name="text">
+             <string>Use 64-Bit Avisynth/Avs2YUV, if running on a 64-Bit machine</string>
+            </property>
+           </widget>
           </item>
           <item>
-           <property name="text">
-            <string>Normal</string>
-           </property>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <widget class="QCheckBox" name="checkSaveLogFiles">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
           </item>
           <item>
-           <property name="text">
-            <string>Below Normal</string>
-           </property>
+           <widget class="QLabel" name="labelSaveLogFiles">
+            <property name="text">
+             <string>Automatically save output to log file when a job has finished</string>
+            </property>
+           </widget>
           </item>
           <item>
-           <property name="text">
-            <string>Idle</string>
-           </property>
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
           </item>
-         </widget>
+         </layout>
         </item>
-        <item row="14" column="5">
-         <spacer name="horizontalSpacer_5">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_9">
+          <item>
+           <widget class="QCheckBox" name="checkSaveToSourceFolder">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelSaveToSourceFolder">
+            <property name="text">
+             <string>Save output to the same folder where the source is located</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="14" column="2" colspan="2">
-         <widget class="QLabel" name="labelProcessPriority">
-          <property name="text">
-           <string>Priority for encoder processes:</string>
-          </property>
-         </widget>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_10">
+          <item>
+           <widget class="QCheckBox" name="checkShutdownComputer">
+            <property name="text">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelShutdownComputer">
+            <property name="text">
+             <string>Shutdown computer as soon as the last job has completed</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="16" column="1">
-         <widget class="QCheckBox" name="checkEnableSounds">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_11">
+          <item>
+           <widget class="QCheckBox" name="checkBoxDummy2">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelProcessPriority">
+            <property name="text">
+             <string>Priority for encoder processes:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboBoxPriority">
+            <property name="editable">
+             <bool>false</bool>
+            </property>
+            <property name="frame">
+             <bool>true</bool>
+            </property>
+            <item>
+             <property name="text">
+              <string>Above Normal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Normal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Below Normal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Idle</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_9">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="16" column="2" colspan="4">
-         <widget class="QLabel" name="labelEnableSounds">
-          <property name="text">
-           <string>Enable sound effects when a job has completed or failed</string>
-          </property>
-         </widget>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_12">
+          <item>
+           <widget class="QCheckBox" name="checkEnableSounds">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelEnableSounds">
+            <property name="text">
+             <string>Enable sound effects when a job has completed or failed</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_10">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="15" column="1" colspan="5">
-         <spacer name="verticalSpacer_9">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <property name="spacing">
+           <number>6</number>
           </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
+          <item>
+           <widget class="QCheckBox" name="checkDisableWarnings">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelDisableWarnings">
+            <property name="text">
+             <string>Never show warning about missing Avisynth or VapourSynth</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_11">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
-        <item row="18" column="2" colspan="4">
-         <widget class="QLabel" name="labelDisableWarnings">
-          <property name="text">
-           <string>Never show warning about missing Avisynth or VapourSynth</string>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="1">
-         <widget class="QCheckBox" name="checkDisableWarnings">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="1" colspan="5">
-         <spacer name="verticalSpacer_10">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>8</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="6" rowspan="18">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>12</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="1" column="0" rowspan="18">
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>8</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QCheckBox" name="checkNoUpdateReminder">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelNoUpdateReminder">
+            <property name="text">
+             <string>Never show auto-update notifications on application startup</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_14">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </item>
        </layout>
       </item>
@@ -505,10 +505,6 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
  <tabstops>
   <tabstop>closeButton</tabstop>
   <tabstop>resetButton</tabstop>
-  <tabstop>checkRunNextJob</tabstop>
-  <tabstop>spinBoxJobCount</tabstop>
-  <tabstop>checkUse64BitAvs2YUV</tabstop>
-  <tabstop>checkShutdownComputer</tabstop>
  </tabstops>
  <resources>
   <include location="../res/resources.qrc"/>

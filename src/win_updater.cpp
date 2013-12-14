@@ -47,6 +47,7 @@
 	ui->labelLoadingLeft->setVisible((FLAG)); \
 	ui->labelLoadingCenter->setVisible((FLAG)); \
 	ui->labelLoadingRight->setVisible((FLAG)); \
+	ui->labelBuildNo->setVisible(!(FLAG)); \
 	ui->labelInfo->setVisible(!(FLAG)); \
 	ui->labelUrl->setVisible(!(FLAG)); \
 	if((FLAG)) m_animator->start(); else m_animator->stop(); \
@@ -66,6 +67,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
 	m_status(UpdateCheckThread::UpdateStatus_NotStartedYet),
 	m_thread(NULL),
 	m_updaterProcess(NULL),
+	m_success(false),
 	m_firstShow(true)
 {
 	//Init the dialog, from the .ui file
@@ -96,6 +98,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
 	//Hide labels
 	ui->labelInfo->hide();
 	ui->labelUrl->hide();
+	ui->labelBuildNo->hide();
 }
 
 UpdaterDialog::~UpdaterDialog(void)
@@ -146,7 +149,7 @@ void UpdaterDialog::showEvent(QShowEvent *event)
 	if(m_firstShow)
 	{
 		m_firstShow = false;
-		QTimer::singleShot(0, this, SLOT(initUpdate()));
+		QTimer::singleShot(16, this, SLOT(initUpdate()));
 	}
 }
 
@@ -204,7 +207,7 @@ void UpdaterDialog::initUpdate(void)
 	}
 
 	//Begin updater run
-	QTimer::singleShot(125, this, SLOT(checkForUpdates()));
+	QTimer::singleShot(16, this, SLOT(checkForUpdates()));
 }
 
 void UpdaterDialog::checkForUpdates(void)
@@ -216,6 +219,7 @@ void UpdaterDialog::checkForUpdates(void)
 
 	//Clear texts
 	ui->retranslateUi(this);
+	ui->labelBuildNo->setText(tr("Installed build is #%1  |  Latest build is #%2").arg(QString::number(x264_version_build()), tr("N/A")));
 
 	//Init buttons
 	ui->buttonCancel->setEnabled(false);
@@ -240,7 +244,7 @@ void UpdaterDialog::checkForUpdates(void)
 	m_logFile.clear();
 
 	//Start the updater thread
-	QTimer::singleShot(125, m_thread, SLOT(start()));
+	QTimer::singleShot(250, m_thread, SLOT(start()));
 }
 
 void UpdaterDialog::threadStatusChanged(int status)
@@ -291,6 +295,12 @@ void UpdaterDialog::threadStatusChanged(int status)
 
 void UpdaterDialog::threadFinished(void)
 {
+	m_success = m_thread->getSuccess();
+	QTimer::singleShot((m_success ? 1000 : 0), this, SLOT(updateFinished()));
+}
+
+void UpdaterDialog::updateFinished(void)
+{
 	//Restore cursor
 	QApplication::restoreOverrideCursor();
 
@@ -309,7 +319,7 @@ void UpdaterDialog::threadFinished(void)
 			UPDATE_TEXT(3, tr("Your version is up-to-date."));
 			break;
 		case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
-			UPDATE_ICON(3, "shield_error");
+			UPDATE_ICON(3, "shield_blue");
 			UPDATE_TEXT(3, tr("You are using a pre-release version!"));
 			break;
 		default:
@@ -324,6 +334,7 @@ void UpdaterDialog::threadFinished(void)
 	case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
 	case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
 		SHOW_ANIMATION(false);
+		ui->labelBuildNo->setText(tr("Installed build is #%1  |  Latest build is #%2").arg(QString::number(x264_version_build()), QString::number(m_thread->getUpdateInfo()->m_buildNo)));
 		ui->labelUrl->setText(QString("<a href=\"%1\">%1</a>").arg(m_thread->getUpdateInfo()->m_downloadSite));
 		break;
 	case UpdateCheckThread::UpdateStatus_ErrorNoConnection:
@@ -411,7 +422,7 @@ void UpdaterDialog::installUpdate(void)
 
 	if(process.exitCode() == 0)
 	{
-		done(42);
+		done(READY_TO_INSTALL_UPDATE);
 	}
 }
 

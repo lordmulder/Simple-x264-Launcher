@@ -49,6 +49,7 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 	preferences->m_processPriority = -1;
 	preferences->m_enableSounds = false;
 	preferences->m_disableWarnings = false;
+	preferences->m_noUpdateReminder = false;
 }
 
 void PreferencesModel::loadPreferences(PreferencesModel *preferences)
@@ -69,6 +70,7 @@ void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 	preferences->m_processPriority = settings.value("process_priority", QVariant(defaults.m_processPriority)).toInt();
 	preferences->m_enableSounds = settings.value("enable_sounds", QVariant(defaults.m_enableSounds)).toBool();
 	preferences->m_disableWarnings = settings.value("disable_warnings", QVariant(defaults.m_disableWarnings)).toBool();
+	preferences->m_noUpdateReminder = settings.value("disable_update_reminder", QVariant(defaults.m_disableWarnings)).toBool();
 }
 
 void PreferencesModel::savePreferences(PreferencesModel *preferences)
@@ -87,5 +89,6 @@ void PreferencesModel::savePreferences(PreferencesModel *preferences)
 	settings.setValue("process_priority", preferences->m_processPriority);
 	settings.setValue("enable_sounds", preferences->m_enableSounds);
 	settings.setValue("disable_warnings", preferences->m_disableWarnings);
+	settings.setValue("disable_update_reminder", preferences->m_noUpdateReminder);
 	settings.sync();
 }

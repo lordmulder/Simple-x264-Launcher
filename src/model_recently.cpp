@@ -26,6 +26,7 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QSettings>
+#include <QDate>
 
 #define ARRAY_SIZE(ARRAY) (sizeof((ARRAY))/sizeof((ARRAY[0])))
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
@@ -33,10 +34,23 @@
 static const char *KEY_FILTER_IDX = "path/filterIndex";
 static const char *KEY_SOURCE_DIR = "path/directory_openFrom";
 static const char *KEY_OUTPUT_DIR = "path/directory_saveTo";
+static const char *KEY_UPDATE_CHK = "auto_update/last_successfull_check";
+
+static void READ_INT(QSettings &settings, const QString &key, int default, int *value)
+{
+	bool ok = false;
+	const int temp = settings.value(key, default).toInt(&ok);
+	*value = (ok) ? temp : default;
+}
 
 RecentlyUsed::RecentlyUsed(void)
 {
 	initRecentlyUsed(this);
+}
+
+RecentlyUsed::~RecentlyUsed(void)
+{
+	/*nothing to do*/
 }
 
 void RecentlyUsed::initRecentlyUsed(RecentlyUsed *recentlyUsed)
@@ -44,16 +58,19 @@ void RecentlyUsed::initRecentlyUsed(RecentlyUsed *recentlyUsed)
 	recentlyUsed->m_sourceDirectory = QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation));
 	recentlyUsed->m_outputDirectory = QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation));
 	recentlyUsed->m_filterIndex = 0;
+	recentlyUsed->m_lastUpdateCheck = QDate(1969, 8, 15).toJulianDay();
 }
 
 void RecentlyUsed::loadRecentlyUsed(RecentlyUsed *recentlyUsed)
 {
 	RecentlyUsed defaults;
-	
 	QSettings settings(QString("%1/last.ini").arg(x264_data_path()), QSettings::IniFormat);
+	int temp = 0;
+
 	recentlyUsed->m_sourceDirectory = settings.value(KEY_SOURCE_DIR, defaults.m_sourceDirectory).toString();
 	recentlyUsed->m_outputDirectory = settings.value(KEY_OUTPUT_DIR, defaults.m_outputDirectory).toString();
-	recentlyUsed->m_filterIndex = settings.value(KEY_FILTER_IDX, defaults.m_filterIndex).toInt();
+	READ_INT(settings, KEY_FILTER_IDX, defaults.m_filterIndex,     &recentlyUsed->m_filterIndex);
+	READ_INT(settings, KEY_UPDATE_CHK, defaults.m_lastUpdateCheck, &recentlyUsed->m_lastUpdateCheck);
 
 	if(!VALID_DIR(recentlyUsed->m_sourceDirectory)) recentlyUsed->m_sourceDirectory = defaults.m_sourceDirectory;
 	if(!VALID_DIR(recentlyUsed->m_outputDirectory)) recentlyUsed->m_outputDirectory = defaults.m_outputDirectory;
@@ -68,6 +85,11 @@ void RecentlyUsed::saveRecentlyUsed(RecentlyUsed *recentlyUsed)
 		settings.setValue(KEY_SOURCE_DIR, recentlyUsed->m_sourceDirectory);
 		settings.setValue(KEY_OUTPUT_DIR, recentlyUsed->m_outputDirectory);
 		settings.setValue(KEY_FILTER_IDX, recentlyUsed->m_filterIndex);
+		settings.setValue(KEY_UPDATE_CHK, recentlyUsed->m_lastUpdateCheck);
 		settings.sync();
+	}
+	else
+	{
+		qWarning("Settings are not writable!");
 	}
 }

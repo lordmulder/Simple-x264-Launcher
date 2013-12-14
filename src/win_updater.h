@@ -39,6 +39,10 @@ public:
 	UpdaterDialog(QWidget *parent, const QString &binDir);
 	~UpdaterDialog(void);
 
+	static const int READY_TO_INSTALL_UPDATE = 42;
+
+	inline bool getSuccess(void) { return m_success; }
+
 protected:
 	virtual bool event(QEvent *e);
 	virtual void showEvent(QShowEvent *event);
@@ -51,6 +55,7 @@ private slots:
 	void threadStatusChanged(int status);
 	void threadMessageLogged(const QString &message);
 	void threadFinished(void);
+	void updateFinished(void);
 	void openUrl(const QString &url);
 	void installUpdate(void);
 
@@ -61,6 +66,7 @@ private:
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
 
 	bool m_firstShow;
+	bool m_success;
 	const QString m_binDir;
 	QMovie *m_animator;
 	UpdateCheckThread *m_thread;

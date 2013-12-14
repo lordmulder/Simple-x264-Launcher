@@ -30,7 +30,7 @@
 #include <QMouseEvent>
 #include <QMessageBox>
 
-static inline void UPDATE_CHECKBOX(QCheckBox *const chkbox, const bool value, const bool block)
+static inline void UPDATE_CHECKBOX(QCheckBox *const chkbox, const bool value, const bool block = false)
 {
 	if(block) { chkbox->blockSignals(true); }
 	if(chkbox->isChecked() != value) chkbox->click();
@@ -76,6 +76,10 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	ui->labelSaveToSourceFolder->installEventFilter(this);
 	ui->labelEnableSounds->installEventFilter(this);
 	ui->labelDisableWarnings->installEventFilter(this);
+	ui->labelNoUpdateReminder->installEventFilter(this);
+
+	ui->checkBoxDummy1->installEventFilter(this);
+	ui->checkBoxDummy2->installEventFilter(this);
 
 	connect(ui->resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
 	connect(ui->checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
@@ -93,12 +97,13 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 {
 	if(event) QDialog::showEvent(event);
 	
-	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->autoRunNextJob(),   false);
-	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->shutdownComputer(), false);
-	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->useAvisyth64Bit(),  false);
-	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->saveLogFiles(),     false);
-	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->saveToSourcePath(), false);
-	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->enableSounds(),     false);
+	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->autoRunNextJob());
+	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->shutdownComputer());
+	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->useAvisyth64Bit());
+	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->saveLogFiles());
+	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->saveToSourcePath());
+	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->enableSounds());
+	UPDATE_CHECKBOX(ui->checkNoUpdateReminder,   m_preferences->noUpdateReminder());
 	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->disableWarnings(),  true);
 	UPDATE_CHECKBOX(ui->checkUse10BitEncoding,   m_preferences->use10BitEncoding(), true);
 
@@ -112,14 +117,23 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 
 bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 {
-	emulateMouseEvent(o, e, ui->labelRunNextJob,         ui->checkRunNextJob);
-	emulateMouseEvent(o, e, ui->labelShutdownComputer,   ui->checkShutdownComputer);
-	emulateMouseEvent(o, e, ui->labelUse10BitEncoding,   ui->checkUse10BitEncoding);
-	emulateMouseEvent(o, e, ui->labelUse64BitAvs2YUV,    ui->checkUse64BitAvs2YUV);
-	emulateMouseEvent(o, e, ui->labelSaveLogFiles,       ui->checkSaveLogFiles);
-	emulateMouseEvent(o, e, ui->labelSaveToSourceFolder, ui->checkSaveToSourceFolder);
-	emulateMouseEvent(o, e, ui->labelEnableSounds,       ui->checkEnableSounds);
-	emulateMouseEvent(o, e, ui->labelDisableWarnings,    ui->checkDisableWarnings);
+	if(e->type() == QEvent::Paint)
+	{
+		if(o == ui->checkBoxDummy1) return true;
+		if(o == ui->checkBoxDummy2) return true;
+	}
+	else if((e->type() == QEvent::MouseButtonPress) || (e->type() == QEvent::MouseButtonRelease))
+	{
+		emulateMouseEvent(o, e, ui->labelRunNextJob,         ui->checkRunNextJob);
+		emulateMouseEvent(o, e, ui->labelShutdownComputer,   ui->checkShutdownComputer);
+		emulateMouseEvent(o, e, ui->labelUse10BitEncoding,   ui->checkUse10BitEncoding);
+		emulateMouseEvent(o, e, ui->labelUse64BitAvs2YUV,    ui->checkUse64BitAvs2YUV);
+		emulateMouseEvent(o, e, ui->labelSaveLogFiles,       ui->checkSaveLogFiles);
+		emulateMouseEvent(o, e, ui->labelSaveToSourceFolder, ui->checkSaveToSourceFolder);
+		emulateMouseEvent(o, e, ui->labelEnableSounds,       ui->checkEnableSounds);
+		emulateMouseEvent(o, e, ui->labelDisableWarnings,    ui->checkDisableWarnings);
+		emulateMouseEvent(o, e, ui->labelNoUpdateReminder,   ui->checkNoUpdateReminder);
+	}
 	return false;
 }
 
@@ -127,18 +141,15 @@ void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidge
 {
 	if(object == source)
 	{
-		if((event->type() == QEvent::MouseButtonPress) || (event->type() == QEvent::MouseButtonRelease))
+		if(QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event))
 		{
-			if(QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event))
-			{
-				qApp->postEvent(target, new QMouseEvent
-				(
-					event->type(),
-					qApp->widgetAt(mouseEvent->globalPos()) == source ? QPoint(1, 1) : QPoint(INT_MAX, INT_MAX),
-					Qt::LeftButton,
-					0, 0
-				));
-			}
+			qApp->postEvent(target, new QMouseEvent
+			(
+				event->type(),
+				(qApp->widgetAt(mouseEvent->globalPos()) == source) ? QPoint(1, 1) : QPoint(INT_MAX, INT_MAX),
+				Qt::LeftButton,
+				0, 0
+			));
 		}
 	}
 }
@@ -155,6 +166,7 @@ void PreferencesDialog::done(int n)
 	m_preferences->setProcessPriority(ui->comboBoxPriority->itemData(ui->comboBoxPriority->currentIndex()).toInt());
 	m_preferences->setEnableSounds(ui->checkEnableSounds->isChecked());
 	m_preferences->setDisableWarnings(ui->checkDisableWarnings->isChecked());
+	m_preferences->setNoUpdateReminder(ui->checkNoUpdateReminder->isChecked());
 
 	PreferencesModel::savePreferences(m_preferences);
 	QDialog::done(n);

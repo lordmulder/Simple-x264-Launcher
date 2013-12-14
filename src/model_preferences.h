@@ -37,6 +37,7 @@ public:
 	int processPriority(void) { return m_processPriority; }
 	bool enableSounds(void) { return m_enableSounds; }
 	bool disableWarnings(void) { return m_disableWarnings; }
+	bool noUpdateReminder(void) { return m_noUpdateReminder; }
 
 	//Setter
 	void setAutoRunNextJob(const bool autoRunNextJob) { m_autoRunNextJob = autoRunNextJob; }
@@ -49,6 +50,7 @@ public:
 	void setProcessPriority(const int processPriority) { m_processPriority = processPriority; }
 	void setEnableSounds(const bool enableSounds) { m_enableSounds = enableSounds; }
 	void setDisableWarnings(const bool disableWarnings) { m_disableWarnings = disableWarnings; }
+	void setNoUpdateReminder(const bool noUpdateReminder) { m_noUpdateReminder = noUpdateReminder; }
 
 	//Static
 	static void initPreferences(PreferencesModel *preferences);
@@ -66,4 +68,5 @@ protected:
 	int m_processPriority;
 	bool m_enableSounds;
 	bool m_disableWarnings;
+	bool m_noUpdateReminder;
 };

@@ -39,6 +39,7 @@ class RecentlyUsed
 {
 public:
 	RecentlyUsed(void);
+	~RecentlyUsed(void);
 
 	static void initRecentlyUsed(RecentlyUsed *recentlyUsed);
 	static void loadRecentlyUsed(RecentlyUsed *recentlyUsed);
@@ -47,15 +48,18 @@ public:
 	//Getter
 	QString sourceDirectory(void) { return m_sourceDirectory; }
 	QString outputDirectory(void) { return m_outputDirectory; }
-	int filterIndex(void) { return m_filterIndex; }
+	int filterIndex(void)         { return m_filterIndex; }
+	int lastUpdateCheck(void)     { return m_lastUpdateCheck; }
 
 	//Setter
 	void setSourceDirectory(const QString &sourceDirectory) { m_sourceDirectory = sourceDirectory; }
 	void setOutputDirectory(const QString &outputDirectory) { m_outputDirectory = outputDirectory; }
-	void setFilterIndex(const int filterIndex) { m_filterIndex = filterIndex; }
+	void setFilterIndex(const int filterIndex)              { m_filterIndex = filterIndex; }
+	void setLastUpdateCheck(const int updateCheck)          { m_lastUpdateCheck = updateCheck; }
 
 protected:
 	QString m_sourceDirectory;
 	QString m_outputDirectory;
 	int m_filterIndex;
+	int m_lastUpdateCheck;
 };

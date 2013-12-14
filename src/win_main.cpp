@@ -56,7 +56,7 @@
 #include <ctime>
 
 const char *home_url = "http://muldersoft.com/";
-const char *update_url = "http://code.google.com/p/mulder/downloads/list";
+const char *update_url = "https://github.com/lordmulder/Simple-x264-Launcher/releases/latest";
 const char *tpl_last = "<LAST_USED>";
 
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
@@ -868,21 +868,44 @@ void MainWindow::init(void)
 		qDebug(" ");
 	}
 
+	//Update initialized flag (must do this before update check!)
+	m_initialized = true;
+
+	//Enable drag&drop support for this window, required for Qt v4.8.4+
+	setAcceptDrops(true);
+
 	//Check for expiration
-	if(x264_version_date().addMonths(6) < QDate::currentDate())
+	if(x264_version_date().addMonths(6) < x264_current_date_safe())
 	{
+		QString text;
+		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 6 months old!").replace("-", "&minus;"));
+		text += QString("<nobr><tt>%1<br><a href=\"%2\">%2</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace("-", "&minus;"), QString::fromLatin1(update_url));
+		text += QString("<nobr><tt>%1</tt></nobr><br>").arg(tr("Alternatively, click 'Check for Updates' to run the auto-update utility.").replace("-", "&minus;"));
 		QMessageBox msgBox(this);
 		msgBox.setIconPixmap(QIcon(":/images/update.png").pixmap(56,56));
 		msgBox.setWindowTitle(tr("Update Notification"));
 		msgBox.setWindowFlags(Qt::Window | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
-		msgBox.setText(tr("<nobr><tt>Your version of 'Simple x264 Launcher' is more than 6 months old!<br><br>Please download the most recent version from the official web-site at:<br><a href=\"%1\">%1</a><br></tt></nobr>").replace("-", "&minus;").arg(update_url));
-		QPushButton *btn1 = msgBox.addButton(tr("Discard"), QMessageBox::NoRole);
-		QPushButton *btn2 = msgBox.addButton(tr("Discard"), QMessageBox::AcceptRole);
-		btn1->setEnabled(false);
-		btn2->setVisible(false);
-		QTimer::singleShot(5000, btn1, SLOT(hide()));
-		QTimer::singleShot(5000, btn2, SLOT(show()));
-		msgBox.exec();
+		msgBox.setText(text);
+		QPushButton *btn1 = msgBox.addButton(tr("Check for Updates"), QMessageBox::AcceptRole);
+		QPushButton *btn2 = msgBox.addButton(tr("Discard"), QMessageBox::NoRole);
+		QPushButton *btn3 = msgBox.addButton(btn2->text(), QMessageBox::RejectRole);
+		btn2->setEnabled(false);
+		btn3->setVisible(false);
+		QTimer::singleShot(7500, btn2, SLOT(hide()));
+		QTimer::singleShot(7500, btn3, SLOT(show()));
+		if(msgBox.exec() == 0)
+		{
+			QTimer::singleShot(0, this, SLOT(checkUpdates()));
+			return;
+		}
+	}
+	else if((!m_preferences->noUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
+	{
+		if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
+		{
+			QTimer::singleShot(0, this, SLOT(checkUpdates()));
+			return;
+		}
 	}
 
 	//Add files from command-line
@@ -905,15 +928,6 @@ void MainWindow::init(void)
 	{
 		createJobMultiple(files);
 	}
-
-	//Enable drag&drop support for this window, required for Qt v4.8.4+
-	setAcceptDrops(true);
-
-	//Update initialized flag
-	m_initialized = true;
-
-	//FIXME
-	QTimer::singleShot(333, this, SLOT(checkUpdates()));
 }
 
 /*
@@ -980,10 +994,15 @@ void MainWindow::checkUpdates(void)
 	UpdaterDialog *updater = new UpdaterDialog(this, QString("%1/toolset").arg(m_appDir));
 	const int ret = updater->exec();
 
-	if(ret == 42)
+	if(updater->getSuccess())
 	{
-		X264_DELETE(updater);
-		qWarning("Exitting to install update...");
+		m_recentlyUsed->setLastUpdateCheck(x264_current_date_safe().toJulianDay());
+		RecentlyUsed::saveRecentlyUsed(m_recentlyUsed);
+	}
+
+	if(ret == UpdaterDialog::READY_TO_INSTALL_UPDATE)
+	{
+		qWarning("Exitting program to install update...");
 		close();
 		QApplication::quit();
 	}

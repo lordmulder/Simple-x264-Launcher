@@ -52,6 +52,7 @@
     <file>images/movie.png</file>
     <file>images/python.png</file>
     <file>images/update.png</file>
+    <file>images/update_wizard.png</file>
     <file>images/x264.png</file>
   </qresource>
 </RCC>

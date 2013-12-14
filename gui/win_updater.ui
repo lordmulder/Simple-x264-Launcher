@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>410</width>
-    <height>273</height>
+    <width>428</width>
+    <height>257</height>
    </rect>
   </property>
   <property name="palette">
@@ -78,7 +78,7 @@
    </palette>
   </property>
   <property name="windowTitle">
-   <string>Web-Update</string>
+   <string>Web Update</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../res/resources.qrc">
@@ -98,21 +98,21 @@
           <widget class="QLabel" name="logo">
            <property name="minimumSize">
             <size>
-             <width>72</width>
-             <height>72</height>
+             <width>96</width>
+             <height>182</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>72</width>
-             <height>72</height>
+             <width>96</width>
+             <height>182</height>
             </size>
            </property>
            <property name="text">
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../res/resources.qrc">:/images/update.png</pixmap>
+            <pixmap resource="../res/resources.qrc">:/images/update_wizard.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -144,7 +144,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>32</width>
+           <width>20</width>
            <height>20</height>
           </size>
          </property>
@@ -152,22 +152,6 @@
        </item>
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_2">
-         <item>
-          <spacer name="verticalSpacer_3">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>6</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
@@ -234,7 +218,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>10</height>
+             <height>8</height>
             </size>
            </property>
           </spacer>
@@ -305,7 +289,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>10</height>
+             <height>8</height>
             </size>
            </property>
           </spacer>

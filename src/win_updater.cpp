@@ -310,7 +310,7 @@ void UpdaterDialog::threadFinished(void)
 			break;
 		case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
 			UPDATE_ICON(3, "shield_error");
-			UPDATE_TEXT(3, tr("Your are using a pre-release version!"));
+			UPDATE_TEXT(3, tr("You are using a pre-release version!"));
 			break;
 		default:
 			qWarning("Update thread succeeded with unexpected status code: %d", m_status);

@@ -132,7 +132,6 @@ VIAddVersionKey "Website" "${MyWebSite}"
 ;MUI2 Interface Settings
 ;--------------------------------
 
-!define MUI_INSTFILESPAGE_COLORS "C5DEFB 000000"
 !define MUI_ABORTWARNING
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT HKLM
 !define MUI_STARTMENUPAGE_REGISTRY_KEY "${MyRegPath}"

@@ -1,5 +1,5 @@
 ﻿; ///////////////////////////////////////////////////////////////////////////////
-; // LameXP - Audio Encoder Front-End
+; // Simple x264 Launcher
 ; // Copyright (C) 2004-2011 LoRd_MuldeR <MuldeR2@GMX.de>
 ; //
 ; // This program is free software; you can redistribute it and/or modify
@@ -38,5 +38,5 @@ LangString X264_LANG_LINK_CHANGELOG      ${LANG_ENGLISH} "Version History"
 LangString X264_LANG_LINK_TRANSLATE      ${LANG_ENGLISH} "Translator's Guide"
 LangString X264_LANG_LINK_UNINSTALL      ${LANG_ENGLISH} "Uninstall"
 LangString X264_LANG_LINK_FAQ            ${LANG_ENGLISH} "Frequently Asked Questions"
-LangString X264_LANG_LINK_MANUAL         ${LANG_ENGLISH} "User Manual"
+LangString X264_LANG_LINK_MANUAL         ${LANG_ENGLISH} "User Manual (Readme)"
 LangString X264_LANG_PRERELEASE_WARNING  ${LANG_ENGLISH} "You are about to install a Demo (pre-release) version of Simple x264 Launcher!"

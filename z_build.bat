@@ -127,61 +127,28 @@ attrib +R "%PACK_PATH%\*.txt"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Setup install parameters
 REM ///////////////////////////////////////////////////////////////////////////
-set "NSI_FILE=%TMP%\~%RANDOM%%RANDOM%.nsi"
-set "OUT_NAME=x264_x64.%ISO_DATE%"
-set "OUT_PATH=%~dp0\bin"
-set "OUT_FULL=%OUT_PATH%\%OUT_NAME%.exe"
+set "OUT_PATH=%~dp0bin\x264_x64.%ISO_DATE%"
 :GenerateOutfileName
-if exist "%OUT_FULL%" (
-	set "OUT_NAME=%OUT_NAME%.new"
-	set "OUT_FULL=%OUT_PATH%\%OUT_NAME%.exe"
+if exist "%OUT_PATH%.exe" (
+	set "OUT_PATH=%OUT_PATH%.new"
+	goto GenerateOutfileName
+)
+if exist "%OUT_PATH%.sfx" (
+	set "OUT_PATH=%OUT_PATH%.new"
 	goto GenerateOutfileName
 )
 
 REM ///////////////////////////////////////////////////////////////////////////
-REM // Generate install script
-REM ///////////////////////////////////////////////////////////////////////////
-echo #Generated File - Do NOT modify! > "%NSI_FILE%"
-echo !define ZIP2EXE_NAME `Simple x264 Launcher (%ISO_DATE%)` >> "%NSI_FILE%"
-echo !define ZIP2EXE_OUTFILE `%OUT_FULL%` >> "%NSI_FILE%"
-echo !define ZIP2EXE_COMPRESSOR_LZMA >> "%NSI_FILE%"
-echo !define ZIP2EXE_COMPRESSOR_SOLID  >> "%NSI_FILE%"
-echo !define ZIP2EXE_INSTALLDIR `$PROGRAMFILES\MuldeR\Simple x264 Launcher v2` >> "%NSI_FILE%"
-echo !define ZIP2EXE_REGPATH `SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{986E454F-DACA-4326-A9C7-3E46C0BFFDCE}` >> "%NSI_FILE%"
-echo !define MUI_INSTFILESPAGE_COLORS "C5DEFB 000000" >> "%NSI_FILE%"
-echo RequestExecutionLevel Admin >> "%NSI_FILE%"
-echo ShowInstDetails show >> "%NSI_FILE%"
-echo BrandingText `Created: %ISO_DATE%, %ISO_TIME% [Build #%BUILD_NO%]` >> "%NSI_FILE%"
-echo InstallDirRegKey HKLM `${ZIP2EXE_REGPATH}` InstallLocation >> "%NSI_FILE%"
-echo !include `${NSISDIR}\Contrib\zip2exe\Base.nsh` >> "%NSI_FILE%"
-echo SetCompressorDictSize 96 >> "%NSI_FILE%"
-echo !include `${NSISDIR}\Contrib\zip2exe\Modern.nsh` >> "%NSI_FILE%"
-echo !include `%~dp0\etc\check_os.nsh` >> "%NSI_FILE%"
-echo !include `%~dp0\etc\finalization.nsh` >> "%NSI_FILE%"
-echo !include `%~dp0\etc\version.nsh` >> "%NSI_FILE%"
-echo !insertmacro X264_VERSIONINFO `%ISO_DATE%` `%ISO_TIME%` `%BUILD_NO%` >> "%NSI_FILE%"
-echo !insertmacro SECTION_BEGIN >> "%NSI_FILE%"
-echo Delete `$INSTDIR\*.exe` >> "%NSI_FILE%"
-echo Delete `$INSTDIR\*.dll` >> "%NSI_FILE%"
-echo Delete `$INSTDIR\toolset\*.exe` >> "%NSI_FILE%"
-echo Delete `$INSTDIR\toolset\x86\*.exe` >> "%NSI_FILE%"
-echo Delete `$INSTDIR\toolset\x86\*.dll` >> "%NSI_FILE%"
-echo Delete `$INSTDIR\toolset\x64\*.exe` >> "%NSI_FILE%"
-echo Delete `$INSTDIR\toolset\x64\*.dll` >> "%NSI_FILE%"
-echo File /a /r `%PACK_PATH%\*.exe` >> "%NSI_FILE%"
-echo File /a /r `%PACK_PATH%\*.dll` >> "%NSI_FILE%"
-echo File /a /r `%PACK_PATH%\*.txt` >> "%NSI_FILE%"
-echo WriteRegStr HKLM `${ZIP2EXE_REGPATH}` InstallLocation `$INSTDIR` >> "%NSI_FILE%"
-echo !include `%~dp0\etc\shortcut.nsh` >> "%NSI_FILE%"
-echo !insertmacro SECTION_END >> "%NSI_FILE%"
-
-REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
 REM ///////////////////////////////////////////////////////////////////////////
-"%NSIS_PATH%\makensis.exe" "%NSI_FILE%"
+"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%UPX3_PATH%" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%"    "%~dp0\etc\setup\setup.nsi"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-attrib +R "%OUT_FULL%"
-del "%NSI_FILE%"
+
+"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%UPX3_PATH%" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.exe" "/DX264_SOURCE_FILE=%OUT_PATH%.sfx" "%~dp0\etc\setup\wrapper.nsi"
+if not "%ERRORLEVEL%"=="0" goto BuildError
+
+attrib +R "%OUT_PATH%.exe"
+attrib +R "%OUT_PATH%.sfx"
 rmdir /Q /S "%PACK_PATH%"
 
 REM ///////////////////////////////////////////////////////////////////////////

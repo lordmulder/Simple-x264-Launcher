@@ -437,18 +437,8 @@ Section "!Install Files"
 	SetOutPath "$INSTDIR\imageformats"
 	File /a `${X264_SOURCE_PATH}\imageformats\*.dll`
 
-	SetOutPath "$INSTDIR\toolset\x86"
-	File /a           `${X264_SOURCE_PATH}\toolset\x86\*.exe`
-	File /nonfatal /a `${X264_SOURCE_PATH}\toolset\x86\*.dll`
-
-	SetOutPath "$INSTDIR\toolset\x64"
-	File /a           `${X264_SOURCE_PATH}\toolset\x64\*.exe`
-	File /nonfatal /a `${X264_SOURCE_PATH}\toolset\x64\*.dll`
-
-	SetOutPath "$INSTDIR\toolset\common"
-	File /a           `${X264_SOURCE_PATH}\toolset\common\*.exe`
-	File /a           `${X264_SOURCE_PATH}\toolset\common\*.gpg`
-	File /nonfatal /a `${X264_SOURCE_PATH}\toolset\common\*.dll`
+	SetOutPath "$INSTDIR\toolset"
+	File /a /r `${X264_SOURCE_PATH}\toolset\*.*`
 
 	SetOutPath "$INSTDIR"
 	File /a `${X264_SOURCE_PATH}\*.dll`

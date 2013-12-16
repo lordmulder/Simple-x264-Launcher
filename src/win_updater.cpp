@@ -42,14 +42,18 @@
 #define UPDATE_TEXT(N, TEXT) ui->label_phase##N->setText((TEXT))
 #define UPDATE_ICON(N, ICON) ui->icon_phase##N->setPixmap(QIcon(":/buttons/" ICON ".png").pixmap(16, 16))
 
+/*
+ui->labelLoadingLeft->setVisible((FLAG)); \
+ui->labelLoadingCenter->setVisible((FLAG)); \
+ui->labelLoadingRight->setVisible((FLAG)); \
+*/
+
 #define SHOW_ANIMATION(FLAG) do  \
 { \
-	ui->labelLoadingLeft->setVisible((FLAG)); \
-	ui->labelLoadingCenter->setVisible((FLAG)); \
-	ui->labelLoadingRight->setVisible((FLAG)); \
-	ui->labelBuildNo->setVisible(!(FLAG)); \
+	ui->frameAnimation->setVisible((FLAG)); \
 	ui->labelInfo->setVisible(!(FLAG)); \
 	ui->labelUrl->setVisible(!(FLAG)); \
+	ui->labelBuildNo->setVisible(!(FLAG)); \
 	if((FLAG)) m_animator->start(); else m_animator->stop(); \
 } \
 while(0)
@@ -88,17 +92,14 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
 	//Init animation
 	m_animator = new QMovie(":/images/loading.gif");
 	ui->labelLoadingCenter->setMovie(m_animator);
-	m_animator->start();
 
 	//Init buttons
 	ui->buttonCancel->setEnabled(false);
 	ui->buttonRetry->hide();
 	ui->buttonDownload->hide();
 
-	//Hide labels
-	ui->labelInfo->hide();
-	ui->labelUrl->hide();
-	ui->labelBuildNo->hide();
+	//Start animation
+	SHOW_ANIMATION(true);
 }
 
 UpdaterDialog::~UpdaterDialog(void)
@@ -192,8 +193,21 @@ void UpdaterDialog::initUpdate(void)
 	{
 		ui->buttonCancel->setEnabled(true);
 		QMessageBox::critical(this, tr("File Error"), tr("At least one file required by web-update is missing or corrupted.<br>Please re-install this application and then try again!"));
-		close();
-		return;
+		close(); return;
+	}
+
+	//Make sure user does have admin access
+	if(!x264_user_is_admin())
+	{
+		qWarning("User is not in the \"admin\" group, cannot update!");
+		QString message;
+		message += QString("<nobr>%1</nobr><br>").arg(tr("Sorry, but only users in the \"Administrators\" group can install updates."));
+		message += QString("<nobr>%1</nobr>").arg(tr("Please start application from an administrator account and try again!"));
+		if(QMessageBox::critical(this, this->windowTitle(), message, tr("Discard"), tr("Ignore")) != 1)
+		{
+			ui->buttonCancel->setEnabled(true);
+			close(); return;
+		}
 	}
 	
 	//Create and setup thread
@@ -464,6 +478,7 @@ bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 		{
 			binaries.insert(FILE_INFO[i].name, binPath);
 		}
+		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	}
 
 	if(okay)

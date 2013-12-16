@@ -390,7 +390,7 @@ static unsigned int x264_mix(const unsigned int x, const unsigned int y, const u
 
 /*
  * Seeds the random number generator
- * Note: Altough rand_s() doesn't need a seed, this must be called pripr to lamexp_rand(), just to to be sure!
+ * Note: Altough rand_s() doesn't need a seed, this must be called pripr to x264_rand(), just to to be sure!
  */
 void x264_seed_rand(void)
 {
@@ -1350,13 +1350,14 @@ static bool x264_event_filter(void *message, long *result)
 /*
  * Check for process elevation
  */
-static bool x264_check_elevation(void)
+static bool x264_process_is_elevated(bool *bIsUacEnabled = NULL)
 {
 	typedef enum { x264_token_elevationType_class = 18, x264_token_elevation_class = 20 } X264_TOKEN_INFORMATION_CLASS;
 	typedef enum { x264_elevationType_default = 1, x264_elevationType_full, x264_elevationType_limited } X264_TOKEN_ELEVATION_TYPE;
 
-	HANDLE hToken = NULL;
 	bool bIsProcessElevated = false;
+	if(bIsUacEnabled) *bIsUacEnabled = false;
+	HANDLE hToken = NULL;
 	
 	if(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
 	{
@@ -1374,9 +1375,14 @@ static bool x264_check_elevation(void)
 				case x264_elevationType_full:
 					qWarning("Process token elevation type: Full -> potential security risk!\n");
 					bIsProcessElevated = true;
+					if(bIsUacEnabled) *bIsUacEnabled = true;
 					break;
 				case x264_elevationType_limited:
 					qDebug("Process token elevation type: Limited -> not elevated.\n");
+					if(bIsUacEnabled) *bIsUacEnabled = true;
+					break;
+				default:
+					qWarning("Unknown tokenElevationType value: %d", tokenElevationType);
 					break;
 				}
 			}
@@ -1388,7 +1394,90 @@ static bool x264_check_elevation(void)
 		qWarning("Failed to open process token!");
 	}
 
-	return !bIsProcessElevated;
+	return bIsProcessElevated;
+}
+
+/*
+ * Check if the current user is an administartor (helper function)
+ */
+static bool x264_user_is_admin_helper(void)
+{
+	HANDLE hToken = NULL;
+	if(!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
+	{
+		return false;
+	}
+
+	DWORD dwSize = 0;
+	if(!GetTokenInformation(hToken, TokenGroups, NULL, 0, &dwSize))
+	{
+		if(GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+		{
+			CloseHandle(hToken);
+			return false;
+		}
+	}
+
+	PTOKEN_GROUPS lpGroups = (PTOKEN_GROUPS) malloc(dwSize);
+	if(!lpGroups)
+	{
+		CloseHandle(hToken);
+		return false;
+	}
+
+	if(!GetTokenInformation(hToken, TokenGroups, lpGroups, dwSize, &dwSize))
+	{
+		free(lpGroups);
+		CloseHandle(hToken);
+		return false;
+	}
+
+	PSID lpSid = NULL; SID_IDENTIFIER_AUTHORITY Authority = {SECURITY_NT_AUTHORITY};
+	if(!AllocateAndInitializeSid(&Authority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &lpSid))
+	{
+		free(lpGroups);
+		CloseHandle(hToken);
+		return false;
+	}
+
+	bool bResult = false;
+	for(DWORD i = 0; i < lpGroups->GroupCount; i++)
+	{
+		if(EqualSid(lpSid, lpGroups->Groups[i].Sid))
+		{
+			bResult = true;
+			break;
+		}
+	}
+
+	FreeSid(lpSid);
+	free(lpGroups);
+	CloseHandle(hToken);
+	return bResult;
+}
+
+/*
+ * Check if the current user is an administartor
+ */
+bool x264_user_is_admin(void)
+{
+	bool isAdmin = false;
+
+	//Check for process elevation and UAC support first!
+	if(x264_process_is_elevated(&isAdmin))
+	{
+		qWarning("Process is elevated -> user is admin!");
+		return true;
+	}
+	
+	//If not elevated and UAC is not available -> user must be in admin group!
+	if(isAdmin)
+	{
+		qDebug("UAC is disabled/unavailable -> checking for Administrators group");
+		isAdmin = x264_user_is_admin_helper();
+	}
+
+	return isAdmin;
 }
 
 /*
@@ -1547,7 +1636,7 @@ bool x264_init_qt(int argc, char* argv[])
 	*/
 
 	//Check for process elevation
-	if((!x264_check_elevation()) && (!x264_detect_wine()))
+	if(x264_process_is_elevated() && (!x264_detect_wine()))
 	{
 		QMessageBox messageBox(QMessageBox::Warning, "Simple x264 Launcher", "<nobr>Simple x264 Launcher was started with 'elevated' rights, altough it does not need these rights.<br>Running an applications with unnecessary rights is a potential security risk!</nobr>", QMessageBox::NoButton, NULL, Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowStaysOnTopHint);
 		messageBox.addButton("Quit Program (Recommended)", QMessageBox::NoRole);
@@ -2127,10 +2216,10 @@ bool x264_shutdown_computer(const QString &message, const unsigned long timeout,
 int x264_network_status(void)
 {
 	DWORD dwFlags;
-	const BOOL ret = (IsNetworkAlive(&dwFlags) == TRUE);
+	const BOOL ret = IsNetworkAlive(&dwFlags);
 	if(GetLastError() == 0)
 	{
-		return (ret == TRUE) ? x264_network_yes : x264_network_non;
+		return (ret != FALSE) ? x264_network_yes : x264_network_non;
 	}
 	return x264_network_err;
 }

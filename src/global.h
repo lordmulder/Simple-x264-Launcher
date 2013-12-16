@@ -154,6 +154,7 @@ bool x264_shutdown_computer(const QString &message, const unsigned long timeout,
 void x264_sleep(const unsigned int delay);
 bool x264_suspendProcess(const QProcess *proc, const bool suspend);
 const QString &x264_temp_directory(void);
+bool x264_user_is_admin(void);
 const char *x264_version_arch(void);
 unsigned int x264_version_build(void);
 const char *x264_version_compiler(void);

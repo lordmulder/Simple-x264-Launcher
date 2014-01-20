@@ -90,6 +90,8 @@ private:
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
 
+	void parseCommandLineArgs(void);
+
 private slots:
 	void addButtonPressed();
 	void openActionTriggered();

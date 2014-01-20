@@ -1352,32 +1352,29 @@ static bool x264_event_filter(void *message, long *result)
  */
 static bool x264_process_is_elevated(bool *bIsUacEnabled = NULL)
 {
-	typedef enum { x264_token_elevationType_class = 18, x264_token_elevation_class = 20 } X264_TOKEN_INFORMATION_CLASS;
-	typedef enum { x264_elevationType_default = 1, x264_elevationType_full, x264_elevationType_limited } X264_TOKEN_ELEVATION_TYPE;
-
 	bool bIsProcessElevated = false;
 	if(bIsUacEnabled) *bIsUacEnabled = false;
 	HANDLE hToken = NULL;
 	
 	if(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken))
 	{
-		X264_TOKEN_ELEVATION_TYPE tokenElevationType;
+		TOKEN_ELEVATION_TYPE tokenElevationType;
 		DWORD returnLength;
-		if(GetTokenInformation(hToken, (TOKEN_INFORMATION_CLASS) x264_token_elevationType_class, &tokenElevationType, sizeof(X264_TOKEN_ELEVATION_TYPE), &returnLength))
+		if(GetTokenInformation(hToken, TokenElevationType, &tokenElevationType, sizeof(TOKEN_ELEVATION_TYPE), &returnLength))
 		{
-			if(returnLength == sizeof(X264_TOKEN_ELEVATION_TYPE))
+			if(returnLength == sizeof(TOKEN_ELEVATION_TYPE))
 			{
 				switch(tokenElevationType)
 				{
-				case x264_elevationType_default:
+				case TokenElevationTypeDefault:
 					qDebug("Process token elevation type: Default -> UAC is disabled.\n");
 					break;
-				case x264_elevationType_full:
+				case TokenElevationTypeFull:
 					qWarning("Process token elevation type: Full -> potential security risk!\n");
 					bIsProcessElevated = true;
 					if(bIsUacEnabled) *bIsUacEnabled = true;
 					break;
-				case x264_elevationType_limited:
+				case TokenElevationTypeLimited:
 					qDebug("Process token elevation type: Limited -> not elevated.\n");
 					if(bIsUacEnabled) *bIsUacEnabled = true;
 					break;
@@ -1385,6 +1382,10 @@ static bool x264_process_is_elevated(bool *bIsUacEnabled = NULL)
 					qWarning("Unknown tokenElevationType value: %d", tokenElevationType);
 					break;
 				}
+			}
+			else
+			{
+				qWarning("GetTokenInformation() return an unexpected size!");
 			}
 		}
 		CloseHandle(hToken);
@@ -1471,7 +1472,7 @@ bool x264_user_is_admin(void)
 	}
 	
 	//If not elevated and UAC is not available -> user must be in admin group!
-	if(isAdmin)
+	if(!isAdmin)
 	{
 		qDebug("UAC is disabled/unavailable -> checking for Administrators group");
 		isAdmin = x264_user_is_admin_helper();

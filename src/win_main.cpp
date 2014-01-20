@@ -909,25 +909,7 @@ void MainWindow::init(void)
 	}
 
 	//Add files from command-line
-	bool bAddFile = false;
-	QStringList files, args = qApp->arguments();
-	while(!args.isEmpty())
-	{
-		QString current = args.takeFirst();
-		if(!bAddFile)
-		{
-			bAddFile = (current.compare("--add", Qt::CaseInsensitive) == 0);
-			continue;
-		}
-		if((!current.startsWith("--")) && QFileInfo(current).exists() && QFileInfo(current).isFile())
-		{
-			files << QFileInfo(current).canonicalFilePath();
-		}
-	}
-	if(files.count() > 0)
-	{
-		createJobMultiple(files);
-	}
+	parseCommandLineArgs();
 }
 
 /*
@@ -1380,4 +1362,74 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 	}
 
 	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
+}
+
+/*
+ * Parse command-line arguments
+ */
+void MainWindow::parseCommandLineArgs(void)
+{
+	QStringList files, args = qApp->arguments();
+	while(!args.isEmpty())
+	{
+		QString current = args.takeFirst();
+		if((current.compare("--add", Qt::CaseInsensitive) == 0) || (current.compare("--add-file", Qt::CaseInsensitive) == 0))
+		{
+			if(!args.isEmpty())
+			{
+				current = args.takeFirst();
+				if(QFileInfo(current).exists() && QFileInfo(current).isFile())
+				{
+					files << QFileInfo(current).canonicalFilePath();
+				}
+				else
+				{
+					qWarning("File '%s' not found!", current.toUtf8().constData());
+				}
+			}
+			else
+			{
+				qWarning("Argument for '--add-file' is missing!");
+			}
+		}
+		else if(current.compare("--add-job", Qt::CaseInsensitive) == 0)
+		{
+			if(args.size() >= 3)
+			{
+				const QString fileSrc = args.takeFirst();
+				const QString fileOut = args.takeFirst();
+				const QString templId = args.takeFirst();
+				if(QFileInfo(fileSrc).exists() && QFileInfo(fileSrc).isFile())
+				{
+					OptionsModel options;
+					if(!(templId.isEmpty() || (templId.compare("-", Qt::CaseInsensitive) == 0)))
+					{
+						if(!OptionsModel::loadTemplate(&options, templId.trimmed()))
+						{
+							qWarning("Template '%s' could not be found -> using defaults!", templId.trimmed().toUtf8().constData());
+						}
+					}
+					appendJob(fileSrc, fileOut, &options, true);
+				}
+				else
+				{
+					qWarning("Source file '%s' not found!", fileSrc.toUtf8().constData());
+				}
+			}
+			else
+			{
+				qWarning("Argument(s) for '--add-job' are missing!");
+				args.clear();
+			}
+		}
+		else
+		{
+			qWarning("Unknown argument: %s", current.toUtf8().constData());
+		}
+	}
+
+	if(files.count() > 0)
+	{
+		createJobMultiple(files);
+	}
 }

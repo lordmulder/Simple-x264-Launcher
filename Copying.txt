@@ -2,4 +2,4 @@ Simple x264 Launcher was created from the scratch by LoRd_MuldeR <mulder2@gmx.de
 
 The Qt GUI Toolkit is Copyright (C) 2012 Digia Finland Ltd and/or its subsidiary(-ies). You may use, distribute and copy the Qt GUI Toolkit under the terms of GNU General Public License version 3.
 
-x264 is Copyright (C) 2003-2012 'x264 project' and is distributed under the terms of GNU General Public License. Avs2YUV was created by Loren Merritt and BugMaster.
+x264 is Copyright (C) 2003-2014 'x264 project' and is distributed under the terms of GNU General Public License. Avs2YUV was created by Loren Merritt and BugMaster.

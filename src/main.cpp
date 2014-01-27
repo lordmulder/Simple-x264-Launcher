@@ -21,6 +21,7 @@
 
 #include "global.h"
 #include "win_main.h"
+#include "ipc.h"
 #include "taskbar7.h"
 
 //Qt includes
@@ -32,6 +33,9 @@
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+
+//Forward declaration
+void handleMultipleInstances(QStringList args, IPC *ipc);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
@@ -62,7 +66,7 @@ static int x264_main(int argc, char* argv[])
 
 	//Get CLI arguments
 	const QStringList &arguments = x264_arguments();
-
+	
 	//Detect CPU capabilities
 	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(arguments);
 	qDebug("   CPU vendor id  :  %s (Intel: %s)", cpuFeatures.vendor, X264_BOOL(cpuFeatures.intel));
@@ -70,6 +74,23 @@ static int x264_main(int argc, char* argv[])
 	qDebug("   CPU signature  :  Family: %d, Model: %d, Stepping: %d", cpuFeatures.family, cpuFeatures.model, cpuFeatures.stepping);
 	qDebug("CPU capabilities  :  MMX=%s, MMXEXT=%s, SSE=%s, SSE2=%s, SSE3=%s, SSSE3=%s, X64=%s", X264_BOOL(cpuFeatures.mmx), X264_BOOL(cpuFeatures.mmx2), X264_BOOL(cpuFeatures.sse), X264_BOOL(cpuFeatures.sse2), X264_BOOL(cpuFeatures.sse3), X264_BOOL(cpuFeatures.ssse3), X264_BOOL(cpuFeatures.x64));
 	qDebug(" Number of CPU's  :  %d\n", cpuFeatures.count);
+
+	//Initialize the IPC handler class
+	bool firstInstance = false;
+	IPC *ipc = new IPC();
+	if(!ipc->initialize(firstInstance))
+	{
+		if(!firstInstance)
+		{
+			handleMultipleInstances(arguments, ipc);
+			X264_DELETE(ipc);
+			return 0;
+		}
+	}
+	else
+	{
+		qWarning("IPC initialization has failed!");
+	}
 
 	//Initialize Qt
 	if(!x264_init_qt(argc, argv))
@@ -104,6 +125,58 @@ static int x264_main(int argc, char* argv[])
 	
 	X264_DELETE(mainWin);
 	return ret;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Multi-instance handler
+///////////////////////////////////////////////////////////////////////////////
+
+void handleMultipleInstances(QStringList args, IPC *ipc)
+{
+	bool commandSent = false;
+
+	//Process all command-line arguments
+	while(!args.isEmpty())
+	{
+		const QString current = args.takeFirst();
+		if((current.compare("--add", Qt::CaseInsensitive) == 0) || (current.compare("--add-file", Qt::CaseInsensitive) == 0))
+		{
+			if(!args.isEmpty())
+			{
+				commandSent = true;
+				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst()))
+				{
+					break;
+				}
+			}
+			else
+			{
+				qWarning("Argument for '--add-file' is missing!");
+			}
+		}
+		else if(current.compare("--add-job", Qt::CaseInsensitive) == 0)
+		{
+			if(args.size() >= 3)
+			{
+				commandSent = true;
+				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_JOB, QStringList() << args.takeFirst() << args.takeFirst() << args.takeFirst()))
+				{
+					break;
+				}
+			}
+			else
+			{
+				qWarning("Argument(s) for '--add-job' are missing!");
+				args.clear();
+			}
+		}
+	}
+
+	//If no argument has been sent yet, send a ping!
+	if(!commandSent)
+	{
+		ipc->sendAsync(IPC::IPC_OPCODE_PING, QStringList());
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

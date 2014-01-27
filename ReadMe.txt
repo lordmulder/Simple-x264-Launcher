@@ -232,17 +232,20 @@ in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 
 The following command-line switches are available:
 
---add <file> [<file>] ..... Create new job(s) from files(s)
---console ................. Show the "debug" console
---no-console .............. Don't show the "debug" console
---no-style ................ Don't use the Qt "Plastique" style
---skip-avisynth-check ..... Skip Avisynth check, disable .AVS input
---skip-vapoursynth-check .. Skip VapourSynth check, disables .VPY input
---force-cpu-no-64bit ...... Forcefully disable 64-Bit support
---no-deadlock-detection ... Don't abort processes on timeout/deadlock
+--add-file <file> ............... Create a new job via "Add Job" dialog
+--add-job <src> <dest> <tpl> .... Create a new job in a non-interactive way
+--console ....................... Show the "debug" console
+--no-console .................... Don't show the "debug" console
+--no-style ...................... Don't use the Qt "Plastique" style
+--skip-avisynth-check ........... Skip Avisynth check, disable .AVS input
+--skip-vapoursynth-check ........ Skip VapourSynth check, disables .VPY input
+--force-cpu-no-64bit ............ Forcefully disable 64-Bit support
+--no-deadlock-detection ......... Don't abort processes on timeout/deadlock
 
-PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher,
-they can *not* be passed to x264 itself as "custom" parameters!
+HINT: Pass "-" as the <tpl> parameter to encode with *default* template.
+
+PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher, they
+can *not* be passed to x264 itself as "custom" parameters !!!
 
 
 14. Help & Support

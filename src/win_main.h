@@ -24,6 +24,7 @@
 #include "global.h"
 #include <QMainWindow>
 
+class IPC;
 class JobListModel;
 class OptionsModel;
 class QFile;
@@ -44,7 +45,7 @@ class MainWindow: public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(const x264_cpu_t *const cpuFeatures);
+	MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc);
 	~MainWindow(void);
 
 protected:
@@ -65,7 +66,7 @@ private:
 	bool m_initialized;
 
 	QLabel *m_label;
-	//IPCThread *m_ipcThread;
+	IPC *const m_ipc;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
@@ -101,7 +102,7 @@ private slots:
 	void checkUpdates(void);
 	void handleDroppedFiles(void);
 	void init(void);
-	void instanceCreated(unsigned int pid);
+	void handleCommand(const int &command, const QStringList &args);
 	void jobSelected(const QModelIndex &current, const QModelIndex &previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);

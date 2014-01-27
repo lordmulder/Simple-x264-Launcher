@@ -23,6 +23,7 @@
 #include "uic_win_main.h"
 
 #include "global.h"
+#include "ipc.h"
 #include "model_status.h"
 #include "model_jobList.h"
 #include "model_options.h"
@@ -72,9 +73,10 @@ const char *tpl_last = "<LAST_USED>";
 /*
  * Constructor
  */
-MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
+MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 :
 	m_cpuFeatures(cpuFeatures),
+	m_ipc(ipc),
 	m_appDir(QApplication::applicationDirPath()),
 	m_options(NULL),
 	m_jobList(NULL),
@@ -107,10 +109,6 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	//Create options object
 	m_options = new OptionsModel();
 	OptionsModel::loadTemplate(m_options, QString::fromLatin1(tpl_last));
-
-	//Create IPC thread object
-	//m_ipcThread = new IPCThread();
-	//connect(m_ipcThread, SIGNAL(instanceCreated(unsigned int)), this, SLOT(instanceCreated(unsigned int)), Qt::QueuedConnection);
 
 	//Freeze minimum size
 	setMinimumSize(size());
@@ -224,7 +222,6 @@ MainWindow::~MainWindow(void)
 	}
 	*/
 
-	//X264_DELETE(m_ipcThread);
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
 	VapourSynthCheckThread::unload();
@@ -718,24 +715,12 @@ void MainWindow::init(void)
 
 	updateLabelPos();
 
-	//Check for a running instance
-	/*
-	bool firstInstance = false;
-	if(m_ipcThread->initialize(&firstInstance))
+	//Create the IPC listener thread
+	if(m_ipc->isInitialized())
 	{
-		m_ipcThread->start();
-		if(!firstInstance)
-		{
-			if(!m_ipcThread->wait(5000))
-			{
-				QMessageBox::warning(this, tr("Not Responding"), tr("<nobr>Another instance of this application is already running, but did not respond in time.<br>If the problem persists, please kill the running instance from the task manager!</nobr>"), tr("Quit"));
-				m_ipcThread->terminate();
-				m_ipcThread->wait();
-			}
-			INIT_ERROR_EXIT();
-		}
+		connect(m_ipc, SIGNAL(receivedCommand(int,QStringList)), this, SLOT(handleCommand(int,QStringList)), Qt::QueuedConnection);
+		m_ipc->startListening();
 	}
-	*/
 
 	//Check all binaries
 	while(!binaries.isEmpty())
@@ -953,14 +938,64 @@ void MainWindow::handleDroppedFiles(void)
 	qDebug("Leave from MainWindow::handleDroppedFiles!");
 }
 
-void MainWindow::instanceCreated(unsigned int pid)
+void MainWindow::handleCommand(const int &command, const QStringList &args)
 {
-	qDebug("Notification from other instance (PID=0x%X) received!", pid);
-	
-	x264_blink_window(this, 5, 125);
 	x264_bring_to_front(this);
-	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-	x264_blink_window(this, 5, 125);
+	
+	if(true)
+	{
+		qDebug("\n---------- IPC ----------");
+		qDebug("CommandId: %d", command);
+		for(QStringList::ConstIterator iter = args.constBegin(); iter != args.constEnd(); iter++)
+		{
+			qDebug("Arguments: %s", iter->toUtf8().constData());
+		}
+		qDebug("---------- IPC ----------\n");
+	}
+
+	switch(command)
+	{
+	case IPC::IPC_OPCODE_PING:
+		qDebug("Received a PING request from another instance!");
+		x264_blink_window(this, 5, 125);
+		break;
+	case IPC::IPC_OPCODE_ADD_FILE:
+		if(!args.isEmpty())
+		{
+			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
+			{
+				createJobMultiple(QStringList() << QFileInfo(args[0]).canonicalFilePath());
+			}
+			else
+			{
+				qWarning("File '%s' not found!", args[0].toUtf8().constData());
+			}
+		}
+		break;
+	case IPC::IPC_OPCODE_ADD_JOB:
+		if(args.size() >= 3)
+		{
+			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
+			{
+				OptionsModel options;
+				if(!(args[2].isEmpty() || X264_STRCMP(args[2], "-")))
+				{
+					if(!OptionsModel::loadTemplate(&options, args[2].trimmed()))
+					{
+						qWarning("Template '%s' could not be found -> using defaults!", args[2].trimmed().toUtf8().constData());
+					}
+				}
+				appendJob(args[0], args[1], &options, true);
+			}
+			else
+			{
+				qWarning("Source file '%s' not found!", args[0].toUtf8().constData());
+			}
+		}
+		break;
+	default:
+		throw std::exception("Unknown command received!");
+	}
 }
 
 void MainWindow::checkUpdates(void)
@@ -1383,15 +1418,7 @@ void MainWindow::parseCommandLineArgs(void)
 		{
 			if(!args.isEmpty())
 			{
-				current = args.takeFirst();
-				if(QFileInfo(current).exists() && QFileInfo(current).isFile())
-				{
-					files << QFileInfo(current).canonicalFilePath();
-				}
-				else
-				{
-					qWarning("File '%s' not found!", current.toUtf8().constData());
-				}
+				handleCommand(IPC::IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst());
 			}
 			else
 			{
@@ -1402,25 +1429,12 @@ void MainWindow::parseCommandLineArgs(void)
 		{
 			if(args.size() >= 3)
 			{
-				const QString fileSrc = args.takeFirst();
-				const QString fileOut = args.takeFirst();
-				const QString templId = args.takeFirst();
-				if(QFileInfo(fileSrc).exists() && QFileInfo(fileSrc).isFile())
+				QStringList lst;
+				for(int i = 0; i < 3; i++)
 				{
-					OptionsModel options;
-					if(!(templId.isEmpty() || (templId.compare("-", Qt::CaseInsensitive) == 0)))
-					{
-						if(!OptionsModel::loadTemplate(&options, templId.trimmed()))
-						{
-							qWarning("Template '%s' could not be found -> using defaults!", templId.trimmed().toUtf8().constData());
-						}
-					}
-					appendJob(fileSrc, fileOut, &options, true);
+					lst << args.takeFirst();
 				}
-				else
-				{
-					qWarning("Source file '%s' not found!", fileSrc.toUtf8().constData());
-				}
+				handleCommand(IPC::IPC_OPCODE_ADD_JOB, lst);
 			}
 			else
 			{
@@ -1436,10 +1450,5 @@ void MainWindow::parseCommandLineArgs(void)
 				break;
 			}
 		}
-	}
-
-	if(files.count() > 0)
-	{
-		createJobMultiple(files);
 	}
 }

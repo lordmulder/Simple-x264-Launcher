@@ -82,6 +82,7 @@ static int x264_main(int argc, char* argv[])
 	{
 		if(!firstInstance)
 		{
+			qDebug("This is *not* the fist instance -> sending all CLI commands to first instance!");
 			handleMultipleInstances(arguments, ipc);
 			X264_DELETE(ipc);
 			return 0;
@@ -114,7 +115,7 @@ static int x264_main(int argc, char* argv[])
 	}
 
 	//Create Main Window
-	MainWindow *mainWin = new MainWindow(&cpuFeatures);
+	MainWindow *mainWin = new MainWindow(&cpuFeatures, ipc);
 	mainWin->show();
 
 	//Run application
@@ -137,15 +138,18 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 {
 	bool commandSent = false;
 
+	//Skip the program file name
+	args.takeFirst();
+
 	//Process all command-line arguments
 	while(!args.isEmpty())
 	{
 		const QString current = args.takeFirst();
 		if(X264_STRCMP(current, "--add") || X264_STRCMP(current, "--add-file"))
 		{
+			commandSent = true;
 			if(!args.isEmpty())
 			{
-				commandSent = true;
 				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst()))
 				{
 					break;
@@ -158,10 +162,15 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 		}
 		else if(X264_STRCMP(current, "--add-job"))
 		{
+			commandSent = true;
 			if(args.size() >= 3)
 			{
-				commandSent = true;
-				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_JOB, QStringList() << args.takeFirst() << args.takeFirst() << args.takeFirst()))
+				QStringList lst;
+				for(int i = 0; i < 3; i++)
+				{
+					lst << args.takeFirst();
+				}
+				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_JOB, lst))
 				{
 					break;
 				}

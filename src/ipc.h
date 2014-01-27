@@ -46,13 +46,15 @@ public:
 
 	bool initialize(bool &firstInstance);
 	bool sendAsync(const int &command, const QStringList &args, const int timeout = 5000);
+	
+	inline bool isInitialized(void) { return (m_initialized >= 0); }
 
 public slots:
-	void startListening(void);
-	void stopListening(void);
+	bool startListening(void);
+	bool stopListening(void);
 
 signals:
-	void receivedStr(const QString &str);
+	void receivedCommand(const int &command, const QStringList &args);
 
 protected:
 	bool popCommand(int &command, QStringList &args);

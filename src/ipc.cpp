@@ -257,6 +257,9 @@ bool IPC::pushCommand(const int &command, const QStringList *args)
 
 bool IPC::popCommand(int &command, QStringList &args)
 {
+	command = -1;
+	args.clear();
+
 	if(m_initialized < 0)
 	{
 		qWarning("Error: IPC not initialized yet!");
@@ -276,7 +279,6 @@ bool IPC::popCommand(int &command, QStringList &args)
 	}
 
 	bool success = true;
-	args.clear();
 
 	try
 	{
@@ -316,6 +318,12 @@ bool IPC::popCommand(int &command, QStringList &args)
 
 bool IPC::sendAsync(const int &command, const QStringList &args, const int timeout)
 {
+	if(m_initialized < 0)
+	{
+		qWarning("Error: IPC not initialized yet!");
+		return false;
+	}
+
 	IPCSendThread sendThread(this, command, args);
 	sendThread.start();
 
@@ -330,12 +338,18 @@ bool IPC::sendAsync(const int &command, const QStringList &args, const int timeo
 	return sendThread.result();
 }
 
-void IPC::startListening(void)
+bool IPC::startListening(void)
 {
+	if(m_initialized < 0)
+	{
+		qWarning("Error: IPC not initialized yet!");
+		return false;
+	}
+
 	if(!m_recvThread)
 	{
 		m_recvThread = new IPCReceiveThread(this);
-		connect(m_recvThread, SIGNAL(receivedStr(QString)), this, SIGNAL(receivedStr(QString)), Qt::QueuedConnection);
+		connect(m_recvThread, SIGNAL(receivedCommand(int,QStringList)), this, SIGNAL(receivedCommand(int,QStringList)), Qt::QueuedConnection);
 	}
 
 	if(!m_recvThread->isRunning())
@@ -347,10 +361,17 @@ void IPC::startListening(void)
 		qWarning("Receive thread was already running!");
 	}
 
+	return true;
 }
 
-void IPC::stopListening(void)
+bool IPC::stopListening(void)
 {
+	if(m_initialized < 0)
+	{
+		qWarning("Error: IPC not initialized yet!");
+		return false;
+	}
+
 	if(m_recvThread && m_recvThread->isRunning())
 	{
 		m_recvThread->stop();
@@ -367,4 +388,6 @@ void IPC::stopListening(void)
 	{
 		qWarning("Receive thread was not running!");
 	}
+
+	return true;
 }

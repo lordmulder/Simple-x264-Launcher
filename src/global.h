@@ -179,6 +179,7 @@ unsigned int x264_version_x264_avs2yuv_ver(void);
 #define _X264_MAKE_STRING_(X) #X
 #define X264_MAKE_STRING(X) _X264_MAKE_STRING_(X)
 #define X264_COMPILER_WARNING(TXT) __pragma(message(__FILE__ "(" X264_MAKE_STRING(__LINE__) ") : warning: " TXT))
+#define X264_STRCMP(X,Y) ((X).compare((Y), Qt::CaseInsensitive) == 0)
 
 //Debug build
 #if defined(_DEBUG) && defined(QT_DEBUG) && !defined(NDEBUG) && !defined(QT_NO_DEBUG)

@@ -78,7 +78,7 @@ static int x264_main(int argc, char* argv[])
 	//Initialize the IPC handler class
 	bool firstInstance = false;
 	IPC *ipc = new IPC();
-	if(!ipc->initialize(firstInstance))
+	if(ipc->initialize(firstInstance))
 	{
 		if(!firstInstance)
 		{
@@ -123,7 +123,9 @@ static int x264_main(int argc, char* argv[])
 	//Taskbar uninit
 	WinSevenTaskbar::init();
 	
+	//Clean up
 	X264_DELETE(mainWin);
+	X264_DELETE(ipc);
 	return ret;
 }
 
@@ -139,7 +141,7 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 	while(!args.isEmpty())
 	{
 		const QString current = args.takeFirst();
-		if((current.compare("--add", Qt::CaseInsensitive) == 0) || (current.compare("--add-file", Qt::CaseInsensitive) == 0))
+		if(X264_STRCMP(current, "--add") || X264_STRCMP(current, "--add-file"))
 		{
 			if(!args.isEmpty())
 			{
@@ -154,7 +156,7 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 				qWarning("Argument for '--add-file' is missing!");
 			}
 		}
-		else if(current.compare("--add-job", Qt::CaseInsensitive) == 0)
+		else if(X264_STRCMP(current, "--add-job"))
 		{
 			if(args.size() >= 3)
 			{
@@ -168,6 +170,14 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 			{
 				qWarning("Argument(s) for '--add-job' are missing!");
 				args.clear();
+			}
+		}
+		else
+		{
+			if(!current.startsWith("--"))
+			{
+				qWarning("Unknown argument: %s", current.toUtf8().constData());
+				break;
 			}
 		}
 	}

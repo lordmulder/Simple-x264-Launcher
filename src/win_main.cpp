@@ -1372,11 +1372,14 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
  */
 void MainWindow::parseCommandLineArgs(void)
 {
-	QStringList files, args = x264_arguments();
+	QStringList files;
+	QStringList args = x264_arguments();
+	args.takeFirst(); //Pop argv[0]
+
 	while(!args.isEmpty())
 	{
 		QString current = args.takeFirst();
-		if((current.compare("--add", Qt::CaseInsensitive) == 0) || (current.compare("--add-file", Qt::CaseInsensitive) == 0))
+		if(X264_STRCMP(current, "--add") || X264_STRCMP(current, "--add-file"))
 		{
 			if(!args.isEmpty())
 			{
@@ -1395,7 +1398,7 @@ void MainWindow::parseCommandLineArgs(void)
 				qWarning("Argument for '--add-file' is missing!");
 			}
 		}
-		else if(current.compare("--add-job", Qt::CaseInsensitive) == 0)
+		else if(X264_STRCMP(current, "--add-job"))
 		{
 			if(args.size() >= 3)
 			{
@@ -1427,7 +1430,11 @@ void MainWindow::parseCommandLineArgs(void)
 		}
 		else
 		{
-			qWarning("Unknown argument: %s", current.toUtf8().constData());
+			if(!current.startsWith("--"))
+			{
+				qWarning("Unknown argument: %s", current.toUtf8().constData());
+				break;
+			}
 		}
 	}
 

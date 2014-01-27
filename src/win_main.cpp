@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2014 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 #include "model_recently.h"
 #include "thread_avisynth.h"
 #include "thread_vapoursynth.h"
-#include "thread_ipc.h"
 #include "thread_encode.h"
 #include "taskbar7.h"
 #include "win_addJob.h"
@@ -110,8 +109,8 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures)
 	OptionsModel::loadTemplate(m_options, QString::fromLatin1(tpl_last));
 
 	//Create IPC thread object
-	m_ipcThread = new IPCThread();
-	connect(m_ipcThread, SIGNAL(instanceCreated(unsigned int)), this, SLOT(instanceCreated(unsigned int)), Qt::QueuedConnection);
+	//m_ipcThread = new IPCThread();
+	//connect(m_ipcThread, SIGNAL(instanceCreated(unsigned int)), this, SLOT(instanceCreated(unsigned int)), Qt::QueuedConnection);
 
 	//Freeze minimum size
 	setMinimumSize(size());
@@ -213,6 +212,7 @@ MainWindow::~MainWindow(void)
 		X264_DELETE(temp);
 	}
 
+	/*
 	if(m_ipcThread->isRunning())
 	{
 		m_ipcThread->setAbort();
@@ -222,8 +222,9 @@ MainWindow::~MainWindow(void)
 			m_ipcThread->wait();
 		}
 	}
+	*/
 
-	X264_DELETE(m_ipcThread);
+	//X264_DELETE(m_ipcThread);
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
 	VapourSynthCheckThread::unload();
@@ -718,6 +719,7 @@ void MainWindow::init(void)
 	updateLabelPos();
 
 	//Check for a running instance
+	/*
 	bool firstInstance = false;
 	if(m_ipcThread->initialize(&firstInstance))
 	{
@@ -733,6 +735,7 @@ void MainWindow::init(void)
 			INIT_ERROR_EXIT();
 		}
 	}
+	*/
 
 	//Check all binaries
 	while(!binaries.isEmpty())
@@ -1369,7 +1372,7 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
  */
 void MainWindow::parseCommandLineArgs(void)
 {
-	QStringList files, args = qApp->arguments();
+	QStringList files, args = x264_arguments();
 	while(!args.isEmpty())
 	{
 		QString current = args.takeFirst();

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2014 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ class QFile;
 class QLibrary;
 class PreferencesModel;
 class RecentlyUsed;
-class IPCThread;
 class QModelIndex;
 class QLabel;
 enum JobStatus;
@@ -66,7 +65,7 @@ private:
 	bool m_initialized;
 
 	QLabel *m_label;
-	IPCThread *m_ipcThread;
+	//IPCThread *m_ipcThread;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;

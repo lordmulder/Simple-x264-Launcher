@@ -986,6 +986,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
 	{
 		qWarning("Cannot accapt commands at this time -> discarding!");
+		return;
 	}
 	
 	x264_bring_to_front(this);
@@ -1211,6 +1212,12 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
  */
 void MainWindow::dropEvent(QDropEvent *event)
 {
+	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
+	{
+		qWarning("Cannot accept drooped files at this time -> discarding!");
+		return;
+	}
+
 	QStringList droppedFiles;
 	QList<QUrl> urls = event->mimeData()->urls();
 
@@ -1229,7 +1236,11 @@ void MainWindow::dropEvent(QDropEvent *event)
 	{
 		m_pendingFiles->append(droppedFiles);
 		m_pendingFiles->sort();
-		QTimer::singleShot(0, this, SLOT(handlePendingFiles()));
+		if(m_status != STATUS_AWAITING)
+		{
+			m_status = STATUS_AWAITING;
+			QTimer::singleShot(0, this, SLOT(handlePendingFiles()));
+		}
 	}
 }
 

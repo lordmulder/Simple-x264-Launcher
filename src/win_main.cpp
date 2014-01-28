@@ -62,7 +62,8 @@ const char *tpl_last = "<LAST_USED>";
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
 #define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
-#define INIT_ERROR_EXIT() do { m_initialized = true; close(); qApp->exit(-1); return; } while(0)
+#define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
+#define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) return; } while(0)
 
 //static int exceptionFilter(_EXCEPTION_RECORD *dst, _EXCEPTION_POINTERS *src) { memcpy(dst, src->ExceptionRecord, sizeof(_EXCEPTION_RECORD)); return EXCEPTION_EXECUTE_HANDLER; }
 
@@ -80,13 +81,13 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	m_appDir(QApplication::applicationDirPath()),
 	m_options(NULL),
 	m_jobList(NULL),
-	m_droppedFiles(NULL),
+	m_pendingFiles(new QStringList()),
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
 	m_skipVersionTest(false),
 	m_abortOnTimeout(true),
+	m_status(STATUS_PRE_INIT),
 	m_firstShow(true),
-	m_initialized(false),
 	ui(new Ui::MainWindow())
 {
 	//Init the dialog, from the .ui file
@@ -201,7 +202,7 @@ MainWindow::~MainWindow(void)
 	
 	X264_DELETE(m_jobList);
 	X264_DELETE(m_options);
-	X264_DELETE(m_droppedFiles);
+	X264_DELETE(m_pendingFiles);
 	X264_DELETE(m_label);
 
 	while(!m_toolsList.isEmpty())
@@ -239,14 +240,19 @@ MainWindow::~MainWindow(void)
  */
 void MainWindow::addButtonPressed()
 {
+	ENSURE_APP_IS_IDLE();
+	m_status = STATUS_BLOCKED;
+
 	qDebug("MainWindow::addButtonPressed");
 	bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
 	QString sourceFileName, outputFileName;
-	
+
 	if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
 	{
 		appendJob(sourceFileName, outputFileName, m_options, runImmediately);
 	}
+
+	m_status = STATUS_IDLE;
 }
 
 /*
@@ -254,6 +260,9 @@ void MainWindow::addButtonPressed()
  */
 void MainWindow::openActionTriggered()
 {
+	ENSURE_APP_IS_IDLE();
+	m_status = STATUS_BLOCKED;
+
 	QStringList fileList = QFileDialog::getOpenFileNames(this, tr("Open Source File(s)"), m_recentlyUsed->sourceDirectory(), AddJobDialog::getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 	if(!fileList.empty())
 	{
@@ -272,6 +281,8 @@ void MainWindow::openActionTriggered()
 			}
 		}
 	}
+
+	m_status = STATUS_IDLE;
 }
 
 /*
@@ -279,6 +290,7 @@ void MainWindow::openActionTriggered()
  */
 void MainWindow::startButtonPressed(void)
 {
+	ENSURE_APP_IS_IDLE();
 	m_jobList->startJob(ui->jobsView->currentIndex());
 }
 
@@ -287,6 +299,7 @@ void MainWindow::startButtonPressed(void)
  */
 void MainWindow::abortButtonPressed(void)
 {
+	ENSURE_APP_IS_IDLE();
 	m_jobList->abortJob(ui->jobsView->currentIndex());
 }
 
@@ -295,6 +308,7 @@ void MainWindow::abortButtonPressed(void)
  */
 void MainWindow::deleteButtonPressed(void)
 {
+	ENSURE_APP_IS_IDLE();
 	m_jobList->deleteJob(ui->jobsView->currentIndex());
 	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 }
@@ -304,6 +318,9 @@ void MainWindow::deleteButtonPressed(void)
  */
 void MainWindow::browseButtonPressed(void)
 {
+	ENSURE_APP_IS_IDLE();
+	m_status = STATUS_BLOCKED;
+
 	QString outputFile = m_jobList->getJobOutputFile(ui->jobsView->currentIndex());
 	if((!outputFile.isEmpty()) && QFileInfo(outputFile).exists() && QFileInfo(outputFile).isFile())
 	{
@@ -313,6 +330,8 @@ void MainWindow::browseButtonPressed(void)
 	{
 		QMessageBox::warning(this, tr("Not Found"), tr("Sorry, the output file could not be found!"));
 	}
+
+	m_status = STATUS_IDLE;
 }
 
 /*
@@ -335,6 +354,8 @@ void MainWindow::pauseButtonPressed(bool checked)
  */
 void MainWindow::restartButtonPressed(void)
 {
+	ENSURE_APP_IS_IDLE();
+
 	const QModelIndex index = ui->jobsView->currentIndex();
 	const OptionsModel *options = m_jobList->getJobOptions(index);
 	QString sourceFileName = m_jobList->getJobSourceFile(index);
@@ -453,8 +474,10 @@ void MainWindow::jobLogExtended(const QModelIndex & parent, int start, int end)
  */
 void MainWindow::showAbout(void)
 {
+	ENSURE_APP_IS_IDLE();
+	m_status = STATUS_BLOCKED;
+	
 	QString text;
-
 	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor(), x264_version_build());
 	text += QString().sprintf("Copyright (c) 2004-%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
 	text += QString().sprintf("Built on %s at %s with %s for Win-%s.<br><br>", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
@@ -536,6 +559,7 @@ void MainWindow::showAbout(void)
 			QMessageBox::aboutQt(this);
 			break;
 		default:
+			m_status = STATUS_IDLE;
 			return;
 		}
 	}
@@ -567,9 +591,14 @@ void MainWindow::showWebLink(void)
  */
 void MainWindow::showPreferences(void)
 {
+	ENSURE_APP_IS_IDLE();
+	m_status = STATUS_BLOCKED;
+
 	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences, m_cpuFeatures->x64);
 	preferences->exec();
+
 	X264_DELETE(preferences);
+	m_status = STATUS_IDLE;
 }
 
 /*
@@ -710,6 +739,12 @@ void MainWindow::shutdownComputer(void)
  */
 void MainWindow::init(void)
 {
+	if(m_status != STATUS_PRE_INIT)
+	{
+		qWarning("Already initialized -> skipping!");
+		return;
+	}
+
 	static const char *binFiles = "x86/x264_8bit_x86.exe:x64/x264_8bit_x64.exe:x86/x264_10bit_x86.exe:x64/x264_10bit_x64.exe:x86/avs2yuv_x86.exe:x64/avs2yuv_x64.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
@@ -856,9 +891,6 @@ void MainWindow::init(void)
 		qDebug(" ");
 	}
 
-	//Update initialized flag (must do this before update check!)
-	m_initialized = true;
-
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);
 
@@ -883,21 +915,28 @@ void MainWindow::init(void)
 		QTimer::singleShot(7500, btn3, SLOT(show()));
 		if(msgBox.exec() == 0)
 		{
-			QTimer::singleShot(0, this, SLOT(checkUpdates()));
-			return;
-		}
-	}
-	else if((!m_preferences->noUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
-	{
-		if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
-		{
+			m_status = STATUS_IDLE;
 			QTimer::singleShot(0, this, SLOT(checkUpdates()));
 			return;
 		}
 	}
 
-	//Add files from command-line
-	parseCommandLineArgs();
+	//Update app staus
+	m_status = STATUS_IDLE;
+
+	//Try adding files from command-line
+	if(!parseCommandLineArgs())
+	{
+		//Update reminder
+		if((!m_preferences->noUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
+		{
+			if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
+			{
+				QTimer::singleShot(0, this, SLOT(checkUpdates()));
+				return;
+			}
+		}
+	}
 }
 
 /*
@@ -926,32 +965,40 @@ void MainWindow::copyLogToClipboard(bool checked)
 /*
  * Process the dropped files
  */
-void MainWindow::handleDroppedFiles(void)
+void MainWindow::handlePendingFiles(void)
 {
-	qDebug("MainWindow::handleDroppedFiles");
-	if(m_droppedFiles)
+	if((m_status == STATUS_IDLE) || (m_status == STATUS_AWAITING))
 	{
-		QStringList droppedFiles(*m_droppedFiles);
-		m_droppedFiles->clear();
-		createJobMultiple(droppedFiles);
+		qDebug("MainWindow::handlePendingFiles");
+		if(!m_pendingFiles->isEmpty())
+		{
+			QStringList pendingFiles(*m_pendingFiles);
+			m_pendingFiles->clear();
+			createJobMultiple(pendingFiles);
+		}
+		qDebug("Leave from MainWindow::handlePendingFiles!");
+		m_status = STATUS_IDLE;
 	}
-	qDebug("Leave from MainWindow::handleDroppedFiles!");
 }
 
 void MainWindow::handleCommand(const int &command, const QStringList &args)
 {
+	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
+	{
+		qWarning("Cannot accapt commands at this time -> discarding!");
+	}
+	
 	x264_bring_to_front(this);
 	
-	if(true)
+#ifdef IPC_LOGGING
+	qDebug("\n---------- IPC ----------");
+	qDebug("CommandId: %d", command);
+	for(QStringList::ConstIterator iter = args.constBegin(); iter != args.constEnd(); iter++)
 	{
-		qDebug("\n---------- IPC ----------");
-		qDebug("CommandId: %d", command);
-		for(QStringList::ConstIterator iter = args.constBegin(); iter != args.constEnd(); iter++)
-		{
-			qDebug("Arguments: %s", iter->toUtf8().constData());
-		}
-		qDebug("---------- IPC ----------\n");
+		qDebug("Arguments: %s", iter->toUtf8().constData());
 	}
+	qDebug("---------- IPC ----------\n");
+#endif //IPC_LOGGING
 
 	switch(command)
 	{
@@ -964,7 +1011,12 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 		{
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
 			{
-				createJobMultiple(QStringList() << QFileInfo(args[0]).canonicalFilePath());
+				*m_pendingFiles << QFileInfo(args[0]).canonicalFilePath();
+				if(m_status != STATUS_AWAITING)
+				{
+					m_status = STATUS_AWAITING;
+					QTimer::singleShot(3333, this, SLOT(handlePendingFiles()));
+				}
 			}
 			else
 			{
@@ -1000,14 +1052,13 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 
 void MainWindow::checkUpdates(void)
 {
-	if(!m_initialized)
-	{
-		return;
-	}
+	ENSURE_APP_IS_IDLE();
+	m_status = STATUS_BLOCKED;
 
 	if(countRunningJobs() > 0)
 	{
 		QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not update while there still are running jobs!"));
+		m_status = STATUS_IDLE;
 		return;
 	}
 
@@ -1022,12 +1073,18 @@ void MainWindow::checkUpdates(void)
 
 	if(ret == UpdaterDialog::READY_TO_INSTALL_UPDATE)
 	{
+		m_status = STATUS_EXITTING;
 		qWarning("Exitting program to install update...");
 		close();
 		QApplication::quit();
 	}
 
 	X264_DELETE(updater);
+
+	if(m_status != STATUS_EXITTING)
+	{
+		m_status = STATUS_IDLE;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1053,26 +1110,33 @@ void MainWindow::showEvent(QShowEvent *e)
  */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	if(!m_initialized)
+	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
 	{
-		e->ignore();
+		qWarning("Cannot close window at this time!");
 		return;
 	}
 
-	if(countRunningJobs() > 0)
+	if(m_status != STATUS_EXITTING)
 	{
-		e->ignore();
-		QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not exit while there still are running jobs!"));
-		return;
-	}
-	
-	if(countPendingJobs() > 0)
-	{
-		int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("Do you really want to quit and discard the pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-		if(ret != QMessageBox::Yes)
+		if(countRunningJobs() > 0)
 		{
 			e->ignore();
+			m_status = STATUS_BLOCKED;
+			QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not exit while there still are running jobs!"));
+			m_status = STATUS_IDLE;
 			return;
+		}
+	
+		if(countPendingJobs() > 0)
+		{
+			m_status = STATUS_BLOCKED;
+			int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("Do you really want to quit and discard the pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+			if(ret != QMessageBox::Yes)
+			{
+				e->ignore();
+				m_status = STATUS_IDLE;
+				return;
+			}
 		}
 	}
 
@@ -1082,7 +1146,9 @@ void MainWindow::closeEvent(QCloseEvent *e)
 		if(!m_jobList->deleteJob(m_jobList->index(0, 0, QModelIndex())))
 		{
 			e->ignore();
+			m_status = STATUS_BLOCKED;
 			QMessageBox::warning(this, tr("Failed To Exit"), tr("Sorry, at least one job could not be deleted!"));
+			m_status = STATUS_IDLE;
 			return;
 		}
 	}
@@ -1161,13 +1227,9 @@ void MainWindow::dropEvent(QDropEvent *event)
 	
 	if(droppedFiles.count() > 0)
 	{
-		if(!m_droppedFiles)
-		{
-			m_droppedFiles = new QStringList();
-		}
-		m_droppedFiles->append(droppedFiles);
-		m_droppedFiles->sort();
-		QTimer::singleShot(0, this, SLOT(handleDroppedFiles()));
+		m_pendingFiles->append(droppedFiles);
+		m_pendingFiles->sort();
+		QTimer::singleShot(0, this, SLOT(handlePendingFiles()));
 	}
 }
 
@@ -1405,10 +1467,13 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 /*
  * Parse command-line arguments
  */
-void MainWindow::parseCommandLineArgs(void)
+bool MainWindow::parseCommandLineArgs(void)
 {
+	bool bCommandAccepted = false;
+	
 	QStringList files;
 	QStringList args = x264_arguments();
+	
 	args.takeFirst(); //Pop argv[0]
 
 	while(!args.isEmpty())
@@ -1416,6 +1481,7 @@ void MainWindow::parseCommandLineArgs(void)
 		QString current = args.takeFirst();
 		if(X264_STRCMP(current, "--add") || X264_STRCMP(current, "--add-file"))
 		{
+			bCommandAccepted = true;
 			if(!args.isEmpty())
 			{
 				handleCommand(IPC::IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst());
@@ -1427,6 +1493,7 @@ void MainWindow::parseCommandLineArgs(void)
 		}
 		else if(X264_STRCMP(current, "--add-job"))
 		{
+			bCommandAccepted = true;
 			if(args.size() >= 3)
 			{
 				QStringList lst;
@@ -1451,4 +1518,6 @@ void MainWindow::parseCommandLineArgs(void)
 			}
 		}
 	}
+
+	return bCommandAccepted;
 }

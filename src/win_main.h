@@ -57,20 +57,31 @@ protected:
 	virtual void dropEvent(QDropEvent *event);
 	virtual bool winEvent(MSG *message, long *result);
 
+	typedef enum
+	{
+		STATUS_PRE_INIT = 0,
+		STATUS_IDLE     = 1,
+		STATUS_AWAITING = 2,
+		STATUS_BLOCKED  = 3,
+		STATUS_EXITTING = 4
+	}
+	x264_status_t;
+
 private:
 	Ui::MainWindow *const ui;
 
 	bool m_firstShow;
 	bool m_skipVersionTest;
 	bool m_abortOnTimeout;
-	bool m_initialized;
+
+	x264_status_t m_status;
 
 	QLabel *m_label;
 	IPC *const m_ipc;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
-	QStringList *m_droppedFiles;
+	QStringList *m_pendingFiles;
 	QList<QFile*> m_toolsList;
 	
 	PreferencesModel *m_preferences;
@@ -90,7 +101,7 @@ private:
 	unsigned int countPendingJobs(void);
 	unsigned int countRunningJobs(void);
 
-	void parseCommandLineArgs(void);
+	bool parseCommandLineArgs(void);
 
 private slots:
 	void addButtonPressed();
@@ -100,7 +111,7 @@ private slots:
 	void deleteButtonPressed(void);
 	void copyLogToClipboard(bool checked);
 	void checkUpdates(void);
-	void handleDroppedFiles(void);
+	void handlePendingFiles(void);
 	void init(void);
 	void handleCommand(const int &command, const QStringList &args);
 	void jobSelected(const QModelIndex &current, const QModelIndex &previous);

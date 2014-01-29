@@ -353,6 +353,7 @@
      </property>
      <addaction name="actionWebAvisynth32"/>
      <addaction name="actionWebAvisynth64"/>
+     <addaction name="actionWebAvisynthPlus"/>
     </widget>
     <addaction name="actionCheckForUpdates"/>
     <addaction name="separator"/>
@@ -653,6 +654,15 @@
    </property>
    <property name="text">
     <string>Check for new Updates</string>
+   </property>
+  </action>
+  <action name="actionWebAvisynthPlus">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>Avisynth+ (32-Bit / 64-Bit)</string>
    </property>
   </action>
  </widget>

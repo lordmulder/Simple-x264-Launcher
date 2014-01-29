@@ -112,7 +112,7 @@ void IPCReceiveThread::receiveLoop(void)
 	{
 		QStringList args;
 		int command;
-		if(m_ipc->popCommand(command, args))
+		if(m_ipc->popCommand(command, args, &m_stopped))
 		{
 			if((command >= 0) && (command < IPC::IPC_OPCODE_MAX))
 			{
@@ -255,7 +255,7 @@ bool IPC::pushCommand(const int &command, const QStringList *args)
 	return success;
 }
 
-bool IPC::popCommand(int &command, QStringList &args)
+bool IPC::popCommand(int &command, QStringList &args, volatile bool *abortFlag)
 {
 	command = -1;
 	args.clear();
@@ -297,7 +297,10 @@ bool IPC::popCommand(int &command, QStringList &args)
 		}
 		else
 		{
-			qWarning("IPC: Shared memory is empty -> cannot pop string!");
+			if(!abortFlag)
+			{
+				qWarning("IPC: Shared memory is empty -> cannot pop string!");
+			}
 			success = false;
 		}
 	}

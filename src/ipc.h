@@ -48,6 +48,7 @@ public:
 	bool sendAsync(const int &command, const QStringList &args, const int timeout = 5000);
 	
 	inline bool isInitialized(void) { return (m_initialized >= 0); }
+	inline bool isListening(void);
 
 public slots:
 	bool startListening(void);
@@ -57,7 +58,7 @@ signals:
 	void receivedCommand(const int &command, const QStringList &args);
 
 protected:
-	bool popCommand(int &command, QStringList &args);
+	bool popCommand(int &command, QStringList &args, volatile bool *abortFlag);
 	bool pushCommand(const int &command, const QStringList *args);
 
 	int m_initialized;
@@ -111,3 +112,12 @@ private:
 	volatile bool m_stopped;
 	IPC *const m_ipc;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// Inline Functions
+///////////////////////////////////////////////////////////////////////////////
+
+inline bool IPC::isListening(void)
+{
+	return (m_recvThread && m_recvThread->isRunning());
+}

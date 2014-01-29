@@ -62,10 +62,8 @@ const char *tpl_last = "<LAST_USED>";
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
 #define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
+#define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 #define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
-#define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) return; } while(0)
-
-//static int exceptionFilter(_EXCEPTION_RECORD *dst, _EXCEPTION_POINTERS *src) { memcpy(dst, src->ExceptionRecord, sizeof(_EXCEPTION_RECORD)); return EXCEPTION_EXECUTE_HANDLER; }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -198,6 +196,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
  */
 MainWindow::~MainWindow(void)
 {
+	m_status = STATUS_EXITTING;
 	OptionsModel::saveTemplate(m_options, QString::fromLatin1(tpl_last));
 	
 	X264_DELETE(m_jobList);
@@ -211,17 +210,10 @@ MainWindow::~MainWindow(void)
 		X264_DELETE(temp);
 	}
 
-	/*
-	if(m_ipcThread->isRunning())
+	if(m_ipc->isListening())
 	{
-		m_ipcThread->setAbort();
-		if(!m_ipcThread->wait(5000))
-		{
-			m_ipcThread->terminate();
-			m_ipcThread->wait();
-		}
+		m_ipc->stopListening();
 	}
-	*/
 
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
@@ -339,6 +331,8 @@ void MainWindow::browseButtonPressed(void)
  */
 void MainWindow::pauseButtonPressed(bool checked)
 {
+	ENSURE_APP_IS_IDLE();
+
 	if(checked)
 	{
 		m_jobList->pauseJob(ui->jobsView->currentIndex());
@@ -570,6 +564,8 @@ void MainWindow::showAbout(void)
  */
 void MainWindow::showWebLink(void)
 {
+	ENSURE_APP_IS_IDLE();
+
 	if(QObject::sender() == ui->actionWebMulder)          QDesktopServices::openUrl(QUrl(home_url));
 	if(QObject::sender() == ui->actionWebX264)            QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
 	if(QObject::sender() == ui->actionWebKomisar)         QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
@@ -675,12 +671,21 @@ void MainWindow::shutdownComputer(void)
 {
 	qDebug("shutdownComputer(void)");
 	
+	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
+	{
+		qWarning("Cannot shutdown computer at this time!");
+		return;
+	}
+
 	if(countPendingJobs() > 0)
 	{
 		qDebug("Still have pending jobs, won't shutdown yet!");
 		return;
 	}
 	
+	const x264_status_t previousStatus = m_status;
+	m_status = STATUS_BLOCKED;
+
 	const int iTimeout = 30;
 	const Qt::WindowFlags flags = Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowSystemMenuHint;
 	const QString text = QString("%1%2%1").arg(QString().fill(' ', 18), tr("Warning: Computer will shutdown in %1 seconds..."));
@@ -717,6 +722,7 @@ void MainWindow::shutdownComputer(void)
 		if(progressDialog.wasCanceled())
 		{
 			progressDialog.close();
+			m_status = previousStatus;
 			return;
 		}
 		progressDialog.setValue(i+1);
@@ -727,11 +733,13 @@ void MainWindow::shutdownComputer(void)
 	}
 	
 	qWarning("Shutting down !!!");
+	m_status = previousStatus;
 
 	if(x264_shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true))
 	{
 		qApp->closeAllWindows();
 	}
+
 }
 
 /*
@@ -1016,7 +1024,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 				if(m_status != STATUS_AWAITING)
 				{
 					m_status = STATUS_AWAITING;
-					QTimer::singleShot(3333, this, SLOT(handlePendingFiles()));
+					QTimer::singleShot(5000, this, SLOT(handlePendingFiles()));
 				}
 			}
 			else
@@ -1153,7 +1161,8 @@ void MainWindow::closeEvent(QCloseEvent *e)
 			return;
 		}
 	}
-
+	
+	m_status = STATUS_EXITTING;
 	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 	QMainWindow::closeEvent(e);
 }
@@ -1507,12 +1516,9 @@ bool MainWindow::parseCommandLineArgs(void)
 			bCommandAccepted = true;
 			if(args.size() >= 3)
 			{
-				QStringList lst;
-				for(int i = 0; i < 3; i++)
-				{
-					lst << args.takeFirst();
-				}
-				handleCommand(IPC::IPC_OPCODE_ADD_JOB, lst);
+				const QStringList list = args.mid(0, 3);
+				handleCommand(IPC::IPC_OPCODE_ADD_JOB, list);
+				args.erase(args.begin(), args.begin() + 3);
 			}
 			else
 			{

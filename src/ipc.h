@@ -22,33 +22,38 @@
 #pragma once
 
 #include <QThread>
+#include <QMutex>
 
 class QSharedMemory;
 class QStringList;
 class QSystemSemaphore;
-class IPCSendThread;
+
+class IPCCore;
 class IPCReceiveThread;
+class IPCSendThread;
+
+//IPC Commands
+static const int IPC_OPCODE_PING     = 0;
+static const int IPC_OPCODE_ADD_FILE = 1;
+static const int IPC_OPCODE_ADD_JOB  = 2;
+static const int IPC_OPCODE_MAX      = 3;
+
+///////////////////////////////////////////////////////////////////////////////
+// IPC Handler Class
+///////////////////////////////////////////////////////////////////////////////
 
 class IPC : public QObject
 {
 	Q_OBJECT
-	friend class IPCReceiveThread;
-	friend class IPCSendThread;
 
 public:
 	IPC(void);
 	~IPC(void);
 
-	static const int IPC_OPCODE_PING     = 0;
-	static const int IPC_OPCODE_ADD_FILE = 1;
-	static const int IPC_OPCODE_ADD_JOB  = 2;
-	static const int IPC_OPCODE_MAX      = 3;
-
 	bool initialize(bool &firstInstance);
-	bool sendAsync(const int &command, const QStringList &args, const int timeout = 5000);
-	
-	inline bool isInitialized(void) { return (m_initialized >= 0); }
-	inline bool isListening(void);
+	bool sendAsync(const int &command, const QStringList &args);
+	bool isInitialized(void);
+	bool isListening(void);
 
 public slots:
 	bool startListening(void);
@@ -58,15 +63,9 @@ signals:
 	void receivedCommand(const int &command, const QStringList &args);
 
 protected:
-	bool popCommand(int &command, QStringList &args, volatile bool *abortFlag);
-	bool pushCommand(const int &command, const QStringList *args);
-
-	int m_initialized;
-
-	QSharedMemory *m_sharedMemory;
-	QSystemSemaphore *m_semaphoreRd;
-	QSystemSemaphore *m_semaphoreWr;
+	IPCCore *m_ipcCore;
 	IPCReceiveThread *m_recvThread;
+	QMutex m_mutex;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -79,16 +78,15 @@ class IPCSendThread : public QThread
 	friend class IPC;
 
 protected:
-	IPCSendThread(IPC *ipc, const int &command, const QStringList &args);
+	IPCSendThread(IPCCore *ipc, const int &command, const QStringList &args);
 	IPCSendThread::~IPCSendThread(void);
 
 	inline bool result(void) { return m_result; }
-
 	virtual void run(void);
 
 private:
 	volatile bool m_result;
-	IPC *const m_ipc;
+	IPCCore *const m_ipc;
 	const int m_command;
 	const QStringList *m_args;
 };
@@ -99,9 +97,9 @@ class IPCReceiveThread : public QThread
 	friend class IPC;
 
 protected:
-	IPCReceiveThread(IPC *ipc);
-	inline void stop(void) { m_stopped = true; }
+	IPCReceiveThread(IPCCore *ipc);
 
+	inline void stop(void) { m_stopped = true; }
 	virtual void run(void);
 
 signals:
@@ -110,14 +108,5 @@ signals:
 private:
 	void receiveLoop(void);
 	volatile bool m_stopped;
-	IPC *const m_ipc;
+	IPCCore *const m_ipc;
 };
-
-///////////////////////////////////////////////////////////////////////////////
-// Inline Functions
-///////////////////////////////////////////////////////////////////////////////
-
-inline bool IPC::isListening(void)
-{
-	return (m_recvThread && m_recvThread->isRunning());
-}

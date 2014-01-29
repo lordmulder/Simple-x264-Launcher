@@ -150,7 +150,7 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 			commandSent = true;
 			if(!args.isEmpty())
 			{
-				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst()))
+				if(!ipc->sendAsync(IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst()))
 				{
 					break;
 				}
@@ -170,7 +170,7 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 				{
 					lst << args.takeFirst();
 				}
-				if(!ipc->sendAsync(IPC::IPC_OPCODE_ADD_JOB, lst))
+				if(!ipc->sendAsync(IPC_OPCODE_ADD_JOB, lst))
 				{
 					break;
 				}
@@ -194,7 +194,7 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 	//If no argument has been sent yet, send a ping!
 	if(!commandSent)
 	{
-		ipc->sendAsync(IPC::IPC_OPCODE_PING, QStringList());
+		ipc->sendAsync(IPC_OPCODE_PING, QStringList());
 	}
 }
 

@@ -25,7 +25,12 @@
 
 #include <QSharedMemory>
 #include <QSystemSemaphore>
+#include <QMutexLocker>
 #include <QStringList>
+
+///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
 
 static const size_t MAX_STR_LEN = 1024;
 static const size_t MAX_ARG_CNT = 3;
@@ -36,6 +41,7 @@ static const char *s_key_sema_wr = "{B595F47C-0F0F-4B52-9F45-FF524BC5EEBD}";
 static const char *s_key_sema_rd = "{D331CBB5-8BCD-4127-9105-E22281130C77}";
 
 static const wchar_t *EMPTY_STRING = L"";
+static unsigned long TIMEOUT_MS = 12000;
 
 typedef struct
 {
@@ -54,10 +60,42 @@ x264_ipc_t;
 #define IS_FIRST_INSTANCE(X) ((X) > 0)
 
 ///////////////////////////////////////////////////////////////////////////////
+// IPC Base Class
+///////////////////////////////////////////////////////////////////////////////
+
+class IPCCore : public QObject
+{
+	friend class IPC;
+	friend class IPCReceiveThread;
+	friend class IPCSendThread;
+
+public:
+	bool initialize(bool &firstInstance);
+	
+	inline bool isInitialized(void)
+	{
+		return (m_initialized >= 0);
+	}
+
+protected:
+	IPCCore(void);
+	~IPCCore(void);
+
+	bool popCommand(int &command, QStringList &args);
+	bool pushCommand(const int &command, const QStringList *args);
+
+	volatile int m_initialized;
+	
+	QSharedMemory *m_sharedMemory;
+	QSystemSemaphore *m_semaphoreRd;
+	QSystemSemaphore *m_semaphoreWr;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Send Thread
 ///////////////////////////////////////////////////////////////////////////////
 
-IPCSendThread::IPCSendThread(IPC *ipc, const int &command, const QStringList &args)
+IPCSendThread::IPCSendThread(IPCCore *ipc, const int &command, const QStringList &args)
 :
 	m_ipc(ipc), m_command(command), m_args(new QStringList(args))
 {
@@ -68,7 +106,6 @@ IPCSendThread::~IPCSendThread(void)
 {
 	X264_DELETE(m_args);
 }
-
 
 void IPCSendThread::run(void)
 {
@@ -87,7 +124,7 @@ void IPCSendThread::run(void)
 // Receive Thread
 ///////////////////////////////////////////////////////////////////////////////
 
-IPCReceiveThread::IPCReceiveThread(IPC *ipc)
+IPCReceiveThread::IPCReceiveThread(IPCCore *ipc)
 :
 	m_ipc(ipc)
 {
@@ -112,49 +149,48 @@ void IPCReceiveThread::receiveLoop(void)
 	{
 		QStringList args;
 		int command;
-		if(m_ipc->popCommand(command, args, &m_stopped))
+		if(m_ipc->popCommand(command, args))
 		{
-			if((command >= 0) && (command < IPC::IPC_OPCODE_MAX))
+			if(!m_stopped)
 			{
-				emit receivedCommand(command, args);
+				if((command >= 0) && (command < IPC_OPCODE_MAX))
+				{
+					emit receivedCommand(command, args);
+				}
+				else
+				{
+					qWarning("IPC: Received the unknown opcode %d", command);
+				}
 			}
-			else
-			{
-				qWarning("IPC: Received the unknown opcode %d", command);
-			}
+		}
+		else
+		{
+			m_stopped = true;
+			qWarning("IPC: Receive operation has failed -> stopping thread!");
 		}
 	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// IPC Class
+// IPC Core Class
 ///////////////////////////////////////////////////////////////////////////////
 
-IPC::IPC(void)
+IPCCore::IPCCore(void)
 {
 	m_initialized  = -1;
 	m_sharedMemory = NULL;
 	m_semaphoreWr  = NULL;
 	m_semaphoreRd  = NULL;
-	m_recvThread   = NULL;
 }
 
-IPC::~IPC(void)
+IPCCore::~IPCCore(void)
 {
-	if(m_recvThread && m_recvThread->isRunning())
-	{
-		qWarning("Receive thread still running -> terminating!");
-		m_recvThread->terminate();
-		m_recvThread->wait();
-	}
-	
-	X264_DELETE(m_recvThread);
 	X264_DELETE(m_sharedMemory);
 	X264_DELETE(m_semaphoreWr);
 	X264_DELETE(m_semaphoreRd);
 }
 
-bool IPC::initialize(bool &firstInstance)
+bool IPCCore::initialize(bool &firstInstance)
 {
 	firstInstance = false;
 
@@ -198,12 +234,11 @@ bool IPC::initialize(bool &firstInstance)
 	return false;
 }
 
-bool IPC::pushCommand(const int &command, const QStringList *args)
+bool IPCCore::pushCommand(const int &command, const QStringList *args)
 {
 	if(m_initialized < 0)
 	{
-		qWarning("Error: IPC not initialized yet!");
-		return false;
+		throw std::runtime_error("IPC not initialized!");
 	}
 
 	if(!m_semaphoreWr->acquire())
@@ -228,7 +263,7 @@ bool IPC::pushCommand(const int &command, const QStringList *args)
 			memory->data[memory->posWr].command = command;
 			for(int i = 0; i < MAX_ARG_CNT; i++)
 			{
-				const wchar_t *current = (i < args->count()) ? ((const wchar_t*)((*args)[i].utf16())) : EMPTY_STRING;
+				const wchar_t *current = (args && (i < args->count())) ? ((const wchar_t*)((*args)[i].utf16())) : EMPTY_STRING;
 				wcsncpy_s(memory->data[memory->posWr].args[i], MAX_STR_LEN, current, _TRUNCATE);
 			}
 			memory->posWr = (memory->posWr + 1) % MAX_ENTRIES;
@@ -255,15 +290,14 @@ bool IPC::pushCommand(const int &command, const QStringList *args)
 	return success;
 }
 
-bool IPC::popCommand(int &command, QStringList &args, volatile bool *abortFlag)
+bool IPCCore::popCommand(int &command, QStringList &args)
 {
 	command = -1;
 	args.clear();
 
 	if(m_initialized < 0)
 	{
-		qWarning("Error: IPC not initialized yet!");
-		return false;
+		throw std::runtime_error("IPC not initialized!");
 	}
 
 	if(!m_semaphoreRd->acquire())
@@ -297,10 +331,7 @@ bool IPC::popCommand(int &command, QStringList &args, volatile bool *abortFlag)
 		}
 		else
 		{
-			if(!abortFlag)
-			{
-				qWarning("IPC: Shared memory is empty -> cannot pop string!");
-			}
+			qWarning("IPC: Shared memory is empty -> cannot pop string!");
 			success = false;
 		}
 	}
@@ -319,18 +350,50 @@ bool IPC::popCommand(int &command, QStringList &args, volatile bool *abortFlag)
 	return success;
 }
 
-bool IPC::sendAsync(const int &command, const QStringList &args, const int timeout)
+///////////////////////////////////////////////////////////////////////////////
+// IPC Handler Class
+///////////////////////////////////////////////////////////////////////////////
+
+IPC::IPC(void)
+:
+	m_mutex(QMutex::Recursive)
 {
-	if(m_initialized < 0)
+	m_ipcCore = new IPCCore();
+	m_recvThread = NULL;
+}
+
+IPC::~IPC(void)
+{
+	if(m_recvThread && m_recvThread->isRunning())
+	{
+		qWarning("Receive thread still running -> terminating!");
+		m_recvThread->terminate();
+		m_recvThread->wait();
+	}
+	X264_DELETE(m_recvThread);
+	X264_DELETE(m_ipcCore);
+}
+
+bool IPC::initialize(bool &firstInstance)
+{
+	QMutexLocker lock(&m_mutex);
+	return m_ipcCore->initialize(firstInstance);
+}
+
+bool IPC::sendAsync(const int &command, const QStringList &args)
+{
+	QMutexLocker lock(&m_mutex);
+
+	if(!m_ipcCore->isInitialized())
 	{
 		qWarning("Error: IPC not initialized yet!");
 		return false;
 	}
 
-	IPCSendThread sendThread(this, command, args);
+	IPCSendThread sendThread(m_ipcCore, command, args);
 	sendThread.start();
 
-	if(!sendThread.wait(timeout))
+	if(!sendThread.wait(TIMEOUT_MS))
 	{
 		qWarning("IPC send operation encountered timeout!");
 		sendThread.terminate();
@@ -343,7 +406,9 @@ bool IPC::sendAsync(const int &command, const QStringList &args, const int timeo
 
 bool IPC::startListening(void)
 {
-	if(m_initialized < 0)
+	QMutexLocker lock(&m_mutex);
+
+	if(!m_ipcCore->isInitialized())
 	{
 		qWarning("Error: IPC not initialized yet!");
 		return false;
@@ -351,7 +416,7 @@ bool IPC::startListening(void)
 
 	if(!m_recvThread)
 	{
-		m_recvThread = new IPCReceiveThread(this);
+		m_recvThread = new IPCReceiveThread(m_ipcCore);
 		connect(m_recvThread, SIGNAL(receivedCommand(int,QStringList)), this, SIGNAL(receivedCommand(int,QStringList)), Qt::QueuedConnection);
 	}
 
@@ -369,7 +434,9 @@ bool IPC::startListening(void)
 
 bool IPC::stopListening(void)
 {
-	if(m_initialized < 0)
+	QMutexLocker lock(&m_mutex);
+
+	if(!m_ipcCore->isInitialized())
 	{
 		qWarning("Error: IPC not initialized yet!");
 		return false;
@@ -378,9 +445,9 @@ bool IPC::stopListening(void)
 	if(m_recvThread && m_recvThread->isRunning())
 	{
 		m_recvThread->stop();
-		m_semaphoreRd->release();
+		sendAsync(IPC_OPCODE_MAX, QStringList()); //push dummy command to unblock thread!
 
-		if(!m_recvThread->wait(5000))
+		if(!m_recvThread->wait(TIMEOUT_MS))
 		{
 			qWarning("Receive thread seems deadlocked -> terminating!");
 			m_recvThread->terminate();
@@ -393,4 +460,16 @@ bool IPC::stopListening(void)
 	}
 
 	return true;
+}
+
+bool IPC::isInitialized(void)
+{
+	QMutexLocker lock(&m_mutex);
+	return m_ipcCore->isInitialized();
+}
+
+bool IPC::isListening(void)
+{
+	QMutexLocker lock(&m_mutex);
+	return (isInitialized() && m_recvThread && m_recvThread->isRunning());
 }

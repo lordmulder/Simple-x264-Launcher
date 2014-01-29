@@ -168,6 +168,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	connect(ui->actionWebJEEB, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionWebAvisynth32, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
+	connect(ui->actionWebAvisynthPlus, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionWebVapourSynth, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionWebVapourSynthDocs, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
@@ -573,6 +574,7 @@ void MainWindow::showWebLink(void)
 	if(QObject::sender() == ui->actionWebJEEB)            QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
 	if(QObject::sender() == ui->actionWebAvisynth32)      QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
 	if(QObject::sender() == ui->actionWebAvisynth64)      QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
+	if(QObject::sender() == ui->actionWebAvisynthPlus)    QDesktopServices::openUrl(QUrl("http://www.avs-plus.net/"));
 	if(QObject::sender() == ui->actionWebVapourSynth)     QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/"));
 	if(QObject::sender() == ui->actionWebVapourSynthDocs) QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/doc/"));
 	if(QObject::sender() == ui->actionWebWiki)            QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
@@ -1011,11 +1013,11 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 
 	switch(command)
 	{
-	case IPC::IPC_OPCODE_PING:
+	case IPC_OPCODE_PING:
 		qDebug("Received a PING request from another instance!");
 		x264_blink_window(this, 5, 125);
 		break;
-	case IPC::IPC_OPCODE_ADD_FILE:
+	case IPC_OPCODE_ADD_FILE:
 		if(!args.isEmpty())
 		{
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
@@ -1033,7 +1035,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 			}
 		}
 		break;
-	case IPC::IPC_OPCODE_ADD_JOB:
+	case IPC_OPCODE_ADD_JOB:
 		if(args.size() >= 3)
 		{
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
@@ -1121,6 +1123,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 {
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
 	{
+		e->ignore();
 		qWarning("Cannot close window at this time!");
 		return;
 	}
@@ -1504,7 +1507,7 @@ bool MainWindow::parseCommandLineArgs(void)
 			bCommandAccepted = true;
 			if(!args.isEmpty())
 			{
-				handleCommand(IPC::IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst());
+				handleCommand(IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst());
 			}
 			else
 			{
@@ -1517,7 +1520,7 @@ bool MainWindow::parseCommandLineArgs(void)
 			if(args.size() >= 3)
 			{
 				const QStringList list = args.mid(0, 3);
-				handleCommand(IPC::IPC_OPCODE_ADD_JOB, list);
+				handleCommand(IPC_OPCODE_ADD_JOB, list);
 				args.erase(args.begin(), args.begin() + 3);
 			}
 			else

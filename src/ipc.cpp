@@ -36,15 +36,19 @@ static const size_t MAX_STR_LEN = 1024;
 static const size_t MAX_ARG_CNT = 3;
 static const size_t MAX_ENTRIES = 16;
 
-static const char *s_key_smemory = "{76BA750B-007B-48BD-BC2E-2DA8E77D3C77}";
-static const char *s_key_sema_wr = "{B595F47C-0F0F-4B52-9F45-FF524BC5EEBD}";
-static const char *s_key_sema_rd = "{D331CBB5-8BCD-4127-9105-E22281130C77}";
+static const char *s_key_smemory = "{C10A332B-31F2-4A12-B521-420C7CCFFF1D}";
+static const char *s_key_sema_wr = "{E20F7E3B-084F-45CF-8448-EBAF25D21BDD}";
+static const char *s_key_sema_rd = "{8B816115-E846-4E2A-9E6B-4DAD400DB93D}";
 
 static const wchar_t *EMPTY_STRING = L"";
 static unsigned long TIMEOUT_MS = 12000;
 
 typedef struct
 {
+	size_t versTag;
+	size_t posRd;
+	size_t posWr;
+	size_t counter;
 	struct
 	{
 		int command;
@@ -52,11 +56,13 @@ typedef struct
 		unsigned int flags;
 	}
 	data[MAX_ENTRIES];
-	size_t posRd;
-	size_t posWr;
-	size_t counter;
 }
 x264_ipc_t;
+
+static size_t versionTag(void)
+{
+	return ((x264_version_major() & 0xFF) << 24) | ((x264_version_minor() & 0xFF) << 16) | (x264_version_build() & 0xFFFF);
+}
 
 #define IS_FIRST_INSTANCE(X) ((X) > 0)
 
@@ -221,7 +227,8 @@ bool IPCCore::initialize(bool &firstInstance)
 
 	if(m_sharedMemory->create(sizeof(x264_ipc_t)))
 	{
-		memset(m_sharedMemory->data(), 0, sizeof(x264_ipc_t));
+		x264_ipc_t *memory = (x264_ipc_t*) m_sharedMemory->data();
+		memset(memory, 0, sizeof(x264_ipc_t)); memory->versTag = versionTag();
 		m_initialized = 1;
 		firstInstance = IS_FIRST_INSTANCE(m_initialized);
 		return true;
@@ -232,6 +239,12 @@ bool IPCCore::initialize(bool &firstInstance)
 		qDebug("Not the first instance -> attaching to existing shared memory");
 		if(m_sharedMemory->attach())
 		{
+			x264_ipc_t *memory = (x264_ipc_t*) m_sharedMemory->data();
+			if(memory->versTag != versionTag())
+			{
+				qWarning("IPC: Version tag mismatch (0x%08x vs. 0x%08x) detected!", memory->versTag, versionTag());
+				return false;
+			}
 			m_initialized = 0;
 			firstInstance = IS_FIRST_INSTANCE(m_initialized);
 			return true;

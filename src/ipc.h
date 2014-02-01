@@ -38,6 +38,10 @@ static const int IPC_OPCODE_ADD_FILE = 1;
 static const int IPC_OPCODE_ADD_JOB  = 2;
 static const int IPC_OPCODE_MAX      = 3;
 
+//IPC Flags
+static const unsigned int IPC_FLAG_FORCE_START   = 0x00000001;
+static const unsigned int IPC_FLAG_FORCE_ENQUEUE = 0x00000002;
+
 ///////////////////////////////////////////////////////////////////////////////
 // IPC Handler Class
 ///////////////////////////////////////////////////////////////////////////////
@@ -51,7 +55,7 @@ public:
 	~IPC(void);
 
 	bool initialize(bool &firstInstance);
-	bool sendAsync(const int &command, const QStringList &args);
+	bool sendAsync(const int &command, const QStringList &args, const unsigned int &flags = 0);
 	bool isInitialized(void);
 	bool isListening(void);
 
@@ -60,7 +64,7 @@ public slots:
 	bool stopListening(void);
 
 signals:
-	void receivedCommand(const int &command, const QStringList &args);
+	void receivedCommand(const int &command, const QStringList &args, const quint32 &flags);
 
 protected:
 	IPCCore *m_ipcCore;
@@ -78,7 +82,7 @@ class IPCSendThread : public QThread
 	friend class IPC;
 
 protected:
-	IPCSendThread(IPCCore *ipc, const int &command, const QStringList &args);
+	IPCSendThread(IPCCore *ipc, const int &command, const QStringList &args, const unsigned int &flags);
 	IPCSendThread::~IPCSendThread(void);
 
 	inline bool result(void) { return m_result; }
@@ -88,6 +92,7 @@ private:
 	volatile bool m_result;
 	IPCCore *const m_ipc;
 	const int m_command;
+	const unsigned int m_flags;
 	const QStringList *m_args;
 };
 
@@ -98,12 +103,13 @@ class IPCReceiveThread : public QThread
 
 protected:
 	IPCReceiveThread(IPCCore *ipc);
+	~IPCReceiveThread(void);
 
 	inline void stop(void) { m_stopped = true; }
 	virtual void run(void);
 
 signals:
-	void receivedCommand(const int &command, const QStringList &args);
+	void receivedCommand(const int &command, const QStringList &args, const quint32 &flags);
 
 private:
 	void receiveLoop(void);

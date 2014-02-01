@@ -49,6 +49,7 @@ typedef struct
 	{
 		int command;
 		wchar_t args[MAX_ARG_CNT][MAX_STR_LEN];
+		unsigned int flags;
 	}
 	data[MAX_ENTRIES];
 	size_t posRd;
@@ -81,8 +82,8 @@ protected:
 	IPCCore(void);
 	~IPCCore(void);
 
-	bool popCommand(int &command, QStringList &args);
-	bool pushCommand(const int &command, const QStringList *args);
+	bool popCommand(int &command, QStringList &args, unsigned int &flags);
+	bool pushCommand(const int &command, const QStringList *args, const unsigned int &flags = 0);
 
 	volatile int m_initialized;
 	
@@ -95,23 +96,23 @@ protected:
 // Send Thread
 ///////////////////////////////////////////////////////////////////////////////
 
-IPCSendThread::IPCSendThread(IPCCore *ipc, const int &command, const QStringList &args)
+IPCSendThread::IPCSendThread(IPCCore *ipc, const int &command, const QStringList &args, const unsigned int &flags)
 :
-	m_ipc(ipc), m_command(command), m_args(new QStringList(args))
+	m_ipc(ipc), m_command(command), m_args(&args), m_flags(flags)
 {
 	m_result = false;
 }
 
 IPCSendThread::~IPCSendThread(void)
 {
-	X264_DELETE(m_args);
+	/*nothing to do here*/
 }
 
 void IPCSendThread::run(void)
 {
 	try
 	{
-		m_result = m_ipc->pushCommand(m_command, m_args);
+		m_result = m_ipc->pushCommand(m_command, m_args, m_flags);
 	}
 	catch(...)
 	{
@@ -130,7 +131,12 @@ IPCReceiveThread::IPCReceiveThread(IPCCore *ipc)
 {
 	m_stopped = false;
 }
-	
+
+IPCReceiveThread::~IPCReceiveThread(void)
+{
+	/*nothing to do here*/
+}
+
 void IPCReceiveThread::run(void)
 {
 	try
@@ -147,15 +153,17 @@ void IPCReceiveThread::receiveLoop(void)
 {
 	while(!m_stopped)
 	{
-		QStringList args;
 		int command;
-		if(m_ipc->popCommand(command, args))
+		unsigned int flags;
+		QStringList args;
+
+		if(m_ipc->popCommand(command, args, flags))
 		{
 			if(!m_stopped)
 			{
 				if((command >= 0) && (command < IPC_OPCODE_MAX))
 				{
-					emit receivedCommand(command, args);
+					emit receivedCommand(command, args, flags);
 				}
 				else
 				{
@@ -234,7 +242,7 @@ bool IPCCore::initialize(bool &firstInstance)
 	return false;
 }
 
-bool IPCCore::pushCommand(const int &command, const QStringList *args)
+bool IPCCore::pushCommand(const int &command, const QStringList *args, const unsigned int &flags)
 {
 	if(m_initialized < 0)
 	{
@@ -266,6 +274,7 @@ bool IPCCore::pushCommand(const int &command, const QStringList *args)
 				const wchar_t *current = (args && (i < args->count())) ? ((const wchar_t*)((*args)[i].utf16())) : EMPTY_STRING;
 				wcsncpy_s(memory->data[memory->posWr].args[i], MAX_STR_LEN, current, _TRUNCATE);
 			}
+			memory->data[memory->posWr].flags = flags;
 			memory->posWr = (memory->posWr + 1) % MAX_ENTRIES;
 			memory->counter++;
 		}
@@ -290,9 +299,10 @@ bool IPCCore::pushCommand(const int &command, const QStringList *args)
 	return success;
 }
 
-bool IPCCore::popCommand(int &command, QStringList &args)
+bool IPCCore::popCommand(int &command, QStringList &args, unsigned int &flags)
 {
 	command = -1;
+	flags = 0;
 	args.clear();
 
 	if(m_initialized < 0)
@@ -326,6 +336,7 @@ bool IPCCore::popCommand(int &command, QStringList &args)
 				const QString str = QString::fromUtf16((const ushort*)memory->data[memory->posRd].args[i]);
 				if(!str.isEmpty()) args << str; else break;
 			}
+			flags = memory->data[memory->posRd].flags;
 			memory->posRd = (memory->posRd + 1) % MAX_ENTRIES;
 			memory->counter--;
 		}
@@ -380,7 +391,7 @@ bool IPC::initialize(bool &firstInstance)
 	return m_ipcCore->initialize(firstInstance);
 }
 
-bool IPC::sendAsync(const int &command, const QStringList &args)
+bool IPC::sendAsync(const int &command, const QStringList &args, const unsigned int &flags)
 {
 	QMutexLocker lock(&m_mutex);
 
@@ -390,7 +401,7 @@ bool IPC::sendAsync(const int &command, const QStringList &args)
 		return false;
 	}
 
-	IPCSendThread sendThread(m_ipcCore, command, args);
+	IPCSendThread sendThread(m_ipcCore, command, args, flags);
 	sendThread.start();
 
 	if(!sendThread.wait(TIMEOUT_MS))
@@ -417,7 +428,7 @@ bool IPC::startListening(void)
 	if(!m_recvThread)
 	{
 		m_recvThread = new IPCReceiveThread(m_ipcCore);
-		connect(m_recvThread, SIGNAL(receivedCommand(int,QStringList)), this, SIGNAL(receivedCommand(int,QStringList)), Qt::QueuedConnection);
+		connect(m_recvThread, SIGNAL(receivedCommand(int,QStringList,quint32)), this, SIGNAL(receivedCommand(int,QStringList,quint32)), Qt::QueuedConnection);
 	}
 
 	if(!m_recvThread->isRunning())

@@ -44,8 +44,11 @@ void handleMultipleInstances(const QStringList &args, IPC *ipc);
 
 static int x264_main(int argc, char* argv[])
 {
+	//Get CLI arguments
+	const QStringList &arguments = x264_arguments();
+
 	//Init console
-	x264_init_console(argc, argv);
+	x264_init_console(arguments);
 
 	//Print version info
 	qDebug("Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth", x264_version_major(), x264_version_minor(), x264_version_build());
@@ -65,9 +68,6 @@ static int x264_main(int argc, char* argv[])
 		qWarning("---------------------------------------------------------\n"); 
 	}
 
-	//Get CLI arguments
-	const QStringList &arguments = x264_arguments();
-	
 	//Detect CPU capabilities
 	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(arguments);
 	qDebug("   CPU vendor id  :  %s (Intel: %s)", cpuFeatures.vendor, X264_BOOL(cpuFeatures.intel));
@@ -110,7 +110,7 @@ static int x264_main(int argc, char* argv[])
 	WinSevenTaskbar::init();
 
 	//Set style
-	if(!qApp->arguments().contains("--no-style", Qt::CaseInsensitive))
+	if(!CLIParser::checkFlag(CLI_PARAM_NO_GUI_STYLE, arguments))
 	{
 		qApp->setStyle(new QPlastiqueStyle());
 	}
@@ -170,8 +170,6 @@ void handleMultipleInstances(const QStringList &args, IPC *ipc)
 		case CLI_PARAM_NO_FORCE_ENQUEUE:
 			flags = (flags & (~IPC_FLAG_FORCE_ENQUEUE));
 			break;
-		default:
-			qWarning("Unknown command-line option!");
 		}
 	}
 

@@ -46,6 +46,8 @@ s_parameters[] =
 	{ "skip-avisynth-check",    0, CLI_PARAM_SKIP_AVS_CHECK   },
 	{ "skip-vapoursynth-check", 0, CLI_PARAM_SKIP_VPS_CHECK   },
 	{ "force-cpu-no-64bit",     0, CLI_PARAM_FORCE_CPU_NO_X64 },
+	{ "force-cpu-no-64bit",     0, CLI_PARAM_FORCE_CPU_NO_SSE },
+	{ "force-cpu-no-64bit",     0, CLI_PARAM_FORCE_CPU_NO_INT },
 	{ "no-deadlock-detection",  0, CLI_PARAM_NO_DEADLOCK      },
 	{ "console",                0, CLI_PARAM_DEBUG_CONSOLE    },
 	{ "no-console",             0, CLI_PARAM_NO_DEBUG_CONSOLE },

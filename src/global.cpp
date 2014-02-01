@@ -19,14 +19,7 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-//x264 includes
 #include "global.h"
-#include "targetver.h"
-
-//Version
-#define ENABLE_X264_VERSION_INCLUDE
-#include "version.h"
-#undef  ENABLE_X264_VERSION_INCLUDE
 
 //Windows includes
 #define NOMINMAX
@@ -46,6 +39,15 @@
 
 //VLD
 #include <vld.h>
+
+//x264 includes
+#include "targetver.h"
+#include "cli.h"
+
+//Version
+#define ENABLE_X264_VERSION_INCLUDE
+#include "version.h"
+#undef  ENABLE_X264_VERSION_INCLUDE
 
 //Qt includes
 #include <QApplication>
@@ -660,89 +662,6 @@ void x264_init_console(const QStringList &argv)
 	{
 		wchar_t *logfile = NULL;
 		size_t logfile_len = 0;
-		if(!_wdupenv_s(&logfile, &logfile_len, L"X264_LOGFILE"))
-		{
-			if(logfile && (logfile_len > 0))
-			{
-				FILE *temp = NULL;
-				if(!_wfopen_s(&temp, logfile, L"wb"))
-				{
-					fprintf(temp, "%c%c%c", char(0xEF), char(0xBB), char(0xBF));
-					g_x264_log_file = temp;
-				}
-				free(logfile);
-			}
-		}
-	}
-
-	if(!X264_DEBUG)
-	{
-		for(int i = 0; i < argv.count(); i++)
-		{
-			if(!argv.at(i).compare("--console", Qt::CaseInsensitive))
-			{
-				enableConsole = true;
-			}
-			else if(!argv.at(i).compare("--no-console", Qt::CaseInsensitive))
-			{
-				enableConsole = false;
-			}
-		}
-	}
-
-	if(enableConsole)
-	{
-		if(!g_x264_console_attached)
-		{
-			if(AllocConsole() != FALSE)
-			{
-				SetConsoleCtrlHandler(NULL, TRUE);
-				SetConsoleTitle(L"Simple x264 Launcher | Debug Console");
-				SetConsoleOutputCP(CP_UTF8);
-				g_x264_console_attached = true;
-			}
-		}
-		
-		if(g_x264_console_attached)
-		{
-			//-------------------------------------------------------------------
-			//See: http://support.microsoft.com/default.aspx?scid=kb;en-us;105305
-			//-------------------------------------------------------------------
-			const int flags = _O_WRONLY | _O_U8TEXT;
-			int hCrtStdOut = _open_osfhandle((intptr_t) GetStdHandle(STD_OUTPUT_HANDLE), flags);
-			int hCrtStdErr = _open_osfhandle((intptr_t) GetStdHandle(STD_ERROR_HANDLE),  flags);
-			FILE *hfStdOut = (hCrtStdOut >= 0) ? _fdopen(hCrtStdOut, "wb") : NULL;
-			FILE *hfStdErr = (hCrtStdErr >= 0) ? _fdopen(hCrtStdErr, "wb") : NULL;
-			if(hfStdOut) { *stdout = *hfStdOut; std::cout.rdbuf(new std::filebuf(hfStdOut)); }
-			if(hfStdErr) { *stderr = *hfStdErr; std::cerr.rdbuf(new std::filebuf(hfStdErr)); }
-		}
-
-		HWND hwndConsole = GetConsoleWindow();
-
-		if((hwndConsole != NULL) && (hwndConsole != INVALID_HANDLE_VALUE))
-		{
-			HMENU hMenu = GetSystemMenu(hwndConsole, 0);
-			EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
-			RemoveMenu(hMenu, SC_CLOSE, MF_BYCOMMAND);
-
-			SetWindowPos(hwndConsole, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
-			SetWindowLong(hwndConsole, GWL_STYLE, GetWindowLong(hwndConsole, GWL_STYLE) & (~WS_MAXIMIZEBOX) & (~WS_MINIMIZEBOX));
-			SetWindowPos(hwndConsole, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_FRAMECHANGED);
-		}
-	}
-}
-
-/*
- * Initialize the console
- */
-void x264_init_console(int argc, char* argv[])
-{
-	bool enableConsole = x264_is_prerelease() || (X264_DEBUG);
-
-	if(_environ)
-	{
-		wchar_t *logfile = NULL;
-		size_t logfile_len = 0;
 		if(!_wdupenv_s(&logfile, &logfile_len, L"X264_LAUNCHER_LOGFILE"))
 		{
 			if(logfile && (logfile_len > 0))
@@ -760,17 +679,8 @@ void x264_init_console(int argc, char* argv[])
 
 	if(!X264_DEBUG)
 	{
-		for(int i = 0; i < argc; i++)
-		{
-			if(!_stricmp(argv[i], "--console"))
-			{
-				enableConsole = true;
-			}
-			else if(!_stricmp(argv[i], "--no-console"))
-			{
-				enableConsole = false;
-			}
-		}
+		if(CLIParser::checkFlag(CLI_PARAM_DEBUG_CONSOLE, argv))    enableConsole = true;
+		if(CLIParser::checkFlag(CLI_PARAM_NO_DEBUG_CONSOLE, argv)) enableConsole = false;
 	}
 
 	if(enableConsole)
@@ -1108,17 +1018,11 @@ x264_cpu_t x264_detect_cpu_features(const QStringList &argv)
 		features.count = qBound(1UL, systemInfo.dwNumberOfProcessors, 64UL);
 	}
 
-	if(argv.count() > 0)
-	{
-		bool flag = false;
-		for(int i = 0; i < argv.count(); i++)
-		{
-			if(!argv[i].compare("--force-cpu-no-64bit", Qt::CaseInsensitive)) { flag = true; features.x64 = false; }
-			if(!argv[i].compare("--force-cpu-no-sse", Qt::CaseInsensitive)) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
-			if(!argv[i].compare("--force-cpu-no-intel", Qt::CaseInsensitive)) { flag = true; features.intel = false; }
-		}
-		if(flag) qWarning("CPU flags overwritten by user-defined parameters. Take care!\n");
-	}
+	bool flag = false;
+	if(CLIParser::checkFlag(CLI_PARAM_FORCE_CPU_NO_X64, argv)) { flag = true; features.x64 = false; }
+	if(CLIParser::checkFlag(CLI_PARAM_FORCE_CPU_NO_SSE, argv)) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
+	if(CLIParser::checkFlag(CLI_PARAM_FORCE_CPU_NO_INT, argv)) { flag = true; features.intel = false; }
+	if(flag) qWarning("CPU flags overwritten by user-defined parameters. Take care!\n");
 
 	return features;
 }
@@ -1484,7 +1388,7 @@ bool x264_user_is_admin(void)
 /*
  * Initialize Qt framework
  */
-bool x264_init_qt(int argc, char* argv[])
+bool x264_init_qt(int &argc, char **argv)
 {
 	static bool qt_initialized = false;
 	typedef BOOL (WINAPI *SetDllDirectoryProc)(WCHAR *lpPathName);

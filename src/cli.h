@@ -37,10 +37,12 @@ static const int CLI_PARAM_SKIP_AVS_CHECK   =  6;
 static const int CLI_PARAM_SKIP_VPS_CHECK   =  7;
 static const int CLI_PARAM_SKIP_X264_CHECK  =  8;
 static const int CLI_PARAM_FORCE_CPU_NO_X64 =  9;
-static const int CLI_PARAM_NO_DEADLOCK      = 10;
-static const int CLI_PARAM_DEBUG_CONSOLE    = 11;
-static const int CLI_PARAM_NO_DEBUG_CONSOLE = 12;
-static const int CLI_PARAM_NO_GUI_STYLE     = 13;
+static const int CLI_PARAM_FORCE_CPU_NO_SSE = 10;
+static const int CLI_PARAM_FORCE_CPU_NO_INT = 11;
+static const int CLI_PARAM_NO_DEADLOCK      = 12;
+static const int CLI_PARAM_DEBUG_CONSOLE    = 13;
+static const int CLI_PARAM_NO_DEBUG_CONSOLE = 14;
+static const int CLI_PARAM_NO_GUI_STYLE     = 15;
 
 ///////////////////////////////////////////////////////////////////////////////
 // CLI Parser

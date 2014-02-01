@@ -1531,8 +1531,6 @@ bool MainWindow::parseCommandLineArgs(void)
 		case CLI_PARAM_NO_FORCE_ENQUEUE:
 			flags = (flags & (~IPC_FLAG_FORCE_ENQUEUE));
 			break;
-		default:
-			qWarning("Unknown command-line option!");
 		}
 	}
 

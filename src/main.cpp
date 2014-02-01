@@ -21,6 +21,7 @@
 
 #include "global.h"
 #include "win_main.h"
+#include "cli.h"
 #include "ipc.h"
 #include "taskbar7.h"
 
@@ -35,7 +36,7 @@
 #include <Windows.h>
 
 //Forward declaration
-void handleMultipleInstances(QStringList args, IPC *ipc);
+void handleMultipleInstances(const QStringList &args, IPC *ipc);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main function
@@ -134,67 +135,43 @@ static int x264_main(int argc, char* argv[])
 // Multi-instance handler
 ///////////////////////////////////////////////////////////////////////////////
 
-void handleMultipleInstances(QStringList args, IPC *ipc)
+void handleMultipleInstances(const QStringList &args, IPC *ipc)
 {
 	bool commandSent = false;
 	unsigned int flags = 0;
 
-	//Skip the program file name
-	args.takeFirst();
+	//Initialize command-line parser
+	CLIParser parser(args);
+	int identifier;
+	QStringList options;
 
 	//Process all command-line arguments
-	while(!args.isEmpty())
+	while(parser.nextOption(identifier, &options))
 	{
-		const QString current = args.takeFirst();
-		if(X264_STRCMP(current, "--add") || X264_STRCMP(current, "--add-file"))
+		switch(identifier)
 		{
+		case CLI_PARAM_ADD_FILE:
+			ipc->sendAsync(IPC_OPCODE_ADD_FILE, options, flags);
 			commandSent = true;
-			if(!args.isEmpty())
-			{
-				if(!ipc->sendAsync(IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst()))
-				{
-					break;
-				}
-			}
-			else
-			{
-				qWarning("Argument for '--add-file' is missing!");
-			}
-		}
-		else if(X264_STRCMP(current, "--add-job"))
-		{
-			commandSent = true;
-			if(args.size() >= 3)
-			{
-				const QStringList list = args.mid(0, 3);
-				args.erase(args.begin(), args.begin() + 3);
-				if(!ipc->sendAsync(IPC_OPCODE_ADD_JOB, list, flags))
-				{
-					break;
-				}
-			}
-			else
-			{
-				qWarning("Argument(s) for '--add-job' are missing!");
-				args.clear();
-			}
-		}
-		else if(X264_STRCMP(current, "--force-start") || X264_STRCMP(current, "--no-force-start"))
-		{
-			const bool bEnabled = X264_STRCMP(current, "--force-start");
-			flags = bEnabled ? (flags | IPC_FLAG_FORCE_START) : (flags & (~IPC_FLAG_FORCE_START));
-			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_ENQUEUE);
-		}
-		else if(X264_STRCMP(current, "--force-enqueue") || X264_STRCMP(current, "--no-force-enqueue"))
-		{
-			const bool bEnabled = X264_STRCMP(current, "--force-enqueue");
-			flags = bEnabled ? (flags | IPC_FLAG_FORCE_ENQUEUE) : (flags & (~IPC_FLAG_FORCE_ENQUEUE));
-			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_START);
-		}
-		else if(!current.startsWith("--"))
-		{
-			qWarning("Unknown argument: %s", current.toUtf8().constData());
 			break;
+		case CLI_PARAM_ADD_JOB:
+			ipc->sendAsync(IPC_OPCODE_ADD_JOB, options, flags);
+			commandSent = true;
+			break;
+		case CLI_PARAM_FORCE_START:
+			flags = ((flags | IPC_FLAG_FORCE_START) & (~IPC_FLAG_FORCE_ENQUEUE));
+			break;
+		case CLI_PARAM_NO_FORCE_START:
+			flags = (flags & (~IPC_FLAG_FORCE_START));
+			break;
+		case CLI_PARAM_FORCE_ENQUEUE:
+			flags = ((flags | IPC_FLAG_FORCE_ENQUEUE) & (~IPC_FLAG_FORCE_START));
+			break;
+		case CLI_PARAM_NO_FORCE_ENQUEUE:
+			flags = (flags & (~IPC_FLAG_FORCE_ENQUEUE));
+			break;
+		default:
+			qWarning("Unknown command-line option!");
 		}
 	}
 

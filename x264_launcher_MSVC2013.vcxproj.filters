@@ -75,7 +75,7 @@
     <ClInclude Include="src\checksum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ipc.h">
+    <ClInclude Include="src\cli.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -191,6 +191,9 @@
     <ClCompile Include="tmp\moc\moc_ipc.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\cli.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -248,6 +251,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\thread_updater.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\ipc.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

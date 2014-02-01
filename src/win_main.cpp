@@ -23,6 +23,7 @@
 #include "uic_win_main.h"
 
 #include "global.h"
+#include "cli.h"
 #include "ipc.h"
 #include "model_status.h"
 #include "model_jobList.h"
@@ -755,6 +756,7 @@ void MainWindow::init(void)
 		return;
 	}
 
+	const QStringList arguments = x264_arguments();
 	static const char *binFiles = "x86/x264_8bit_x86.exe:x64/x264_8bit_x64.exe:x86/x264_10bit_x86.exe:x64/x264_10bit_x64.exe:x86/avs2yuv_x86.exe:x64/avs2yuv_x64.exe";
 	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
 
@@ -833,21 +835,21 @@ void MainWindow::init(void)
 	}
 
 	//Skip version check (not recommended!)
-	if(qApp->arguments().contains("--skip-x264-version-check", Qt::CaseInsensitive))
+	if(CLIParser::checkFlag(CLI_PARAM_SKIP_X264_CHECK, arguments))
 	{
 		qWarning("x264 version check disabled, you have been warned!\n");
 		m_skipVersionTest = true;
 	}
 	
 	//Don't abort encoding process on timeout (not recommended!)
-	if(qApp->arguments().contains("--no-deadlock-detection", Qt::CaseInsensitive))
+	if(CLIParser::checkFlag(CLI_PARAM_NO_DEADLOCK, arguments))
 	{
 		qWarning("Deadlock detection disabled, you have been warned!\n");
 		m_abortOnTimeout = false;
 	}
 
 	//Check for Avisynth support
-	if(!qApp->arguments().contains("--skip-avisynth-check", Qt::CaseInsensitive))
+	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_AVS_CHECK, arguments))
 	{
 		qDebug("[Check for Avisynth support]");
 		volatile double avisynthVersion = 0.0;
@@ -874,7 +876,7 @@ void MainWindow::init(void)
 	}
 
 	//Check for VapourSynth support
-	if(!qApp->arguments().contains("--skip-vapoursynth-check", Qt::CaseInsensitive))
+	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_VPS_CHECK, arguments))
 	{
 		qDebug("[Check for VapourSynth support]");
 		volatile double avisynthVersion = 0.0;
@@ -1498,58 +1500,39 @@ bool MainWindow::parseCommandLineArgs(void)
 {
 	bool bCommandAccepted = false;
 	unsigned int flags = 0;
-	
-	QStringList files;
-	QStringList args = x264_arguments();
-	
-	args.takeFirst(); //Pop argv[0]
 
-	while(!args.isEmpty())
+	//Initialize command-line parser
+	CLIParser parser(x264_arguments());
+	int identifier;
+	QStringList options;
+
+	//Process all command-line arguments
+	while(parser.nextOption(identifier, &options))
 	{
-		QString current = args.takeFirst();
-		if(X264_STRCMP(current, "--add") || X264_STRCMP(current, "--add-file"))
+		switch(identifier)
 		{
+		case CLI_PARAM_ADD_FILE:
+			handleCommand(IPC_OPCODE_ADD_FILE, options, flags);
 			bCommandAccepted = true;
-			if(!args.isEmpty())
-			{
-				handleCommand(IPC_OPCODE_ADD_FILE, QStringList() << args.takeFirst());
-			}
-			else
-			{
-				qWarning("Argument for '--add-file' is missing!");
-			}
-		}
-		else if(X264_STRCMP(current, "--add-job"))
-		{
-			bCommandAccepted = true;
-			if(args.size() >= 3)
-			{
-				const QStringList list = args.mid(0, 3);
-				args.erase(args.begin(), args.begin() + 3);
-				handleCommand(IPC_OPCODE_ADD_JOB, list, flags);
-			}
-			else
-			{
-				qWarning("Argument(s) for '--add-job' are missing!");
-				args.clear();
-			}
-		}
-		else if(X264_STRCMP(current, "--force-start") || X264_STRCMP(current, "--no-force-start"))
-		{
-			const bool bEnabled = X264_STRCMP(current, "--force-start");
-			flags = bEnabled ? (flags | IPC_FLAG_FORCE_START) : (flags & (~IPC_FLAG_FORCE_START));
-			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_ENQUEUE);
-		}
-		else if(X264_STRCMP(current, "--force-enqueue") || X264_STRCMP(current, "--no-force-enqueue"))
-		{
-			const bool bEnabled = X264_STRCMP(current, "--force-enqueue");
-			flags = bEnabled ? (flags | IPC_FLAG_FORCE_ENQUEUE) : (flags & (~IPC_FLAG_FORCE_ENQUEUE));
-			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_START);
-		}
-		else if(!current.startsWith("--"))
-		{
-			qWarning("Unknown argument: %s", current.toUtf8().constData());
 			break;
+		case CLI_PARAM_ADD_JOB:
+			handleCommand(IPC_OPCODE_ADD_JOB, options, flags);
+			bCommandAccepted = true;
+			break;
+		case CLI_PARAM_FORCE_START:
+			flags = ((flags | IPC_FLAG_FORCE_START) & (~IPC_FLAG_FORCE_ENQUEUE));
+			break;
+		case CLI_PARAM_NO_FORCE_START:
+			flags = (flags & (~IPC_FLAG_FORCE_START));
+			break;
+		case CLI_PARAM_FORCE_ENQUEUE:
+			flags = ((flags | IPC_FLAG_FORCE_ENQUEUE) & (~IPC_FLAG_FORCE_START));
+			break;
+		case CLI_PARAM_NO_FORCE_ENQUEUE:
+			flags = (flags & (~IPC_FLAG_FORCE_ENQUEUE));
+			break;
+		default:
+			qWarning("Unknown command-line option!");
 		}
 	}
 

@@ -294,6 +294,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="src\3rd_party\avisynth_c.h" />
     <ClInclude Include="src\3rd_party\blake2.h" />
     <ClInclude Include="src\checksum.h" />
+    <ClInclude Include="src\cli.h" />
     <ClInclude Include="src\global.h" />
     <CustomBuild Include="src\model_jobList.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -364,6 +365,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\3rd_party\blake2.c" />
     <ClCompile Include="src\3rd_party\qtmain_win.cpp" />
     <ClCompile Include="src\checksum.cpp" />
+    <ClCompile Include="src\cli.cpp" />
     <ClCompile Include="src\ipc.cpp" />
     <ClCompile Include="src\job_object.cpp" />
     <ClCompile Include="src\model_jobList.cpp" />

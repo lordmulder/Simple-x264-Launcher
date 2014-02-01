@@ -62,8 +62,8 @@ const char *tpl_last = "<LAST_USED>";
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
 #define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
-#define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 #define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
+#define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -763,7 +763,7 @@ void MainWindow::init(void)
 	//Create the IPC listener thread
 	if(m_ipc->isInitialized())
 	{
-		connect(m_ipc, SIGNAL(receivedCommand(int,QStringList)), this, SLOT(handleCommand(int,QStringList)), Qt::QueuedConnection);
+		connect(m_ipc, SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
 		m_ipc->startListening();
 	}
 
@@ -991,7 +991,7 @@ void MainWindow::handlePendingFiles(void)
 	}
 }
 
-void MainWindow::handleCommand(const int &command, const QStringList &args)
+void MainWindow::handleCommand(const int &command, const QStringList &args, const quint32 &flags)
 {
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
 	{
@@ -1008,6 +1008,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 	{
 		qDebug("Arguments: %s", iter->toUtf8().constData());
 	}
+	qDebug("The Flags: 0x%08X", flags);
 	qDebug("---------- IPC ----------\n");
 #endif //IPC_LOGGING
 
@@ -1041,6 +1042,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
 			{
 				OptionsModel options;
+				bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
 				if(!(args[2].isEmpty() || X264_STRCMP(args[2], "-")))
 				{
 					if(!OptionsModel::loadTemplate(&options, args[2].trimmed()))
@@ -1048,7 +1050,9 @@ void MainWindow::handleCommand(const int &command, const QStringList &args)
 						qWarning("Template '%s' could not be found -> using defaults!", args[2].trimmed().toUtf8().constData());
 					}
 				}
-				appendJob(args[0], args[1], &options, true);
+				if((flags & IPC_FLAG_FORCE_START) && (!(flags & IPC_FLAG_FORCE_ENQUEUE))) runImmediately = true;
+				if((flags & IPC_FLAG_FORCE_ENQUEUE) && (!(flags & IPC_FLAG_FORCE_START))) runImmediately = false;
+				appendJob(args[0], args[1], &options, runImmediately);
 			}
 			else
 			{
@@ -1493,6 +1497,7 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 bool MainWindow::parseCommandLineArgs(void)
 {
 	bool bCommandAccepted = false;
+	unsigned int flags = 0;
 	
 	QStringList files;
 	QStringList args = x264_arguments();
@@ -1520,8 +1525,8 @@ bool MainWindow::parseCommandLineArgs(void)
 			if(args.size() >= 3)
 			{
 				const QStringList list = args.mid(0, 3);
-				handleCommand(IPC_OPCODE_ADD_JOB, list);
 				args.erase(args.begin(), args.begin() + 3);
+				handleCommand(IPC_OPCODE_ADD_JOB, list, flags);
 			}
 			else
 			{
@@ -1529,13 +1534,22 @@ bool MainWindow::parseCommandLineArgs(void)
 				args.clear();
 			}
 		}
-		else
+		else if(X264_STRCMP(current, "--force-start") || X264_STRCMP(current, "--no-force-start"))
 		{
-			if(!current.startsWith("--"))
-			{
-				qWarning("Unknown argument: %s", current.toUtf8().constData());
-				break;
-			}
+			const bool bEnabled = X264_STRCMP(current, "--force-start");
+			flags = bEnabled ? (flags | IPC_FLAG_FORCE_START) : (flags & (~IPC_FLAG_FORCE_START));
+			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_ENQUEUE);
+		}
+		else if(X264_STRCMP(current, "--force-enqueue") || X264_STRCMP(current, "--no-force-enqueue"))
+		{
+			const bool bEnabled = X264_STRCMP(current, "--force-enqueue");
+			flags = bEnabled ? (flags | IPC_FLAG_FORCE_ENQUEUE) : (flags & (~IPC_FLAG_FORCE_ENQUEUE));
+			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_START);
+		}
+		else if(!current.startsWith("--"))
+		{
+			qWarning("Unknown argument: %s", current.toUtf8().constData());
+			break;
 		}
 	}
 

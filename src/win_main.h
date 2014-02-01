@@ -113,7 +113,7 @@ private slots:
 	void checkUpdates(void);
 	void handlePendingFiles(void);
 	void init(void);
-	void handleCommand(const int &command, const QStringList &args);
+	void handleCommand(const int &command, const QStringList &args, const quint32 &flags = 0);
 	void jobSelected(const QModelIndex &current, const QModelIndex &previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);

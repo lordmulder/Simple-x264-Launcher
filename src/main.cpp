@@ -137,6 +137,7 @@ static int x264_main(int argc, char* argv[])
 void handleMultipleInstances(QStringList args, IPC *ipc)
 {
 	bool commandSent = false;
+	unsigned int flags = 0;
 
 	//Skip the program file name
 	args.takeFirst();
@@ -165,12 +166,9 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 			commandSent = true;
 			if(args.size() >= 3)
 			{
-				QStringList lst;
-				for(int i = 0; i < 3; i++)
-				{
-					lst << args.takeFirst();
-				}
-				if(!ipc->sendAsync(IPC_OPCODE_ADD_JOB, lst))
+				const QStringList list = args.mid(0, 3);
+				args.erase(args.begin(), args.begin() + 3);
+				if(!ipc->sendAsync(IPC_OPCODE_ADD_JOB, list, flags))
 				{
 					break;
 				}
@@ -181,13 +179,22 @@ void handleMultipleInstances(QStringList args, IPC *ipc)
 				args.clear();
 			}
 		}
-		else
+		else if(X264_STRCMP(current, "--force-start") || X264_STRCMP(current, "--no-force-start"))
 		{
-			if(!current.startsWith("--"))
-			{
-				qWarning("Unknown argument: %s", current.toUtf8().constData());
-				break;
-			}
+			const bool bEnabled = X264_STRCMP(current, "--force-start");
+			flags = bEnabled ? (flags | IPC_FLAG_FORCE_START) : (flags & (~IPC_FLAG_FORCE_START));
+			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_ENQUEUE);
+		}
+		else if(X264_STRCMP(current, "--force-enqueue") || X264_STRCMP(current, "--no-force-enqueue"))
+		{
+			const bool bEnabled = X264_STRCMP(current, "--force-enqueue");
+			flags = bEnabled ? (flags | IPC_FLAG_FORCE_ENQUEUE) : (flags & (~IPC_FLAG_FORCE_ENQUEUE));
+			if(bEnabled) flags = flags & (~IPC_FLAG_FORCE_START);
+		}
+		else if(!current.startsWith("--"))
+		{
+			qWarning("Unknown argument: %s", current.toUtf8().constData());
+			break;
 		}
 	}
 

@@ -230,22 +230,30 @@ in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 13. Command-line Syntax
 -----------------------
 
+PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher, they
+can **not** be passed to x264 (or avs2yuv) itself as "custom" parameters !!!
+
 The following command-line switches are available:
 
---add-file <file> ............... Create a new job via "Add Job" dialog
---add-job <src> <dest> <tpl> .... Create a new job in a non-interactive way
---console ....................... Show the "debug" console
---no-console .................... Don't show the "debug" console
---no-style ...................... Don't use the Qt "Plastique" style
---skip-avisynth-check ........... Skip Avisynth check, disable .AVS input
---skip-vapoursynth-check ........ Skip VapourSynth check, disables .VPY input
---force-cpu-no-64bit ............ Forcefully disable 64-Bit support
---no-deadlock-detection ......... Don't abort processes on timeout/deadlock
+  --add-file <file> ............... Create a new job via "Add Job" dialog
+  --add-job <src> <dest> <tpl> .... Create a new job in a non-interactive way
+  --[no-]force-start .............. Next job will [not] be started immediately
+  --[no-]force-enqueue ............ Next job will [not] be appended to queue
+  --skip-avisynth-check ........... Skip Avisynth check, disable .AVS input
+  --skip-vapoursynth-check ........ Skip VapourSynth check, disables .VPY input
+  --force-cpu-no-64bit ............ Forcefully disable 64-Bit support
+  --no-deadlock-detection ......... Don't abort processes on timeout/deadlock
+  --[no-]console .................. Do [not] show the "debug" console window
+  --no-style ...................... Don't use the Qt "Plastique" UI-style
 
-HINT: Pass "-" as the <tpl> parameter to encode with *default* template.
+Some details on the "--add-job" command-line switch:
 
-PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher, they
-can *not* be passed to x264 itself as "custom" parameters !!!
+  <src> .... Specifies the source media file or Avisynth/VapourSynth script
+  <dest> ... Specifies the output H.264/MKV/MP4 file to be written
+  <tpl> .... Specifies the template name to be used, can be "-" to use defaults
+
+  Use "--[no-]force-start" or "--[no-]force-enqueue" to tweak startup behavior.
+  If neither of those switches is used, the default startup behavior applies.
 
 
 14. Help & Support

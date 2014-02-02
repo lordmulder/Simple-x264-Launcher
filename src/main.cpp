@@ -44,11 +44,8 @@ void handleMultipleInstances(const QStringList &args, IPC *ipc);
 
 static int x264_main(int argc, char* argv[])
 {
-	//Get CLI arguments
-	const QStringList &arguments = x264_arguments();
-
 	//Init console
-	x264_init_console(arguments);
+	x264_init_console(argc, argv);
 
 	//Print version info
 	qDebug("Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth", x264_version_major(), x264_version_minor(), x264_version_build());
@@ -69,12 +66,15 @@ static int x264_main(int argc, char* argv[])
 	}
 
 	//Detect CPU capabilities
-	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(arguments);
+	const x264_cpu_t cpuFeatures = x264_detect_cpu_features(argc, argv);
 	qDebug("   CPU vendor id  :  %s (Intel: %s)", cpuFeatures.vendor, X264_BOOL(cpuFeatures.intel));
 	qDebug("CPU brand string  :  %s", cpuFeatures.brand);
 	qDebug("   CPU signature  :  Family: %d, Model: %d, Stepping: %d", cpuFeatures.family, cpuFeatures.model, cpuFeatures.stepping);
 	qDebug("CPU capabilities  :  MMX=%s, MMXEXT=%s, SSE=%s, SSE2=%s, SSE3=%s, SSSE3=%s, X64=%s", X264_BOOL(cpuFeatures.mmx), X264_BOOL(cpuFeatures.mmx2), X264_BOOL(cpuFeatures.sse), X264_BOOL(cpuFeatures.sse2), X264_BOOL(cpuFeatures.sse3), X264_BOOL(cpuFeatures.ssse3), X264_BOOL(cpuFeatures.x64));
 	qDebug(" Number of CPU's  :  %d\n", cpuFeatures.count);
+
+	//Get CLI arguments
+	const QStringList &arguments = x264_arguments();
 
 	//Initialize the IPC handler class
 	bool firstInstance = false;

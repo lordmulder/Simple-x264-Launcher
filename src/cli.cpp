@@ -28,6 +28,8 @@
 // Pre-defined commands
 ///////////////////////////////////////////////////////////////////////////////
 
+#define MAKE_ARG(X,Y,Z) { "--"X, (Y), (Z) }
+
 static struct
 {
 	const char *longName;
@@ -36,22 +38,22 @@ static struct
 }
 s_parameters[] =
 {
-	{ "add",                    1, CLI_PARAM_ADD_FILE         },
-	{ "add-file",               1, CLI_PARAM_ADD_FILE         },
-	{ "add-job",                3, CLI_PARAM_ADD_JOB          },
-	{ "force-start",            0, CLI_PARAM_FORCE_START      },
-	{ "no-force-start",         0, CLI_PARAM_NO_FORCE_START   },
-	{ "force-enqueue",          0, CLI_PARAM_FORCE_ENQUEUE    },
-	{ "no-force-enqueue",       0, CLI_PARAM_NO_FORCE_ENQUEUE },
-	{ "skip-avisynth-check",    0, CLI_PARAM_SKIP_AVS_CHECK   },
-	{ "skip-vapoursynth-check", 0, CLI_PARAM_SKIP_VPS_CHECK   },
-	{ "force-cpu-no-64bit",     0, CLI_PARAM_FORCE_CPU_NO_X64 },
-	{ "force-cpu-no-64bit",     0, CLI_PARAM_FORCE_CPU_NO_SSE },
-	{ "force-cpu-no-64bit",     0, CLI_PARAM_FORCE_CPU_NO_INT },
-	{ "no-deadlock-detection",  0, CLI_PARAM_NO_DEADLOCK      },
-	{ "console",                0, CLI_PARAM_DEBUG_CONSOLE    },
-	{ "no-console",             0, CLI_PARAM_NO_DEBUG_CONSOLE },
-	{ "no-style",               0, CLI_PARAM_NO_GUI_STYLE     },
+	MAKE_ARG( "add",                    1, CLI_PARAM_ADD_FILE         ),
+	MAKE_ARG( "add-file",               1, CLI_PARAM_ADD_FILE         ),
+	MAKE_ARG( "add-job",                3, CLI_PARAM_ADD_JOB          ),
+	MAKE_ARG( "force-start",            0, CLI_PARAM_FORCE_START      ),
+	MAKE_ARG( "no-force-start",         0, CLI_PARAM_NO_FORCE_START   ),
+	MAKE_ARG( "force-enqueue",          0, CLI_PARAM_FORCE_ENQUEUE    ),
+	MAKE_ARG( "no-force-enqueue",       0, CLI_PARAM_NO_FORCE_ENQUEUE ),
+	MAKE_ARG( "skip-avisynth-check",    0, CLI_PARAM_SKIP_AVS_CHECK   ),
+	MAKE_ARG( "skip-vapoursynth-check", 0, CLI_PARAM_SKIP_VPS_CHECK   ),
+	MAKE_ARG( "no-deadlock-detection",  0, CLI_PARAM_NO_DEADLOCK      ),
+	MAKE_ARG( "no-style",               0, CLI_PARAM_NO_GUI_STYLE     ),
+	MAKE_ARG( "console",                0, CLI_PARAM_OTHER            ),
+	MAKE_ARG( "no-console",             0, CLI_PARAM_OTHER            ),
+	MAKE_ARG( "force-cpu-no-64bit",     0, CLI_PARAM_OTHER            ),
+	MAKE_ARG( "force-cpu-no-sse",       0, CLI_PARAM_OTHER            ),
+	MAKE_ARG( "force-cpu-no-intel",     0, CLI_PARAM_OTHER            ),
 	{ NULL, 0, 0 }
 };
 
@@ -85,7 +87,7 @@ bool CLIParser::nextOption(int &identifier, QStringList *options)
 		const QString current = *(m_iter++);
 		for(size_t i = 0; s_parameters[i].longName != NULL; i++)
 		{
-			if(X264_STRCMP(current, QString("--%1").arg(QString::fromLatin1(s_parameters[i].longName))))
+			if(X264_STRCMP(current, QString::fromLatin1(s_parameters[i].longName)))
 			{
 				numOpts = s_parameters[i].optionCount;
 				identifier = s_parameters[i].identifier;

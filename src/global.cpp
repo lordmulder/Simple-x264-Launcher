@@ -19,7 +19,9 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
+//x264 includes
 #include "global.h"
+#include "targetver.h"
 
 //Windows includes
 #define NOMINMAX
@@ -39,10 +41,6 @@
 
 //VLD
 #include <vld.h>
-
-//x264 includes
-#include "targetver.h"
-#include "cli.h"
 
 //Version
 #define ENABLE_X264_VERSION_INCLUDE
@@ -222,6 +220,17 @@ while(0)
 } \
 while(0)
 
+//Check for CLI flag
+static inline bool _CHECK_FLAG(const int argc, char **argv, const char *flag)
+{
+	for(int i = 1; i < argc; i++)
+	{
+		if(_stricmp(argv[i], flag) == 0) return true;
+	}
+	return false;
+}
+
+#define CHECK_FLAG(FLAG) _CHECK_FLAG(argc, argv, "--" FLAG)
 #define X264_ZERO_MEMORY(X) SecureZeroMemory(&X, sizeof(X))
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -654,7 +663,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
 /*
  * Initialize the console
  */
-void x264_init_console(const QStringList &argv)
+void x264_init_console(const int argc, char **argv)
 {
 	bool enableConsole = x264_is_prerelease() || (X264_DEBUG);
 
@@ -679,8 +688,9 @@ void x264_init_console(const QStringList &argv)
 
 	if(!X264_DEBUG)
 	{
-		if(CLIParser::checkFlag(CLI_PARAM_DEBUG_CONSOLE, argv))    enableConsole = true;
-		if(CLIParser::checkFlag(CLI_PARAM_NO_DEBUG_CONSOLE, argv)) enableConsole = false;
+
+		if(CHECK_FLAG("console"))    enableConsole = true;
+		if(CHECK_FLAG("no-console")) enableConsole = false;
 	}
 
 	if(enableConsole)
@@ -922,7 +932,7 @@ extern "C"
 /*
  * Detect CPU features
  */
-x264_cpu_t x264_detect_cpu_features(const QStringList &argv)
+x264_cpu_t x264_detect_cpu_features(const int argc, char **argv)
 {
 	typedef BOOL (WINAPI *IsWow64ProcessFun)(__in HANDLE hProcess, __out PBOOL Wow64Process);
 
@@ -1019,9 +1029,9 @@ x264_cpu_t x264_detect_cpu_features(const QStringList &argv)
 	}
 
 	bool flag = false;
-	if(CLIParser::checkFlag(CLI_PARAM_FORCE_CPU_NO_X64, argv)) { flag = true; features.x64 = false; }
-	if(CLIParser::checkFlag(CLI_PARAM_FORCE_CPU_NO_SSE, argv)) { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
-	if(CLIParser::checkFlag(CLI_PARAM_FORCE_CPU_NO_INT, argv)) { flag = true; features.intel = false; }
+	if(CHECK_FLAG("force-cpu-no-64bit")) { flag = true; features.x64 = false; }
+	if(CHECK_FLAG("force-cpu-no-sse"))   { flag = true; features.sse = features.sse2 = features.sse3 = features.ssse3 = false; }
+	if(CHECK_FLAG("force-cpu-no-intel")) { flag = true; features.intel = false; }
 	if(flag) qWarning("CPU flags overwritten by user-defined parameters. Take care!\n");
 
 	return features;

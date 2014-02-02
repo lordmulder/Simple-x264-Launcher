@@ -252,6 +252,7 @@ void UpdateCheckThread::checkForUpdates(void)
 	// ----- Test Internet Connection ----- //
 
 	int connectionScore = 0;
+	int maxConnectTries = 2 * MIN_CONNSCORE;
 	
 	log("Checking internet connection...");
 	setStatus(UpdateStatus_CheckingConnection);
@@ -276,28 +277,26 @@ void UpdateCheckThread::checkForUpdates(void)
 	}
 
 	x264_seed_rand();
-	while(!hostList.isEmpty())
+
+	while(!(hostList.isEmpty() || (connectionScore >= MIN_CONNSCORE) || (--maxConnectTries < 0)))
 	{
 		QString currentHost = hostList.takeAt(x264_rand() % hostList.count());
-		if(connectionScore < MIN_CONNSCORE)
+		log("", "Testing host:", currentHost);
+		QString outFile = QString("%1/%2.htm").arg(x264_temp_directory(), x264_rand_str());
+		bool httpOk = false;
+		if(getFile(currentHost, outFile, 0, &httpOk))
 		{
-			log("", "Testing host:", currentHost);
-			QString outFile = QString("%1/%2.htm").arg(x264_temp_directory(), x264_rand_str());
-			bool httpOk = false;
-			if(getFile(currentHost, outFile, 0, &httpOk))
-			{
-				connectionScore++;
-				setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
-				x264_sleep(64);
-			}
-			if(httpOk)
-			{
-				connectionScore++;
-				setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
-				x264_sleep(64);
-			}
-			QFile::remove(outFile);
+			connectionScore++;
+			setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
+			x264_sleep(64);
 		}
+		if(httpOk)
+		{
+			connectionScore++;
+			setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
+			x264_sleep(64);
+		}
+		QFile::remove(outFile);
 	}
 
 	if(connectionScore < MIN_CONNSCORE)

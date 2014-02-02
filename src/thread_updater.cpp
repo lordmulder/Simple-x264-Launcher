@@ -252,7 +252,7 @@ void UpdateCheckThread::checkForUpdates(void)
 	// ----- Test Internet Connection ----- //
 
 	int connectionScore = 0;
-	int maxConnectTries = 2 * MIN_CONNSCORE;
+	int maxConnectTries = (3 * MIN_CONNSCORE) / 2;
 	
 	log("Checking internet connection...");
 	setStatus(UpdateStatus_CheckingConnection);
@@ -278,29 +278,21 @@ void UpdateCheckThread::checkForUpdates(void)
 
 	x264_seed_rand();
 
-	while(!(hostList.isEmpty() || (connectionScore >= MIN_CONNSCORE) || (--maxConnectTries < 0)))
+	while(!(hostList.isEmpty() || (connectionScore >= MIN_CONNSCORE) || (maxConnectTries < 1)))
 	{
-		QString currentHost = hostList.takeAt(x264_rand() % hostList.count());
-		log("", "Testing host:", currentHost);
-		QString outFile = QString("%1/%2.htm").arg(x264_temp_directory(), x264_rand_str());
-		bool httpOk = false;
-		if(getFile(currentHost, outFile, 0, &httpOk))
+		switch(tryContactHost(hostList.takeAt(x264_rand() % hostList.count())))
 		{
-			connectionScore++;
-			setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
-			x264_sleep(64);
+			case 01: connectionScore += 1; break;
+			case 02: connectionScore += 2; break;
+			default: maxConnectTries -= 1; break;
 		}
-		if(httpOk)
-		{
-			connectionScore++;
-			setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
-			x264_sleep(64);
-		}
-		QFile::remove(outFile);
+		setProgress(qBound(1, connectionScore + 1, MIN_CONNSCORE + 1));
+		x264_sleep(64);
 	}
 
 	if(connectionScore < MIN_CONNSCORE)
 	{
+		log("", "Connectivity test has failed: Internet connection appears to be broken!");
 		setProgress(m_maxProgress);
 		setStatus(UpdateStatus_ErrorConnectionTestFailed);
 		return;
@@ -439,6 +431,35 @@ void UpdateCheckThread::log(const QString &str1, const QString &str2, const QStr
 	if(!str4.isNull()) emit messageLogged(str4);
 }
 
+int UpdateCheckThread::tryContactHost(const QString &url)
+{
+		int result = -1; bool httpOkay = false;
+		const QString outFile = QString("%1/%2.htm").arg(x264_temp_directory(), x264_rand_str());
+		log("", "Testing host:", url);
+
+		if(getFile(url, outFile, 0, &httpOkay))
+		{
+			log("Connection to host was established successfully.");
+			result = 2;
+		}
+		else
+		{
+			if(httpOkay)
+			{
+				log("Connection to host timed out after HTTP OK was received.");
+				result = 1;
+			}
+			else
+			{
+				log("Connection failed: The host could not be reached!");
+				result = 0;
+			}
+		}
+
+		QFile::remove(outFile);
+		return result;
+}
+
 bool UpdateCheckThread::tryUpdateMirror(UpdateInfo *updateInfo, const QString &url)
 {
 	bool success = false;
@@ -497,7 +518,7 @@ bool UpdateCheckThread::getFile(const QString &url, const QString &outFile, unsi
 	x264_init_process(process, output.absolutePath());
 
 	QStringList args;
-	args << "--no-cache" << "--no-dns-cache" << QString().sprintf("--max-redirect=%u", maxRedir);
+	args << "-T" << "15" << "--no-cache" << "--no-dns-cache" << QString().sprintf("--max-redirect=%u", maxRedir);
 	args << QString("--referer=%1://%2/").arg(QUrl(url).scheme(), QUrl(url).host()) << "-U" << USER_AGENT_STR;
 	args << "-O" << output.fileName() << url;
 
@@ -522,10 +543,10 @@ bool UpdateCheckThread::getFile(const QString &url, const QString &outFile, unsi
 
 	timer.start();
 
-	while(process.state() == QProcess::Running)
+	while(process.state() != QProcess::NotRunning)
 	{
 		loop.exec();
-		bool bTimeOut = (!timer.isActive());
+		const bool bTimeOut = (!timer.isActive());
 		while(process.canReadLine())
 		{
 			QString line = QString::fromLatin1(process.readLine()).simplified();

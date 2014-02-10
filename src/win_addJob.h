@@ -42,10 +42,7 @@ public:
 
 	QString sourceFile(void);
 	QString outputFile(void);
-	QString preset(void);
-	QString tuning(void);
-	QString profile(void);
-	QString params(void);
+
 	bool runImmediately(void);
 	bool applyToAll(void);
 	void setRunImmediately(bool run);
@@ -76,6 +73,7 @@ protected:
 	virtual void dropEvent(QDropEvent *event);
 
 private slots:
+	void encoderIndexChanged(int index);
 	void modeIndexChanged(int index);
 	void browseButtonClicked(void);
 	void configurationChanged(void);

@@ -29,7 +29,26 @@ class OptionsModel
 {
 public:
 	OptionsModel(void);
+	OptionsModel(const OptionsModel &rhs);
 	~OptionsModel(void);
+
+	enum EncType
+	{
+		EncType_X264 = 0,
+		EncType_X265 = 1,
+	};
+
+	enum EncArch
+	{
+		EncArch_x32 = 0,
+		EncArch_x64 = 1,
+	};
+
+	enum EncVariant
+	{
+		EncVariant_LoBit = 0, // 8-Bit
+		EncVariant_HiBit = 1, //10-Bit (x264) or 16-Bit (x265)
+	};
 
 	enum RCMode
 	{
@@ -40,23 +59,29 @@ public:
 	};
 
 	//Getter
+	EncType encType(void) const { return m_encoderType; }
+	EncArch encArch(void) const { return m_encoderArch; }
+	EncVariant encVariant(void) const { return m_encoderVariant; }
 	RCMode rcMode(void) const { return m_rcMode; }
 	unsigned int bitrate(void) const { return m_bitrate; }
 	double quantizer(void) const { return m_quantizer; }
 	QString preset(void) const { return m_preset; }
 	QString tune(void) const { return m_tune; }
 	QString profile(void) const { return m_profile; }
-	QString customX264(void) const { return m_custom_x264; }
+	QString customEncParams(void) const { return m_custom_encoder; }
 	QString customAvs2YUV(void) const { return m_custom_avs2yuv; }
 
 	//Setter
+	void setEncType(EncType type) { m_encoderType = qBound(EncType_X264, type, EncType_X265); }
+	void setEncArch(EncArch arch) { m_encoderArch = qBound(EncArch_x32, arch, EncArch_x64); }
+	void setEncVariant(EncVariant variant) { m_encoderVariant = qBound(EncVariant_LoBit, variant, EncVariant_HiBit); }
 	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
 	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(10U, bitrate, 800000U); }
 	void setQuantizer(double quantizer) { m_quantizer = qBound(0.0, quantizer, 52.0); }
 	void setPreset(const QString &preset) { m_preset = preset.trimmed(); }
 	void setTune(const QString &tune) { m_tune = tune.trimmed(); }
 	void setProfile(const QString &profile) { m_profile = profile.trimmed(); }
-	void setCustomX264(const QString &custom) { m_custom_x264 = custom.trimmed(); }
+	void setCustomEncParams(const QString &custom) { m_custom_encoder = custom.trimmed(); }
 	void setCustomAvs2YUV(const QString &custom) { m_custom_avs2yuv = custom.trimmed(); }
 
 	//Stuff
@@ -71,12 +96,15 @@ public:
 	static bool deleteTemplate(const QString &name);
 
 protected:
+	EncType m_encoderType;
+	EncArch m_encoderArch;
+	EncVariant m_encoderVariant;
 	RCMode m_rcMode;
 	unsigned int m_bitrate;
 	double m_quantizer;
 	QString m_preset;
 	QString m_tune;
 	QString m_profile;
-	QString m_custom_x264;
+	QString m_custom_encoder;
 	QString m_custom_avs2yuv;
 };

@@ -28,15 +28,38 @@
 #include <QStringList>
 #include <QApplication>
 
+#define COMPARE_VAL(OTHER, NAME) ((this->NAME) == (OTHER->NAME))
+#define COMPARE_STR(OTHER, NAME) ((this->NAME).compare((model->NAME), Qt::CaseInsensitive) == 0)
+#define ASSIGN_FROM(OTHER, NAME) ((this->NAME) = (OTHER.NAME))
+
 OptionsModel::OptionsModel(void)
 {
+	m_encoderType = EncType_X264;
+	m_encoderArch = EncArch_x32;
+	m_encoderVariant = EncVariant_LoBit;
 	m_rcMode = RCMode_CRF;
 	m_bitrate = 1200;
 	m_quantizer = 22;
 	m_preset = "Medium";
 	m_tune = "None";
 	m_profile = "Auto";
-	m_custom_x264 = "";
+	m_custom_encoder = "";
+	m_custom_avs2yuv = "";
+}
+
+OptionsModel::OptionsModel(const OptionsModel &rhs)
+{
+	ASSIGN_FROM(rhs, m_encoderType);
+	ASSIGN_FROM(rhs, m_encoderArch);
+	ASSIGN_FROM(rhs, m_encoderVariant);
+	ASSIGN_FROM(rhs, m_rcMode);
+	ASSIGN_FROM(rhs, m_bitrate);
+	ASSIGN_FROM(rhs, m_quantizer);
+	ASSIGN_FROM(rhs, m_preset);
+	ASSIGN_FROM(rhs, m_tune);
+	ASSIGN_FROM(rhs, m_profile);
+	ASSIGN_FROM(rhs, m_custom_encoder);
+	ASSIGN_FROM(rhs, m_custom_avs2yuv);
 }
 
 OptionsModel::~OptionsModel(void)
@@ -68,15 +91,18 @@ QString OptionsModel::rcMode2String(RCMode mode)
 bool OptionsModel::equals(OptionsModel *model)
 {
 	bool equal = true;
-	
-	if(this->m_rcMode != model->m_rcMode) equal = false;
-	if(this->m_bitrate!= model->m_bitrate) equal = false;
-	if(this->m_quantizer != model->m_quantizer) equal = false;
-	if(this->m_preset.compare(model->m_preset, Qt::CaseInsensitive)) equal = false;
-	if(this->m_tune.compare(model->m_tune, Qt::CaseInsensitive)) equal = false;
-	if(this->m_profile.compare(model->m_profile, Qt::CaseInsensitive)) equal = false;
-	if(this->m_custom_x264.compare(model->m_custom_x264, Qt::CaseInsensitive)) equal = false;
-	if(this->m_custom_avs2yuv.compare(model->m_custom_avs2yuv, Qt::CaseInsensitive)) equal = false;
+
+	equal = equal && COMPARE_VAL(model, m_encoderType);
+	equal = equal && COMPARE_VAL(model, m_encoderArch);
+	equal = equal && COMPARE_VAL(model, m_encoderVariant);
+	equal = equal && COMPARE_VAL(model, m_rcMode);
+	equal = equal && COMPARE_VAL(model, m_bitrate);
+	equal = equal && COMPARE_VAL(model, m_quantizer);
+	equal = equal && COMPARE_STR(model, m_preset);
+	equal = equal && COMPARE_STR(model, m_tune);
+	equal = equal && COMPARE_STR(model, m_profile);
+	equal = equal && COMPARE_STR(model, m_custom_encoder);
+	equal = equal && COMPARE_STR(model, m_custom_avs2yuv);
 
 	return equal;
 }
@@ -94,13 +120,16 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	settings.beginGroup(templateName);
 	
+	settings.setValue("encoder_type", model->m_encoderType);
+	settings.setValue("encoder_arch", model->m_encoderArch);
+	settings.setValue("encoder_variant", model->m_encoderVariant);
 	settings.setValue("rate_control_mode", model->m_rcMode);
 	settings.setValue("target_bitrate", model->m_bitrate);
 	settings.setValue("target_quantizer", model->m_quantizer);
 	settings.setValue("preset_name", model->m_preset);
 	settings.setValue("tuning_name", model->m_tune);
 	settings.setValue("profile_name", model->m_profile);
-	settings.setValue("custom_params_x264", model->m_custom_x264);
+	settings.setValue("custom_params_encoder", model->m_custom_encoder);
 	settings.setValue("custom_params_avs2yuv", model->m_custom_avs2yuv);
 	
 	settings.endGroup();
@@ -129,24 +158,30 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	}
 
 	bool complete = true;
+	if(!settings.contains("encoder_type")) complete = false;
+	if(!settings.contains("encoder_arch")) complete = false;
+	if(!settings.contains("encoder_variant")) complete = false;
 	if(!settings.contains("rate_control_mode")) complete = false;
 	if(!settings.contains("target_bitrate")) complete = false;
 	if(!settings.contains("target_quantizer")) complete = false;
 	if(!settings.contains("preset_name")) complete = false;
 	if(!settings.contains("tuning_name")) complete = false;
 	if(!settings.contains("profile_name")) complete = false;
-	if(!settings.contains("custom_params_x264")) complete = false;
+	if(!settings.contains("custom_params_encoder")) complete = false;
 	if(!settings.contains("custom_params_avs2yuv")) complete = false;
 
 	if(complete)
 	{
+		model->setEncType(static_cast<OptionsModel::EncType>(settings.value("encoder_type", model->m_encoderType).toInt()));
+		model->setEncArch(static_cast<OptionsModel::EncArch>(settings.value("encoder_arch", model->m_encoderArch).toInt()));
+		model->setEncVariant(static_cast<OptionsModel::EncVariant>(settings.value("encoder_variant", model->m_encoderVariant).toInt()));
 		model->setRCMode(static_cast<OptionsModel::RCMode>(settings.value("rate_control_mode", model->m_rcMode).toInt()));
 		model->setBitrate(settings.value("target_bitrate", model->m_bitrate).toUInt());
 		model->setQuantizer(settings.value("target_quantizer", model->m_quantizer).toDouble());
 		model->setPreset(settings.value("preset_name", model->m_preset).toString());
 		model->setTune(settings.value("tuning_name", model->m_tune).toString());
 		model->setProfile(settings.value("profile_name", model->m_profile).toString());
-		model->setCustomX264(settings.value("custom_params_x264", model->m_custom_x264).toString());
+		model->setCustomEncParams(settings.value("custom_params_x264", model->m_custom_encoder).toString());
 		model->setCustomAvs2YUV(settings.value("custom_params_avs2yuv", model->m_custom_avs2yuv).toString());
 	}
 

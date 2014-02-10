@@ -76,6 +76,18 @@
 	WIDGET->addAction(_action); \
 } 
 
+static void ENABLE_SIGNALS(Ui::AddJobDialog *ui, const bool &flag)
+{
+	ui->cbxRateControlMode->blockSignals(flag);
+	ui->spinQuantizer->blockSignals(flag);
+	ui->spinBitrate->blockSignals(flag);
+	ui->cbxPreset->blockSignals(flag);
+	ui->cbxTuning->blockSignals(flag);
+	ui->cbxProfile->blockSignals(flag);
+	ui->editCustomX264Params->blockSignals(flag);
+	ui->editCustomAvs2YUVParams->blockSignals(flag);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
 ///////////////////////////////////////////////////////////////////////////////
@@ -227,8 +239,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed 
 	//Hide optional controls
 	ui->checkBoxApplyToAll->setVisible(false);
 
-	//Monitor RC mode combobox
+	//Monitor combobox changes
 	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
+	connect(ui->cbxEncoderType, SIGNAL(currentIndexChanged(int)), this, SLOT(encoderIndexChanged(int)));
 
 	//Activate buttons
 	connect(ui->buttonBrowseSource, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
@@ -407,6 +420,15 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
 
+void AddJobDialog::encoderIndexChanged(int index)
+{
+	const bool isX265 = (index >= 1);
+	ui->cbxEncoderVariant->setItemText(1, isX265 ? tr("16-Bit") : tr("10-Bit"));
+	ui->cbxProfile->setEnabled(!isX265);
+	ui->labelProfile->setEnabled(!isX265);
+	if(isX265) ui->cbxProfile->setCurrentIndex(0);
+}
+
 void AddJobDialog::modeIndexChanged(int index)
 {
 	ui->spinQuantizer->setEnabled(index == 0 || index == 1);
@@ -534,6 +556,7 @@ void AddJobDialog::templateSelected(void)
 		restoreOptions(options);
 	}
 
+	//Force updates
 	modeIndexChanged(ui->cbxRateControlMode->currentIndex());
 }
 
@@ -725,26 +748,6 @@ QString AddJobDialog::outputFile(void)
 	return QDir::fromNativeSeparators(ui->editOutput->text());
 }
 
-QString AddJobDialog::preset(void)
-{
-	return ui->cbxPreset->itemText(ui->cbxPreset->currentIndex());
-}
-
-QString AddJobDialog::tuning(void)
-{
-	return ui->cbxTuning->itemText(ui->cbxTuning->currentIndex());
-}
-
-QString AddJobDialog::profile(void)
-{
-	return ui->cbxProfile->itemText(ui->cbxProfile->currentIndex());
-}
-
-QString AddJobDialog::params(void)
-{
-	return ui->editCustomX264Params->text().simplified();
-}
-
 bool AddJobDialog::runImmediately(void)
 {
 	return ui->checkBoxRun->isChecked();
@@ -812,26 +815,24 @@ void AddJobDialog::loadTemplateList(void)
 
 void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 {
-	for(int i = 0; i < cbox->model()->rowCount(); i++)
+	int index = -1;
+	if(QAbstractItemModel *model = cbox->model())
 	{
-		if(cbox->model()->data(cbox->model()->index(i, 0, QModelIndex())).toString().compare(text, Qt::CaseInsensitive) == 0)
+		for(int i = 0; i < cbox->model()->rowCount(); i++)
 		{
-			cbox->setCurrentIndex(i);
-			break;
+			if(model->data(model->index(i, 0, QModelIndex())).toString().compare(text, Qt::CaseInsensitive) == 0)
+			{
+				index = i;
+				break;
+			}
 		}
 	}
+	cbox->setCurrentIndex(index);
 }
 
 void AddJobDialog::restoreOptions(OptionsModel *options)
 {
-	ui->cbxRateControlMode->blockSignals(true);
-	ui->spinQuantizer->blockSignals(true);
-	ui->spinBitrate->blockSignals(true);
-	ui->cbxPreset->blockSignals(true);
-	ui->cbxTuning->blockSignals(true);
-	ui->cbxProfile->blockSignals(true);
-	ui->editCustomX264Params->blockSignals(true);
-	ui->editCustomAvs2YUVParams->blockSignals(true);
+	ENABLE_SIGNALS(ui, false);
 
 	ui->cbxRateControlMode->setCurrentIndex(options->rcMode());
 	ui->spinQuantizer->setValue(options->quantizer());
@@ -839,28 +840,24 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 	updateComboBox(ui->cbxPreset, options->preset());
 	updateComboBox(ui->cbxTuning, options->tune());
 	updateComboBox(ui->cbxProfile, options->profile());
-	ui->editCustomX264Params->setText(options->customX264());
+	ui->editCustomX264Params->setText(options->customEncParams());
 	ui->editCustomAvs2YUVParams->setText(options->customAvs2YUV());
 
-	ui->cbxRateControlMode->blockSignals(false);
-	ui->spinQuantizer->blockSignals(false);
-	ui->spinBitrate->blockSignals(false);
-	ui->cbxPreset->blockSignals(false);
-	ui->cbxTuning->blockSignals(false);
-	ui->cbxProfile->blockSignals(false);
-	ui->editCustomX264Params->blockSignals(false);
-	ui->editCustomAvs2YUVParams->blockSignals(false);
+	ENABLE_SIGNALS(ui, true);
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)
 {
+	options->setEncType(static_cast<OptionsModel::EncType>(ui->cbxEncoderArch->currentIndex()));
+	options->setEncArch(static_cast<OptionsModel::EncArch>(ui->cbxEncoderType->currentIndex()));
+	options->setEncVariant(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant->currentIndex()));
 	options->setRCMode(static_cast<OptionsModel::RCMode>(ui->cbxRateControlMode->currentIndex()));
 	options->setQuantizer(ui->spinQuantizer->value());
 	options->setBitrate(ui->spinBitrate->value());
 	options->setPreset(ui->cbxPreset->model()->data(ui->cbxPreset->model()->index(ui->cbxPreset->currentIndex(), 0)).toString());
 	options->setTune(ui->cbxTuning->model()->data(ui->cbxTuning->model()->index(ui->cbxTuning->currentIndex(), 0)).toString());
 	options->setProfile(ui->cbxProfile->model()->data(ui->cbxProfile->model()->index(ui->cbxProfile->currentIndex(), 0)).toString());
-	options->setCustomX264(ui->editCustomX264Params->hasAcceptableInput() ? ui->editCustomX264Params->text().simplified() : QString());
+	options->setCustomEncParams(ui->editCustomX264Params->hasAcceptableInput() ? ui->editCustomX264Params->text().simplified() : QString());
 	options->setCustomAvs2YUV(ui->editCustomAvs2YUVParams->hasAcceptableInput() ? ui->editCustomAvs2YUVParams->text().simplified() : QString());
 }
 

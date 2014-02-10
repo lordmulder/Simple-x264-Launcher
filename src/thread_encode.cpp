@@ -249,7 +249,7 @@ void EncodeThread::encode(void)
 	log(tr("Preset:  %1").arg(m_options->preset()));
 	log(tr("Tuning:  %1").arg(m_options->tune()));
 	log(tr("Profile: %1").arg(m_options->profile()));
-	log(tr("Custom:  %1").arg(m_options->customX264().isEmpty() ? tr("(None)") : m_options->customX264()));
+	log(tr("Custom:  %1").arg(m_options->customEncParams().isEmpty() ? tr("(None)") : m_options->customEncParams()));
 	
 	log(m_binDir);
 
@@ -690,9 +690,9 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 		}
 	}
 
-	if(!m_options->customX264().isEmpty())
+	if(!m_options->customEncParams().isEmpty())
 	{
-		QStringList customArgs = splitParams(m_options->customX264());
+		QStringList customArgs = splitParams(m_options->customEncParams());
 		if(usePipe)
 		{
 			QStringList::iterator i = customArgs.begin();

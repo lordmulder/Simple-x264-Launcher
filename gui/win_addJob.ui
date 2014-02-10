@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>569</width>
-    <height>614</height>
+    <width>557</width>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,26 +29,19 @@
       <string> Input / Output </string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <spacer name="verticalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
+      <property name="spacing">
+       <number>3</number>
+      </property>
+      <property name="topMargin">
+       <number>3</number>
+      </property>
       <item>
        <layout class="QVBoxLayout" name="verticalLayout_14">
         <property name="spacing">
-         <number>4</number>
+         <number>1</number>
         </property>
         <item>
-         <widget class="QLabel" name="label">
+         <widget class="QLabel" name="labelSource">
           <property name="toolTip">
            <string>Select the source video file. This can be an Avisynth/VapourSynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
           </property>
@@ -87,25 +80,12 @@
        </layout>
       </item>
       <item>
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
        <layout class="QVBoxLayout" name="verticalLayout_5">
         <property name="spacing">
-         <number>4</number>
+         <number>1</number>
         </property>
         <item>
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="labelOutput">
           <property name="toolTip">
            <string>Select the output H.264/AVC file. This can be a Matroska (MKV,) MPEG-4 Part-14 (MP4) or &quot;raw&quot; H.264 file.</string>
           </property>
@@ -143,19 +123,6 @@
         </item>
        </layout>
       </item>
-      <item>
-       <spacer name="verticalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
@@ -165,10 +132,13 @@
       <string> Configuration </string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_15">
+      <property name="topMargin">
+       <number>3</number>
+      </property>
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
-         <widget class="QLabel" name="label_9">
+         <widget class="QLabel" name="labelTemplate">
           <property name="toolTip">
            <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new template.</string>
           </property>
@@ -253,20 +223,139 @@
        </layout>
       </item>
       <item>
-       <spacer name="verticalSpacer_10">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
+       <widget class="QGroupBox" name="groupBox_6">
+        <property name="title">
+         <string> Encoder Selection </string>
         </property>
-        <property name="sizeType">
-         <enum>QSizePolicy::Fixed</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>4</height>
-         </size>
-        </property>
-       </spacer>
+        <layout class="QHBoxLayout" name="horizontalLayout_10">
+         <property name="topMargin">
+          <number>3</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_9">
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_16">
+             <property name="spacing">
+              <number>2</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="labelEncoderType">
+               <property name="text">
+                <string>Encoder:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cbxEncoderType">
+               <item>
+                <property name="text">
+                 <string>x264 (AVC)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>x265 (HEVC)</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_15">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Fixed</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>16</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_18">
+             <property name="spacing">
+              <number>2</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="labelEncoderArch">
+               <property name="text">
+                <string>Architecture:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cbxEncoderArch">
+               <property name="currentIndex">
+                <number>1</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>32-Bit (x86)</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>64-Bit (x86_64)</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_16">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Fixed</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>16</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_17">
+             <property name="spacing">
+              <number>2</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="labelEncoderVariant">
+               <property name="text">
+                <string>Variant:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cbxEncoderVariant">
+               <item>
+                <property name="text">
+                 <string>8-Bit</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>10-Bit</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
       </item>
       <item>
        <widget class="QGroupBox" name="groupBox_2">
@@ -280,6 +369,9 @@
          <string> Rate Control </string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_3">
+         <property name="topMargin">
+          <number>3</number>
+         </property>
          <item>
           <spacer name="verticalSpacer_4">
            <property name="orientation">
@@ -297,8 +389,11 @@
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_4">
+             <property name="spacing">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_3">
+              <widget class="QLabel" name="labelRCMode">
                <property name="toolTip">
                 <string>Select the x264 rate-control mode. Use 'CRF' mode to hit a specific level of quality or use '2-Pass' mode to hit a specific file size.</string>
                </property>
@@ -357,8 +452,11 @@
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_7">
+             <property name="spacing">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_4">
+              <widget class="QLabel" name="labelQuantizer">
                <property name="toolTip">
                 <string>Select the quantizer or CRF value. Smaller value means better quality, but bigger file. Higher value means smaller file, but lower quality. A value of '0' triggers lossless mode.</string>
                </property>
@@ -403,8 +501,11 @@
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_6">
+             <property name="spacing">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_5">
+              <widget class="QLabel" name="labelBitrate">
                <property name="toolTip">
                 <string>Select the target average(!) bitrate, in kilobit/sec. Higher value means better quality, but bigger file. Lower value means smaller file, but lower quality.</string>
                </property>
@@ -461,6 +562,9 @@
          <string> Basic Encoder Options </string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_8">
+         <property name="topMargin">
+          <number>3</number>
+         </property>
          <item>
           <spacer name="verticalSpacer_6">
            <property name="orientation">
@@ -478,8 +582,11 @@
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_11">
+             <property name="spacing">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_6">
+              <widget class="QLabel" name="labelPreset">
                <property name="toolTip">
                 <string>This option controls the &quot;Speed -vs- Quality&quot; trade-off. Use a slower preset to improve the quality at the same bitrate (file size). Use a faster preset to save encoding time, at the cost of reduced quality.</string>
                </property>
@@ -568,8 +675,11 @@
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_10">
+             <property name="spacing">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_7">
+              <widget class="QLabel" name="labelTuning">
                <property name="toolTip">
                 <string>This option tweaks x264 for a specific type of source/content. For real-life footage, CGI and most other stuff, use the &quot;Film&quot; option. For anime/cartoon use the &quot;Animation&quot; option.</string>
                </property>
@@ -658,8 +768,11 @@
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_9">
+             <property name="spacing">
+              <number>2</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_8">
+              <widget class="QLabel" name="labelProfile">
                <property name="toolTip">
                 <string>This option can be used to enforce the restrictions of a specific H.264/AVC Proifle, though it won't force a higher profile than needed. Use &quot;Auto&quot; for an unrestricted encode.</string>
                </property>
@@ -745,6 +858,9 @@
          <string>Advanced Encoder Options </string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_13">
+         <property name="topMargin">
+          <number>3</number>
+         </property>
          <item>
           <spacer name="verticalSpacer_8">
            <property name="orientation">
@@ -777,7 +893,7 @@
                 <string>&lt;nobr&gt;All command&amp;minus;line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.&lt;br&gt;The following macros can be used:&lt;tt&gt; $(INPUT)&lt;/tt&gt; expands to the current source file path and&lt;tt&gt; $(OUTPUT)&lt;/tt&gt; expands to the current output file path.&lt;/nobr&gt;</string>
                </property>
                <property name="text">
-                <string>Custom x264 Parameters:</string>
+                <string>Custom Encoder Parameters:</string>
                </property>
               </widget>
              </item>

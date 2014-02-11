@@ -30,7 +30,6 @@ public:
 	bool autoRunNextJob(void) { return m_autoRunNextJob; }
 	unsigned int maxRunningJobCount(void) { return m_maxRunningJobCount; }
 	bool shutdownComputer(void) { return m_shutdownComputer; }
-	bool use10BitEncoding(void) { return m_use10BitEncoding; }
 	bool useAvisyth64Bit(void) { return m_useAvisyth64Bit; }
 	bool saveLogFiles(void) { return m_saveLogFiles; }
 	bool saveToSourcePath(void) { return m_saveToSourcePath; }
@@ -43,7 +42,6 @@ public:
 	void setAutoRunNextJob(const bool autoRunNextJob) { m_autoRunNextJob = autoRunNextJob; }
 	void setMaxRunningJobCount(const unsigned int maxRunningJobCount) { m_maxRunningJobCount = maxRunningJobCount; }
 	void setShutdownComputer(const bool shutdownComputer) { m_shutdownComputer = shutdownComputer; }
-	void setUse10BitEncoding(const bool use10BitEncoding) { m_use10BitEncoding = use10BitEncoding; }
 	void setUseAvisyth64Bit(const bool useAvisyth64Bit) { m_useAvisyth64Bit = useAvisyth64Bit; }
 	void setSaveLogFiles(const bool saveLogFiles) { m_saveLogFiles = saveLogFiles; }
 	void setSaveToSourcePath(const bool saveToSourcePath) { m_saveToSourcePath = saveToSourcePath; }
@@ -61,7 +59,6 @@ protected:
 	bool m_autoRunNextJob;
 	unsigned int m_maxRunningJobCount;
 	bool m_shutdownComputer;
-	bool m_use10BitEncoding;
 	bool m_useAvisyth64Bit;
 	bool m_saveLogFiles;
 	bool m_saveToSourcePath;

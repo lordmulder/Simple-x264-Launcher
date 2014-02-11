@@ -42,7 +42,6 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 	preferences->m_autoRunNextJob = true;
 	preferences->m_maxRunningJobCount = 1;
 	preferences->m_shutdownComputer = false;
-	preferences->m_use10BitEncoding = false;
 	preferences->m_useAvisyth64Bit = false;
 	preferences->m_saveLogFiles = false;
 	preferences->m_saveToSourcePath = false;
@@ -63,7 +62,6 @@ void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 	preferences->m_autoRunNextJob = settings.value("auto_run_next_job", QVariant(defaults.m_autoRunNextJob)).toBool();
 	preferences->m_maxRunningJobCount = qBound(1U, settings.value("max_running_job_count", QVariant(defaults.m_maxRunningJobCount)).toUInt(), 16U);
 	preferences->m_shutdownComputer = settings.value("shutdown_computer_on_completion", QVariant(defaults.m_shutdownComputer)).toBool();
-	preferences->m_use10BitEncoding = settings.value("use_10bit_encoding", QVariant(defaults.m_use10BitEncoding)).toBool();
 	preferences->m_useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(defaults.m_useAvisyth64Bit)).toBool();
 	preferences->m_saveLogFiles = settings.value("save_log_files", QVariant(defaults.m_saveLogFiles)).toBool();
 	preferences->m_saveToSourcePath = settings.value("save_to_source_path", QVariant(defaults.m_saveToSourcePath)).toBool();
@@ -82,7 +80,6 @@ void PreferencesModel::savePreferences(PreferencesModel *preferences)
 	settings.setValue("auto_run_next_job", preferences->m_autoRunNextJob);
 	settings.setValue("shutdown_computer_on_completion", preferences->m_shutdownComputer);
 	settings.setValue("max_running_job_count", preferences->m_maxRunningJobCount);
-	settings.setValue("use_10bit_encoding", preferences->m_use10BitEncoding);
 	settings.setValue("use_64bit_avisynth", preferences->m_useAvisyth64Bit);
 	settings.setValue("save_log_files", preferences->m_saveLogFiles);
 	settings.setValue("save_to_source_path", preferences->m_saveToSourcePath);

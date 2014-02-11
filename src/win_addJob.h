@@ -37,7 +37,7 @@ class AddJobDialog : public QDialog
 	Q_OBJECT
 
 public:
-	AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder);
+	AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool saveToSourceFolder);
 	~AddJobDialog(void);
 
 	QString sourceFile(void);
@@ -64,7 +64,6 @@ protected:
 	RecentlyUsed *m_recentlyUsed;
 
 	const bool m_x64supported;
-	const bool m_use10BitEncoding;
 	const bool m_saveToSourceFolder;
 
 	virtual void showEvent(QShowEvent *event);

@@ -105,8 +105,7 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->enableSounds());
 	UPDATE_CHECKBOX(ui->checkNoUpdateReminder,   m_preferences->noUpdateReminder());
 	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->disableWarnings(),  true);
-	UPDATE_CHECKBOX(ui->checkUse10BitEncoding,   m_preferences->use10BitEncoding(), true);
-
+	
 	ui->spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
 	
 	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->processPriority(), 1), 0);
@@ -158,7 +157,6 @@ void PreferencesDialog::done(int n)
 {
 	m_preferences->setAutoRunNextJob(ui->checkRunNextJob->isChecked());
 	m_preferences->setShutdownComputer(ui->checkShutdownComputer->isChecked());
-	m_preferences->setUse10BitEncoding(ui->checkUse10BitEncoding->isChecked());
 	m_preferences->setUseAvisyth64Bit(ui->checkUse64BitAvs2YUV->isChecked());
 	m_preferences->setSaveLogFiles(ui->checkSaveLogFiles->isChecked());
 	m_preferences->setSaveToSourcePath(ui->checkSaveToSourceFolder->isChecked());

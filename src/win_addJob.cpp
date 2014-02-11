@@ -76,17 +76,21 @@
 	WIDGET->addAction(_action); \
 } 
 
-static void ENABLE_SIGNALS(Ui::AddJobDialog *ui, const bool &flag)
-{
-	ui->cbxRateControlMode->blockSignals(flag);
-	ui->spinQuantizer->blockSignals(flag);
-	ui->spinBitrate->blockSignals(flag);
-	ui->cbxPreset->blockSignals(flag);
-	ui->cbxTuning->blockSignals(flag);
-	ui->cbxProfile->blockSignals(flag);
-	ui->editCustomX264Params->blockSignals(flag);
-	ui->editCustomAvs2YUVParams->blockSignals(flag);
-}
+#define BLOCK_SIGNALS(FLAG) do \
+{ \
+	ui->cbxEncoderType->blockSignals(FLAG); \
+	ui->cbxEncoderArch->blockSignals(FLAG); \
+	ui->cbxEncoderVariant->blockSignals(FLAG); \
+	ui->cbxRateControlMode->blockSignals(FLAG); \
+	ui->spinQuantizer->blockSignals(FLAG); \
+	ui->spinBitrate->blockSignals(FLAG); \
+	ui->cbxPreset->blockSignals(FLAG); \
+	ui->cbxTuning->blockSignals(FLAG); \
+	ui->cbxProfile->blockSignals(FLAG); \
+	ui->editCustomX264Params->blockSignals(FLAG); \
+	ui->editCustomAvs2YUVParams->blockSignals(FLAG); \
+} \
+while(0)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
@@ -214,13 +218,12 @@ public:
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool use10BitEncoding, bool saveToSourceFolder)
+AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool saveToSourceFolder)
 :
 	QDialog(parent),
 	m_defaults(new OptionsModel()),
 	m_options(options),
 	m_x64supported(x64supported),
-	m_use10BitEncoding(use10BitEncoding),
 	m_saveToSourceFolder(saveToSourceFolder),
 	m_recentlyUsed(recentlyUsed),
 	ui(new Ui::AddJobDialog())
@@ -262,6 +265,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed 
 	ui->labelHelpScreenAvs2YUV->installEventFilter(this);
 
 	//Monitor for options changes
+	connect(ui->cbxEncoderType, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->cbxEncoderArch, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
+	connect(ui->cbxEncoderVariant, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(configurationChanged()));
 	connect(ui->spinQuantizer, SIGNAL(valueChanged(double)), this, SLOT(configurationChanged()));
 	connect(ui->spinBitrate, SIGNAL(valueChanged(int)), this, SLOT(configurationChanged()));
@@ -345,13 +351,14 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 {
 	if((o == ui->labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
 	{
-		HelpDialog *helpScreen = new HelpDialog(this, false, m_x64supported, m_use10BitEncoding);
+		OptionsModel options; saveOptions(&options);
+		HelpDialog *helpScreen = new HelpDialog(this, false, &options);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
 	else if((o == ui->labelHelpScreenAvs2YUV) && (e->type() == QEvent::MouseButtonPress))
 	{
-		HelpDialog *helpScreen = new HelpDialog(this, true, m_x64supported, m_use10BitEncoding);
+		HelpDialog *helpScreen = new HelpDialog(this, true, NULL);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
@@ -437,6 +444,14 @@ void AddJobDialog::modeIndexChanged(int index)
 
 void AddJobDialog::accept(void)
 {
+	//Check 64-Bit support
+	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_x64supported))
+	{
+		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("Sorry, this computer does <b>not</b> support 64-Bit encoders!"));
+		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x32);
+		return;
+	}
+	
 	//Selection complete?
 	if(ui->editSource->text().trimmed().isEmpty())
 	{
@@ -795,12 +810,11 @@ void AddJobDialog::loadTemplateList(void)
 	QStringList templateNames = templates.keys();
 	templateNames.sort();
 
-	while(!templateNames.isEmpty())
+	for(QStringList::ConstIterator current = templateNames.constBegin(); current != templateNames.constEnd(); current++)
 	{
-		QString current = templateNames.takeFirst();
-		ui->cbxTemplate->addItem(current, QVariant::fromValue<void*>(templates.value(current)));
-
-		if(templates.value(current)->equals(m_options))
+		OptionsModel *currentTemplate = templates.take(*current);
+		ui->cbxTemplate->addItem(*current, QVariant::fromValue<void*>(currentTemplate));
+		if(currentTemplate->equals(m_options))
 		{
 			ui->cbxTemplate->setCurrentIndex(ui->cbxTemplate->count() - 1);
 		}
@@ -808,6 +822,7 @@ void AddJobDialog::loadTemplateList(void)
 
 	if((ui->cbxTemplate->currentIndex() == 0) && (!m_options->equals(m_defaults)))
 	{
+		qWarning("Not the default -> recently used!");
 		ui->cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
 		ui->cbxTemplate->setCurrentIndex(1);
 	}
@@ -832,8 +847,11 @@ void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 
 void AddJobDialog::restoreOptions(OptionsModel *options)
 {
-	ENABLE_SIGNALS(ui, false);
+	BLOCK_SIGNALS(true);
 
+	ui->cbxEncoderType->setCurrentIndex(options->encType());
+	ui->cbxEncoderArch->setCurrentIndex(options->encArch());
+	ui->cbxEncoderVariant->setCurrentIndex(options->encVariant());
 	ui->cbxRateControlMode->setCurrentIndex(options->rcMode());
 	ui->spinQuantizer->setValue(options->quantizer());
 	ui->spinBitrate->setValue(options->bitrate());
@@ -843,13 +861,13 @@ void AddJobDialog::restoreOptions(OptionsModel *options)
 	ui->editCustomX264Params->setText(options->customEncParams());
 	ui->editCustomAvs2YUVParams->setText(options->customAvs2YUV());
 
-	ENABLE_SIGNALS(ui, true);
+	BLOCK_SIGNALS(false);
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)
 {
-	options->setEncType(static_cast<OptionsModel::EncType>(ui->cbxEncoderArch->currentIndex()));
-	options->setEncArch(static_cast<OptionsModel::EncArch>(ui->cbxEncoderType->currentIndex()));
+	options->setEncType(static_cast<OptionsModel::EncType>(ui->cbxEncoderType->currentIndex()));
+	options->setEncArch(static_cast<OptionsModel::EncArch>(ui->cbxEncoderArch->currentIndex()));
 	options->setEncVariant(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant->currentIndex()));
 	options->setRCMode(static_cast<OptionsModel::RCMode>(ui->cbxRateControlMode->currentIndex()));
 	options->setQuantizer(ui->spinQuantizer->value());

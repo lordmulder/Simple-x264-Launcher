@@ -1272,7 +1272,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart, int fileNo, int fileTotal, bool *applyToAll)
 {
 	bool okay = false;
-	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed, m_cpuFeatures->x64, m_preferences->use10BitEncoding(), m_preferences->saveToSourcePath());
+	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed, m_cpuFeatures->x64, m_preferences->saveToSourcePath());
 
 	addDialog->setRunImmediately(runImmediately);
 	if(!sourceFileName.isEmpty()) addDialog->setSourceFile(sourceFileName);
@@ -1359,7 +1359,7 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		QString("%1/toolset").arg(m_appDir),
 		m_vapoursynthPath,
 		m_cpuFeatures->x64,
-		m_preferences->use10BitEncoding(),
+		false /*m_preferences->use10BitEncoding()*/,
 		m_cpuFeatures->x64 && m_preferences->useAvisyth64Bit(),
 		m_skipVersionTest,
 		m_preferences->processPriority(),

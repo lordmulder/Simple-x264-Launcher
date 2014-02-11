@@ -23,25 +23,49 @@
 #include "uic_win_help.h"
 
 #include "global.h"
+#include "model_options.h"
 
 #include <QProcess>
 #include <QScrollBar>
 #include <QTimer>
 
-#define AVS2_BINARY(BIN_DIR, IS_X64) QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"))
-#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit"))
+#define AVS2_BINARY(BIN_DIR) QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), "x86")
+
+static QString X264_BINARY(const QString &binDir, const OptionsModel *options)
+{
+	QString baseName, arch, variant;
+
+	switch(options->encType())
+	{
+		case OptionsModel::EncType_X264: baseName = "x264"; break;
+		case OptionsModel::EncType_X265: baseName = "x265"; break;
+	}
+	
+	switch(options->encArch())
+	{
+		case OptionsModel::EncArch_x32: arch = "x86"; break;
+		case OptionsModel::EncArch_x64: arch = "x64"; break;
+	}
+
+	switch(options->encVariant())
+	{
+		case OptionsModel::EncVariant_LoBit: variant = "8bit"; break;
+		case OptionsModel::EncVariant_HiBit: variant = (options->encType() == OptionsModel::EncType_X265) ? "16bit" : "10bit"; break;
+	}
+
+	return QString("%1/%2/x264_%3_%2.exe").arg((binDir), arch, variant);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-HelpDialog::HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported, bool use10BitEncoding)
+HelpDialog::HelpDialog(QWidget *parent, bool avs2yuv, const OptionsModel *options)
 :
 	QDialog(parent),
 	m_appDir(QApplication::applicationDirPath() + "/toolset"),
 	m_avs2yuv(avs2yuv),
-	m_x64supported(x64supported),
-	m_use10BitEncoding(use10BitEncoding),
+	m_options(options),
 	m_process(new QProcess()),
 	ui(new Ui::HelpDialog())
 {
@@ -82,11 +106,11 @@ void HelpDialog::showEvent(QShowEvent *event)
 
 	if(!m_avs2yuv)
 	{
-		m_process->start(X264_BINARY(m_appDir, m_use10BitEncoding, m_x64supported), QStringList() << "--version");
+		m_process->start(X264_BINARY(m_appDir, m_options), QStringList() << "--version");
 	}
 	else
 	{
-		m_process->start(AVS2_BINARY(m_appDir, m_x64supported), QStringList());
+		m_process->start(AVS2_BINARY(m_appDir), QStringList());
 	}
 
 	if(!m_process->waitForStarted())
@@ -131,7 +155,7 @@ void HelpDialog::finished(void)
 		m_startAgain = false;
 		if(!m_avs2yuv)
 		{
-			m_process->start(X264_BINARY(m_appDir, m_use10BitEncoding, m_x64supported), QStringList() << "--fullhelp");
+			m_process->start(X264_BINARY(m_appDir, m_options), QStringList() << "--fullhelp");
 			ui->plainTextEdit->appendPlainText("\n--------\n");
 
 			if(!m_process->waitForStarted())

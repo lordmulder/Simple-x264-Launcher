@@ -24,6 +24,7 @@
 #include <QDialog>
 
 class QProcess;
+class OptionsModel;
 
 namespace Ui
 {
@@ -35,7 +36,7 @@ class HelpDialog : public QDialog
 	Q_OBJECT
 
 public:
-	HelpDialog(QWidget *parent, bool avs2yuv, bool x64supported, bool use10BitEncoding);
+	HelpDialog(QWidget *parent, bool avs2yuv, const OptionsModel *options);
 	~HelpDialog(void);
 
 private slots:
@@ -52,8 +53,7 @@ private:
 
 protected:
 	const bool m_avs2yuv;
-	const bool m_x64supported;
-	const bool m_use10BitEncoding;
+	const OptionsModel *m_options;
 
 	virtual void showEvent(QShowEvent *event);
 	virtual void closeEvent(QCloseEvent *e);

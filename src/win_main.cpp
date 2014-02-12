@@ -26,6 +26,7 @@
 #include "cli.h"
 #include "ipc.h"
 #include "model_status.h"
+#include "model_sysinfo.h"
 #include "model_jobList.h"
 #include "model_options.h"
 #include "model_preferences.h"
@@ -75,9 +76,8 @@ const char *tpl_last = "<LAST_USED>";
  */
 MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 :
-	m_cpuFeatures(cpuFeatures),
 	m_ipc(ipc),
-	m_appDir(QApplication::applicationDirPath()),
+	m_sysinfo(NULL),
 	m_options(NULL),
 	m_jobList(NULL),
 	m_pendingFiles(new QStringList()),
@@ -98,6 +98,13 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	qRegisterMetaType<QUuid>("DWORD");
 	qRegisterMetaType<JobStatus>("JobStatus");
 
+	//Create and initialize the sysinfo object
+	m_sysinfo = new SysinfoModel();
+	m_sysinfo->setAppPath(QApplication::applicationDirPath());
+	m_sysinfo->setMMXSupport(cpuFeatures->mmx && cpuFeatures->mmx2);
+	m_sysinfo->setSSESupport(cpuFeatures->sse);
+	m_sysinfo->setX64Support(cpuFeatures->x64);
+
 	//Load preferences
 	m_preferences = new PreferencesModel();
 	PreferencesModel::loadPreferences(m_preferences);
@@ -117,7 +124,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	//Update title
 	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	ui->labelBuildDate->installEventFilter(this);
-	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_cpuFeatures->x64 ? "64-Bit" : "32-Bit"));
+	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
 	if(X264_DEBUG)
 	{
 		setWindowTitle(QString("%1 | !!! DEBUG VERSION !!!").arg(windowTitle()));
@@ -219,6 +226,8 @@ MainWindow::~MainWindow(void)
 
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
+	X264_DELETE(m_sysinfo);
+
 	VapourSynthCheckThread::unload();
 	AvisynthCheckThread::unload();
 
@@ -593,7 +602,7 @@ void MainWindow::showPreferences(void)
 	ENSURE_APP_IS_IDLE();
 	m_status = STATUS_BLOCKED;
 
-	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences, m_cpuFeatures->x64);
+	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences, m_sysinfo);
 	preferences->exec();
 
 	X264_DELETE(preferences);
@@ -774,13 +783,13 @@ void MainWindow::init(void)
 	{
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 		QString current = binaries.takeFirst();
-		QFile *file = new QFile(QString("%1/toolset/%2").arg(m_appDir, current));
+		QFile *file = new QFile(QString("%1/toolset/%2").arg(m_sysinfo->getAppPath(), current));
 		if(file->open(QIODevice::ReadOnly))
 		{
 			if(!x264_is_executable(file->fileName()))
 			{
-				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
-				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
+				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_sysinfo->getAppPath(), current))).replace("-", "&minus;"));
+				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_sysinfo->getAppPath(), current).toLatin1().constData());
 				INIT_ERROR_EXIT();
 			}
 			m_toolsList << file;
@@ -788,8 +797,8 @@ void MainWindow::init(void)
 		else
 		{
 			X264_DELETE(file);
-			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_appDir, current))).replace("-", "&minus;"));
-			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_appDir, current).toLatin1().constData());
+			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_sysinfo->getAppPath(), current))).replace("-", "&minus;"));
+			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_sysinfo->getAppPath(), current).toLatin1().constData());
 			INIT_ERROR_EXIT();
 		}
 	}
@@ -821,13 +830,13 @@ void MainWindow::init(void)
 	}
 
 	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
-	if(!(m_cpuFeatures->mmx && m_cpuFeatures->mmx2))
+	if(!m_sysinfo->hasMMXSupport())
 	{
 		QMessageBox::critical(this, tr("Unsupported CPU"), tr("<nobr>Sorry, but this machine is <b>not</b> physically capable of running x264 (with assembly).<br>Please get a CPU that supports at least the MMX and MMXEXT instruction sets!</nobr>"), tr("Quit"));
 		qFatal("System does not support MMX and MMXEXT, x264 will not work !!!");
 		INIT_ERROR_EXIT();
 	}
-	else if(!(m_cpuFeatures->mmx && m_cpuFeatures->sse))
+	else if(!m_sysinfo->hasSSESupport())
 	{
 		qWarning("WARNING: System does not support SSE1, most x264 builds will not work !!!\n");
 		int val = QMessageBox::warning(this, tr("Unsupported CPU"), tr("<nobr>It appears that this machine does <b>not</b> support the SSE1 instruction set.<br>Thus most builds of x264 will <b>not</b> run on this computer at all.<br><br>Please get a CPU that supports the MMX and SSE1 instruction sets!</nobr>"), tr("Quit"), tr("Ignore"));
@@ -862,7 +871,12 @@ void MainWindow::init(void)
 			int val = QMessageBox::critical(this, tr("Avisynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
-		if((!result) || (avisynthVersion < 2.5))
+		if(result && (avisynthVersion >= 2.5))
+		{
+			qDebug("Avisynth support is officially enabled now!");
+			m_sysinfo->setAVSSupport(true);
+		}
+		else
 		{
 			if(!m_preferences->disableWarnings())
 			{
@@ -879,8 +893,8 @@ void MainWindow::init(void)
 	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_VPS_CHECK, arguments))
 	{
 		qDebug("[Check for VapourSynth support]");
-		volatile double avisynthVersion = 0.0;
-		const int result = VapourSynthCheckThread::detect(m_vapoursynthPath);
+		QString vapoursynthPath;
+		const int result = VapourSynthCheckThread::detect(vapoursynthPath);
 		if(result < 0)
 		{
 			QString text = tr("A critical error was encountered while checking your VapourSynth installation.").append("<br>");
@@ -889,7 +903,13 @@ void MainWindow::init(void)
 			int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
-		if((!result) || (m_vapoursynthPath.isEmpty()))
+		if(result && (!vapoursynthPath.isEmpty()))
+		{
+			qDebug("VapourSynth support is officially enabled now!");
+			m_sysinfo->setVPSSupport(true);
+			m_sysinfo->setVPSPath(vapoursynthPath);
+		}
+		else
 		{
 			if(!m_preferences->disableWarnings())
 			{
@@ -1079,7 +1099,7 @@ void MainWindow::checkUpdates(void)
 		return;
 	}
 
-	UpdaterDialog *updater = new UpdaterDialog(this, QString("%1/toolset").arg(m_appDir));
+	UpdaterDialog *updater = new UpdaterDialog(this, m_sysinfo);
 	const int ret = updater->exec();
 
 	if(updater->getSuccess())
@@ -1272,7 +1292,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart, int fileNo, int fileTotal, bool *applyToAll)
 {
 	bool okay = false;
-	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed, m_cpuFeatures->x64, m_preferences->saveToSourcePath());
+	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed, m_sysinfo, m_preferences->saveToSourcePath());
 
 	addDialog->setRunImmediately(runImmediately);
 	if(!sourceFileName.isEmpty()) addDialog->setSourceFile(sourceFileName);
@@ -1356,11 +1376,8 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		sourceFileName,
 		outputFileName,
 		options,
-		QString("%1/toolset").arg(m_appDir),
-		m_vapoursynthPath,
-		m_cpuFeatures->x64,
-		false /*m_preferences->use10BitEncoding()*/,
-		m_cpuFeatures->x64 && m_preferences->useAvisyth64Bit(),
+		m_sysinfo,
+		m_preferences->useAvisyth64Bit(),
 		m_skipVersionTest,
 		m_preferences->processPriority(),
 		m_abortOnTimeout

@@ -27,6 +27,7 @@
 class IPC;
 class JobListModel;
 class OptionsModel;
+class SysinfoModel;
 class QFile;
 class QLibrary;
 class PreferencesModel;
@@ -84,13 +85,9 @@ private:
 	QStringList *m_pendingFiles;
 	QList<QFile*> m_toolsList;
 	
+	SysinfoModel *m_sysinfo;
 	PreferencesModel *m_preferences;
 	RecentlyUsed *m_recentlyUsed;
-
-	QString m_vapoursynthPath;
-
-	const x264_cpu_t *const m_cpuFeatures;
-	const QString m_appDir;
 	
 	bool createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart = false, int fileNo = -1, int fileTotal = 0, bool *applyToAll = NULL);
 	bool createJobMultiple(const QStringList &filePathIn);

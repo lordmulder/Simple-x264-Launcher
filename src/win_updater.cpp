@@ -23,6 +23,7 @@
 #include "uic_win_updater.h"
 
 #include "global.h"
+#include "model_sysinfo.h"
 #include "thread_updater.h"
 #include "checksum.h"
 
@@ -63,11 +64,11 @@ while(0)
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-UpdaterDialog::UpdaterDialog(QWidget *parent, const QString &binDir)
+UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo)
 :
 	QDialog(parent),
 	ui(new Ui::UpdaterDialog()),
-	m_binDir(binDir),
+	m_sysinfo(sysinfo),
 	m_status(UpdateCheckThread::UpdateStatus_NotStartedYet),
 	m_thread(NULL),
 	m_updaterProcess(NULL),
@@ -473,7 +474,7 @@ bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 
 	for(size_t i = 0; FILE_INFO[i].name; i++)
 	{
-		const QString binPath = QString("%1/common/%2").arg(m_binDir, QString::fromLatin1(FILE_INFO[i].name));
+		const QString binPath = QString("%1/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(FILE_INFO[i].name));
 		if(okay = okay && checkFileHash(binPath, FILE_INFO[i].hash))
 		{
 			binaries.insert(FILE_INFO[i].name, binPath);

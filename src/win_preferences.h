@@ -24,6 +24,7 @@
 #include <QDialog>
 
 class PreferencesModel;
+class SysinfoModel;
 
 namespace Ui
 {
@@ -35,10 +36,8 @@ class PreferencesDialog : public QDialog
 	Q_OBJECT
 
 public:
-	PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64);
+	PreferencesDialog(QWidget *parent, PreferencesModel *preferences, const SysinfoModel *sysinfo);
 	~PreferencesDialog(void);
-
-	const bool m_x64;
 
 protected:
 	virtual void done(int n);
@@ -49,10 +48,10 @@ protected:
 
 private:
 	Ui::PreferencesDialog *const ui;
+	const SysinfoModel *const m_sysinfo;
 	PreferencesModel *m_preferences;
 
 private slots:
 	void resetButtonPressed(void);
-	void use10BitEncodingToggled(bool checked);
 	void disableWarningsToggled(bool checked);
 };

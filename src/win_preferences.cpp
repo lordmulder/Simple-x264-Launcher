@@ -24,6 +24,7 @@
 
 #include "global.h"
 #include "model_preferences.h"
+#include "model_sysinfo.h"
 
 #include <QSettings>
 #include <QDesktopServices>
@@ -52,10 +53,10 @@ static inline void UPDATE_COMBOBOX(QComboBox *const cobox, const int value, cons
 	}
 }
 
-PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferences, bool x64)
+PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferences, const SysinfoModel *sysinfo)
 :
 	QDialog(parent),
-	m_x64(x64),
+	m_sysinfo(sysinfo),
 	ui(new Ui::PreferencesDialog())
 {
 	ui->setupUi(this);
@@ -69,7 +70,6 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	ui->comboBoxPriority->setItemData(3, QVariant::fromValue(-2)); //Idle
 
 	ui->labelRunNextJob->installEventFilter(this);
-	ui->labelUse10BitEncoding->installEventFilter(this);
 	ui->labelUse64BitAvs2YUV->installEventFilter(this);
 	ui->labelShutdownComputer->installEventFilter(this);
 	ui->labelSaveLogFiles->installEventFilter(this);
@@ -82,7 +82,6 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	ui->checkBoxDummy2->installEventFilter(this);
 
 	connect(ui->resetButton, SIGNAL(clicked()), this, SLOT(resetButtonPressed()));
-	connect(ui->checkUse10BitEncoding, SIGNAL(toggled(bool)), this, SLOT(use10BitEncodingToggled(bool)));
 	connect(ui->checkDisableWarnings, SIGNAL(toggled(bool)), this, SLOT(disableWarningsToggled(bool)));
 	
 	m_preferences = preferences;
@@ -99,19 +98,19 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	
 	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->autoRunNextJob());
 	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->shutdownComputer());
-	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->useAvisyth64Bit());
+	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->useAvisyth64Bit() && m_sysinfo->hasX64Support());
 	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->saveLogFiles());
 	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->saveToSourcePath());
 	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->enableSounds());
 	UPDATE_CHECKBOX(ui->checkNoUpdateReminder,   m_preferences->noUpdateReminder());
-	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->disableWarnings(),  true);
+	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->disableWarnings(), true);
 	
 	ui->spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
 	
 	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->processPriority(), 1), 0);
 	
-	ui->checkUse64BitAvs2YUV->setEnabled(m_x64);
-	ui->labelUse64BitAvs2YUV->setEnabled(m_x64);
+	ui->checkUse64BitAvs2YUV->setEnabled(m_sysinfo->hasX64Support());
+	ui->labelUse64BitAvs2YUV->setEnabled(m_sysinfo->hasX64Support());
 }
 
 bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
@@ -125,7 +124,6 @@ bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 	{
 		emulateMouseEvent(o, e, ui->labelRunNextJob,         ui->checkRunNextJob);
 		emulateMouseEvent(o, e, ui->labelShutdownComputer,   ui->checkShutdownComputer);
-		emulateMouseEvent(o, e, ui->labelUse10BitEncoding,   ui->checkUse10BitEncoding);
 		emulateMouseEvent(o, e, ui->labelUse64BitAvs2YUV,    ui->checkUse64BitAvs2YUV);
 		emulateMouseEvent(o, e, ui->labelSaveLogFiles,       ui->checkSaveLogFiles);
 		emulateMouseEvent(o, e, ui->labelSaveToSourceFolder, ui->checkSaveToSourceFolder);
@@ -176,21 +174,21 @@ void PreferencesDialog::resetButtonPressed(void)
 	showEvent(NULL);
 }
 
-void PreferencesDialog::use10BitEncodingToggled(bool checked)
-{
-	if(checked)
-	{
-		QString text;
-		text += QString("<nobr>%1</nobr><br>").arg(tr("Please note that 10&minus;Bit H.264 streams are <b>not</b> currently supported by hardware (standalone) players!"));
-		text += QString("<nobr>%1</nobr><br>").arg(tr("To play such streams, you will need an <i>up&minus;to&minus;date</i> ffdshow&minus;tryouts, CoreAVC 3.x or another supported s/w decoder."));
-		text += QString("<nobr>%1</nobr><br>").arg(tr("Also be aware that hardware&minus;acceleration (CUDA, DXVA, etc) usually will <b>not</b> work with 10&minus;Bit H.264 streams."));
-		
-		if(QMessageBox::warning(this, tr("10-Bit Encoding"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
-		{
-			UPDATE_CHECKBOX(ui->checkUse10BitEncoding, false, true);
-		}
-	}
-}
+//void PreferencesDialog::use10BitEncodingToggled(bool checked)
+//{
+//	if(checked)
+//	{
+//		QString text;
+//		text += QString("<nobr>%1</nobr><br>").arg(tr("Please note that 10&minus;Bit H.264 streams are <b>not</b> currently supported by hardware (standalone) players!"));
+//		text += QString("<nobr>%1</nobr><br>").arg(tr("To play such streams, you will need an <i>up&minus;to&minus;date</i> ffdshow&minus;tryouts, CoreAVC 3.x or another supported s/w decoder."));
+//		text += QString("<nobr>%1</nobr><br>").arg(tr("Also be aware that hardware&minus;acceleration (CUDA, DXVA, etc) usually will <b>not</b> work with 10&minus;Bit H.264 streams."));
+//		
+//		if(QMessageBox::warning(this, tr("10-Bit Encoding"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
+//		{
+//			UPDATE_CHECKBOX(ui->checkUse10BitEncoding, false, true);
+//		}
+//	}
+//}
 
 void PreferencesDialog::disableWarningsToggled(bool checked)
 {

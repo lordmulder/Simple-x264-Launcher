@@ -25,6 +25,7 @@
 
 class QMovie;
 class UpdateCheckThread;
+class SysinfoModel;
 
 namespace Ui
 {
@@ -36,7 +37,7 @@ class UpdaterDialog : public QDialog
 	Q_OBJECT
 
 public:
-	UpdaterDialog(QWidget *parent, const QString &binDir);
+	UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo);
 	~UpdaterDialog(void);
 
 	static const int READY_TO_INSTALL_UPDATE = 42;
@@ -65,9 +66,11 @@ private:
 	bool checkBinaries(QString &wgetBin, QString &gpgvBin);
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
 
+	const SysinfoModel *const m_sysinfo;
+
 	bool m_firstShow;
 	bool m_success;
-	const QString m_binDir;
+
 	QMovie *m_animator;
 	UpdateCheckThread *m_thread;
 	unsigned long m_updaterProcess;

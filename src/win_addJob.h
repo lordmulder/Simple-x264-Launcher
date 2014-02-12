@@ -25,6 +25,8 @@
 
 class OptionsModel;
 class RecentlyUsed;
+class SysinfoModel;
+class PreferencesModel;
 class QComboBox;
 
 namespace Ui
@@ -37,7 +39,7 @@ class AddJobDialog : public QDialog
 	Q_OBJECT
 
 public:
-	AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool saveToSourceFolder);
+	AddJobDialog(QWidget *parent, OptionsModel *const options, RecentlyUsed *const recentlyUsed, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences);
 	~AddJobDialog(void);
 
 	QString sourceFile(void);
@@ -59,12 +61,12 @@ public:
 	static QString getInputFilterLst(void);
 
 protected:
-	OptionsModel *m_options;
-	OptionsModel *m_defaults;
-	RecentlyUsed *m_recentlyUsed;
+	OptionsModel *const m_options;
+	RecentlyUsed *const m_recentlyUsed;
 
-	const bool m_x64supported;
-	const bool m_saveToSourceFolder;
+	const SysinfoModel *const m_sysinfo;
+	const PreferencesModel *const m_preferences;
+	const OptionsModel *m_defaults;
 
 	virtual void showEvent(QShowEvent *event);
 	virtual bool eventFilter(QObject *o, QEvent *e);
@@ -73,6 +75,7 @@ protected:
 
 private slots:
 	void encoderIndexChanged(int index);
+	void variantIndexChanged(int index);
 	void modeIndexChanged(int index);
 	void browseButtonClicked(void);
 	void configurationChanged(void);
@@ -89,7 +92,7 @@ private:
 	Ui::AddJobDialog *const ui;
 
 	void loadTemplateList(void);
-	void restoreOptions(OptionsModel *options);
+	void restoreOptions(const OptionsModel *options);
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *cbox, const QString &text);
 

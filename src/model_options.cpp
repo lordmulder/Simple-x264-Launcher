@@ -88,7 +88,7 @@ QString OptionsModel::rcMode2String(RCMode mode)
 	}
 }
 
-bool OptionsModel::equals(OptionsModel *model)
+bool OptionsModel::equals(const OptionsModel *model)
 {
 	bool equal = true;
 

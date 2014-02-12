@@ -85,7 +85,7 @@ public:
 	void setCustomAvs2YUV(const QString &custom) { m_custom_avs2yuv = custom.trimmed(); }
 
 	//Stuff
-	bool equals(OptionsModel *model);
+	bool equals(const OptionsModel *model);
 
 	//Static functions
 	static QString rcMode2String(RCMode mode);

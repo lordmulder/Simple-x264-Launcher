@@ -293,6 +293,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\3rd_party\avisynth_c.h" />
     <ClInclude Include="src\3rd_party\blake2.h" />
+    <ClInclude Include="src\binaries.h" />
     <ClInclude Include="src\checksum.h" />
     <ClInclude Include="src\cli.h" />
     <ClInclude Include="src\global.h" />
@@ -365,6 +366,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
   <ItemGroup>
     <ClCompile Include="src\3rd_party\blake2.c" />
     <ClCompile Include="src\3rd_party\qtmain_win.cpp" />
+    <ClCompile Include="src\binaries.cpp" />
     <ClCompile Include="src\checksum.cpp" />
     <ClCompile Include="src\cli.cpp" />
     <ClCompile Include="src\ipc.cpp" />

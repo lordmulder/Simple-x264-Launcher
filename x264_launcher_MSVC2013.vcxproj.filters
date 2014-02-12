@@ -81,6 +81,9 @@
     <ClInclude Include="src\model_sysinfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\binaries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -195,6 +198,9 @@
       <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\cli.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\binaries.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

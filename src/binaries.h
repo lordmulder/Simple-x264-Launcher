@@ -19,46 +19,11 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <QString>
 
-#include <QDialog>
-
-class QProcess;
 class SysinfoModel;
 class PreferencesModel;
 class OptionsModel;
 
-namespace Ui
-{
-	class HelpDialog;
-}
-
-class HelpDialog : public QDialog
-{
-	Q_OBJECT
-
-public:
-	HelpDialog(QWidget *parent, bool avs2yuv, const SysinfoModel *const sysinfo, const OptionsModel *const options, const PreferencesModel *const preferences);
-	~HelpDialog(void);
-
-private slots:
-	void readyRead(void);
-	void finished(void);
-
-private:
-	Ui::HelpDialog *const ui;
-
-	const bool m_avs2yuv;
-
-	const SysinfoModel *const m_sysinfo;
-	const PreferencesModel *const m_preferences;
-	const OptionsModel *const m_options;
-
-	QProcess *const m_process;
-	bool m_startAgain;
-
-protected:
-	virtual void showEvent(QShowEvent *event);
-	virtual void closeEvent(QCloseEvent *e);
-};
-
+QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options);
+QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);

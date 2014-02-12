@@ -24,6 +24,8 @@
 
 #include "global.h"
 #include "model_options.h"
+#include "model_preferences.h"
+#include "model_sysinfo.h"
 #include "model_recently.h"
 #include "win_help.h"
 #include "win_editor.h"
@@ -50,7 +52,7 @@
 { \
 	for(int i = 0; i < ui->cbxTemplate->count(); i++) \
 	{ \
-		OptionsModel* temp = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>()); \
+		const OptionsModel* temp = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>()); \
 		if(temp == NULL) \
 		{ \
 			ui->cbxTemplate->blockSignals(true); \
@@ -91,6 +93,8 @@
 	ui->editCustomAvs2YUVParams->blockSignals(FLAG); \
 } \
 while(0)
+
+Q_DECLARE_METATYPE(const void*)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validator
@@ -218,14 +222,14 @@ public:
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed *recentlyUsed, bool x64supported, bool saveToSourceFolder)
+AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, RecentlyUsed *const recentlyUsed, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences)
 :
 	QDialog(parent),
-	m_defaults(new OptionsModel()),
 	m_options(options),
-	m_x64supported(x64supported),
-	m_saveToSourceFolder(saveToSourceFolder),
 	m_recentlyUsed(recentlyUsed),
+	m_sysinfo(sysinfo),
+	m_preferences(preferences),
+	m_defaults(new OptionsModel()),
 	ui(new Ui::AddJobDialog())
 {
 	//Init the dialog, from the .ui file
@@ -243,8 +247,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *options, RecentlyUsed 
 	ui->checkBoxApplyToAll->setVisible(false);
 
 	//Monitor combobox changes
-	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
 	connect(ui->cbxEncoderType, SIGNAL(currentIndexChanged(int)), this, SLOT(encoderIndexChanged(int)));
+	connect(ui->cbxEncoderVariant, SIGNAL(currentIndexChanged(int)), this, SLOT(variantIndexChanged(int)));
+	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
 
 	//Activate buttons
 	connect(ui->buttonBrowseSource, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
@@ -333,7 +338,7 @@ void AddJobDialog::showEvent(QShowEvent *event)
 
 	if((!ui->editSource->text().isEmpty()) && ui->editOutput->text().isEmpty())
 	{
-		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(ui->editSource->text()), m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_saveToSourceFolder);
+		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(ui->editSource->text()), m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->saveToSourcePath());
 		ui->editOutput->setText(QDir::toNativeSeparators(outPath));
 		ui->buttonAccept->setFocus();
 	}
@@ -352,13 +357,13 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 	if((o == ui->labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
 	{
 		OptionsModel options; saveOptions(&options);
-		HelpDialog *helpScreen = new HelpDialog(this, false, &options);
+		HelpDialog *helpScreen = new HelpDialog(this, false, m_sysinfo, &options, m_preferences);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
 	else if((o == ui->labelHelpScreenAvs2YUV) && (e->type() == QEvent::MouseButtonPress))
 	{
-		HelpDialog *helpScreen = new HelpDialog(this, true, NULL);
+		HelpDialog *helpScreen = new HelpDialog(this, false, m_sysinfo, m_defaults, m_preferences);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
 	}
@@ -417,7 +422,7 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 	
 	if(!droppedFile.isEmpty())
 	{
-		const QString outFileName = generateOutputFileName(droppedFile, currentOutputPath(), currentOutputIndx(), m_saveToSourceFolder);
+		const QString outFileName = generateOutputFileName(droppedFile, currentOutputPath(), currentOutputIndx(), m_preferences->saveToSourcePath());
 		ui->editSource->setText(QDir::toNativeSeparators(droppedFile));
 		ui->editOutput->setText(QDir::toNativeSeparators(outFileName));
 	}
@@ -429,11 +434,22 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 
 void AddJobDialog::encoderIndexChanged(int index)
 {
-	const bool isX265 = (index >= 1);
+	const bool isX265 = (index > 0);
+	const bool noProf = isX265 || (ui->cbxEncoderVariant->currentIndex() > 0);
+
 	ui->cbxEncoderVariant->setItemText(1, isX265 ? tr("16-Bit") : tr("10-Bit"));
-	ui->cbxProfile->setEnabled(!isX265);
-	ui->labelProfile->setEnabled(!isX265);
-	if(isX265) ui->cbxProfile->setCurrentIndex(0);
+	ui->labelProfile->setEnabled(!noProf);
+	ui->cbxProfile->setEnabled(!noProf);
+	if(noProf) ui->cbxProfile->setCurrentIndex(0);
+}
+
+void AddJobDialog::variantIndexChanged(int index)
+{
+	const bool noProf = (index > 0) || (ui->cbxEncoderType->currentIndex() > 0);
+
+	ui->labelProfile->setEnabled(!noProf);
+	ui->cbxProfile->setEnabled(!noProf);
+	if(noProf) ui->cbxProfile->setCurrentIndex(0);
 }
 
 void AddJobDialog::modeIndexChanged(int index)
@@ -445,7 +461,7 @@ void AddJobDialog::modeIndexChanged(int index)
 void AddJobDialog::accept(void)
 {
 	//Check 64-Bit support
-	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_x64supported))
+	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->hasX64Support()))
 	{
 		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("Sorry, this computer does <b>not</b> support 64-Bit encoders!"));
 		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x32);
@@ -518,7 +534,7 @@ void AddJobDialog::browseButtonClicked(void)
 		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), currentSourcePath(true), getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			QString destFile = generateOutputFileName(filePath, currentOutputPath(), currentOutputIndx(), m_saveToSourceFolder);
+			QString destFile = generateOutputFileName(filePath, currentOutputPath(), currentOutputIndx(), m_preferences->saveToSourcePath());
 			ui->editSource->setText(QDir::toNativeSeparators(filePath));
 			ui->editOutput->setText(QDir::toNativeSeparators(destFile));
 		}
@@ -551,11 +567,11 @@ void AddJobDialog::browseButtonClicked(void)
 
 void AddJobDialog::configurationChanged(void)
 {
-	OptionsModel* options = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<void*>());
+	const OptionsModel* options = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<const void*>());
 	if(options)
 	{
 		ui->cbxTemplate->blockSignals(true);
-		ui->cbxTemplate->insertItem(0, tr("<Unsaved Configuration>"), QVariant::fromValue<void*>(NULL));
+		ui->cbxTemplate->insertItem(0, tr("<Unsaved Configuration>"), QVariant::fromValue<const void*>(NULL));
 		ui->cbxTemplate->setCurrentIndex(0);
 		ui->cbxTemplate->blockSignals(false);
 	}
@@ -563,7 +579,7 @@ void AddJobDialog::configurationChanged(void)
 
 void AddJobDialog::templateSelected(void)
 {
-	OptionsModel* options = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<void*>());
+	const OptionsModel* options = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<const void*>());
 	if(options)
 	{
 		qDebug("Loading options!");
@@ -803,7 +819,7 @@ void AddJobDialog::setApplyToAllVisible(const bool visible)
 
 void AddJobDialog::loadTemplateList(void)
 {
-	ui->cbxTemplate->addItem(tr("<Default>"), QVariant::fromValue<void*>(m_defaults));
+	ui->cbxTemplate->addItem(tr("<Default>"), QVariant::fromValue<const void*>(m_defaults));
 	ui->cbxTemplate->setCurrentIndex(0);
 
 	QMap<QString, OptionsModel*> templates = OptionsModel::loadAllTemplates();
@@ -813,7 +829,7 @@ void AddJobDialog::loadTemplateList(void)
 	for(QStringList::ConstIterator current = templateNames.constBegin(); current != templateNames.constEnd(); current++)
 	{
 		OptionsModel *currentTemplate = templates.take(*current);
-		ui->cbxTemplate->addItem(*current, QVariant::fromValue<void*>(currentTemplate));
+		ui->cbxTemplate->addItem(*current, QVariant::fromValue<const void*>(currentTemplate));
 		if(currentTemplate->equals(m_options))
 		{
 			ui->cbxTemplate->setCurrentIndex(ui->cbxTemplate->count() - 1);
@@ -823,7 +839,7 @@ void AddJobDialog::loadTemplateList(void)
 	if((ui->cbxTemplate->currentIndex() == 0) && (!m_options->equals(m_defaults)))
 	{
 		qWarning("Not the default -> recently used!");
-		ui->cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<void*>(m_options));
+		ui->cbxTemplate->insertItem(1, tr("<Recently Used>"), QVariant::fromValue<const void*>(m_options));
 		ui->cbxTemplate->setCurrentIndex(1);
 	}
 }
@@ -845,7 +861,7 @@ void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 	cbox->setCurrentIndex(index);
 }
 
-void AddJobDialog::restoreOptions(OptionsModel *options)
+void AddJobDialog::restoreOptions(const OptionsModel *options)
 {
 	BLOCK_SIGNALS(true);
 

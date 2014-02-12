@@ -27,28 +27,28 @@ public:
 	PreferencesModel(void);
 
 	//Getter
-	bool autoRunNextJob(void) { return m_autoRunNextJob; }
-	unsigned int maxRunningJobCount(void) { return m_maxRunningJobCount; }
-	bool shutdownComputer(void) { return m_shutdownComputer; }
-	bool useAvisyth64Bit(void) { return m_useAvisyth64Bit; }
-	bool saveLogFiles(void) { return m_saveLogFiles; }
-	bool saveToSourcePath(void) { return m_saveToSourcePath; }
-	int processPriority(void) { return m_processPriority; }
-	bool enableSounds(void) { return m_enableSounds; }
-	bool disableWarnings(void) { return m_disableWarnings; }
-	bool noUpdateReminder(void) { return m_noUpdateReminder; }
+	bool autoRunNextJob(void)             const { return m_autoRunNextJob;     }
+	unsigned int maxRunningJobCount(void) const { return m_maxRunningJobCount; }
+	bool shutdownComputer(void)           const { return m_shutdownComputer;   }
+	bool useAvisyth64Bit(void)            const { return m_useAvisyth64Bit;    }
+	bool saveLogFiles(void)               const { return m_saveLogFiles;       }
+	bool saveToSourcePath(void)           const { return m_saveToSourcePath;   }
+	int processPriority(void)             const { return m_processPriority;    }
+	bool enableSounds(void)               const { return m_enableSounds;       }
+	bool disableWarnings(void)            const { return m_disableWarnings;    }
+	bool noUpdateReminder(void)           const { return m_noUpdateReminder;   }
 
 	//Setter
-	void setAutoRunNextJob(const bool autoRunNextJob) { m_autoRunNextJob = autoRunNextJob; }
+	void setAutoRunNextJob(const bool autoRunNextJob)                 { m_autoRunNextJob     = autoRunNextJob;     }
 	void setMaxRunningJobCount(const unsigned int maxRunningJobCount) { m_maxRunningJobCount = maxRunningJobCount; }
-	void setShutdownComputer(const bool shutdownComputer) { m_shutdownComputer = shutdownComputer; }
-	void setUseAvisyth64Bit(const bool useAvisyth64Bit) { m_useAvisyth64Bit = useAvisyth64Bit; }
-	void setSaveLogFiles(const bool saveLogFiles) { m_saveLogFiles = saveLogFiles; }
-	void setSaveToSourcePath(const bool saveToSourcePath) { m_saveToSourcePath = saveToSourcePath; }
-	void setProcessPriority(const int processPriority) { m_processPriority = processPriority; }
-	void setEnableSounds(const bool enableSounds) { m_enableSounds = enableSounds; }
-	void setDisableWarnings(const bool disableWarnings) { m_disableWarnings = disableWarnings; }
-	void setNoUpdateReminder(const bool noUpdateReminder) { m_noUpdateReminder = noUpdateReminder; }
+	void setShutdownComputer(const bool shutdownComputer)             { m_shutdownComputer   = shutdownComputer;   }
+	void setUseAvisyth64Bit(const bool useAvisyth64Bit)               { m_useAvisyth64Bit    = useAvisyth64Bit;    }
+	void setSaveLogFiles(const bool saveLogFiles)                     { m_saveLogFiles       = saveLogFiles;       }
+	void setSaveToSourcePath(const bool saveToSourcePath)             { m_saveToSourcePath   = saveToSourcePath;   }
+	void setProcessPriority(const int processPriority)                { m_processPriority    = processPriority;    }
+	void setEnableSounds(const bool enableSounds)                     { m_enableSounds       = enableSounds;       }
+	void setDisableWarnings(const bool disableWarnings)               { m_disableWarnings    = disableWarnings;    }
+	void setNoUpdateReminder(const bool noUpdateReminder)             { m_noUpdateReminder   = noUpdateReminder;   }
 
 	//Static
 	static void initPreferences(PreferencesModel *preferences);

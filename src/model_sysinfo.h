@@ -57,7 +57,7 @@ public:
 
 protected:
 	static const unsigned int FLAG_HAS_X64 = 0x00000001;
-	static const unsigned int FLAG_HAS_MMX = 0x00000001;
+	static const unsigned int FLAG_HAS_MMX = 0x00000002;
 	static const unsigned int FLAG_HAS_SSE = 0x00000004;
 	static const unsigned int FLAG_HAS_AVS = 0x00000008;
 	static const unsigned int FLAG_HAS_VPS = 0x00000010;

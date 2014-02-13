@@ -96,18 +96,18 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 {
 	if(event) QDialog::showEvent(event);
 	
-	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->autoRunNextJob());
-	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->shutdownComputer());
-	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->useAvisyth64Bit() && m_sysinfo->hasX64Support());
-	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->saveLogFiles());
-	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->saveToSourcePath());
-	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->enableSounds());
-	UPDATE_CHECKBOX(ui->checkNoUpdateReminder,   m_preferences->noUpdateReminder());
-	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->disableWarnings(), true);
+	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->getAutoRunNextJob());
+	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->getShutdownComputer());
+	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->getUseAvisyth64Bit() && m_sysinfo->hasX64Support());
+	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->getSaveLogFiles());
+	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->getSaveToSourcePath());
+	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->getEnableSounds());
+	UPDATE_CHECKBOX(ui->checkNoUpdateReminder,   m_preferences->getNoUpdateReminder());
+	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->getDisableWarnings(), true);
 	
-	ui->spinBoxJobCount->setValue(m_preferences->maxRunningJobCount());
+	ui->spinBoxJobCount->setValue(m_preferences->getMaxRunningJobCount());
 	
-	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->processPriority(), 1), 0);
+	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->getProcessPriority(), 1), 0);
 	
 	ui->checkUse64BitAvs2YUV->setEnabled(m_sysinfo->hasX64Support());
 	ui->labelUse64BitAvs2YUV->setEnabled(m_sysinfo->hasX64Support());

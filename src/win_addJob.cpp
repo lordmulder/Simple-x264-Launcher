@@ -338,7 +338,7 @@ void AddJobDialog::showEvent(QShowEvent *event)
 
 	if((!ui->editSource->text().isEmpty()) && ui->editOutput->text().isEmpty())
 	{
-		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(ui->editSource->text()), m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->saveToSourcePath());
+		QString outPath = generateOutputFileName(QDir::fromNativeSeparators(ui->editSource->text()), m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->getSaveToSourcePath());
 		ui->editOutput->setText(QDir::toNativeSeparators(outPath));
 		ui->buttonAccept->setFocus();
 	}
@@ -422,7 +422,7 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 	
 	if(!droppedFile.isEmpty())
 	{
-		const QString outFileName = generateOutputFileName(droppedFile, currentOutputPath(), currentOutputIndx(), m_preferences->saveToSourcePath());
+		const QString outFileName = generateOutputFileName(droppedFile, currentOutputPath(), currentOutputIndx(), m_preferences->getSaveToSourcePath());
 		ui->editSource->setText(QDir::toNativeSeparators(droppedFile));
 		ui->editOutput->setText(QDir::toNativeSeparators(outFileName));
 	}
@@ -534,7 +534,7 @@ void AddJobDialog::browseButtonClicked(void)
 		QString filePath = QFileDialog::getOpenFileName(this, tr("Open Source File"), currentSourcePath(true), getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 		if(!(filePath.isNull() || filePath.isEmpty()))
 		{
-			QString destFile = generateOutputFileName(filePath, currentOutputPath(), currentOutputIndx(), m_preferences->saveToSourcePath());
+			QString destFile = generateOutputFileName(filePath, currentOutputPath(), currentOutputIndx(), m_preferences->getSaveToSourcePath());
 			ui->editSource->setText(QDir::toNativeSeparators(filePath));
 			ui->editOutput->setText(QDir::toNativeSeparators(destFile));
 		}

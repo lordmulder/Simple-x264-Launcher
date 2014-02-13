@@ -71,10 +71,6 @@ protected:
 private:
 	Ui::MainWindow *const ui;
 
-	bool m_firstShow;
-	bool m_skipVersionTest;
-	bool m_abortOnTimeout;
-
 	x264_status_t m_status;
 
 	QLabel *m_label;

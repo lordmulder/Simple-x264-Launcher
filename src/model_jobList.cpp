@@ -486,7 +486,7 @@ void JobListModel::updateStatus(const QUuid &jobId, JobStatus newStatus)
 		m_status.insert(jobId, newStatus);
 		emit dataChanged(createIndex(index, 0), createIndex(index, 1));
 
-		if(m_preferences->enableSounds())
+		if(m_preferences->getEnableSounds())
 		{
 			switch(newStatus)
 			{

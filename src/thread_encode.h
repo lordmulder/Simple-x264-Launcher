@@ -29,6 +29,8 @@
 #include <QStringList>
 #include <QSemaphore>
 
+class SysinfoModel;
+class PreferencesModel;
 class OptionsModel;
 class QProcess;
 class JobObject;
@@ -38,7 +40,7 @@ class EncodeThread : public QThread
 	Q_OBJECT
 
 public:
-	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, const bool &x264_x64, const bool &x264_10bit, const bool &avs2yuv_x64, const bool &skipVersionTest, const int &processPriroity, const bool &abortOnTimeout);
+	EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const m_preferences);
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
@@ -68,20 +70,16 @@ protected:
 	static const unsigned int m_processTimeoutMaxCounter = 120;
 	static const unsigned int m_processTimeoutWarning = 24;
 
+	//Globals
+	const SysinfoModel *const m_sysinfo;
+	const PreferencesModel *const m_preferences;
+
 	//Constants
 	const QUuid m_jobId;
 	const QString m_sourceFileName;
 	const QString m_outputFileName;
 	const OptionsModel *m_options;
-	const QString m_binDir;
-	const QString m_vpsDir;
-	const bool m_x264_x64;
-	const bool m_x264_10bit;
-	const bool m_avs2yuv_x64;
-	const bool m_skipVersionTest;
-	const int m_processPriority;
-	const bool m_abortOnTimeout;
-
+	
 	//Types
 	enum inputType_t
 	{

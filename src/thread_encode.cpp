@@ -24,7 +24,9 @@
 #include "global.h"
 #include "model_options.h"
 #include "model_preferences.h"
+#include "model_sysinfo.h"
 #include "job_object.h"
+#include "binaries.h"
 
 #include <QDate>
 #include <QTime>
@@ -117,10 +119,6 @@ while(0)
 } \
 while(0)
 
-#define AVS2_BINARY(BIN_DIR, IS_X64) (QString("%1/%2/avs2yuv_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86")))
-#define X264_BINARY(BIN_DIR, IS_10BIT, IS_X64) (QString("%1/%2/x264_%3_%2.exe").arg((BIN_DIR), ((IS_X64) ? "x64" : "x86"), ((IS_10BIT) ? "10bit" : "8bit")))
-#define VPSP_BINARY(VPS_DIR) (QString("%1/vspipe.exe").arg((VPS_DIR)))
-
 /*
  * Static vars
  */
@@ -131,20 +129,14 @@ static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const QString &binDir, const QString &vpsDir, const bool &x264_x64, const bool &x264_10bit, const bool &avs2yuv_x64, const bool &skipVersionTest, const int &processPriroity, const bool &abortOnTimeout)
+EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputFileName, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences)
 :
 	m_jobId(QUuid::createUuid()),
 	m_sourceFileName(sourceFileName),
 	m_outputFileName(outputFileName),
 	m_options(new OptionsModel(*options)),
-	m_binDir(binDir),
-	m_vpsDir(vpsDir),
-	m_x264_x64(x264_x64),
-	m_x264_10bit(x264_10bit),
-	m_avs2yuv_x64(avs2yuv_x64),
-	m_skipVersionTest(skipVersionTest),
-	m_processPriority(qBound(-2, processPriroity, 1)),
-	m_abortOnTimeout(abortOnTimeout),
+	m_sysinfo(sysinfo),
+	m_preferences(preferences),
 	m_jobObject(new JobObject),
 	m_semaphorePaused(0)
 {
@@ -238,9 +230,9 @@ void EncodeThread::encode(void)
 	log(tr("Source file: %1").arg(QDir::toNativeSeparators(m_sourceFileName)));
 	log(tr("Output file: %1").arg(QDir::toNativeSeparators(m_outputFileName)));
 	
-	if(!m_vpsDir.isEmpty())
+	if(!m_sysinfo->getVPSPath().isEmpty())
 	{
-		log(tr("\nVapourSynth: %1").arg(QDir::toNativeSeparators(m_vpsDir)));
+		log(tr("\nVapourSynth: %1").arg(QDir::toNativeSeparators(m_sysinfo->getVPSPath())));
 	}
 
 	//Print encoder settings
@@ -251,7 +243,7 @@ void EncodeThread::encode(void)
 	log(tr("Profile: %1").arg(m_options->profile()));
 	log(tr("Custom:  %1").arg(m_options->customEncParams().isEmpty() ? tr("(None)") : m_options->customEncParams()));
 	
-	log(m_binDir);
+	log(m_sysinfo->getAppPath());
 
 	bool ok = false;
 	unsigned int frames = 0;
@@ -264,7 +256,7 @@ void EncodeThread::encode(void)
 	log(tr("\n--- CHECK VERSION ---\n"));
 	unsigned int revision_x264 = UINT_MAX;
 	bool x264_modified = false;
-	ok = ((revision_x264 = checkVersionX264(m_x264_x64, m_x264_10bit, x264_modified)) != UINT_MAX);
+	ok = ((revision_x264 = checkVersionX264(x264_modified)) != UINT_MAX);
 	CHECK_STATUS(m_abort, ok);
 	
 	//Checking avs2yuv version
@@ -725,7 +717,7 @@ QStringList EncodeThread::buildCommandLine(bool usePipe, bool use10Bit, unsigned
 	return cmdLine;
 }
 
-unsigned int EncodeThread::checkVersionX264(bool use_x64, bool use_10bit, bool &modified)
+unsigned int EncodeThread::checkVersionX264(bool &modified)
 {
 	if(m_skipVersionTest)
 	{
@@ -737,7 +729,7 @@ unsigned int EncodeThread::checkVersionX264(bool use_x64, bool use_10bit, bool &
 	QStringList cmdLine = QStringList() << "--version";
 
 	log("Creating process:");
-	if(!startProcess(process, X264_BINARY(m_binDir, use_10bit, use_x64), cmdLine))
+	if(!startProcess(process, ENC_BINARY(m_sysinfo, m_options), cmdLine))
 	{
 		return false;;
 	}

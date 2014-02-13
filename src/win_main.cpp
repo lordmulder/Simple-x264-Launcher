@@ -83,10 +83,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	m_pendingFiles(new QStringList()),
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
-	m_skipVersionTest(false),
-	m_abortOnTimeout(true),
 	m_status(STATUS_PRE_INIT),
-	m_firstShow(true),
 	ui(new Ui::MainWindow())
 {
 	//Init the dialog, from the .ui file
@@ -247,7 +244,7 @@ void MainWindow::addButtonPressed()
 	m_status = STATUS_BLOCKED;
 
 	qDebug("MainWindow::addButtonPressed");
-	bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
+	bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 	QString sourceFileName, outputFileName;
 
 	if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
@@ -276,7 +273,7 @@ void MainWindow::openActionTriggered()
 		}
 		else
 		{
-			bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
+			bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 			QString sourceFileName(fileList.first()), outputFileName;
 			if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
 			{
@@ -368,7 +365,7 @@ void MainWindow::restartButtonPressed(void)
 
 	if((options) && (!sourceFileName.isEmpty()) && (!outputFileName.isEmpty()))
 	{
-		bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1)); //bool runImmediately = true;
+		bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 		OptionsModel *tempOptions = new OptionsModel(*options);
 		if(createJob(sourceFileName, outputFileName, tempOptions, runImmediately, true))
 		{
@@ -435,9 +432,9 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			}
 			if((status == JobStatus_Completed) || (status == JobStatus_Failed))
 			{
-				if(m_preferences->autoRunNextJob()) QTimer::singleShot(0, this, SLOT(launchNextJob()));
-				if(m_preferences->shutdownComputer()) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
-				if(m_preferences->saveLogFiles()) saveLogFile(m_jobList->index(i, 1, QModelIndex()));
+				if(m_preferences->getAutoRunNextJob()) QTimer::singleShot(0, this, SLOT(launchNextJob()));
+				if(m_preferences->getShutdownComputer()) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
+				if(m_preferences->getSaveLogFiles()) saveLogFile(m_jobList->index(i, 1, QModelIndex()));
 			}
 		}
 	}
@@ -618,7 +615,7 @@ void MainWindow::launchNextJob(void)
 	
 	const int rows = m_jobList->rowCount(QModelIndex());
 
-	if(countRunningJobs() >= m_preferences->maxRunningJobCount())
+	if(countRunningJobs() >= m_preferences->getMaxRunningJobCount())
 	{
 		qDebug("Still have too many jobs running, won't launch next one yet!");
 		return;
@@ -847,14 +844,14 @@ void MainWindow::init(void)
 	if(CLIParser::checkFlag(CLI_PARAM_SKIP_X264_CHECK, arguments))
 	{
 		qWarning("x264 version check disabled, you have been warned!\n");
-		m_skipVersionTest = true;
+		m_preferences->setSkipVersionTest(true);
 	}
 	
 	//Don't abort encoding process on timeout (not recommended!)
 	if(CLIParser::checkFlag(CLI_PARAM_NO_DEADLOCK, arguments))
 	{
 		qWarning("Deadlock detection disabled, you have been warned!\n");
-		m_abortOnTimeout = false;
+		m_preferences->setAbortOnTimeout(false);
 	}
 
 	//Check for Avisynth support
@@ -878,7 +875,7 @@ void MainWindow::init(void)
 		}
 		else
 		{
-			if(!m_preferences->disableWarnings())
+			if(!m_preferences->getDisableWarnings())
 			{
 				QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
 				text += tr("Please download and install Avisynth:").append("<br>").append(LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
@@ -911,7 +908,7 @@ void MainWindow::init(void)
 		}
 		else
 		{
-			if(!m_preferences->disableWarnings())
+			if(!m_preferences->getDisableWarnings())
 			{
 				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
 				text += tr("Please download and install VapourSynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/")).append("<br><br>");
@@ -960,7 +957,7 @@ void MainWindow::init(void)
 	if(!parseCommandLineArgs())
 	{
 		//Update reminder
-		if((!m_preferences->noUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
+		if((!m_preferences->getNoUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
 		{
 			if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
 			{
@@ -1064,7 +1061,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
 			{
 				OptionsModel options;
-				bool runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
+				bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 				if(!(args[2].isEmpty() || X264_STRCMP(args[2], "-")))
 				{
 					if(!OptionsModel::loadTemplate(&options, args[2].trimmed()))
@@ -1135,9 +1132,8 @@ void MainWindow::showEvent(QShowEvent *e)
 {
 	QMainWindow::showEvent(e);
 
-	if(m_firstShow)
+	if(m_status == STATUS_PRE_INIT)
 	{
-		m_firstShow = false;
 		QTimer::singleShot(0, this, SLOT(init()));
 	}
 }
@@ -1335,7 +1331,7 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	//Add files individually
 	for(iter = filePathIn.constBegin(); (iter != filePathIn.constEnd()) && (!applyToAll); iter++)
 	{
-		runImmediately = (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
+		runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 		QString sourceFileName(*iter), outputFileName;
 		if(createJob(sourceFileName, outputFileName, m_options, runImmediately, false, counter++, filePathIn.count(), &applyToAll))
 		{
@@ -1350,9 +1346,9 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	//Add remaining files
 	while(applyToAll && (iter != filePathIn.constEnd()))
 	{
-		const bool runImmediatelyTmp = runImmediately && (countRunningJobs() < (m_preferences->autoRunNextJob() ? m_preferences->maxRunningJobCount() : 1));
+		const bool runImmediatelyTmp = runImmediately && (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 		const QString sourceFileName = *iter;
-		const QString outputFileName = AddJobDialog::generateOutputFileName(sourceFileName, m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->saveToSourcePath());
+		const QString outputFileName = AddJobDialog::generateOutputFileName(sourceFileName, m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->getSaveToSourcePath());
 		if(!appendJob(sourceFileName, outputFileName, m_options, runImmediatelyTmp))
 		{
 			return false;

@@ -21,49 +21,62 @@
 
 #pragma once
 
+#include <QMutex>
+#include <QMutexLocker>
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define PREFERENCES_MAKE_X(NAME, PREFIX, TYPE) \
+	public: \
+		inline TYPE get##NAME(void) const \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			return m_##PREFIX##NAME; \
+		} \
+		inline void set##NAME(const TYPE PREFIX##NAME) \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			m_##PREFIX##NAME = PREFIX##NAME; \
+		} \
+	protected: \
+		TYPE m_##PREFIX##NAME;
+
+#define PREFERENCES_MAKE_B(NAME) PREFERENCES_MAKE_X(NAME, b, bool)
+#define PREFERENCES_MAKE_I(NAME) PREFERENCES_MAKE_X(NAME, i, int)
+#define PREFERENCES_MAKE_U(NAME) PREFERENCES_MAKE_X(NAME, u, unsigned int)
+
+///////////////////////////////////////////////////////////////////////////////
+
 class PreferencesModel
 {
 public:
 	PreferencesModel(void);
 
-	//Getter
-	bool autoRunNextJob(void)             const { return m_autoRunNextJob;     }
-	unsigned int maxRunningJobCount(void) const { return m_maxRunningJobCount; }
-	bool shutdownComputer(void)           const { return m_shutdownComputer;   }
-	bool useAvisyth64Bit(void)            const { return m_useAvisyth64Bit;    }
-	bool saveLogFiles(void)               const { return m_saveLogFiles;       }
-	bool saveToSourcePath(void)           const { return m_saveToSourcePath;   }
-	int processPriority(void)             const { return m_processPriority;    }
-	bool enableSounds(void)               const { return m_enableSounds;       }
-	bool disableWarnings(void)            const { return m_disableWarnings;    }
-	bool noUpdateReminder(void)           const { return m_noUpdateReminder;   }
+	PREFERENCES_MAKE_B(AutoRunNextJob)
+	PREFERENCES_MAKE_U(MaxRunningJobCount)
+	PREFERENCES_MAKE_B(ShutdownComputer)
+	PREFERENCES_MAKE_B(UseAvisyth64Bit)
+	PREFERENCES_MAKE_B(SaveLogFiles)
+	PREFERENCES_MAKE_B(SaveToSourcePath)
+	PREFERENCES_MAKE_I(ProcessPriority)
+	PREFERENCES_MAKE_B(EnableSounds)
+	PREFERENCES_MAKE_B(DisableWarnings)
+	PREFERENCES_MAKE_B(NoUpdateReminder)
+	PREFERENCES_MAKE_B(AbortOnTimeout)
+	PREFERENCES_MAKE_B(SkipVersionTest)
 
-	//Setter
-	void setAutoRunNextJob(const bool autoRunNextJob)                 { m_autoRunNextJob     = autoRunNextJob;     }
-	void setMaxRunningJobCount(const unsigned int maxRunningJobCount) { m_maxRunningJobCount = maxRunningJobCount; }
-	void setShutdownComputer(const bool shutdownComputer)             { m_shutdownComputer   = shutdownComputer;   }
-	void setUseAvisyth64Bit(const bool useAvisyth64Bit)               { m_useAvisyth64Bit    = useAvisyth64Bit;    }
-	void setSaveLogFiles(const bool saveLogFiles)                     { m_saveLogFiles       = saveLogFiles;       }
-	void setSaveToSourcePath(const bool saveToSourcePath)             { m_saveToSourcePath   = saveToSourcePath;   }
-	void setProcessPriority(const int processPriority)                { m_processPriority    = processPriority;    }
-	void setEnableSounds(const bool enableSounds)                     { m_enableSounds       = enableSounds;       }
-	void setDisableWarnings(const bool disableWarnings)               { m_disableWarnings    = disableWarnings;    }
-	void setNoUpdateReminder(const bool noUpdateReminder)             { m_noUpdateReminder   = noUpdateReminder;   }
-
-	//Static
+public:
 	static void initPreferences(PreferencesModel *preferences);
 	static void loadPreferences(PreferencesModel *preferences);
 	static void savePreferences(PreferencesModel *preferences);
 
 protected:
-	bool m_autoRunNextJob;
-	unsigned int m_maxRunningJobCount;
-	bool m_shutdownComputer;
-	bool m_useAvisyth64Bit;
-	bool m_saveLogFiles;
-	bool m_saveToSourcePath;
-	int m_processPriority;
-	bool m_enableSounds;
-	bool m_disableWarnings;
-	bool m_noUpdateReminder;
+	static QMutex m_mutex;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+
+#undef PREFERENCES_MAKE_X
+#undef PREFERENCES_MAKE_B
+#undef PREFERENCES_MAKE_I
+#undef PREFERENCES_MAKE_U

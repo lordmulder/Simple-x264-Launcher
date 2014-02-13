@@ -74,5 +74,5 @@ QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options)
 
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), preferences->useAvisyth64Bit() ? "x64": "x86");
+	return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), preferences->getUseAvisyth64Bit() ? "x64": "x86");
 }

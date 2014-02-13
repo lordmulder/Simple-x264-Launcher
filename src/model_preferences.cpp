@@ -23,12 +23,44 @@
 
 #include "global.h"
 
-#include <cstring>
-
 #include <QSettings>
 #include <QDesktopServices>
 #include <QMouseEvent>
 #include <QMessageBox>
+
+///////////////////////////////////////////////////////////////////////////////
+
+#define INIT_VALUE(NAME, VAL) do \
+{ \
+	preferences->set##NAME(VAL); \
+} \
+while(0)
+
+#define STORE_VALUE(NAME) do \
+{ \
+	settings.setValue(#NAME, (preferences->get##NAME())); \
+} \
+while(0)
+
+#define LOAD_VALUE_B(NAME) do \
+{ \
+	preferences->set##NAME(settings.value(#NAME, QVariant(defaults.get##NAME())).toBool()); \
+} \
+while(0)
+
+#define LOAD_VALUE_I(NAME) do \
+{ \
+	preferences->set##NAME(settings.value(#NAME, QVariant(defaults.get##NAME())).toInt()); \
+} \
+while(0)
+
+#define LOAD_VALUE_U(NAME) do \
+{ \
+	preferences->set##NAME(settings.value(#NAME, QVariant(defaults.get##NAME())).toUInt()); \
+} \
+while(0)
+
+///////////////////////////////////////////////////////////////////////////////
 
 PreferencesModel::PreferencesModel(void)
 {
@@ -37,55 +69,60 @@ PreferencesModel::PreferencesModel(void)
 
 void PreferencesModel::initPreferences(PreferencesModel *preferences)
 {
-	memset(preferences, 0, sizeof(PreferencesModel));
+	INIT_VALUE(AutoRunNextJob,     true );
+	INIT_VALUE(MaxRunningJobCount, 1    );
+	INIT_VALUE(ShutdownComputer,   false);
+	INIT_VALUE(UseAvisyth64Bit,    false);
+	INIT_VALUE(SaveLogFiles,       false);
+	INIT_VALUE(SaveToSourcePath,   false);
+	INIT_VALUE(ProcessPriority,    -1   );
+	INIT_VALUE(EnableSounds,       false);
+	INIT_VALUE(DisableWarnings,    false);
+	INIT_VALUE(NoUpdateReminder,   false);
+	INIT_VALUE(AbortOnTimeout,     true );
+	INIT_VALUE(SkipVersionTest,    false);
 
-	preferences->m_autoRunNextJob = true;
-	preferences->m_maxRunningJobCount = 1;
-	preferences->m_shutdownComputer = false;
-	preferences->m_useAvisyth64Bit = false;
-	preferences->m_saveLogFiles = false;
-	preferences->m_saveToSourcePath = false;
-	preferences->m_processPriority = -1;
-	preferences->m_enableSounds = false;
-	preferences->m_disableWarnings = false;
-	preferences->m_noUpdateReminder = false;
 }
 
 void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 {
 	const QString appDir = x264_data_path();
-	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
-
 	PreferencesModel defaults;
-
+	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
 	settings.beginGroup("preferences");
-	preferences->m_autoRunNextJob = settings.value("auto_run_next_job", QVariant(defaults.m_autoRunNextJob)).toBool();
-	preferences->m_maxRunningJobCount = qBound(1U, settings.value("max_running_job_count", QVariant(defaults.m_maxRunningJobCount)).toUInt(), 16U);
-	preferences->m_shutdownComputer = settings.value("shutdown_computer_on_completion", QVariant(defaults.m_shutdownComputer)).toBool();
-	preferences->m_useAvisyth64Bit = settings.value("use_64bit_avisynth", QVariant(defaults.m_useAvisyth64Bit)).toBool();
-	preferences->m_saveLogFiles = settings.value("save_log_files", QVariant(defaults.m_saveLogFiles)).toBool();
-	preferences->m_saveToSourcePath = settings.value("save_to_source_path", QVariant(defaults.m_saveToSourcePath)).toBool();
-	preferences->m_processPriority = settings.value("process_priority", QVariant(defaults.m_processPriority)).toInt();
-	preferences->m_enableSounds = settings.value("enable_sounds", QVariant(defaults.m_enableSounds)).toBool();
-	preferences->m_disableWarnings = settings.value("disable_warnings", QVariant(defaults.m_disableWarnings)).toBool();
-	preferences->m_noUpdateReminder = settings.value("disable_update_reminder", QVariant(defaults.m_disableWarnings)).toBool();
+
+	LOAD_VALUE_B(AutoRunNextJob    );
+	LOAD_VALUE_U(MaxRunningJobCount);
+	LOAD_VALUE_B(ShutdownComputer  );
+	LOAD_VALUE_B(UseAvisyth64Bit   );
+	LOAD_VALUE_B(SaveLogFiles      );
+	LOAD_VALUE_B(SaveToSourcePath  );
+	LOAD_VALUE_I(ProcessPriority   );
+	LOAD_VALUE_B(EnableSounds      );
+	LOAD_VALUE_B(DisableWarnings   );
+	LOAD_VALUE_B(NoUpdateReminder  );
+
+	//Validation
+	preferences->setProcessPriority(qBound(-2, preferences->getProcessPriority(), 2));
+	preferences->setMaxRunningJobCount(qBound(1U, preferences->getMaxRunningJobCount(), 16U));
 }
 
 void PreferencesModel::savePreferences(PreferencesModel *preferences)
 {
 	const QString appDir = x264_data_path();
 	QSettings settings(QString("%1/preferences.ini").arg(appDir), QSettings::IniFormat);
-
 	settings.beginGroup("preferences");
-	settings.setValue("auto_run_next_job", preferences->m_autoRunNextJob);
-	settings.setValue("shutdown_computer_on_completion", preferences->m_shutdownComputer);
-	settings.setValue("max_running_job_count", preferences->m_maxRunningJobCount);
-	settings.setValue("use_64bit_avisynth", preferences->m_useAvisyth64Bit);
-	settings.setValue("save_log_files", preferences->m_saveLogFiles);
-	settings.setValue("save_to_source_path", preferences->m_saveToSourcePath);
-	settings.setValue("process_priority", preferences->m_processPriority);
-	settings.setValue("enable_sounds", preferences->m_enableSounds);
-	settings.setValue("disable_warnings", preferences->m_disableWarnings);
-	settings.setValue("disable_update_reminder", preferences->m_noUpdateReminder);
+
+	STORE_VALUE(AutoRunNextJob    );
+	STORE_VALUE(MaxRunningJobCount);
+	STORE_VALUE(ShutdownComputer  );
+	STORE_VALUE(UseAvisyth64Bit   );
+	STORE_VALUE(SaveLogFiles      );
+	STORE_VALUE(SaveToSourcePath  );
+	STORE_VALUE(ProcessPriority   );
+	STORE_VALUE(EnableSounds      );
+	STORE_VALUE(DisableWarnings   );
+	STORE_VALUE(NoUpdateReminder  );
+	
 	settings.sync();
 }

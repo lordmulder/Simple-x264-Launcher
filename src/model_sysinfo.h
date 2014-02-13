@@ -20,26 +20,33 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+
+#include <QMutex>
+#include <QMutexLocker>
 #include <QString>
 
 #define SYSINFO_MAKE_FLAG(NAME) \
 	inline void set##NAME##Support(const bool &enable) \
 	{ \
+		QMutexLocker lock(&m_mutex); \
 		if(enable) setFlag(FLAG_HAS_##NAME); else clrFlag(FLAG_HAS_##NAME); \
 	} \
 	inline bool has##NAME##Support(void) const \
 	{ \
-			return ((m_flags & (FLAG_HAS_##NAME)) == FLAG_HAS_##NAME); \
+		QMutexLocker lock(&m_mutex); \
+		return ((m_flags & (FLAG_HAS_##NAME)) == FLAG_HAS_##NAME); \
 	}
 
 #define SYSINFO_MAKE_PATH(NAME) \
 	inline void set##NAME##Path(const QString &path) \
 	{ \
+		QMutexLocker lock(&m_mutex); \
 		m_path##NAME = path; \
 	} \
 	inline const QString & get##NAME##Path(void) const \
 	{ \
-			return m_path##NAME; \
+		QMutexLocker lock(&m_mutex); \
+		return m_path##NAME; \
 	}
 
 class SysinfoModel
@@ -61,14 +68,16 @@ protected:
 	static const unsigned int FLAG_HAS_SSE = 0x00000004;
 	static const unsigned int FLAG_HAS_AVS = 0x00000008;
 	static const unsigned int FLAG_HAS_VPS = 0x00000010;
-
+	
 	inline void setFlag(const unsigned int &flag) { m_flags = (m_flags | flag); }
 	inline void clrFlag(const unsigned int &flag) { m_flags = (m_flags & (~flag)); }
+
+	unsigned int m_flags;
 
 	QString m_pathApp;
 	QString m_pathVPS;
 
-	unsigned int m_flags;
+	static QMutex m_mutex;
 };
 
 #undef SYSINFO_MAKE_FLAG

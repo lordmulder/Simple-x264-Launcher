@@ -25,59 +25,63 @@
 #include <QMutexLocker>
 #include <QString>
 
-#define SYSINFO_MAKE_FLAG(NAME) \
-	inline void set##NAME##Support(const bool &enable) \
-	{ \
-		QMutexLocker lock(&m_mutex); \
-		if(enable) setFlag(FLAG_HAS_##NAME); else clrFlag(FLAG_HAS_##NAME); \
-	} \
-	inline bool has##NAME##Support(void) const \
-	{ \
-		QMutexLocker lock(&m_mutex); \
-		return ((m_flags & (FLAG_HAS_##NAME)) == FLAG_HAS_##NAME); \
-	}
+///////////////////////////////////////////////////////////////////////////////
+
+#define SYSINFO_MAKE_FLAG(NAME, VALUE) \
+	protected: \
+		static const unsigned int FLAG_HAS_##NAME = VALUE; \
+	public: \
+		inline void set##NAME##Support(const bool &enable) \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			if(enable) setFlag(FLAG_HAS_##NAME); else clrFlag(FLAG_HAS_##NAME); \
+		} \
+		inline bool has##NAME##Support(void) const \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			const bool enabeld = ((m_flags & (FLAG_HAS_##NAME)) == FLAG_HAS_##NAME); \
+			return enabeld; \
+		}
 
 #define SYSINFO_MAKE_PATH(NAME) \
-	inline void set##NAME##Path(const QString &path) \
-	{ \
-		QMutexLocker lock(&m_mutex); \
-		m_path##NAME = path; \
-	} \
-	inline const QString & get##NAME##Path(void) const \
-	{ \
-		QMutexLocker lock(&m_mutex); \
-		return m_path##NAME; \
-	}
+	protected: \
+		QString m_path##NAME; \
+	public: \
+		inline void set##NAME##Path(const QString &path) \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			m_path##NAME = path; \
+		} \
+		inline const QString get##NAME##Path(void) const \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			const QString path = m_path##NAME; \
+			return path; \
+		}
+
+///////////////////////////////////////////////////////////////////////////////
 
 class SysinfoModel
 {
 public:
 	SysinfoModel(void) { m_flags = 0; }
 
-	SYSINFO_MAKE_FLAG(X64)
-	SYSINFO_MAKE_FLAG(MMX)
-	SYSINFO_MAKE_FLAG(SSE)
-	SYSINFO_MAKE_FLAG(AVS)
-	SYSINFO_MAKE_FLAG(VPS)
+	SYSINFO_MAKE_FLAG(X64, 0x00000001)
+	SYSINFO_MAKE_FLAG(MMX, 0x00000002)
+	SYSINFO_MAKE_FLAG(SSE, 0x00000004)
+	SYSINFO_MAKE_FLAG(AVS, 0x00000008)
+	SYSINFO_MAKE_FLAG(VPS, 0x00000010)
+	SYSINFO_MAKE_FLAG(256, 0x00000020)
+	
 	SYSINFO_MAKE_PATH(VPS)
 	SYSINFO_MAKE_PATH(App)
 
 protected:
-	static const unsigned int FLAG_HAS_X64 = 0x00000001;
-	static const unsigned int FLAG_HAS_MMX = 0x00000002;
-	static const unsigned int FLAG_HAS_SSE = 0x00000004;
-	static const unsigned int FLAG_HAS_AVS = 0x00000008;
-	static const unsigned int FLAG_HAS_VPS = 0x00000010;
-	
-	inline void setFlag(const unsigned int &flag) { m_flags = (m_flags | flag); }
+	inline void setFlag(const unsigned int &flag) { m_flags = (m_flags | flag);    }
 	inline void clrFlag(const unsigned int &flag) { m_flags = (m_flags & (~flag)); }
 
 	unsigned int m_flags;
-
-	QString m_pathApp;
-	QString m_pathVPS;
-
-	static QMutex m_mutex;
+	mutable QMutex m_mutex;
 };
 
 #undef SYSINFO_MAKE_FLAG

@@ -31,7 +31,8 @@
 		inline TYPE get##NAME(void) const \
 		{ \
 			QMutexLocker lock(&m_mutex); \
-			return m_##PREFIX##NAME; \
+			const TYPE value = m_##PREFIX##NAME; \
+			return value; \
 		} \
 		inline void set##NAME(const TYPE PREFIX##NAME) \
 		{ \
@@ -71,7 +72,7 @@ public:
 	static void savePreferences(PreferencesModel *preferences);
 
 protected:
-	static QMutex m_mutex;
+	mutable QMutex m_mutex;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

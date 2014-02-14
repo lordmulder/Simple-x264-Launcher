@@ -25,10 +25,12 @@
 #include <QString>
 #include <QMap>
 
+class SysinfoModel;
+
 class OptionsModel
 {
 public:
-	OptionsModel(void);
+	OptionsModel(const SysinfoModel *sysinfo);
 	OptionsModel(const OptionsModel &rhs);
 	~OptionsModel(void);
 
@@ -91,7 +93,7 @@ public:
 	static QString rcMode2String(RCMode mode);
 	static bool saveTemplate(OptionsModel *model, const QString &name);
 	static bool loadTemplate(OptionsModel *model, const QString &name);
-	static QMap<QString, OptionsModel*> loadAllTemplates(void);
+	static QMap<QString, OptionsModel*> loadAllTemplates(const SysinfoModel *sysinfo);
 	static bool templateExists(const QString &name);
 	static bool deleteTemplate(const QString &name);
 

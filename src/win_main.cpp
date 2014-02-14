@@ -111,7 +111,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	RecentlyUsed::loadRecentlyUsed(m_recentlyUsed);
 
 	//Create options object
-	m_options = new OptionsModel();
+	m_options = new OptionsModel(m_sysinfo);
 	OptionsModel::loadTemplate(m_options, QString::fromLatin1(tpl_last));
 
 	//Freeze minimum size
@@ -1060,7 +1060,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 		{
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
 			{
-				OptionsModel options;
+				OptionsModel options(m_sysinfo);
 				bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 				if(!(args[2].isEmpty() || X264_STRCMP(args[2], "-")))
 				{

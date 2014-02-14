@@ -22,6 +22,7 @@
 #include "model_options.h"
 
 #include "global.h"
+#include "model_sysinfo.h"
 
 #include <QDesktopServices>
 #include <QSettings>
@@ -32,10 +33,10 @@
 #define COMPARE_STR(OTHER, NAME) ((this->NAME).compare((model->NAME), Qt::CaseInsensitive) == 0)
 #define ASSIGN_FROM(OTHER, NAME) ((this->NAME) = (OTHER.NAME))
 
-OptionsModel::OptionsModel(void)
+OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 {
 	m_encoderType = EncType_X264;
-	m_encoderArch = EncArch_x32;
+	m_encoderArch = sysinfo->hasX64Support() ? EncArch_x64 : EncArch_x32;
 	m_encoderVariant = EncVariant_LoBit;
 	m_rcMode = RCMode_CRF;
 	m_bitrate = 1200;
@@ -189,7 +190,7 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	return complete;
 }
 
-QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
+QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(const SysinfoModel *sysinfo)
 {
 	QMap<QString, OptionsModel*> list;
 	const QString appDir = x264_data_path();
@@ -201,7 +202,7 @@ QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(void)
 		QString name = allTemplates.takeFirst();
 		if(!(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/')))
 		{
-			OptionsModel *options = new OptionsModel();
+			OptionsModel *options = new OptionsModel(sysinfo);
 			if(loadTemplate(options, name))
 			{
 				list.insert(name, options);

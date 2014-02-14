@@ -229,7 +229,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	m_recentlyUsed(recentlyUsed),
 	m_sysinfo(sysinfo),
 	m_preferences(preferences),
-	m_defaults(new OptionsModel()),
+	m_defaults(new OptionsModel(sysinfo)),
 	ui(new Ui::AddJobDialog())
 {
 	//Init the dialog, from the .ui file
@@ -356,7 +356,7 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 {
 	if((o == ui->labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
 	{
-		OptionsModel options; saveOptions(&options);
+		OptionsModel options(m_sysinfo); saveOptions(&options);
 		HelpDialog *helpScreen = new HelpDialog(this, false, m_sysinfo, &options, m_preferences);
 		helpScreen->exec();
 		X264_DELETE(helpScreen);
@@ -612,7 +612,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		name = tr("New Template (%1)").arg(QString::number(n++));
 	}
 
-	OptionsModel *options = new OptionsModel();
+	OptionsModel *options = new OptionsModel(m_sysinfo);
 	saveOptions(options);
 
 	if(options->equals(m_defaults))
@@ -832,7 +832,7 @@ void AddJobDialog::loadTemplateList(void)
 	ui->cbxTemplate->addItem(tr("<Default>"), QVariant::fromValue<const void*>(m_defaults));
 	ui->cbxTemplate->setCurrentIndex(0);
 
-	QMap<QString, OptionsModel*> templates = OptionsModel::loadAllTemplates();
+	QMap<QString, OptionsModel*> templates = OptionsModel::loadAllTemplates(m_sysinfo);
 	QStringList templateNames = templates.keys();
 	templateNames.sort();
 

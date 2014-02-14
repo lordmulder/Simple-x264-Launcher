@@ -588,6 +588,8 @@ void AddJobDialog::templateSelected(void)
 	}
 
 	//Force updates
+	encoderIndexChanged(ui->cbxEncoderType->currentIndex());
+	variantIndexChanged(ui->cbxEncoderVariant->currentIndex());
 	modeIndexChanged(ui->cbxRateControlMode->currentIndex());
 }
 

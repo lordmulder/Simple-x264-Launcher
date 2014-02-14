@@ -108,13 +108,13 @@ protected:
 	
 	//Encode functions
 	void encode(void);
-	bool runEncodingPass(bool x264_x64, bool x264_10bit, bool avs2yuv_x64, int inputType, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
-	QStringList buildCommandLine(bool usePipe, bool use10Bit, unsigned int frames, const QString &indexFile, int pass = 0, const QString &passLogFile = QString());
-	unsigned int checkVersionX264(bool use_x64, bool use_10bit, bool &modified);
-	unsigned int checkVersionAvs2yuv(bool x64);
+	bool runEncodingPass(const int &inputType, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
+	QStringList buildCommandLine(const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
+	unsigned int checkVersionX264(bool &modified);
+	unsigned int checkVersionAvs2yuv(void);
 	bool checkVersionVapoursynth(void);
-	bool checkPropertiesAvisynth(bool x64, unsigned int &frames);
-	bool checkPropertiesVapoursynth(unsigned int &frames);
+	bool checkPropertiesAVS(unsigned int &frames);
+	bool checkPropertiesVPS(unsigned int &frames);
 
 	//Auxiallary Stuff
 	void log(const QString &text) { emit messageLogged(m_jobId, text); }

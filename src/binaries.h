@@ -27,3 +27,4 @@ class OptionsModel;
 
 QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options);
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);
+QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);

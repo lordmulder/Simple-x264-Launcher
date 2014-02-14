@@ -76,3 +76,8 @@ QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferen
 {
 	return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), preferences->getUseAvisyth64Bit() ? "x64": "x86");
 }
+
+QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
+{
+	return QString("%1/vspipe.exe").arg(sysinfo->getVPSPath());
+}

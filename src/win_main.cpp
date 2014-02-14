@@ -1359,26 +1359,13 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	return true;
 }
 
-
 /*
  * Append a new job
  */
 bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputFileName, OptionsModel *options, const bool runImmediately)
 {
 	bool okay = false;
-	
-	EncodeThread *thrd = NULL/*new EncodeThread
-	(
-		sourceFileName,
-		outputFileName,
-		options,
-		m_sysinfo,
-		m_preferences->useAvisyth64Bit(),
-		m_skipVersionTest,
-		m_preferences->processPriority(),
-		m_abortOnTimeout
-	)*/;
-	
+	EncodeThread *thrd = new EncodeThread(sourceFileName, outputFileName, options, m_sysinfo, m_preferences);
 	QModelIndex newIndex = m_jobList->insertJob(thrd);
 
 	if(newIndex.isValid())

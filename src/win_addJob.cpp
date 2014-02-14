@@ -460,6 +460,14 @@ void AddJobDialog::modeIndexChanged(int index)
 
 void AddJobDialog::accept(void)
 {
+	//FIXME
+	if(ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265)
+	{
+		QMessageBox::warning(this, tr("x265"), tr("Sorry, x265 support not implemented yet!"));
+		ui->cbxEncoderType->setCurrentIndex(OptionsModel::EncType_X264);
+		return;
+	}
+
 	//Check 64-Bit support
 	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->hasX64Support()))
 	{

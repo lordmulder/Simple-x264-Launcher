@@ -233,7 +233,7 @@ void EncodeThread::encode(void)
 	//Print system info
 	log(tr("\n--- SYSTEMINFO ---\n"));
 	log(tr("Binary Path: %1").arg(QDir::toNativeSeparators(m_sysinfo->getAppPath())));
-	log(tr("Avisynth 2x: %1").arg(m_sysinfo->hasAVSSupport() ? tr("YES") : tr("NO")));
+	log(tr("Avisynth OK: %1").arg(m_sysinfo->hasAVSSupport() ? tr("Yes") : tr("No")));
 	log(tr("VapourSynth: %1").arg(m_sysinfo->hasVPSSupport() ? QDir::toNativeSeparators(m_sysinfo->getVPSPath()) : tr("N/A")));
 
 	//Print encoder settings

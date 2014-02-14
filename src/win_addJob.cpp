@@ -306,8 +306,8 @@ AddJobDialog::~AddJobDialog(void)
 		{
 			continue;
 		}
-		OptionsModel *item = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>());
-		ui->cbxTemplate->setItemData(i, QVariant::fromValue<void*>(NULL));
+		const OptionsModel *item = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>());
+		ui->cbxTemplate->setItemData(i, QVariant::fromValue<const void*>(NULL));
 		X264_DELETE(item);
 	}
 
@@ -623,7 +623,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		{
 			continue;
 		}
-		OptionsModel* test = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>());
+		const OptionsModel* test = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>());
 		if(test != NULL)
 		{
 			if(options->equals(test))
@@ -684,15 +684,15 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		if(ui->cbxTemplate->itemText(i).compare(name, Qt::CaseInsensitive) == 0)
 		{
 			index = -1; //Do not append new template
-			OptionsModel *oldItem = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(i).value<void*>());
-			ui->cbxTemplate->setItemData(i, QVariant::fromValue<void*>(options));
+			const OptionsModel *oldItem = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>());
+			ui->cbxTemplate->setItemData(i, QVariant::fromValue<const void*>(options));
 			ui->cbxTemplate->setCurrentIndex(i);
 			X264_DELETE(oldItem);
 		}
 	}
 	if(index >= 0)
 	{
-		ui->cbxTemplate->insertItem(index, name, QVariant::fromValue<void*>(options));
+		ui->cbxTemplate->insertItem(index, name, QVariant::fromValue<const void*>(options));
 		ui->cbxTemplate->setCurrentIndex(index);
 	}
 	ui->cbxTemplate->blockSignals(false);
@@ -719,7 +719,7 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 
 
 	OptionsModel::deleteTemplate(name);
-	OptionsModel *item = reinterpret_cast<OptionsModel*>(ui->cbxTemplate->itemData(index).value<void*>());
+	const OptionsModel *item = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(index).value<const void*>());
 	ui->cbxTemplate->removeItem(index);
 	X264_DELETE(item);
 }

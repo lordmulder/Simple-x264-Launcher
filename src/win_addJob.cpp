@@ -504,16 +504,30 @@ void AddJobDialog::accept(void)
 			return;
 		}
 	}
-	if(((sourceFile.suffix().compare("VPY", Qt::CaseInsensitive) == 0) || (sourceFile.suffix().compare("PY", Qt::CaseInsensitive) == 0)) && (!m_sysinfo->hasVPSSupport()))
+	else if(((sourceFile.suffix().compare("VPY", Qt::CaseInsensitive) == 0) || (sourceFile.suffix().compare("PY", Qt::CaseInsensitive) == 0)) && (!m_sysinfo->hasVPSSupport()))
 	{
 		if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
 		{
 			return;
 		}
 	}
-	
-	//Does output file already exist?
+
+	//Is output file extension supported by encoder
 	QFileInfo outputFile = QFileInfo(this->outputFile());
+	if((outputFile.suffix().compare("264", Qt::CaseInsensitive) == 0) && (ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265))
+	{
+		QMessageBox::warning(this, tr("H.264 unsupported!"), tr("<nobr>Sorry, x265 cannot output H.264/AVC files!</nobr>"));
+		ui->editOutput->setText(QString("%1/%2.hevc").arg(outputFile.absolutePath(), outputFile.completeBaseName()));
+		return;
+	}
+	else if((outputFile.suffix().compare("HEVC", Qt::CaseInsensitive) == 0) && (ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X264))
+	{
+		QMessageBox::warning(this, tr("H.264 unsupported!"), tr("<nobr>Sorry, x264 cannot output H.265/HEVC files!</nobr>"));
+		ui->editOutput->setText(QString("%1/%2.264").arg(outputFile.absolutePath(), outputFile.completeBaseName()));
+		return;
+	}
+
+	//Does output file already exist?
 	if(outputFile.exists() && outputFile.isFile())
 	{
 		int ret = QMessageBox::question(this, tr("Already Exists!"), tr("<nobr>Output file already exists! Overwrite?</nobr>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
@@ -965,9 +979,14 @@ QString AddJobDialog::currentOutputPath(const bool bWithName)
 
 int AddJobDialog::currentOutputIndx(void)
 {
-	int index = m_recentlyUsed->filterIndex();
-	QString currentOutputFile = this->outputFile();
+	if(ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265)
+	{
+		return ARRAY_SIZE(X264_FILE_TYPE_FILTERS) - 1;
+	}
 	
+	int index = m_recentlyUsed->filterIndex();
+	const QString currentOutputFile = this->outputFile();
+
 	if(!currentOutputFile.isEmpty())
 	{
 		const QString currentOutputExtn = QFileInfo(currentOutputFile).suffix();

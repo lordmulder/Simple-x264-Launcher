@@ -342,6 +342,7 @@
      <addaction name="actionWebVideoLAN"/>
      <addaction name="actionWebKomisar"/>
      <addaction name="actionWebJEEB"/>
+     <addaction name="actionWebFreeCodecs"/>
     </widget>
     <widget class="QMenu" name="menuDownloadAvisynth">
      <property name="title">
@@ -355,13 +356,29 @@
      <addaction name="actionWebAvisynth64"/>
      <addaction name="actionWebAvisynthPlus"/>
     </widget>
+    <widget class="QMenu" name="menuDownload_x265_Binaries">
+     <property name="title">
+      <string>Download x265 Binaries</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../res/resources.qrc">
+       <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
+     </property>
+     <addaction name="actionWebX265BinRU"/>
+     <addaction name="actionWebX265BinORG"/>
+     <addaction name="actionWebX265BinEU"/>
+     <addaction name="separator"/>
+     <addaction name="actionWebX265BinFF"/>
+    </widget>
     <addaction name="actionCheckForUpdates"/>
     <addaction name="separator"/>
     <addaction name="actionWebMulder"/>
     <addaction name="actionWebX264"/>
+    <addaction name="actionWebX265"/>
     <addaction name="actionWebSupport"/>
     <addaction name="separator"/>
     <addaction name="menuDownloadX264"/>
+    <addaction name="menuDownload_x265_Binaries"/>
     <addaction name="menuDownloadAvisynth"/>
     <addaction name="actionWebVapourSynth"/>
     <addaction name="separator"/>
@@ -663,6 +680,65 @@
    </property>
    <property name="text">
     <string>Avisynth+ (32-Bit / 64-Bit)</string>
+   </property>
+  </action>
+  <action name="actionWebX265">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/x265.png</normaloff>:/buttons/x265.png</iconset>
+   </property>
+   <property name="text">
+    <string>Official x265 Web-Site</string>
+   </property>
+  </action>
+  <action name="actionDownload_x265_Binaries">
+   <property name="text">
+    <string>Download x265 Binaries</string>
+   </property>
+  </action>
+  <action name="actionWebX265BinRU">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>*Unofficial* x265 binaries [x265.ru]</string>
+   </property>
+  </action>
+  <action name="actionWebX265BinFF">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>FFmepg with x265 encoding support</string>
+   </property>
+  </action>
+  <action name="actionWebX265BinEU">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>*Unofficial* x265 binaries [builds.x265.eu]</string>
+   </property>
+  </action>
+  <action name="actionWebX265BinORG">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>*Unofficial* x265 binaries [chromashift.org]</string>
+   </property>
+  </action>
+  <action name="actionWebFreeCodecs">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>Codecs.com Mirror</string>
    </property>
   </action>
  </widget>

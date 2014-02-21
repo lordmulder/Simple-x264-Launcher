@@ -48,6 +48,7 @@
     <file>buttons/world_link.png</file>
     <file>buttons/wrench.png</file>
     <file>buttons/x264.png</file>
+    <file>buttons/x265.png</file>
     <file>images/avisynth.png</file>
     <file>images/loading.gif</file>
     <file>images/movie.png</file>
@@ -55,5 +56,6 @@
     <file>images/update.png</file>
     <file>images/update_wizard.png</file>
     <file>images/x264.png</file>
+    <file>images/x265.png</file>
   </qresource>
 </RCC>

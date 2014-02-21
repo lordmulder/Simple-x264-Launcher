@@ -68,6 +68,8 @@ const char *tpl_last = "<LAST_USED>";
 #define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
 #define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
+#define SETUP_WEBLINK(OBJ, URL) do { (OBJ)->setData(QVariant(QUrl(URL))); connect((OBJ), SIGNAL(triggered()), this, SLOT(showWebLink())); } while(0)
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -168,23 +170,31 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	//Enable menu
 	connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(openActionTriggered()));
 	connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
-	connect(ui->actionWebMulder, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebX264, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebKomisar, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebVideoLAN, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebJEEB, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebAvisynth32, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebAvisynth64, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebAvisynthPlus, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebVapourSynth, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebVapourSynthDocs, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebBluRay, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebAvsWiki, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebSecret, SIGNAL(triggered()), this, SLOT(showWebLink()));
-	connect(ui->actionWebSupport, SIGNAL(triggered()), this, SLOT(showWebLink()));
 	connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
 	connect(ui->actionCheckForUpdates, SIGNAL(triggered()), this, SLOT(checkUpdates()));
+
+	//Setup web-links
+	SETUP_WEBLINK(ui->actionWebMulder,          home_url);
+	SETUP_WEBLINK(ui->actionWebX264,            "http://www.x264.com/");
+	SETUP_WEBLINK(ui->actionWebX265,            "http://www.x265.org/");
+	SETUP_WEBLINK(ui->actionWebKomisar,         "http://komisar.gin.by/");
+	SETUP_WEBLINK(ui->actionWebVideoLAN,        "http://download.videolan.org/pub/x264/binaries/");
+	SETUP_WEBLINK(ui->actionWebJEEB,            "http://x264.fushizen.eu/");
+	SETUP_WEBLINK(ui->actionWebFreeCodecs,      "http://www.free-codecs.com/x264_video_codec_download.htm");
+	SETUP_WEBLINK(ui->actionWebX265BinRU,       "http://goo.gl/xRS6AW");
+	SETUP_WEBLINK(ui->actionWebX265BinEU,       "http://builds.x265.eu/");
+	SETUP_WEBLINK(ui->actionWebX265BinORG,      "http://chromashift.org/x265_builds/");
+	SETUP_WEBLINK(ui->actionWebX265BinFF,       "http://ffmpeg.zeranoe.com/builds/");
+	SETUP_WEBLINK(ui->actionWebAvisynth32,      "http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/");
+	SETUP_WEBLINK(ui->actionWebAvisynth64,      "http://code.google.com/p/avisynth64/downloads/list");
+	SETUP_WEBLINK(ui->actionWebAvisynthPlus,    "http://www.avs-plus.net/");
+	SETUP_WEBLINK(ui->actionWebVapourSynth,     "http://www.vapoursynth.com/");
+	SETUP_WEBLINK(ui->actionWebVapourSynthDocs, "http://www.vapoursynth.com/doc/");
+	SETUP_WEBLINK(ui->actionWebWiki,            "http://mewiki.project357.com/wiki/X264_Settings");
+	SETUP_WEBLINK(ui->actionWebBluRay,          "http://www.x264bluray.com/");
+	SETUP_WEBLINK(ui->actionWebAvsWiki,         "http://avisynth.nl/index.php/Main_Page#Usage");
+	SETUP_WEBLINK(ui->actionWebSupport,         "http://forum.doom9.org/showthread.php?t=144140");
+	SETUP_WEBLINK(ui->actionWebSecret,          "http://www.youtube.com/watch_popup?v=AXIeHY-OYNI");
 
 	//Create floating label
 	m_label = new QLabel(ui->jobsView->viewport());
@@ -495,8 +505,9 @@ void MainWindow::showAbout(void)
 	aboutBox.setWindowTitle(tr("About..."));
 	aboutBox.setText(text.replace("-", "&minus;"));
 	aboutBox.addButton(tr("About x264"), QMessageBox::NoRole);
-	aboutBox.addButton(tr("About AVS"), QMessageBox::NoRole);
-	aboutBox.addButton(tr("About VPY"), QMessageBox::NoRole);
+	aboutBox.addButton(tr("About x265"), QMessageBox::NoRole);
+	aboutBox.addButton(tr("About Avs"), QMessageBox::NoRole);
+	aboutBox.addButton(tr("About Vpy"), QMessageBox::NoRole);
 	aboutBox.addButton(tr("About Qt"), QMessageBox::NoRole);
 	aboutBox.setEscapeButton(aboutBox.addButton(tr("Close"), QMessageBox::NoRole));
 		
@@ -508,9 +519,9 @@ void MainWindow::showAbout(void)
 		case 0:
 			{
 				QString text2;
-				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (c) 2003-2013 x264 project.<br>");
+				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (C) 2013-2014 x264 project.<br>");
 				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
-				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
+				text2 += tr("Released under the terms of the GNU General Public License v2.<br><br>");
 				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a commercial x264 license.<br>").arg("http://x264licensing.com/");
 				text2 += tr("Read the <a href=\"%1\">user's manual</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://mewiki.project357.com/wiki/X264_Settings", "http://forum.doom9.org/forumdisplay.php?f=77");
 
@@ -526,10 +537,28 @@ void MainWindow::showAbout(void)
 		case 1:
 			{
 				QString text2;
+				text2 += tr("<nobr><tt>x265 - H.265/HEVC encoder. Copyright (C) 2003-2014 x265 project.<br>");
+				text2 += tr("Commercially funded open source implementation of the H.265/HEVC compression standard.<br>");
+				text2 += tr("Released under the terms of the GNU General Public License v2.<br><br>");
+				text2 += tr("The x265 project is coordinated by <a href=\"%1\">MultiCoreWare</a>. Visit the <a href=\"%2\">x265 web-site</a> for details.<br>").arg("http://www.multicorewareinc.com/", "http://x265.org/");
+				text2 += tr("Read the <a href=\"%1\">user's manual</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr").arg("http://goo.gl/smws42", "https://forum.doom9.org/forumdisplay.php?f=81");
+
+				QMessageBox x264Box(this);
+				x264Box.setIconPixmap(QIcon(":/images/x265.png").pixmap(48,48));
+				x264Box.setWindowTitle(tr("About x264"));
+				x264Box.setText(text2.replace("-", "&minus;"));
+				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
+				x264_beep(x264_beep_info);
+				x264Box.exec();
+			}
+			break;
+		case 2:
+			{
+				QString text2;
 				text2 += tr("<nobr><tt>Avisynth - powerful video processing scripting language.<br>");
 				text2 += tr("Copyright (c) 2000 Ben Rudiak-Gould and all subsequent developers.<br>");
 				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
-				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://avisynth.org/");
+				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://avisynth.nl/");
 				text2 += tr("Read the <a href=\"%1\">guide</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://avisynth.nl/index.php/First_script", "http://forum.doom9.org/forumdisplay.php?f=33");
 
 				QMessageBox x264Box(this);
@@ -541,7 +570,7 @@ void MainWindow::showAbout(void)
 				x264Box.exec();
 			}
 			break;
-		case 2:
+		case 3:
 			{
 				QString text2;
 				text2 += tr("<nobr><tt>VapourSynth - application for video manipulation based on Python.<br>");
@@ -559,7 +588,7 @@ void MainWindow::showAbout(void)
 				x264Box.exec();
 			}
 			break;
-		case 3:
+		case 4:
 			QMessageBox::aboutQt(this);
 			break;
 		default:
@@ -575,22 +604,17 @@ void MainWindow::showAbout(void)
 void MainWindow::showWebLink(void)
 {
 	ENSURE_APP_IS_IDLE();
-
-	if(QObject::sender() == ui->actionWebMulder)          QDesktopServices::openUrl(QUrl(home_url));
-	if(QObject::sender() == ui->actionWebX264)            QDesktopServices::openUrl(QUrl("http://www.x264.com/"));
-	if(QObject::sender() == ui->actionWebKomisar)         QDesktopServices::openUrl(QUrl("http://komisar.gin.by/"));
-	if(QObject::sender() == ui->actionWebVideoLAN)        QDesktopServices::openUrl(QUrl("http://download.videolan.org/pub/x264/binaries/"));
-	if(QObject::sender() == ui->actionWebJEEB)            QDesktopServices::openUrl(QUrl("http://x264.fushizen.eu/"));
-	if(QObject::sender() == ui->actionWebAvisynth32)      QDesktopServices::openUrl(QUrl("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
-	if(QObject::sender() == ui->actionWebAvisynth64)      QDesktopServices::openUrl(QUrl("http://code.google.com/p/avisynth64/downloads/list"));
-	if(QObject::sender() == ui->actionWebAvisynthPlus)    QDesktopServices::openUrl(QUrl("http://www.avs-plus.net/"));
-	if(QObject::sender() == ui->actionWebVapourSynth)     QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/"));
-	if(QObject::sender() == ui->actionWebVapourSynthDocs) QDesktopServices::openUrl(QUrl("http://www.vapoursynth.com/doc/"));
-	if(QObject::sender() == ui->actionWebWiki)            QDesktopServices::openUrl(QUrl("http://mewiki.project357.com/wiki/X264_Settings"));
-	if(QObject::sender() == ui->actionWebBluRay)          QDesktopServices::openUrl(QUrl("http://www.x264bluray.com/"));
-	if(QObject::sender() == ui->actionWebAvsWiki)         QDesktopServices::openUrl(QUrl("http://avisynth.nl/index.php/Main_Page#Usage"));
-	if(QObject::sender() == ui->actionWebSupport)         QDesktopServices::openUrl(QUrl("http://forum.doom9.org/showthread.php?t=144140"));
-	if(QObject::sender() == ui->actionWebSecret)          QDesktopServices::openUrl(QUrl("http://www.youtube.com/watch_popup?v=AXIeHY-OYNI"));
+	
+	if(QObject *obj = QObject::sender())
+	{
+		if(QAction *action = dynamic_cast<QAction*>(obj))
+		{
+			if(action->data().type() == QVariant::Url)
+			{
+				QDesktopServices::openUrl(action->data().toUrl());
+			}
+		}
+	}
 }
 
 /*

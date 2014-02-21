@@ -38,6 +38,7 @@
 #include "win_addJob.h"
 #include "win_preferences.h"
 #include "win_updater.h"
+#include "binaries.h"
 #include "resource.h"
 
 #include <QDate>
@@ -66,6 +67,7 @@ const char *tpl_last = "<LAST_USED>";
 #define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
 #define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
 #define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
+#define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -99,8 +101,8 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	m_sysinfo = new SysinfoModel();
 	m_sysinfo->setAppPath(QApplication::applicationDirPath());
 	m_sysinfo->setMMXSupport(cpuFeatures->mmx && cpuFeatures->mmx2);
-	m_sysinfo->setSSESupport(cpuFeatures->sse);
-	m_sysinfo->setX64Support(cpuFeatures->x64);
+	m_sysinfo->setSSESupport(cpuFeatures->sse && cpuFeatures->mmx2); //SSE implies MMX2
+	m_sysinfo->setX64Support(cpuFeatures->x64 && cpuFeatures->sse2); //X64 implies SSE2
 
 	//Load preferences
 	m_preferences = new PreferencesModel();
@@ -121,7 +123,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	//Update title
 	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	ui->labelBuildDate->installEventFilter(this);
-	setWindowTitle(QString("%1 (%2 Mode)").arg(windowTitle(), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
+	
 	if(X264_DEBUG)
 	{
 		setWindowTitle(QString("%1 | !!! DEBUG VERSION !!!").arg(windowTitle()));
@@ -762,45 +764,103 @@ void MainWindow::init(void)
 		return;
 	}
 
-	const QStringList arguments = x264_arguments();
-	static const char *binFiles = "x86/x264_8bit_x86.exe:x64/x264_8bit_x64.exe:x86/x264_10bit_x86.exe:x64/x264_10bit_x64.exe:x86/avs2yuv_x86.exe:x64/avs2yuv_x64.exe";
-	QStringList binaries = QString::fromLatin1(binFiles).split(":", QString::SkipEmptyParts);
-
 	updateLabelPos();
 
-	//Create the IPC listener thread
+	//---------------------------------------
+	// Create the IPC listener thread
+	//---------------------------------------
+
 	if(m_ipc->isInitialized())
 	{
 		connect(m_ipc, SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
 		m_ipc->startListening();
 	}
 
-	//Check all binaries
-	while(!binaries.isEmpty())
+	//---------------------------------------
+	// Check required binaries
+	//---------------------------------------
+
+	QStringList binFiles;
+	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x32; arch <= OptionsModel::EncArch_x64; NEXT(arch))
+	{
+		for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
+		{
+			binFiles << ENC_BINARY(m_sysinfo, OptionsModel::EncType_X264, arch, varnt);
+		}
+		binFiles << AVS_BINARY(m_sysinfo, arch == OptionsModel::EncArch_x64);
+	}
+		
+	qDebug("[Validating binaries]");
+	for(QStringList::ConstIterator iter = binFiles.constBegin(); iter != binFiles.constEnd(); iter++)
 	{
 		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-		QString current = binaries.takeFirst();
-		QFile *file = new QFile(QString("%1/toolset/%2").arg(m_sysinfo->getAppPath(), current));
+		QFile *file = new QFile(*iter);
+		qDebug("%s", file->fileName().toLatin1().constData());
 		if(file->open(QIODevice::ReadOnly))
 		{
 			if(!x264_is_executable(file->fileName()))
 			{
-				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_sysinfo->getAppPath(), current))).replace("-", "&minus;"));
-				qFatal(QString("Binary is invalid: %1/toolset/%2").arg(m_sysinfo->getAppPath(), current).toLatin1().constData());
+				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(file->fileName())).replace("-", "&minus;"));
+				qFatal(QString("Binary is invalid: %1").arg(file->fileName()).toLatin1().constData());
+				X264_DELETE(file);
 				INIT_ERROR_EXIT();
 			}
 			m_toolsList << file;
 		}
 		else
 		{
+			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(file->fileName())).replace("-", "&minus;"));
+			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_sysinfo->getAppPath(), file->fileName()).toLatin1().constData());
 			X264_DELETE(file);
-			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(QString("%1/toolset/%2").arg(m_sysinfo->getAppPath(), current))).replace("-", "&minus;"));
-			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_sysinfo->getAppPath(), current).toLatin1().constData());
 			INIT_ERROR_EXIT();
 		}
 	}
+	qDebug(" ");
 
-	//Check for portable mode
+	//---------------------------------------
+	// Check x265 binaries
+	//---------------------------------------
+
+	binFiles.clear();
+	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x32; arch <= OptionsModel::EncArch_x64; NEXT(arch))
+	{
+		for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
+		{
+			binFiles << ENC_BINARY(m_sysinfo, OptionsModel::EncType_X265, arch, varnt);
+		}
+	}
+
+	qDebug("[Checking for x265 support]");
+	bool bHaveX265 = true;
+	for(QStringList::ConstIterator iter = binFiles.constBegin(); iter != binFiles.constEnd(); iter++)
+	{
+		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+		QFile *file = new QFile(*iter);
+		qDebug("%s", file->fileName().toLatin1().constData());
+		if(file->open(QIODevice::ReadOnly))
+		{
+			if(x264_is_executable(file->fileName()))
+			{
+				m_toolsList << file;
+				continue;
+			}
+			X264_DELETE(file);
+		}
+		bHaveX265 = false;
+		qWarning("x265 binaries not found or incomplete -> disable x265 support!");
+		break;
+	}
+	if(bHaveX265)
+	{
+		qDebug("x265 support is officially enabled now!");
+		m_sysinfo->set256Support(true);
+	}
+	qDebug(" ");
+	
+	//---------------------------------------
+	// Check for portable mode
+	//---------------------------------------
+
 	if(x264_portable())
 	{
 		bool ok = false;
@@ -825,6 +885,12 @@ void MainWindow::init(void)
 		int val = QMessageBox::information(this, tr("Pre-Release Version"), tr("Note: This is a pre-release version. Please do NOT use for production!<br>Click the button #%1 in order to continue...<br><br>(There will be no such message box in the final version of this application)").arg(QString::number(rnd + 1)), tr("(1)"), tr("(2)"), tr("(3)"), qrand() % 3);
 		if(rnd != val) INIT_ERROR_EXIT();
 	}
+
+	//---------------------------------------
+	// Check CPU capabilities
+	//---------------------------------------
+	
+	const QStringList arguments = x264_arguments();
 
 	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
 	if(!m_sysinfo->hasMMXSupport())
@@ -854,7 +920,10 @@ void MainWindow::init(void)
 		m_preferences->setAbortOnTimeout(false);
 	}
 
-	//Check for Avisynth support
+	//---------------------------------------
+	// Check Avisynth support
+	//---------------------------------------
+
 	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_AVS_CHECK, arguments))
 	{
 		qDebug("[Check for Avisynth support]");
@@ -879,14 +948,22 @@ void MainWindow::init(void)
 			{
 				QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
 				text += tr("Please download and install Avisynth:").append("<br>").append(LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
-				int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-				if(val != 1) INIT_ERROR_EXIT();
+				int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
+				if(val == 1)
+				{
+					m_preferences->setDisableWarnings(true);
+					PreferencesModel::savePreferences(m_preferences);
+				}
+
 			}
 		}
 		qDebug(" ");
 	}
 
-	//Check for VapourSynth support
+	//---------------------------------------
+	// Check VapurSynth support
+	//---------------------------------------
+
 	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_VPS_CHECK, arguments))
 	{
 		qDebug("[Check for VapourSynth support]");
@@ -897,7 +974,7 @@ void MainWindow::init(void)
 			QString text = tr("A critical error was encountered while checking your VapourSynth installation.").append("<br>");
 			text += tr("This is most likely caused by an erroneous VapourSynth Plugin, please try to clean your Filters folder!").append("<br>");
 			text += tr("We suggest to move all .dll files out of your VapourSynth Filters folder and try again.");
-			int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
+			const int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
 		if(result && (!vapoursynthPath.isEmpty()))
@@ -913,17 +990,21 @@ void MainWindow::init(void)
 				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
 				text += tr("Please download and install VapourSynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/")).append("<br><br>");
 				text += tr("Note that Python 3.3 (x86) is a prerequisite for installing VapourSynth:").append("<br>").append(LINK("http://www.python.org/getit/")).append("<br>");
-				int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
-				if(val != 1) INIT_ERROR_EXIT();
+				const int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
+				if(val == 1)
+				{
+					m_preferences->setDisableWarnings(true);
+					PreferencesModel::savePreferences(m_preferences);
+				}
 			}
 		}
 		qDebug(" ");
 	}
 
-	//Enable drag&drop support for this window, required for Qt v4.8.4+
-	setAcceptDrops(true);
+	//---------------------------------------
+	// Check for Expiration
+	//---------------------------------------
 
-	//Check for expiration
 	if(x264_version_date().addMonths(6) < x264_current_date_safe())
 	{
 		QString text;
@@ -949,6 +1030,16 @@ void MainWindow::init(void)
 			return;
 		}
 	}
+
+	//---------------------------------------
+	// Finish initialization
+	//---------------------------------------
+
+	//Set Window title
+	setWindowTitle(QString("%1 [%2]").arg(tr("Simple %1 Launcher").arg(m_sysinfo->has256Support() ? "x264/x265" : "x264"), m_sysinfo->hasX64Support() ? "x64" : "x86"));
+
+	//Enable drag&drop support for this window, required for Qt v4.8.4+
+	setAcceptDrops(true);
 
 	//Update app staus
 	m_status = STATUS_IDLE;

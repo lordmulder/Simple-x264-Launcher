@@ -25,36 +25,38 @@
 #include "model_preferences.h"
 #include "model_options.h"
 
-QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options)
+/* --- Encooders --- */
+
+QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel::EncType &encType, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant)
 {
 	QString baseName, arch, variant;
 
 	//Encoder Type
-	switch(options->encType())
+	switch(encType)
 	{
 		case OptionsModel::EncType_X264: baseName = "x264"; break;
 		case OptionsModel::EncType_X265: baseName = "x265"; break;
 	}
 	
 	//Architecture
-	switch(options->encArch())
+	switch(encArch)
 	{
 		case OptionsModel::EncArch_x32: arch = "x86"; break;
 		case OptionsModel::EncArch_x64: arch = "x64"; break;
 	}
 
 	//Encoder Variant
-	switch(options->encVariant())
+	switch(encVariant)
 	{
 	case OptionsModel::EncVariant_LoBit:
-		switch(options->encType())
+		switch(encType)
 		{
 			case OptionsModel::EncType_X264:
 			case OptionsModel::EncType_X265: variant = "8bit"; break;
 		}
 		break;
 	case OptionsModel::EncVariant_HiBit:
-		switch(options->encType())
+		switch(encType)
 		{
 			case OptionsModel::EncType_X264: variant = "10bit"; break;
 			case OptionsModel::EncType_X265: variant = "16bit"; break;
@@ -72,13 +74,31 @@ QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options)
 	return QString("%1/toolset/%2/%3_%4_%2.exe").arg(sysinfo->getAppPath(), arch, baseName, variant);
 }
 
+QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options)
+{
+	return ENC_BINARY(sysinfo, options->encType(), options->encArch(), options->encVariant());
+}
+
+/* --- Avisynth --- */
+
+QString AVS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
+{
+	return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), (x64 ? "x64": "x86"));
+}
+
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	const bool x64 = preferences->getUseAvisyth64Bit() && sysinfo->hasX64Support();
-	return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), x64 ? "x64": "x86");
+	return AVS_BINARY(sysinfo, preferences->getUseAvisyth64Bit() && sysinfo->hasX64Support());
+}
+
+/* --- VapurSynth --- */
+
+QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
+{
+	return QString("%1/vspipe.exe").arg(sysinfo->getVPSPath());
 }
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	return QString("%1/vspipe.exe").arg(sysinfo->getVPSPath());
+	return VPS_BINARY(sysinfo, sysinfo->hasX64Support());
 }

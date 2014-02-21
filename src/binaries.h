@@ -19,12 +19,16 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <QString>
+#include "model_options.h"
 
 class SysinfoModel;
 class PreferencesModel;
-class OptionsModel;
 
 QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options);
+QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel::EncType &encType, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant);
+
+QString AVS_BINARY(const SysinfoModel *sysinfo, const bool &x64);
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);
+
+QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64);
 QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);

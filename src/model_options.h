@@ -43,7 +43,7 @@ public:
 	enum EncArch
 	{
 		EncArch_x32 = 0,
-		EncArch_x64 = 1,
+		EncArch_x64 = 1
 	};
 
 	enum EncVariant

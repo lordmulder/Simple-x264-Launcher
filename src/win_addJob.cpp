@@ -460,10 +460,10 @@ void AddJobDialog::modeIndexChanged(int index)
 
 void AddJobDialog::accept(void)
 {
-	//FIXME
-	if(ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265)
+	//Check x265 support
+	if((ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265) && (!m_sysinfo->has256Support()))
 	{
-		QMessageBox::warning(this, tr("x265"), tr("Sorry, x265 support not implemented yet!"));
+		QMessageBox::warning(this, tr("x265 unsupported"), tr("<nobr>Sorry, the x265 encoder is <b>not</b> currently available on this computer!<br>Please see the Readme file on how to obtain and install x265...</nobr>"));
 		ui->cbxEncoderType->setCurrentIndex(OptionsModel::EncType_X264);
 		return;
 	}
@@ -471,7 +471,7 @@ void AddJobDialog::accept(void)
 	//Check 64-Bit support
 	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->hasX64Support()))
 	{
-		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("Sorry, this computer does <b>not</b> support 64-Bit encoders!"));
+		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("<nobr>Sorry, this computer does <b>not</b> support 64-Bit encoders!</nobr>"));
 		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x32);
 		return;
 	}
@@ -479,7 +479,7 @@ void AddJobDialog::accept(void)
 	//Selection complete?
 	if(ui->editSource->text().trimmed().isEmpty())
 	{
-		QMessageBox::warning(this, tr("Not Found!"), tr("Please select a valid source file first!"));
+		QMessageBox::warning(this, tr("Not Found!"), tr("<nobr>Please select a valid source file first!<(nobr>"));
 		return;
 	}
 	if(ui->editOutput->text().trimmed().isEmpty())
@@ -496,6 +496,22 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
+	//Is the type of source supported? (as far as we can tell)
+	if((sourceFile.suffix().compare("AVS", Qt::CaseInsensitive) == 0) && (!m_sysinfo->hasAVSSupport()))
+	{
+		if(QMessageBox::warning(this, tr("Avisynth unsupported!"), tr("<nobr>An Avisynth script was selected as input, although Avisynth is <b>not</b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+		{
+			return;
+		}
+	}
+	if(((sourceFile.suffix().compare("VPY", Qt::CaseInsensitive) == 0) || (sourceFile.suffix().compare("PY", Qt::CaseInsensitive) == 0)) && (!m_sysinfo->hasVPSSupport()))
+	{
+		if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+		{
+			return;
+		}
+	}
+	
 	//Does output file already exist?
 	QFileInfo outputFile = QFileInfo(this->outputFile());
 	if(outputFile.exists() && outputFile.isFile())

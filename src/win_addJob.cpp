@@ -512,7 +512,7 @@ void AddJobDialog::accept(void)
 		}
 	}
 
-	//Is output file extension supported by encoder
+	//Is output file extension supported by encoder?
 	QFileInfo outputFile = QFileInfo(this->outputFile());
 	if((outputFile.suffix().compare("264", Qt::CaseInsensitive) == 0) && (ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265))
 	{

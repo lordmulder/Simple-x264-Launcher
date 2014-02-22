@@ -19,19 +19,38 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 3
-#define VER_X264_PATCH 2
-#define VER_X264_BUILD 780
+#include <QObject>
+#include <QMutex>
 
-#define VER_X264_MINIMUM_REV 2380
-#define VER_X264_CURRENT_API 142
-#define VER_X264_AVS2YUV_VER 242
+class OptionsModel;
+class SysinfoModel;
+class PreferencesModel;
+class JobObject;
+class QProcess;
 
-#define VER_X264_PORTABLE_EDITION (0)
+class AbstractTool : QObject
+{
+	Q_OBJECT
 
-#define VER_X264_PRE_RELEASE (0)
+public:
+	AbstractTool(volatile bool *abort, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobObject *jobObject);
+	virtual ~AbstractTool(void) {/*NOP*/}
+	
+signals:
+	void messageLogged(const QString &text);
+
+protected:
+	void log(const QString &text) { emit messageLogged(text); }
+	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
+	static QString commandline2string(const QString &program, const QStringList &arguments);
+
+	const OptionsModel *const m_options;
+	const SysinfoModel *const m_sysinfo;
+	const PreferencesModel *const m_preferences;
+	JobObject *const m_jobObject;
+	
+	volatile bool *const m_abort;
+	static QMutex s_mutexStartProcess;
+};

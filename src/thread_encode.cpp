@@ -122,7 +122,6 @@ while(0)
 /*
  * Static vars
  */
-static const unsigned int REV_MULT = 10000;
 static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core()\nv = core.std.BlankClip()\nv.set_output()\n";
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -253,41 +252,54 @@ void EncodeThread::encode(void)
 
 	//Checking x264 version
 	log(tr("\n--- CHECK VERSION ---\n"));
-	unsigned int revision_x264 = UINT_MAX;
-	bool x264_modified = false;
-	ok = ((revision_x264 = checkVersionX264(x264_modified)) != UINT_MAX);
+	unsigned int encoderRevision = UINT_MAX;
+	bool encoderModified = false;
+	ok = ((encoderRevision = checkVersionEncoder(encoderModified)) != UINT_MAX);
 	CHECK_STATUS(m_abort, ok);
 	
 	//Checking avs2yuv version
 	unsigned int revision_avs2yuv = UINT_MAX;
 	switch(inputType)
 	{
-	case INPUT_AVISYN:
-		ok = ((revision_avs2yuv = checkVersionAvs2yuv()) != UINT_MAX);
-		CHECK_STATUS(m_abort, ok);
-		break;
-	case INPUT_VAPOUR:
-		ok = checkVersionVapoursynth();
-		CHECK_STATUS(m_abort, ok);
-		break;
+		case INPUT_NATIVE: break;
+		case INPUT_AVISYN: ok = ((revision_avs2yuv = checkVersionAvs2yuv()) != UINT_MAX); break;
+		case INPUT_VAPOUR: ok = checkVersionVapoursynth();  break;
+		default: throw "Invalid input type!";
 	}
+	CHECK_STATUS(m_abort, ok);
 
 	//Print versions
-	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision_x264 % REV_MULT), QString::number(revision_x264 / REV_MULT)).append(x264_modified ? tr(" - with custom patches!") : QString()));
-	if(revision_avs2yuv != UINT_MAX) log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
+	switch(m_options->encType())
+	{
+		case OptionsModel::EncType_X264: log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(encoderRevision % REV_MULT), QString::number(encoderRevision / REV_MULT)).append(encoderModified ? tr(" - with custom patches!") : QString())); break;
+		case OptionsModel::EncType_X265: log(tr("\nx265 version: 0.%1+%2").arg(QString::number(encoderRevision / REV_MULT), QString::number(encoderRevision % REV_MULT))); break;
+	}
+	if(revision_avs2yuv != UINT_MAX)
+	{
+		log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
+	}
 
-	//Is x264 revision supported?
-	if((revision_x264 % REV_MULT) < x264_version_x264_minimum_rev())
+	//Is encoder version suppoprted?
+	if(m_options->encType() == OptionsModel::EncType_X264)
 	{
-		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(x264_version_x264_minimum_rev())));
-		setStatus(JobStatus_Failed);
-		return;
+		if((encoderRevision % REV_MULT) < x264_version_x264_minimum_rev())
+		{
+			log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(x264_version_x264_minimum_rev())));
+			setStatus(JobStatus_Failed);
+			return;
+		}
+		if((encoderRevision / REV_MULT) != x264_version_x264_current_api())
+		{
+			log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
+			log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(x264_version_x264_current_api())));
+		}
 	}
-	if((revision_x264 / REV_MULT) != x264_version_x264_current_api())
+	else if(m_options->encType() == OptionsModel::EncType_X264)
 	{
-		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
-		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(x264_version_x264_current_api())));
+		/*TODO*/
 	}
+
+	//Is Avs2YUV version supported?
 	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != x264_version_x264_avs2yuv_ver()))
 	{
 		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
@@ -705,107 +717,9 @@ QStringList EncodeThread::buildCommandLine(const bool &usePipe, const unsigned i
 	return cmdLine;
 }
 
-unsigned int EncodeThread::checkVersionX264(bool &modified)
+unsigned int EncodeThread::checkVersionEncoder(bool &modified)
 {
-	if(m_preferences->getSkipVersionTest())
-	{
-		log("Warning: Skipping x264 version check this time!");
-		return (999 * REV_MULT) + (9999 % REV_MULT);
-	}
 
-	QProcess process;
-	QStringList cmdLine = QStringList() << "--version";
-
-	log("Creating process:");
-	if(!startProcess(process, ENC_BINARY(m_sysinfo, m_options), cmdLine))
-	{
-		return false;;
-	}
-
-	QRegExp regExpVersion("\\bx264\\s(\\d)\\.(\\d+)\\.(\\d+)\\s([a-f0-9]{7})", Qt::CaseInsensitive);
-	QRegExp regExpVersionMod("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)", Qt::CaseInsensitive);
-	
-	bool bTimeout = false;
-	bool bAborted = false;
-
-	unsigned int revision = UINT_MAX;
-	unsigned int coreVers = UINT_MAX;
-	modified = false;
-
-	while(process.state() != QProcess::NotRunning)
-	{
-		if(m_abort)
-		{
-			process.kill();
-			bAborted = true;
-			break;
-		}
-		if(!process.waitForReadyRead())
-		{
-			if(process.state() == QProcess::Running)
-			{
-				process.kill();
-				qWarning("x264 process timed out <-- killing!");
-				log("\nPROCESS TIMEOUT !!!");
-				bTimeout = true;
-				break;
-			}
-		}
-		while(process.bytesAvailable() > 0)
-		{
-			QList<QByteArray> lines = process.readLine().split('\r');
-			while(!lines.isEmpty())
-			{
-				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
-				int offset = -1;
-				if((offset = regExpVersion.lastIndexIn(text)) >= 0)
-				{
-					bool ok1 = false, ok2 = false;
-					unsigned int temp1 = regExpVersion.cap(2).toUInt(&ok1);
-					unsigned int temp2 = regExpVersion.cap(3).toUInt(&ok2);
-					if(ok1) coreVers = temp1;
-					if(ok2) revision = temp2;
-				}
-				else if((offset = regExpVersionMod.lastIndexIn(text)) >= 0)
-				{
-					bool ok1 = false, ok2 = false;
-					unsigned int temp1 = regExpVersionMod.cap(2).toUInt(&ok1);
-					unsigned int temp2 = regExpVersionMod.cap(3).toUInt(&ok2);
-					if(ok1) coreVers = temp1;
-					if(ok2) revision = temp2;
-					modified = true;
-				}
-				if(!text.isEmpty())
-				{
-					log(text);
-				}
-			}
-		}
-	}
-
-	process.waitForFinished();
-	if(process.state() != QProcess::NotRunning)
-	{
-		process.kill();
-		process.waitForFinished(-1);
-	}
-
-	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
-	{
-		if(!(bTimeout || bAborted))
-		{
-			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
-		}
-		return UINT_MAX;
-	}
-
-	if((revision == UINT_MAX) || (coreVers == UINT_MAX))
-	{
-		log(tr("\nFAILED TO DETERMINE X264 VERSION !!!"));
-		return UINT_MAX;
-	}
-	
-	return (coreVers * REV_MULT) + (revision % REV_MULT);
 }
 
 unsigned int EncodeThread::checkVersionAvs2yuv(void)
@@ -1366,55 +1280,6 @@ QString EncodeThread::stringToHash(const QString &string)
 	}
 
 	return QString::fromLatin1(result.toHex().constData());
-}
-
-bool EncodeThread::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)
-{
-	QMutexLocker lock(&m_mutex_startProcess);
-	log(commandline2string(program, args) + "\n");
-
-	process.setWorkingDirectory(QDir::tempPath());
-
-	if(mergeChannels)
-	{
-		process.setProcessChannelMode(QProcess::MergedChannels);
-		process.setReadChannel(QProcess::StandardOutput);
-	}
-	else
-	{
-		process.setProcessChannelMode(QProcess::SeparateChannels);
-		process.setReadChannel(QProcess::StandardError);
-	}
-
-	process.start(program, args);
-	
-	if(process.waitForStarted())
-	{
-		m_jobObject->addProcessToJob(&process);
-		x264_change_process_priority(&process, m_preferences->getProcessPriority());
-		lock.unlock();
-		return true;
-	}
-
-	log("Process creation has failed :-(");
-	QString errorMsg= process.errorString().trimmed();
-	if(!errorMsg.isEmpty()) log(errorMsg);
-
-	process.kill();
-	process.waitForFinished(-1);
-	return false;
-}
-
-QString EncodeThread::commandline2string(const QString &program, const QStringList &arguments)
-{
-	QString commandline = (program.contains(' ') ? QString("\"%1\"").arg(program) : program);
-	
-	for(int i = 0; i < arguments.count(); i++)
-	{
-		commandline += (arguments.at(i).contains(' ') ? QString(" \"%1\"").arg(arguments.at(i)) : QString(" %1").arg(arguments.at(i)));
-	}
-
-	return commandline;
 }
 
 QStringList EncodeThread::splitParams(const QString &params)

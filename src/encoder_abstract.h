@@ -19,19 +19,21 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 3
-#define VER_X264_PATCH 2
-#define VER_X264_BUILD 780
+#include "tool_abstract.h"
 
-#define VER_X264_MINIMUM_REV 2380
-#define VER_X264_CURRENT_API 142
-#define VER_X264_AVS2YUV_VER 242
+class QRegExp;
+template<class T> class QList;
 
-#define VER_X264_PORTABLE_EDITION (0)
+class AbstractEncoder : AbstractTool
+{
+public:
+	static const unsigned int REV_MULT = 10000;
 
-#define VER_X264_PRE_RELEASE (0)
+	virtual unsigned int checkVersion(bool &modified);
+
+protected:
+	virtual void checkVersion_init(QList<QRegExp*> *patterns) = 0;
+	virtual void checkVersion_parseLine(QRegExp *pattern, unsigned int &coreVers, unsigned int &revision, bool &modified) = 0;
+};

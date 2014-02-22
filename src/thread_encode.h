@@ -110,7 +110,7 @@ protected:
 	void encode(void);
 	bool runEncodingPass(const int &inputType, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
 	QStringList buildCommandLine(const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
-	unsigned int checkVersionX264(bool &modified);
+	unsigned int checkVersionEncoder(bool &modified);
 	unsigned int checkVersionAvs2yuv(void);
 	bool checkVersionVapoursynth(void);
 	bool checkPropertiesAVS(unsigned int &frames);
@@ -121,12 +121,10 @@ protected:
 	inline void setStatus(JobStatus newStatus);
 	inline void setProgress(unsigned int newProgress);
 	inline void setDetails(const QString &text);
-	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
 	QStringList splitParams(const QString &params);
 	qint64 estimateSize(int progress);
 
 	//Static functions
-	static QString commandline2string(const QString &program, const QStringList &arguments);
 	static QString sizeToString(qint64 size);
 	static int getInputType(const QString &fileExt);
 	static QString stringToHash(const QString &string);

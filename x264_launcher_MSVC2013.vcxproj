@@ -296,6 +296,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="src\binaries.h" />
     <ClInclude Include="src\checksum.h" />
     <ClInclude Include="src\cli.h" />
+    <ClInclude Include="src\encoder_abstract.h" />
     <ClInclude Include="src\global.h" />
     <CustomBuild Include="src\model_jobList.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -353,6 +354,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <ClInclude Include="src\tool_abstract.h" />
     <ClInclude Include="src\version.h" />
     <CustomBuild Include="src\win_main.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -369,6 +371,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\binaries.cpp" />
     <ClCompile Include="src\checksum.cpp" />
     <ClCompile Include="src\cli.cpp" />
+    <ClCompile Include="src\encoder_abstract.cpp" />
     <ClCompile Include="src\ipc.cpp" />
     <ClCompile Include="src\job_object.cpp" />
     <ClCompile Include="src\model_jobList.cpp" />
@@ -383,6 +386,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\thread_updater.cpp" />
     <ClCompile Include="src\thread_vapoursynth.cpp" />
+    <ClCompile Include="src\tool_abstract.cpp" />
     <ClCompile Include="src\win_addJob.cpp" />
     <ClCompile Include="src\win_editor.cpp" />
     <ClCompile Include="src\win_help.cpp" />

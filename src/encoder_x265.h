@@ -26,13 +26,17 @@
 class X265Encoder : public AbstractEncoder
 {
 public:
-	X265Encoder(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort);
+	X265Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
 	virtual ~X265Encoder(void);
 
 	virtual void printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
+	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile);
 
 protected:
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified);
+
+	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
+	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass);
 };

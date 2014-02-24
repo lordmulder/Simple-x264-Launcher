@@ -30,29 +30,46 @@ class SysinfoModel;
 class PreferencesModel;
 class JobObject;
 class QProcess;
+class QSemaphore;
+enum JobStatus;
 
-class AbstractTool : QObject
+class AbstractTool : public QObject
 {
 	Q_OBJECT
 
 public:
-	AbstractTool(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort);
+	AbstractTool(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause);
 	virtual ~AbstractTool(void) {/*NOP*/}
 	
 signals:
-	void messageLogged(const QUuid &jobId, const QString &text);
+	void statusChanged(const JobStatus &newStatus);
+	void progressChanged(unsigned int newProgress);
+	void messageLogged(const QString &text);
+	void detailsChanged(const QString &details);
 
 protected:
-	inline void log(const QString &text) { emit messageLogged((*m_jobId), text); }
-	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
-	static QString commandline2string(const QString &program, const QStringList &arguments);
+	static const unsigned int m_processTimeoutInterval = 2500;
+	static const unsigned int m_processTimeoutMaxCounter = 120;
+	static const unsigned int m_processTimeoutWarning = 24;
 
-	const QUuid *const m_jobId;
+	void log(const QString &text) { emit messageLogged(text); }
+	void setStatus(const JobStatus &newStatus) { emit statusChanged(newStatus); } 
+	void setProgress(unsigned int newProgress) { emit progressChanged(newProgress); }
+	void setDetails(const QString &text) { emit detailsChanged(text); }
+
+	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
+
 	JobObject *const m_jobObject;
 	const OptionsModel *const m_options;
 	const SysinfoModel *const m_sysinfo;
 	const PreferencesModel *const m_preferences;
+	JobStatus &m_jobStatus;
 	volatile bool *const m_abort;
+	volatile bool *const m_pause;
+	QSemaphore *const m_semaphorePause;
 
+	static QString commandline2string(const QString &program, const QStringList &arguments);
+	static QString stringToHash(const QString &string);
+	
 	static QMutex s_mutexStartProcess;
 };

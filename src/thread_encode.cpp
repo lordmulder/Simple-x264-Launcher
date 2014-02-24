@@ -42,11 +42,6 @@
 #include <QCryptographicHash>
 
 /*
- * Static vars
- */
-QMutex EncodeThread::m_mutex_startProcess;
-
-/*
  * RAII execution state handler
  */
 class ExecutionStateHandler
@@ -79,44 +74,14 @@ private:
 	{ \
 		log("\nPROCESS ABORTED BY USER !!!"); \
 		setStatus(JobStatus_Aborted); \
-		if(QFileInfo(indexFile).exists()) QFile::remove(indexFile); \
 		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
 		return; \
 	} \
 	else if(!(OK_FLAG)) \
 	{ \
 		setStatus(JobStatus_Failed); \
-		if(QFileInfo(indexFile).exists()) QFile::remove(indexFile); \
 		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
 		return; \
-	} \
-} \
-while(0)
-
-#define APPEND_AND_CLEAR(LIST, STR) do \
-{ \
-	if(!((STR).isEmpty())) \
-	{ \
-		(LIST) << (STR); \
-		(STR).clear(); \
-	} \
-} \
-while(0)
-
-#define REMOVE_CUSTOM_ARG(LIST, ITER, FLAG, PARAM) do \
-{ \
-	if(ITER != LIST.end()) \
-	{ \
-		if((*ITER).compare(PARAM, Qt::CaseInsensitive) == 0) \
-		{ \
-			log(tr("WARNING: Custom parameter \"" PARAM "\" will be ignored in Pipe'd mode!\n")); \
-			ITER = LIST.erase(ITER); \
-			if(ITER != LIST.end()) \
-			{ \
-				if(!((*ITER).startsWith("--", Qt::CaseInsensitive))) ITER = LIST.erase(ITER); \
-			} \
-			FLAG = true; \
-		} \
 	} \
 } \
 while(0)
@@ -148,15 +113,20 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	switch(options->encType())
 	{
 	case OptionsModel::EncType_X264:
-		m_encoder = new X264Encoder(&m_jobId, m_jobObject, m_options, m_sysinfo, m_preferences, &m_abort);
+		m_encoder = new X264Encoder(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName, m_outputFileName);
 		break;
 	case OptionsModel::EncType_X265:
-		m_encoder = new X265Encoder(&m_jobId, m_jobObject, m_options, m_sysinfo, m_preferences, &m_abort);
+		m_encoder = new X265Encoder(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName, m_outputFileName);
 		break;
 	default:
 		throw "Unknown encoder type encountered!";
 	}
 
+	//Establish connections
+	connect(m_encoder, SIGNAL(statusChanged(JobStatus)), this, SIGNAL(setStatus(QString)), Qt::DirectConnection);
+	connect(m_encoder, SIGNAL(progressChanged(unsigned int)), this, SIGNAL(setProgress(QString)), Qt::DirectConnection);
+	connect(m_encoder, SIGNAL(messageLogged(QString)), this, SIGNAL(log(QString)), Qt::DirectConnection);
+	connect(m_encoder, SIGNAL(detailsChanged(QString)), this, SIGNAL(setDetails(QString)), Qt::DirectConnection);
 }
 
 EncodeThread::~EncodeThread(void)
@@ -269,8 +239,7 @@ void EncodeThread::encode(void)
 
 	//Seletct type of input
 	const int inputType = getInputType(QFileInfo(m_sourceFileName).suffix());
-	const QString indexFile = QString("%1/x264_%2.ffindex").arg(QDir::tempPath(), stringToHash(m_sourceFileName));
-
+	
 	// -----------------------------------------------------------------------------------
 	// Check Versions
 	// -----------------------------------------------------------------------------------
@@ -371,362 +340,6 @@ void EncodeThread::encode(void)
 	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
 	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
-}
-
-#define X264_UPDATE_PROGRESS(X) do \
-{ \
-	bool ok = false; \
-	unsigned int progress = (X).cap(1).toUInt(&ok); \
-	setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running)); \
-	if(ok && ((progress > last_progress) || (last_progress == UINT_MAX))) \
-	{ \
-		setProgress(progress); \
-		size_estimate = estimateSize(progress); \
-		last_progress = progress; \
-	} \
-	setDetails(tr("%1, est. file size %2").arg(text.mid(offset).trimmed(), sizeToString(size_estimate))); \
-	last_indexing = UINT_MAX; \
-} \
-while(0)
-
-bool EncodeThread::runEncodingPass(const int &inputType, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
-{
-	QProcess processEncode, processInput;
-	
-	if(inputType != INPUT_NATIVE)
-	{
-		QStringList cmdLine_Input;
-		processInput.setStandardOutputProcess(&processEncode);
-		switch(inputType)
-		{
-		case INPUT_AVISYN:
-			if(!m_options->customAvs2YUV().isEmpty())
-			{
-				cmdLine_Input.append(splitParams(m_options->customAvs2YUV()));
-			}
-			cmdLine_Input << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
-			cmdLine_Input << "-";
-			log("Creating Avisynth process:");
-			if(!startProcess(processInput, AVS_BINARY(m_sysinfo, m_preferences), cmdLine_Input, false))
-			{
-				return false;
-			}
-			break;
-		case INPUT_VAPOUR:
-			cmdLine_Input << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
-			cmdLine_Input << "-" << "-y4m";
-			log("Creating Vapoursynth process:");
-			if(!startProcess(processInput, VPS_BINARY(m_sysinfo, m_preferences), cmdLine_Input, false))
-			{
-				return false;
-			}
-			break;
-		default:
-			throw "Bad input type encontered!";
-		}
-	}
-
-	QStringList cmdLine_Encode = buildCommandLine((inputType != INPUT_NATIVE), frames, indexFile, pass, passLogFile);
-
-	log("Creating x264 process:");
-	if(!startProcess(processEncode, ENC_BINARY(m_sysinfo, m_options), cmdLine_Encode))
-	{
-		return false;
-	}
-
-	QRegExp regExpIndexing("indexing.+\\[(\\d+)\\.(\\d+)%\\]");
-	QRegExp regExpProgress("\\[(\\d+)\\.(\\d+)%\\].+frames");
-	QRegExp regExpModified("\\[\\s*(\\d+)\\.(\\d+)%\\]\\s+(\\d+)/(\\d+)\\s(\\d+).(\\d+)\\s(\\d+).(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+):(\\d+):(\\d+)");
-	QRegExp regExpFrameCnt("^(\\d+) frames:");
-	
-	QTextCodec *localCodec = QTextCodec::codecForName("System");
-
-	bool bTimeout = false;
-	bool bAborted = false;
-
-	unsigned int last_progress = UINT_MAX;
-	unsigned int last_indexing = UINT_MAX;
-	qint64 size_estimate = 0I64;
-
-	//Main processing loop
-	while(processEncode.state() != QProcess::NotRunning)
-	{
-		unsigned int waitCounter = 0;
-
-		//Wait until new output is available
-		forever
-		{
-			if(m_abort)
-			{
-				processEncode.kill();
-				processInput.kill();
-				bAborted = true;
-				break;
-			}
-			if(m_pause && (processEncode.state() == QProcess::Running))
-			{
-				JobStatus previousStatus = m_status;
-				setStatus(JobStatus_Paused);
-				log(tr("Job paused by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
-				bool ok[2] = {false, false};
-				QProcess *proc[2] = { &processEncode, &processInput };
-				ok[0] = x264_suspendProcess(proc[0], true);
-				ok[1] = x264_suspendProcess(proc[1], true);
-				while(m_pause) m_semaphorePaused.tryAcquire(1, 5000);
-				while(m_semaphorePaused.tryAcquire(1, 0));
-				ok[0] = x264_suspendProcess(proc[0], false);
-				ok[1] = x264_suspendProcess(proc[1], false);
-				if(!m_abort) setStatus(previousStatus);
-				log(tr("Job resumed by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
-				waitCounter = 0;
-				continue;
-			}
-			if(!processEncode.waitForReadyRead(m_processTimeoutInterval))
-			{
-				if(processEncode.state() == QProcess::Running)
-				{
-					if(++waitCounter > m_processTimeoutMaxCounter)
-					{
-						if(m_preferences->getAbortOnTimeout())
-						{
-							processEncode.kill();
-							qWarning("x264 process timed out <-- killing!");
-							log("\nPROCESS TIMEOUT !!!");
-							bTimeout = true;
-							break;
-						}
-					}
-					else if(waitCounter == m_processTimeoutWarning)
-					{
-						unsigned int timeOut = (waitCounter * m_processTimeoutInterval) / 1000U;
-						log(tr("Warning: x264 did not respond for %1 seconds, potential deadlock...").arg(QString::number(timeOut)));
-					}
-					continue;
-				}
-			}
-			if(m_abort || (m_pause && (processEncode.state() == QProcess::Running)))
-			{
-				continue;
-			}
-			break;
-		}
-		
-		//Exit main processing loop now?
-		if(bAborted || bTimeout)
-		{
-			break;
-		}
-
-		//Process all output
-		while(processEncode.bytesAvailable() > 0)
-		{
-			QList<QByteArray> lines = processEncode.readLine().split('\r');
-			while(!lines.isEmpty())
-			{
-				QString text = localCodec->toUnicode(lines.takeFirst().constData()).simplified();
-				int offset = -1;
-				if((offset = regExpProgress.lastIndexIn(text)) >= 0)
-				{
-					X264_UPDATE_PROGRESS(regExpProgress);
-				}
-				else if((offset = regExpIndexing.lastIndexIn(text)) >= 0)
-				{
-					bool ok = false;
-					unsigned int progress = regExpIndexing.cap(1).toUInt(&ok);
-					setStatus(JobStatus_Indexing);
-					if(ok && ((progress > last_indexing) || (last_indexing == UINT_MAX)))
-					{
-						setProgress(progress);
-						last_indexing = progress;
-					}
-					setDetails(text.mid(offset).trimmed());
-					last_progress = UINT_MAX;
-				}
-				else if((offset = regExpFrameCnt.lastIndexIn(text)) >= 0)
-				{
-					last_progress = last_indexing = UINT_MAX;
-					setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running));
-					setDetails(text.mid(offset).trimmed());
-				}
-				else if((offset = regExpModified.lastIndexIn(text)) >= 0)
-				{
-					X264_UPDATE_PROGRESS(regExpModified);
-				}
-				else if(!text.isEmpty())
-				{
-					last_progress = last_indexing = UINT_MAX;
-					log(text);
-				}
-			}
-		}
-	}
-
-	processEncode.waitForFinished(5000);
-	if(processEncode.state() != QProcess::NotRunning)
-	{
-		qWarning("x264 process still running, going to kill it!");
-		processEncode.kill();
-		processEncode.waitForFinished(-1);
-	}
-	
-	processInput.waitForFinished(5000);
-	if(processInput.state() != QProcess::NotRunning)
-	{
-		qWarning("Input process still running, going to kill it!");
-		processInput.kill();
-		processInput.waitForFinished(-1);
-	}
-
-	if(!(bTimeout || bAborted))
-	{
-		while(processInput.bytesAvailable() > 0)
-		{
-			switch(inputType)
-			{
-			case INPUT_AVISYN:
-				log(tr("av2y [info]: %1").arg(QString::fromUtf8(processInput.readLine()).simplified()));
-				break;
-			case INPUT_VAPOUR:
-				log(tr("vpyp [info]: %1").arg(QString::fromUtf8(processInput.readLine()).simplified()));
-				break;
-			}
-		}
-	}
-
-	if((inputType != INPUT_NATIVE) && (processInput.exitCode() != EXIT_SUCCESS))
-	{
-		if(!(bTimeout || bAborted))
-		{
-			const int exitCode = processInput.exitCode();
-			log(tr("\nWARNING: Input process exited with error (code: %1), your encode might be *incomplete* !!!").arg(QString::number(exitCode)));
-			if((inputType == INPUT_AVISYN) && ((exitCode < 0) || (exitCode >= 32)))
-			{
-				log(tr("\nIMPORTANT: The Avs2YUV process terminated abnormally. This means Avisynth or one of your Avisynth-Plugin's just crashed."));
-				log(tr("IMPORTANT: Please fix your Avisynth script and try again! If you use Avisynth-MT, try using a *stable* Avisynth instead!"));
-			}
-			if((inputType == INPUT_VAPOUR) && ((exitCode < 0) || (exitCode >= 32)))
-			{
-				log(tr("\nIMPORTANT: The Vapoursynth process terminated abnormally. This means Vapoursynth or one of your Vapoursynth-Plugin's just crashed."));
-			}
-		}
-	}
-
-	if(bTimeout || bAborted || processEncode.exitCode() != EXIT_SUCCESS)
-	{
-		if(!(bTimeout || bAborted))
-		{
-			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(processEncode.exitCode())));
-		}
-		processEncode.close();
-		processInput.close();
-		return false;
-	}
-
-	QThread::yieldCurrentThread();
-
-	const qint64 finalSize = QFileInfo(m_outputFileName).size();
-	QLocale locale(QLocale::English);
-	log(tr("Final file size is %1 bytes.").arg(locale.toString(finalSize)));
-
-	switch(pass)
-	{
-	case 1:
-		setStatus(JobStatus_Running_Pass1);
-		setDetails(tr("First pass completed. Preparing for second pass..."));
-		break;
-	case 2:
-		setStatus(JobStatus_Running_Pass2);
-		setDetails(tr("Second pass completed successfully. Final size is %1.").arg(sizeToString(finalSize)));
-		break;
-	default:
-		setStatus(JobStatus_Running);
-		setDetails(tr("Encode completed successfully. Final size is %1.").arg(sizeToString(finalSize)));
-		break;
-	}
-
-	setProgress(100);
-	processEncode.close();
-	processInput.close();
-	return true;
-}
-
-QStringList EncodeThread::buildCommandLine(const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
-{
-	QStringList cmdLine;
-	double crf_int = 0.0, crf_frc = 0.0;
-
-	switch(m_options->rcMode())
-	{
-	case OptionsModel::RCMode_CQ:
-		cmdLine << "--qp" << QString::number(qRound(m_options->quantizer()));
-		break;
-	case OptionsModel::RCMode_CRF:
-		crf_frc = modf(m_options->quantizer(), &crf_int);
-		cmdLine << "--crf" << QString("%1.%2").arg(QString::number(qRound(crf_int)), QString::number(qRound(crf_frc * 10.0)));
-		break;
-	case OptionsModel::RCMode_2Pass:
-	case OptionsModel::RCMode_ABR:
-		cmdLine << "--bitrate" << QString::number(m_options->bitrate());
-		break;
-	default:
-		throw "Bad rate-control mode !!!";
-		break;
-	}
-	
-	if((pass == 1) || (pass == 2))
-	{
-		cmdLine << "--pass" << QString::number(pass);
-		cmdLine << "--stats" << QDir::toNativeSeparators(passLogFile);
-	}
-
-	cmdLine << "--preset" << m_options->preset().toLower();
-
-	if(m_options->tune().compare("none", Qt::CaseInsensitive))
-	{
-		cmdLine << "--tune" << m_options->tune().toLower();
-	}
-
-	if(m_options->profile().compare("auto", Qt::CaseInsensitive) != 0)
-	{
-		if((m_options->encType() == OptionsModel::EncType_X264) && (m_options->encVariant() == OptionsModel::EncVariant_LoBit))
-		{
-			cmdLine << "--profile" << m_options->profile().toLower();
-		}
-	}
-
-	if(!m_options->customEncParams().isEmpty())
-	{
-		QStringList customArgs = splitParams(m_options->customEncParams());
-		if(usePipe)
-		{
-			QStringList::iterator i = customArgs.begin();
-			while(i != customArgs.end())
-			{
-				bool bModified = false;
-				REMOVE_CUSTOM_ARG(customArgs, i, bModified, "--fps");
-				REMOVE_CUSTOM_ARG(customArgs, i, bModified, "--frames");
-				if(!bModified) i++;
-			}
-		}
-		cmdLine.append(customArgs);
-	}
-
-	cmdLine << "--output" << QDir::toNativeSeparators(m_outputFileName);
-	
-	if(usePipe)
-	{
-		if(frames < 1) throw "Frames not set!";
-		cmdLine << "--frames" << QString::number(frames);
-		cmdLine << "--demuxer" << "y4m";
-		cmdLine << "--stdin" << "y4m" << "-";
-	}
-	else
-	{
-		cmdLine << "--index" << QDir::toNativeSeparators(indexFile);
-		cmdLine << QDir::toNativeSeparators(m_sourceFileName);
-	}
-
-	return cmdLine;
 }
 
 unsigned int EncodeThread::checkVersionAvs2yuv(void)
@@ -1236,7 +849,12 @@ bool EncodeThread::checkPropertiesVPS(unsigned int &frames)
 // Misc functions
 ///////////////////////////////////////////////////////////////////////////////
 
-void EncodeThread::setStatus(JobStatus newStatus)
+void EncodeThread::log(const QString &text)
+{
+	emit messageLogged(m_jobId, text);
+}
+
+void EncodeThread::setStatus(const JobStatus &newStatus)
 {
 	if(m_status != newStatus)
 	{
@@ -1257,7 +875,7 @@ void EncodeThread::setStatus(JobStatus newStatus)
 	}
 }
 
-void EncodeThread::setProgress(unsigned int newProgress)
+void EncodeThread::setProgress(const unsigned int &newProgress)
 {
 	if(m_progress != newProgress)
 	{
@@ -1269,92 +887,6 @@ void EncodeThread::setProgress(unsigned int newProgress)
 void EncodeThread::setDetails(const QString &text)
 {
 	emit detailsChanged(m_jobId, text);
-}
-
-QString EncodeThread::stringToHash(const QString &string)
-{
-	QByteArray result(10, char(0));
-	const QByteArray hash = QCryptographicHash::hash(string.toUtf8(), QCryptographicHash::Sha1);
-
-	if((hash.size() == 20) && (result.size() == 10))
-	{
-		unsigned char *out = reinterpret_cast<unsigned char*>(result.data());
-		const unsigned char *in = reinterpret_cast<const unsigned char*>(hash.constData());
-		for(int i = 0; i < 10; i++)
-		{
-			out[i] = (in[i] ^ in[10+i]);
-		}
-	}
-
-	return QString::fromLatin1(result.toHex().constData());
-}
-
-QStringList EncodeThread::splitParams(const QString &params)
-{
-	QStringList list; 
-	bool ignoreWhitespaces = false;
-	QString temp;
-
-	for(int i = 0; i < params.length(); i++)
-	{
-		const QChar c = params.at(i);
-
-		if(c == QChar::fromLatin1('"'))
-		{
-			ignoreWhitespaces = (!ignoreWhitespaces);
-			continue;
-		}
-		else if((!ignoreWhitespaces) && (c == QChar::fromLatin1(' ')))
-		{
-			APPEND_AND_CLEAR(list, temp);
-			continue;
-		}
-		
-		temp.append(c);
-	}
-	
-	APPEND_AND_CLEAR(list, temp);
-
-	list.replaceInStrings("$(INPUT)", QDir::toNativeSeparators(m_sourceFileName), Qt::CaseInsensitive);
-	list.replaceInStrings("$(OUTPUT)", QDir::toNativeSeparators(m_outputFileName), Qt::CaseInsensitive);
-
-	return list;
-}
-
-qint64 EncodeThread::estimateSize(int progress)
-{
-	if(progress >= 3)
-	{
-		qint64 currentSize = QFileInfo(m_outputFileName).size();
-		qint64 estimatedSize = (currentSize * 100I64) / static_cast<qint64>(progress);
-		return estimatedSize;
-	}
-
-	return 0I64;
-}
-
-QString EncodeThread::sizeToString(qint64 size)
-{
-	static char *prefix[5] = {"Byte", "KB", "MB", "GB", "TB"};
-
-	if(size > 1024I64)
-	{
-		qint64 estimatedSize = size;
-		qint64 remainderSize = 0I64;
-
-		int prefixIdx = 0;
-		while((estimatedSize > 1024I64) && (prefixIdx < 4))
-		{
-			remainderSize = estimatedSize % 1024I64;
-			estimatedSize = estimatedSize / 1024I64;
-			prefixIdx++;
-		}
-			
-		double value = static_cast<double>(estimatedSize) + (static_cast<double>(remainderSize) / 1024.0);
-		return QString().sprintf((value < 10.0) ? "%.2f %s" : "%.1f %s", value, prefix[prefixIdx]);
-	}
-
-	return tr("N/A");
 }
 
 int EncodeThread::getInputType(const QString &fileExt)

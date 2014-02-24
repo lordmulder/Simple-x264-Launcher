@@ -53,11 +53,13 @@ public:
 	{
 		m_pause = true;
 	}
+
 	void resumeJob(void)
 	{
 		m_pause = false;
 		m_semaphorePaused.release();
 	}
+
 	void abortJob(void)
 	{
 		m_abort = true;
@@ -66,11 +68,6 @@ public:
 	}
 
 protected:
-	static QMutex m_mutex_startProcess;
-	static const unsigned int m_processTimeoutInterval = 2500;
-	static const unsigned int m_processTimeoutMaxCounter = 120;
-	static const unsigned int m_processTimeoutWarning = 24;
-
 	//Globals
 	const SysinfoModel *const m_sysinfo;
 	const PreferencesModel *const m_preferences;
@@ -120,25 +117,24 @@ protected:
 	bool checkPropertiesVPS(unsigned int &frames);
 
 	//Auxiallary Stuff
-	void log(const QString &text) { emit messageLogged(m_jobId, text); }
-	inline void setStatus(JobStatus newStatus);
-	inline void setProgress(unsigned int newProgress);
-	inline void setDetails(const QString &text);
-	QStringList splitParams(const QString &params);
-	qint64 estimateSize(int progress);
+	//QStringList splitParams(const QString &params);
 
 	//Static functions
-	static QString sizeToString(qint64 size);
 	static int getInputType(const QString &fileExt);
 	static QString stringToHash(const QString &string);
 
 signals:
-	void statusChanged(const QUuid &jobId, JobStatus newStatus);
-	void progressChanged(const QUuid &jobId, unsigned int newProgress);
+	void statusChanged(const QUuid &jobId, const JobStatus &newStatus);
+	void progressChanged(const QUuid &jobId, const unsigned int &newProgress);
 	void messageLogged(const QUuid &jobId, const QString &text);
 	void detailsChanged(const QUuid &jobId, const QString &details);
+
+private slots:
+	void log(const QString &text);
+	void setStatus(const JobStatus &newStatus);
+	void setProgress(const unsigned int &newProgress);
+	void setDetails(const QString &text);
 
 public slots:
 	void start(Priority priority = InheritPriority);
 };
-

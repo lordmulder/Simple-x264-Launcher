@@ -31,17 +31,20 @@
 #include <QProcess>
 #include <QMutexLocker>
 #include <QDir>
+#include <QCryptographicHash>
 
 QMutex AbstractTool::s_mutexStartProcess;
 
-AbstractTool::AbstractTool(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort)
+AbstractTool::AbstractTool(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause)
 :
-	m_jobId(jobId),
 	m_jobObject(jobObject),
 	m_options(options),
 	m_sysinfo(sysinfo),
 	m_preferences(preferences),
-	m_abort(abort)
+	m_jobStatus(jobStatus),
+	m_abort(abort),
+	m_pause(pause),
+	m_semaphorePause(semaphorePause)
 {
 	/*nothing to do here*/
 }
@@ -93,4 +96,22 @@ QString AbstractTool::commandline2string(const QString &program, const QStringLi
 	}
 
 	return commandline;
+}
+
+QString AbstractTool::stringToHash(const QString &string)
+{
+	QByteArray result(10, char(0));
+	const QByteArray hash = QCryptographicHash::hash(string.toUtf8(), QCryptographicHash::Sha1);
+
+	if((hash.size() == 20) && (result.size() == 10))
+	{
+		unsigned char *out = reinterpret_cast<unsigned char*>(result.data());
+		const unsigned char *in = reinterpret_cast<const unsigned char*>(hash.constData());
+		for(int i = 0; i < 10; i++)
+		{
+			out[i] = (in[i] ^ in[10+i]);
+		}
+	}
+
+	return QString::fromLatin1(result.toHex().constData());
 }

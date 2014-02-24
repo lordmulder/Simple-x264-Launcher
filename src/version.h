@@ -26,7 +26,7 @@
 #define VER_X264_MAJOR 2
 #define VER_X264_MINOR 3
 #define VER_X264_PATCH 2
-#define VER_X264_BUILD 782
+#define VER_X264_BUILD 786
 
 #define VER_X264_AVS2YUV_VER 242
 

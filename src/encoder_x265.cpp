@@ -30,9 +30,9 @@
 static const unsigned int X265_VERSION_X264_MINIMUM_VER = 7;
 static const unsigned int X265_VERSION_X264_MINIMUM_REV = 167;
 
-X265Encoder::X265Encoder(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort)
+X265Encoder::X265Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
-	AbstractEncoder(jobId, jobObject, options, sysinfo, preferences, abort)
+	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile)
 {
 	if(options->encType() != OptionsModel::EncType_X265)
 	{

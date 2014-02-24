@@ -30,21 +30,12 @@ class AbstractSource;
 class AbstractEncoder : public AbstractTool
 {
 public:
-	static const unsigned int REV_MULT = 10000;
-
 	AbstractEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
 	virtual ~AbstractEncoder(void);
 
-	virtual unsigned int checkVersion(bool &modified);
-	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
-	virtual void printVersion(const unsigned int &revision, const bool &modified) = 0;
-
-	bool runEncodingPass(AbstractSource* source, const QString outputFile, const unsigned int &frames, const int &pass, const QString &passLogFile);
+	bool runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass = 0, const QString &passLogFile = QString());
 
 protected:
-	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified) = 0;
-
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile) = 0;
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns) = 0;

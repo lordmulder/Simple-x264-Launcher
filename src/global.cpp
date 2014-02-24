@@ -112,7 +112,6 @@ static const struct
 	unsigned int ver_build;
 	const char* ver_date;
 	const char* ver_time;
-	unsigned int ver_x264_avs2yuv_ver;
 }
 g_x264_version =
 {
@@ -122,7 +121,6 @@ g_x264_version =
 	(VER_X264_BUILD),
 	__DATE__,
 	__TIME__,
-	(VER_X264_AVS2YUV_VER)
 };
 
 //CLI Arguments
@@ -757,12 +755,6 @@ const char *x264_version_compiler(void)
 const char *x264_version_arch(void)
 {
 	return g_x264_version_arch;
-}
-
-//FIXME: Remove x264_version_x264_avs2yuv_ver!
-unsigned int x264_version_x264_avs2yuv_ver(void)
-{
-	return g_x264_version.ver_x264_avs2yuv_ver;
 }
 
 /*

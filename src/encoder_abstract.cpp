@@ -26,6 +26,7 @@
 #include "model_preferences.h"
 #include "model_sysinfo.h"
 #include "model_status.h"
+#include "source_abstract.h"
 #include "binaries.h"
 
 #include <QProcess>
@@ -62,140 +63,17 @@ AbstractEncoder::~AbstractEncoder(void)
 	/*Nothing to do here*/
 }
 
-unsigned int AbstractEncoder::checkVersion(bool &modified)
-{
-	if(m_preferences->getSkipVersionTest())
-	{
-		log("Warning: Skipping encoder version check this time!");
-		return (999 * REV_MULT) + (REV_MULT-1);
-	}
-
-	QProcess process;
-	QList<QRegExp*> patterns;
-	QStringList cmdLine;
-
-	//Init encoder-specific values
-	checkVersion_init(patterns, cmdLine);
-
-	log("Creating process:");
-	if(!startProcess(process, ENC_BINARY(m_sysinfo, m_options), cmdLine))
-	{
-		return false;
-	}
-
-	bool bTimeout = false;
-	bool bAborted = false;
-
-	unsigned int revision = UINT_MAX;
-	unsigned int coreVers = UINT_MAX;
-	modified = false;
-
-	while(process.state() != QProcess::NotRunning)
-	{
-		if(m_abort)
-		{
-			process.kill();
-			bAborted = true;
-			break;
-		}
-		if(!process.waitForReadyRead())
-		{
-			if(process.state() == QProcess::Running)
-			{
-				process.kill();
-				qWarning("encoder process timed out <-- killing!");
-				log("\nPROCESS TIMEOUT !!!");
-				bTimeout = true;
-				break;
-			}
-		}
-		while(process.bytesAvailable() > 0)
-		{
-			QList<QByteArray> lines = process.readLine().split('\r');
-			while(!lines.isEmpty())
-			{
-				const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
-				checkVersion_parseLine(text, patterns, coreVers, revision, modified);
-				if(!text.isEmpty())
-				{
-					log(text);
-				}
-			}
-		}
-	}
-
-	process.waitForFinished();
-	if(process.state() != QProcess::NotRunning)
-	{
-		process.kill();
-		process.waitForFinished(-1);
-	}
-
-	while(!patterns.isEmpty())
-	{
-		QRegExp *pattern = patterns.takeFirst();
-		X264_DELETE(pattern);
-	}
-
-	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
-	{
-		if(!(bTimeout || bAborted))
-		{
-			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
-		}
-		return UINT_MAX;
-	}
-
-	if((revision == UINT_MAX) || (coreVers == UINT_MAX))
-	{
-		log(tr("\nFAILED TO DETERMINE ENCODER VERSION !!!"));
-		return UINT_MAX;
-	}
-	
-	return (coreVers * REV_MULT) + (revision % REV_MULT);
-}
-
-bool AbstractEncoder::runEncodingPass(AbstractSource* source, const QString outputFile, const unsigned int &frames, const int &pass, const QString &passLogFile)
+bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass, const QString &passLogFile)
 {
 	QProcess processEncode, processInput;
 	
-	/*
-	if(inputType != INPUT_NATIVE)
+	if(pipedSource)
 	{
-		QStringList cmdLine_Input;
-		processInput.setStandardOutputProcess(&processEncode);
-		switch(inputType)
-		{
-		case INPUT_AVISYN:
-			if(!m_options->customAvs2YUV().isEmpty())
-			{
-				cmdLine_Input.append(splitParams(m_options->customAvs2YUV()));
-			}
-			cmdLine_Input << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
-			cmdLine_Input << "-";
-			log("Creating Avisynth process:");
-			if(!startProcess(processInput, AVS_BINARY(m_sysinfo, m_preferences), cmdLine_Input, false))
-			{
-				return false;
-			}
-			break;
-		case INPUT_VAPOUR:
-			cmdLine_Input << QDir::toNativeSeparators(x264_path2ansi(m_sourceFileName, true));
-			cmdLine_Input << "-" << "-y4m";
-			log("Creating Vapoursynth process:");
-			if(!startProcess(processInput, VPS_BINARY(m_sysinfo, m_preferences), cmdLine_Input, false))
-			{
-				return false;
-			}
-			break;
-		default:
-			throw "Bad input type encontered!";
-		}
+		pipedSource->createProcess(processEncode, processInput);
 	}
-	*/
 
 	QStringList cmdLine_Encode;
-	buildCommandLine(cmdLine_Encode, (source != NULL), frames, m_indexFile, pass, passLogFile);
+	buildCommandLine(cmdLine_Encode, (pipedSource != NULL), frames, m_indexFile, pass, passLogFile);
 
 	log("Creating encoder process:");
 	if(!startProcess(processEncode, ENC_BINARY(m_sysinfo, m_options), cmdLine_Encode))
@@ -304,12 +182,19 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* source, const QString outp
 		processEncode.waitForFinished(-1);
 	}
 	
-	processInput.waitForFinished(5000);
-	if(processInput.state() != QProcess::NotRunning)
+	if(pipedSource)
 	{
-		qWarning("Input process still running, going to kill it!");
-		processInput.kill();
-		processInput.waitForFinished(-1);
+		processInput.waitForFinished(5000);
+		if(processInput.state() != QProcess::NotRunning)
+		{
+			qWarning("Input process still running, going to kill it!");
+			processInput.kill();
+			processInput.waitForFinished(-1);
+		}
+		if(!(bTimeout || bAborted))
+		{
+			pipedSource->flushProcess(processInput);
+		}
 	}
 
 	while(!patterns.isEmpty())
@@ -317,44 +202,6 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* source, const QString outp
 		QRegExp *pattern = patterns.takeFirst();
 		X264_DELETE(pattern);
 	}
-
-	if(!(bTimeout || bAborted))
-	{
-		while(processInput.bytesAvailable() > 0)
-		{
-			/*
-			switch(inputType)
-			{
-			case INPUT_AVISYN:
-				log(tr("av2y [info]: %1").arg(QString::fromUtf8(processInput.readLine()).simplified()));
-				break;
-			case INPUT_VAPOUR:
-				log(tr("vpyp [info]: %1").arg(QString::fromUtf8(processInput.readLine()).simplified()));
-				break;
-			}
-			*/
-		}
-	}
-
-	/*
-	if((inputType != INPUT_NATIVE) && (processInput.exitCode() != EXIT_SUCCESS))
-	{
-		if(!(bTimeout || bAborted))
-		{
-			const int exitCode = processInput.exitCode();
-			log(tr("\nWARNING: Input process exited with error (code: %1), your encode might be *incomplete* !!!").arg(QString::number(exitCode)));
-			if((inputType == INPUT_AVISYN) && ((exitCode < 0) || (exitCode >= 32)))
-			{
-				log(tr("\nIMPORTANT: The Avs2YUV process terminated abnormally. This means Avisynth or one of your Avisynth-Plugin's just crashed."));
-				log(tr("IMPORTANT: Please fix your Avisynth script and try again! If you use Avisynth-MT, try using a *stable* Avisynth instead!"));
-			}
-			if((inputType == INPUT_VAPOUR) && ((exitCode < 0) || (exitCode >= 32)))
-			{
-				log(tr("\nIMPORTANT: The Vapoursynth process terminated abnormally. This means Vapoursynth or one of your Vapoursynth-Plugin's just crashed."));
-			}
-		}
-	}
-	*/
 
 	if(bTimeout || bAborted || processEncode.exitCode() != EXIT_SUCCESS)
 	{

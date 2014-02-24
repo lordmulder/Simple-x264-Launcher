@@ -41,6 +41,12 @@ public:
 	AbstractTool(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause);
 	virtual ~AbstractTool(void) {/*NOP*/}
 	
+	virtual unsigned int checkVersion(bool &modified);
+	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
+	virtual void printVersion(const unsigned int &revision, const bool &modified) = 0;
+
+	static const unsigned int REV_MULT = 10000;
+
 signals:
 	void statusChanged(const JobStatus &newStatus);
 	void progressChanged(unsigned int newProgress);
@@ -51,6 +57,11 @@ protected:
 	static const unsigned int m_processTimeoutInterval = 2500;
 	static const unsigned int m_processTimeoutMaxCounter = 120;
 	static const unsigned int m_processTimeoutWarning = 24;
+
+	virtual const QString &getBinaryPath(void) = 0;
+
+	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
+	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified) = 0;
 
 	void log(const QString &text) { emit messageLogged(text); }
 	void setStatus(const JobStatus &newStatus) { emit statusChanged(newStatus); } 

@@ -330,6 +330,9 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="src\model_recently.h" />
     <ClInclude Include="src\model_status.h" />
     <ClInclude Include="src\model_sysinfo.h" />
+    <ClInclude Include="src\source_abstract.h" />
+    <ClInclude Include="src\source_avisynth.h" />
+    <ClInclude Include="src\source_vapoursynth.h" />
     <ClInclude Include="src\targetver.h" />
     <ClInclude Include="src\taskbar7.h" />
     <CustomBuild Include="src\thread_avisynth.h">
@@ -356,7 +359,14 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
-    <ClInclude Include="src\tool_abstract.h" />
+    <CustomBuild Include="src\tool_abstract.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\moc\moc_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\moc\moc_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\moc\moc_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <ClInclude Include="src\version.h" />
     <CustomBuild Include="src\win_main.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\moc\moc_%(Filename).cpp" "%(FullPath)"</Command>
@@ -383,6 +393,9 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\model_options.cpp" />
     <ClCompile Include="src\model_preferences.cpp" />
     <ClCompile Include="src\model_recently.cpp" />
+    <ClCompile Include="src\source_abstract.cpp" />
+    <ClCompile Include="src\source_avisynth.cpp" />
+    <ClCompile Include="src\source_vapoursynth.cpp" />
     <ClCompile Include="src\taskbar7.cpp" />
     <ClCompile Include="src\thread_avisynth.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
@@ -404,6 +417,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="tmp\moc\moc_thread_encode.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_updater.cpp" />
     <ClCompile Include="tmp\moc\moc_thread_vapoursynth.cpp" />
+    <ClCompile Include="tmp\moc\moc_tool_abstract.cpp" />
     <ClCompile Include="tmp\moc\moc_win_addJob.cpp" />
     <ClCompile Include="tmp\moc\moc_win_editor.cpp" />
     <ClCompile Include="tmp\moc\moc_win_help.cpp" />

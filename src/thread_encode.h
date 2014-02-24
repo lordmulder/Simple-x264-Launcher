@@ -35,6 +35,7 @@ class OptionsModel;
 class QProcess;
 class JobObject;
 class AbstractEncoder;
+class AbstractSource;
 
 class EncodeThread : public QThread
 {
@@ -74,17 +75,9 @@ protected:
 
 	//Constants
 	const QUuid m_jobId;
+	const OptionsModel *m_options;
 	const QString m_sourceFileName;
 	const QString m_outputFileName;
-	const OptionsModel *m_options;
-	
-	//Types
-	enum inputType_t
-	{
-		INPUT_NATIVE = 0,
-		INPUT_AVISYN = 1,
-		INPUT_VAPOUR = 2
-	};
 
 	//Flags
 	volatile bool m_abort;
@@ -102,26 +95,18 @@ protected:
 
 	//Encoder and Source objects
 	AbstractEncoder *m_encoder;
+	AbstractSource *m_pipedSource;
 
 	//Entry point
 	virtual void run(void);
 	virtual void checkedRun(void);
 	
-	//Encode functions
+	//Main encoding functions
 	void encode(void);
-	bool runEncodingPass(const int &inputType, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
-	QStringList buildCommandLine(const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
-	unsigned int checkVersionAvs2yuv(void);
-	bool checkVersionVapoursynth(void);
-	bool checkPropertiesAVS(unsigned int &frames);
-	bool checkPropertiesVPS(unsigned int &frames);
-
-	//Auxiallary Stuff
-	//QStringList splitParams(const QString &params);
 
 	//Static functions
 	static int getInputType(const QString &fileExt);
-	static QString stringToHash(const QString &string);
+	static QString getPasslogFile(const QString &outputFile);
 
 signals:
 	void statusChanged(const QUuid &jobId, const JobStatus &newStatus);

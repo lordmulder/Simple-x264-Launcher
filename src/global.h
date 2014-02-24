@@ -162,9 +162,6 @@ const QDate &x264_version_date(void);
 unsigned int x264_version_major(void);
 unsigned int x264_version_minor(void);
 const char *x264_version_time(void);
-unsigned int x264_version_x264_minimum_rev(void);
-unsigned int x264_version_x264_current_api(void);
-unsigned int x264_version_x264_avs2yuv_ver(void);
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER MACROS

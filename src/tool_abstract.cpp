@@ -49,6 +49,99 @@ AbstractTool::AbstractTool(JobObject *jobObject, const OptionsModel *options, co
 	/*nothing to do here*/
 }
 
+unsigned int AbstractTool::checkVersion(bool &modified)
+{
+	if(m_preferences->getSkipVersionTest())
+	{
+		log("Warning: Skipping the version check this time!");
+		return (999 * REV_MULT) + (REV_MULT-1);
+	}
+
+	QProcess process;
+	QList<QRegExp*> patterns;
+	QStringList cmdLine;
+
+	//Init encoder-specific values
+	checkVersion_init(patterns, cmdLine);
+
+	log("Creating process:");
+	if(!startProcess(process, getBinaryPath(), cmdLine))
+	{
+		return false;
+	}
+
+	bool bTimeout = false;
+	bool bAborted = false;
+
+	unsigned int revision = UINT_MAX;
+	unsigned int coreVers = UINT_MAX;
+	modified = false;
+
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(m_abort)
+		{
+			process.kill();
+			bAborted = true;
+			break;
+		}
+		if(!process.waitForReadyRead())
+		{
+			if(process.state() == QProcess::Running)
+			{
+				process.kill();
+				qWarning("process timed out <-- killing!");
+				log("\nPROCESS TIMEOUT !!!");
+				bTimeout = true;
+				break;
+			}
+		}
+		while(process.bytesAvailable() > 0)
+		{
+			QList<QByteArray> lines = process.readLine().split('\r');
+			while(!lines.isEmpty())
+			{
+				const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				checkVersion_parseLine(text, patterns, coreVers, revision, modified);
+				if(!text.isEmpty())
+				{
+					log(text);
+				}
+			}
+		}
+	}
+
+	process.waitForFinished();
+	if(process.state() != QProcess::NotRunning)
+	{
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	while(!patterns.isEmpty())
+	{
+		QRegExp *pattern = patterns.takeFirst();
+		X264_DELETE(pattern);
+	}
+
+	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
+	{
+		if(!(bTimeout || bAborted))
+		{
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(process.exitCode())));
+		}
+		return UINT_MAX;
+	}
+
+	if((revision == UINT_MAX) || (coreVers == UINT_MAX))
+	{
+		log(tr("\nFAILED TO DETERMINE VERSION INFO !!!"));
+		return UINT_MAX;
+	}
+	
+	return (coreVers * REV_MULT) + (revision % REV_MULT);
+}
+
 bool AbstractTool::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)
 {
 	QMutexLocker lock(&s_mutexStartProcess);

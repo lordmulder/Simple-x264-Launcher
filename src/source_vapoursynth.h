@@ -21,26 +21,28 @@
 
 #pragma once
 
-#include "encoder_abstract.h"
+#include "source_abstract.h"
 
-class X264Encoder : public AbstractEncoder
+class VapoursynthSource : public AbstractSource
 {
 public:
-	X264Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
-	virtual ~X264Encoder(void);
+	VapoursynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile);
+	virtual ~VapoursynthSource(void);
 
 	virtual void printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
 
+	virtual void flushProcess(QProcess &processInput);
+
 protected:
+	void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
+	void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified);
+
+	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
+	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen);
+
 	virtual const QString &getBinaryPath() { return m_binaryFile; }
-	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile);
-
-	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified);
-
-	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
-	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass);
+	virtual void buildCommandLine(QStringList &cmdLine);
 
 	const QString m_binaryFile;
 };

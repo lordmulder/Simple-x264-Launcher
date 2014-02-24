@@ -21,15 +21,23 @@
 
 #include "thread_encode.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "model_preferences.h"
 #include "model_sysinfo.h"
-#include "encoder_x264.h"
-#include "encoder_x265.h"
 #include "job_object.h"
 #include "binaries.h"
 
+//Encoders
+#include "encoder_x264.h"
+#include "encoder_x265.h"
+
+//Source
+#include "source_avisynth.h"
+#include "source_vapoursynth.h"
+
+//Qt Framework
 #include <QDate>
 #include <QTime>
 #include <QDateTime>
@@ -87,9 +95,19 @@ private:
 while(0)
 
 /*
+ * Input types
+ */
+typedef enum
+{
+	INPUT_NATIVE = 0,
+	INPUT_AVISYN = 1,
+	INPUT_VAPOUR = 2
+};
+
+/*
  * Static vars
  */
-static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core()\nv = core.std.BlankClip()\nv.set_output()\n";
+//static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core()\nv = core.std.BlankClip()\nv.set_output()\n";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -104,7 +122,9 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_sysinfo(sysinfo),
 	m_preferences(preferences),
 	m_jobObject(new JobObject),
-	m_semaphorePaused(0)
+	m_semaphorePaused(0),
+	m_encoder(NULL),
+	m_pipedSource(NULL)
 {
 	m_abort = false;
 	m_pause = false;
@@ -122,11 +142,29 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 		throw "Unknown encoder type encountered!";
 	}
 
+	//Create input handler object
+	switch(getInputType(QFileInfo(m_sourceFileName).suffix()))
+	{
+	case INPUT_AVISYN:
+		m_pipedSource = new AvisynthSource   (m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+		break;
+	case INPUT_VAPOUR:
+		m_pipedSource = new VapoursynthSource(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+		break;
+	}
+
 	//Establish connections
 	connect(m_encoder, SIGNAL(statusChanged(JobStatus)), this, SIGNAL(setStatus(QString)), Qt::DirectConnection);
 	connect(m_encoder, SIGNAL(progressChanged(unsigned int)), this, SIGNAL(setProgress(QString)), Qt::DirectConnection);
 	connect(m_encoder, SIGNAL(messageLogged(QString)), this, SIGNAL(log(QString)), Qt::DirectConnection);
 	connect(m_encoder, SIGNAL(detailsChanged(QString)), this, SIGNAL(setDetails(QString)), Qt::DirectConnection);
+	if(m_pipedSource)
+	{
+		connect(m_pipedSource, SIGNAL(statusChanged(JobStatus)), this, SIGNAL(setStatus(QString)), Qt::DirectConnection);
+		connect(m_pipedSource, SIGNAL(progressChanged(unsigned int)), this, SIGNAL(setProgress(QString)), Qt::DirectConnection);
+		connect(m_pipedSource, SIGNAL(messageLogged(QString)), this, SIGNAL(log(QString)), Qt::DirectConnection);
+		connect(m_pipedSource, SIGNAL(detailsChanged(QString)), this, SIGNAL(setDetails(QString)), Qt::DirectConnection);
+	}
 }
 
 EncodeThread::~EncodeThread(void)
@@ -236,9 +274,6 @@ void EncodeThread::encode(void)
 	
 	bool ok = false;
 	unsigned int frames = 0;
-
-	//Seletct type of input
-	const int inputType = getInputType(QFileInfo(m_sourceFileName).suffix());
 	
 	// -----------------------------------------------------------------------------------
 	// Check Versions
@@ -248,26 +283,11 @@ void EncodeThread::encode(void)
 
 	//Check encoder version
 	bool encoderModified = false;
-	unsigned int encoderRevision = m_encoder->checkVersion(encoderModified);
+	const unsigned int encoderRevision = m_encoder->checkVersion(encoderModified);
 	CHECK_STATUS(m_abort, (ok = (encoderRevision != UINT_MAX)));
 	
-	//Checking avs2yuv version
-	unsigned int revision_avs2yuv = UINT_MAX;
-	switch(inputType)
-	{
-		case INPUT_NATIVE: break;
-		case INPUT_AVISYN: ok = ((revision_avs2yuv = checkVersionAvs2yuv()) != UINT_MAX); break;
-		case INPUT_VAPOUR: ok = checkVersionVapoursynth();  break;
-		default: throw "Invalid input type!";
-	}
-	CHECK_STATUS(m_abort, ok);
-
-	//Print versions
+	//Print source versions
 	m_encoder->printVersion(encoderRevision, encoderModified);
-	if(revision_avs2yuv != UINT_MAX)
-	{
-		log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
-	}
 
 	//Is encoder version suppoprted?
 	if(!m_encoder->isVersionSupported(encoderRevision, encoderModified))
@@ -276,13 +296,22 @@ void EncodeThread::encode(void)
 		return;
 	}
 
-	//Is Avs2YUV version supported?
-	if((revision_avs2yuv != UINT_MAX) && ((revision_avs2yuv % REV_MULT) != x264_version_x264_avs2yuv_ver()))
+	if(m_pipedSource)
 	{
-		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
-		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));
-		setStatus(JobStatus_Failed);
-		return;
+		//Checking source version
+		bool sourceModified = false;
+		const unsigned int sourceRevision = m_pipedSource->checkVersion(sourceModified);
+		CHECK_STATUS(m_abort, (ok = (sourceRevision != UINT_MAX)));
+
+		//Print source versions
+		m_pipedSource->printVersion(sourceModified, sourceModified);
+
+		//Is source version supported?
+		if(!m_pipedSource->isVersionSupported(sourceRevision, sourceModified))
+		{
+			setStatus(JobStatus_Failed);
+			return;
+		}
 	}
 
 	// -----------------------------------------------------------------------------------
@@ -290,58 +319,126 @@ void EncodeThread::encode(void)
 	// -----------------------------------------------------------------------------------
 
 	//Detect source info
-	if(inputType != INPUT_NATIVE)
+	if(m_pipedSource)
 	{
-		log(tr("\n--- SOURCE INFO ---\n"));
-		switch(inputType)
-		{
-		case INPUT_AVISYN:
-			ok = checkPropertiesAVS(frames);
-			CHECK_STATUS(m_abort, ok);
-			break;
-		case INPUT_VAPOUR:
-			ok = checkPropertiesVPS(frames);
-			CHECK_STATUS(m_abort, ok);
-			break;
-		}
+		log(tr("\n--- GET SOURCE INFO ---\n"));
+		ok = m_pipedSource->checkSourceProperties(frames);
+		CHECK_STATUS(m_abort, ok);
 	}
+
+	// -----------------------------------------------------------------------------------
+	// Encoding Passes
+	// -----------------------------------------------------------------------------------
 
 	//Run encoding passes
 	if(m_options->rcMode() == OptionsModel::RCMode_2Pass)
 	{
-		QFileInfo info(m_outputFileName);
-		QString passLogFile = QString("%1/%2.stats").arg(info.path(), info.completeBaseName());
-
-		if(QFileInfo(passLogFile).exists())
-		{
-			int n = 2;
-			while(QFileInfo(passLogFile).exists())
-			{
-				passLogFile = QString("%1/%2.%3.stats").arg(info.path(), info.completeBaseName(), QString::number(n++));
-			}
-		}
+		const QString passLogFile = getPasslogFile(m_outputFileName);
 		
-		log(tr("\n--- PASS 1 ---\n"));
-		ok = runEncodingPass(inputType, frames, indexFile, 1, passLogFile);
+		log(tr("\n--- ENCODING PASS #1 ---\n"));
+		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, frames, 1, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 
-		log(tr("\n--- PASS 2 ---\n"));
-		ok = runEncodingPass(inputType, frames, indexFile, 2, passLogFile);
+		log(tr("\n--- ENCODING PASS #2 ---\n"));
+		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, frames, 2, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 	else
 	{
-		log(tr("\n--- ENCODING ---\n"));
-		ok = runEncodingPass(inputType, frames, indexFile);
+		log(tr("\n--- ENCODING VIDEO ---\n"));
+		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, frames);
 		CHECK_STATUS(m_abort, ok);
 	}
 
-	log(tr("\n--- DONE ---\n"));
+	// -----------------------------------------------------------------------------------
+	// Encoding complete
+	// -----------------------------------------------------------------------------------
+
+	log(tr("\n--- COMPLETED ---\n"));
+
 	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
 	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Misc functions
+///////////////////////////////////////////////////////////////////////////////
+
+void EncodeThread::log(const QString &text)
+{
+	emit messageLogged(m_jobId, text);
+}
+
+void EncodeThread::setStatus(const JobStatus &newStatus)
+{
+	if(m_status != newStatus)
+	{
+		if((newStatus != JobStatus_Completed) && (newStatus != JobStatus_Failed) && (newStatus != JobStatus_Aborted) && (newStatus != JobStatus_Paused))
+		{
+			if(m_status != JobStatus_Paused) setProgress(0);
+		}
+		if(newStatus == JobStatus_Failed)
+		{
+			setDetails("The job has failed. See log for details!");
+		}
+		if(newStatus == JobStatus_Aborted)
+		{
+			setDetails("The job was aborted by the user!");
+		}
+		m_status = newStatus;
+		emit statusChanged(m_jobId, newStatus);
+	}
+}
+
+void EncodeThread::setProgress(const unsigned int &newProgress)
+{
+	if(m_progress != newProgress)
+	{
+		m_progress = newProgress;
+		emit progressChanged(m_jobId, m_progress);
+	}
+}
+
+void EncodeThread::setDetails(const QString &text)
+{
+	emit detailsChanged(m_jobId, text);
+}
+
+int EncodeThread::getInputType(const QString &fileExt)
+{
+	int type = INPUT_NATIVE;
+
+	if(fileExt.compare("avs",  Qt::CaseInsensitive) == 0) type = INPUT_AVISYN;
+	if(fileExt.compare("avsi", Qt::CaseInsensitive) == 0) type = INPUT_AVISYN;
+	if(fileExt.compare("vpy",  Qt::CaseInsensitive) == 0) type = INPUT_VAPOUR;
+	if(fileExt.compare("py",   Qt::CaseInsensitive) == 0) type = INPUT_VAPOUR;
+
+	return type;
+}
+
+QString EncodeThread::getPasslogFile(const QString &outputFile)
+{
+	QFileInfo info(outputFile);
+	QString passLogFile = QString("%1/%2.stats").arg(info.absolutePath(), info.completeBaseName());
+	int counter = 1;
+
+	while(QFileInfo(passLogFile).exists())
+	{
+		passLogFile = QString("%1/%2_%3.stats").arg(info.absolutePath(), info.completeBaseName(), QString::number(++counter));
+	}
+
+	return passLogFile;
+}
+
+
+
+
+// ==========================================
+// DISABLED
+// ==========================================
+
+/*
 unsigned int EncodeThread::checkVersionAvs2yuv(void)
 {
 	if(!m_sysinfo->hasAVSSupport())
@@ -844,57 +941,4 @@ bool EncodeThread::checkPropertiesVPS(unsigned int &frames)
 
 	return true;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// Misc functions
-///////////////////////////////////////////////////////////////////////////////
-
-void EncodeThread::log(const QString &text)
-{
-	emit messageLogged(m_jobId, text);
-}
-
-void EncodeThread::setStatus(const JobStatus &newStatus)
-{
-	if(m_status != newStatus)
-	{
-		if((newStatus != JobStatus_Completed) && (newStatus != JobStatus_Failed) && (newStatus != JobStatus_Aborted) && (newStatus != JobStatus_Paused))
-		{
-			if(m_status != JobStatus_Paused) setProgress(0);
-		}
-		if(newStatus == JobStatus_Failed)
-		{
-			setDetails("The job has failed. See log for details!");
-		}
-		if(newStatus == JobStatus_Aborted)
-		{
-			setDetails("The job was aborted by the user!");
-		}
-		m_status = newStatus;
-		emit statusChanged(m_jobId, newStatus);
-	}
-}
-
-void EncodeThread::setProgress(const unsigned int &newProgress)
-{
-	if(m_progress != newProgress)
-	{
-		m_progress = newProgress;
-		emit progressChanged(m_jobId, m_progress);
-	}
-}
-
-void EncodeThread::setDetails(const QString &text)
-{
-	emit detailsChanged(m_jobId, text);
-}
-
-int EncodeThread::getInputType(const QString &fileExt)
-{
-	int type = INPUT_NATIVE;
-	if(fileExt.compare("avs", Qt::CaseInsensitive) == 0)       type = INPUT_AVISYN;
-	else if(fileExt.compare("avsi", Qt::CaseInsensitive) == 0) type = INPUT_AVISYN;
-	else if(fileExt.compare("vpy", Qt::CaseInsensitive) == 0)  type = INPUT_VAPOUR;
-	else if(fileExt.compare("py", Qt::CaseInsensitive) == 0)   type = INPUT_VAPOUR;
-	return type;
-}
+*/

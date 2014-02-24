@@ -23,6 +23,7 @@
 
 #include "model_options.h"
 #include "model_status.h"
+#include "binaries.h"
 
 #include <QStringList>
 #include <QDir>
@@ -66,13 +67,13 @@ while(0)
 
 X264Encoder::X264Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
-	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile)
+	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile),
+	m_binaryFile(ENC_BINARY(sysinfo, options))
 {
 	if(options->encType() != OptionsModel::EncType_X264)
 	{
 		throw "Invalid encoder type!";
 	}
-
 }
 
 X264Encoder::~X264Encoder(void)

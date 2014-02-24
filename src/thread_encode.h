@@ -34,6 +34,7 @@ class PreferencesModel;
 class OptionsModel;
 class QProcess;
 class JobObject;
+class AbstractEncoder;
 
 class EncodeThread : public QThread
 {
@@ -102,6 +103,9 @@ protected:
 	JobStatus m_status;
 	unsigned int m_progress;
 
+	//Encoder and Source objects
+	AbstractEncoder *m_encoder;
+
 	//Entry point
 	virtual void run(void);
 	virtual void checkedRun(void);
@@ -110,7 +114,6 @@ protected:
 	void encode(void);
 	bool runEncodingPass(const int &inputType, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
 	QStringList buildCommandLine(const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass = 0, const QString &passLogFile = QString());
-	unsigned int checkVersionEncoder(bool &modified);
 	unsigned int checkVersionAvs2yuv(void);
 	bool checkVersionVapoursynth(void);
 	bool checkPropertiesAVS(unsigned int &frames);

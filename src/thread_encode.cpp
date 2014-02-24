@@ -25,6 +25,8 @@
 #include "model_options.h"
 #include "model_preferences.h"
 #include "model_sysinfo.h"
+#include "encoder_x264.h"
+#include "encoder_x265.h"
 #include "job_object.h"
 #include "binaries.h"
 
@@ -141,12 +143,27 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 {
 	m_abort = false;
 	m_pause = false;
+
+	//Create encoder object
+	switch(options->encType())
+	{
+	case OptionsModel::EncType_X264:
+		m_encoder = new X264Encoder(&m_jobId, m_jobObject, m_options, m_sysinfo, m_preferences, &m_abort);
+		break;
+	case OptionsModel::EncType_X265:
+		m_encoder = new X265Encoder(&m_jobId, m_jobObject, m_options, m_sysinfo, m_preferences, &m_abort);
+		break;
+	default:
+		throw "Unknown encoder type encountered!";
+	}
+
 }
 
 EncodeThread::~EncodeThread(void)
 {
-	X264_DELETE(m_options);
+	X264_DELETE(m_encoder);
 	X264_DELETE(m_jobObject);
+	X264_DELETE(m_options);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -223,6 +240,10 @@ void EncodeThread::encode(void)
 {
 	QDateTime startTime = QDateTime::currentDateTime();
 
+	// -----------------------------------------------------------------------------------
+	// Print Information
+	// -----------------------------------------------------------------------------------
+
 	//Print some basic info
 	log(tr("Simple x264 Launcher (Build #%1), built %2\n").arg(QString::number(x264_version_build()), x264_version_date().toString(Qt::ISODate)));
 	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
@@ -250,12 +271,16 @@ void EncodeThread::encode(void)
 	const int inputType = getInputType(QFileInfo(m_sourceFileName).suffix());
 	const QString indexFile = QString("%1/x264_%2.ffindex").arg(QDir::tempPath(), stringToHash(m_sourceFileName));
 
-	//Checking x264 version
+	// -----------------------------------------------------------------------------------
+	// Check Versions
+	// -----------------------------------------------------------------------------------
+	
 	log(tr("\n--- CHECK VERSION ---\n"));
-	unsigned int encoderRevision = UINT_MAX;
+
+	//Check encoder version
 	bool encoderModified = false;
-	ok = ((encoderRevision = checkVersionEncoder(encoderModified)) != UINT_MAX);
-	CHECK_STATUS(m_abort, ok);
+	unsigned int encoderRevision = m_encoder->checkVersion(encoderModified);
+	CHECK_STATUS(m_abort, (ok = (encoderRevision != UINT_MAX)));
 	
 	//Checking avs2yuv version
 	unsigned int revision_avs2yuv = UINT_MAX;
@@ -269,34 +294,17 @@ void EncodeThread::encode(void)
 	CHECK_STATUS(m_abort, ok);
 
 	//Print versions
-	switch(m_options->encType())
-	{
-		case OptionsModel::EncType_X264: log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(encoderRevision % REV_MULT), QString::number(encoderRevision / REV_MULT)).append(encoderModified ? tr(" - with custom patches!") : QString())); break;
-		case OptionsModel::EncType_X265: log(tr("\nx265 version: 0.%1+%2").arg(QString::number(encoderRevision / REV_MULT), QString::number(encoderRevision % REV_MULT))); break;
-	}
+	m_encoder->printVersion(encoderRevision, encoderModified);
 	if(revision_avs2yuv != UINT_MAX)
 	{
 		log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision_avs2yuv / REV_MULT), QString::number((revision_avs2yuv % REV_MULT) / 10),QString::number((revision_avs2yuv % REV_MULT) % 10)));
 	}
 
 	//Is encoder version suppoprted?
-	if(m_options->encType() == OptionsModel::EncType_X264)
+	if(!m_encoder->isVersionSupported(encoderRevision, encoderModified))
 	{
-		if((encoderRevision % REV_MULT) < x264_version_x264_minimum_rev())
-		{
-			log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %2)").arg(QString::number(x264_version_x264_minimum_rev())));
-			setStatus(JobStatus_Failed);
-			return;
-		}
-		if((encoderRevision / REV_MULT) != x264_version_x264_current_api())
-		{
-			log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
-			log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(x264_version_x264_current_api())));
-		}
-	}
-	else if(m_options->encType() == OptionsModel::EncType_X264)
-	{
-		/*TODO*/
+		setStatus(JobStatus_Failed);
+		return;
 	}
 
 	//Is Avs2YUV version supported?
@@ -307,6 +315,10 @@ void EncodeThread::encode(void)
 		setStatus(JobStatus_Failed);
 		return;
 	}
+
+	// -----------------------------------------------------------------------------------
+	// Detect Source Info
+	// -----------------------------------------------------------------------------------
 
 	//Detect source info
 	if(inputType != INPUT_NATIVE)
@@ -715,11 +727,6 @@ QStringList EncodeThread::buildCommandLine(const bool &usePipe, const unsigned i
 	}
 
 	return cmdLine;
-}
-
-unsigned int EncodeThread::checkVersionEncoder(bool &modified)
-{
-
 }
 
 unsigned int EncodeThread::checkVersionAvs2yuv(void)

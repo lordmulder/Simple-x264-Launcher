@@ -22,6 +22,7 @@
 #pragma once
 
 #include <QObject>
+#include <QUuid>
 #include <QMutex>
 
 class OptionsModel;
@@ -35,22 +36,23 @@ class AbstractTool : QObject
 	Q_OBJECT
 
 public:
-	AbstractTool(volatile bool *abort, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobObject *jobObject);
+	AbstractTool(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort);
 	virtual ~AbstractTool(void) {/*NOP*/}
 	
 signals:
-	void messageLogged(const QString &text);
+	void messageLogged(const QUuid &jobId, const QString &text);
 
 protected:
-	void log(const QString &text) { emit messageLogged(text); }
+	inline void log(const QString &text) { emit messageLogged((*m_jobId), text); }
 	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
 	static QString commandline2string(const QString &program, const QStringList &arguments);
 
+	const QUuid *const m_jobId;
+	JobObject *const m_jobObject;
 	const OptionsModel *const m_options;
 	const SysinfoModel *const m_sysinfo;
 	const PreferencesModel *const m_preferences;
-	JobObject *const m_jobObject;
-	
 	volatile bool *const m_abort;
+
 	static QMutex s_mutexStartProcess;
 };

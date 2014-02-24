@@ -21,24 +21,18 @@
 
 #pragma once
 
-#include "tool_abstract.h"
+#include "encoder_abstract.h"
 
-class QRegExp;
-template<class T> class QList;
-
-class AbstractEncoder : public AbstractTool
+class X264Encoder : public AbstractEncoder
 {
 public:
-	static const unsigned int REV_MULT = 10000;
+	X264Encoder(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort);
+	virtual ~X264Encoder(void);
 
-	AbstractEncoder(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort);
-	virtual ~AbstractEncoder(void);
-
-	virtual unsigned int checkVersion(bool &modified);
-	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
-	virtual void printVersion(const unsigned int &revision, const bool &modified) = 0;
+	virtual void printVersion(const unsigned int &revision, const bool &modified);
+	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
 
 protected:
-	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified) = 0;
+	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
+	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified);
 };

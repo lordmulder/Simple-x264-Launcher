@@ -29,6 +29,18 @@
 
 #include <QProcess>
 
+AbstractEncoder::AbstractEncoder(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort)
+:
+	AbstractTool(jobId, jobObject, options, sysinfo, preferences, abort)
+{
+	/*Nothing to do here*/
+}
+
+AbstractEncoder::~AbstractEncoder(void)
+{
+	/*Nothing to do here*/
+}
+
 unsigned int AbstractEncoder::checkVersion(bool &modified)
 {
 	if(m_preferences->getSkipVersionTest())
@@ -38,22 +50,16 @@ unsigned int AbstractEncoder::checkVersion(bool &modified)
 	}
 
 	QProcess process;
-	QStringList cmdLine = QStringList() << "--version";
+	QList<QRegExp*> patterns;
+	QStringList cmdLine;
+
+	//Init encoder-specific values
+	checkVersion_init(patterns, cmdLine);
 
 	log("Creating process:");
 	if(!startProcess(process, ENC_BINARY(m_sysinfo, m_options), cmdLine))
 	{
-		return false;;
-	}
-
-	QRegExp regExpVersion("", Qt::CaseInsensitive);
-	QRegExp regExpVersionMod("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)", Qt::CaseInsensitive);
-	
-	switch(m_options->encType())
-	{
-		case OptionsModel::EncType_X264: regExpVersion.setPattern("\\bx264\\s(\\d)\\.(\\d+)\\.(\\d+)\\s([a-f0-9]{7})");
-		case OptionsModel::EncType_X265: regExpVersion.setPattern("\\bHEVC\\s+encoder\\s+version\\s+0\\.(\\d+)\\+(\\d+)-[a-f0-9]+\\b");
-		default: throw "Invalid encoder type!";
+		return false;
 	}
 
 	bool bTimeout = false;
@@ -87,25 +93,8 @@ unsigned int AbstractEncoder::checkVersion(bool &modified)
 			QList<QByteArray> lines = process.readLine().split('\r');
 			while(!lines.isEmpty())
 			{
-				QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
-				int offset = -1;
-				if((offset = regExpVersion.lastIndexIn(text)) >= 0)
-				{
-					bool ok1 = false, ok2 = false;
-					unsigned int temp1 = regExpVersion.cap(2).toUInt(&ok1);
-					unsigned int temp2 = regExpVersion.cap(3).toUInt(&ok2);
-					if(ok1) coreVers = temp1;
-					if(ok2) revision = temp2;
-				}
-				else if((offset = regExpVersionMod.lastIndexIn(text)) >= 0)
-				{
-					bool ok1 = false, ok2 = false;
-					unsigned int temp1 = regExpVersionMod.cap(2).toUInt(&ok1);
-					unsigned int temp2 = regExpVersionMod.cap(3).toUInt(&ok2);
-					if(ok1) coreVers = temp1;
-					if(ok2) revision = temp2;
-					modified = true;
-				}
+				const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
+				checkVersion_parseLine(text, patterns, coreVers, revision, modified);
 				if(!text.isEmpty())
 				{
 					log(text);
@@ -119,6 +108,12 @@ unsigned int AbstractEncoder::checkVersion(bool &modified)
 	{
 		process.kill();
 		process.waitForFinished(-1);
+	}
+
+	while(!patterns.isEmpty())
+	{
+		QRegExp *pattern = patterns.takeFirst();
+		X264_DELETE(pattern);
 	}
 
 	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)

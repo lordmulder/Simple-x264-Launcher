@@ -34,13 +34,14 @@
 
 QMutex AbstractTool::s_mutexStartProcess;
 
-AbstractTool::AbstractTool(volatile bool *abort, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobObject *jobObject)
+AbstractTool::AbstractTool(const QUuid *jobId, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, volatile bool *abort)
 :
-	m_abort(abort),
+	m_jobId(jobId),
+	m_jobObject(jobObject),
 	m_options(options),
 	m_sysinfo(sysinfo),
 	m_preferences(preferences),
-	m_jobObject(jobObject)
+	m_abort(abort)
 {
 	/*nothing to do here*/
 }

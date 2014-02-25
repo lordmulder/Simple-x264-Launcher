@@ -33,6 +33,10 @@
 
 static const unsigned int VER_X264_AVS2YUV_VER = 242;
 
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
+
 AvisynthSource::AvisynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
 	AbstractSource(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile),
@@ -46,6 +50,10 @@ AvisynthSource::~AvisynthSource(void)
 	/*Nothing to do here*/
 }
 
+// ------------------------------------------------------------
+// Check Version
+// ------------------------------------------------------------
+
 bool AvisynthSource::isSourceAvailable()
 {
 	if(!(m_sysinfo->hasAVSSupport()))
@@ -58,7 +66,6 @@ bool AvisynthSource::isSourceAvailable()
 
 void AvisynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
-	cmdLine << "--version";
 	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)\\b", Qt::CaseInsensitive);
 	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
 }
@@ -66,23 +73,36 @@ void AvisynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &c
 void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
 {
 	int offset = -1;
+
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
 		bool ok1 = false, ok2 = false;
-		unsigned int temp1 = patterns[0]->cap(2).toUInt(&ok1);
-		unsigned int temp2 = patterns[0]->cap(3).toUInt(&ok2);
-		if(ok1) coreVers = temp1;
-		if(ok2) revision = temp2;
+		unsigned int temp1 = patterns[0]->cap(1).toUInt(&ok1);
+		unsigned int temp2 = patterns[0]->cap(2).toUInt(&ok2);
+		if(ok1 && ok2)
+		{
+			coreVers = temp1;
+			revision = temp2;
+		}
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		unsigned int temp1 = patterns[1]->cap(2).toUInt(&ok1);
-		unsigned int temp2 = patterns[1]->cap(3).toUInt(&ok2);
-		if(ok1) coreVers = temp1;
-		if(ok2) revision = temp2;
+		bool ok1 = false, ok2 = false, ok3 = false;
+		unsigned int temp1 = patterns[1]->cap(1).toUInt(&ok1);
+		unsigned int temp2 = patterns[1]->cap(2).toUInt(&ok2);
+		unsigned int temp3 = patterns[1]->cap(3).toUInt(&ok3);
+		if(ok1 && ok2 && ok3)
+		{
+			coreVers = temp1;
+			revision = (temp2 * 10) + (temp3 % 10);
+		}
 		modified = true;
 	}
+}
+
+bool AvisynthSource::checkVersion_succeeded(const int &exitCode)
+{
+	return (exitCode == EXIT_SUCCESS) || (exitCode == 2);
 }
 
 void AvisynthSource::printVersion(const unsigned int &revision, const bool &modified)
@@ -92,14 +112,18 @@ void AvisynthSource::printVersion(const unsigned int &revision, const bool &modi
 
 bool AvisynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	if((revision != UINT_MAX) && ((revision % REV_MULT) != VER_X264_AVS2YUV_VER))
+	if((revision != UINT_MAX) && ((revision % REV_MULT) < VER_X264_AVS2YUV_VER))
 	{
-		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
+		log(tr("\nERROR: Your version of avs2yuv is unsupported (required version: v0.24 BugMaster's mod 2)"));
 		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));
 		return false;
 	}
 	return true;
 }
+
+// ------------------------------------------------------------
+// Check Source Properties
+// ------------------------------------------------------------
 
 void AvisynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
@@ -112,7 +136,10 @@ void AvisynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStri
 
 void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen)
 {
+	qWarning("parseLine \"%1\"", line.toUtf8().constData());
+
 	int offset = -1;
+
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
 		bool ok1 = false, ok2 = false;
@@ -141,10 +168,12 @@ void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<
 		if(ok4) fpsDen = temp4;
 		if(ok5) frames = temp5;
 	}
+
 	if(!line.isEmpty())
 	{
 		log(line);
 	}
+
 	if(line.contains("failed to load avisynth.dll", Qt::CaseInsensitive))
 	{
 		log(tr("\nWarning: It seems that %1-Bit Avisynth is not currently installed !!!").arg(m_preferences->getUseAvisyth64Bit() ? "64" : "32"));
@@ -154,6 +183,10 @@ void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<
 		log(tr("\nWarning: YV16 (4:2:2) and YV24 (4:4:4) color-spaces only supported in Avisynth 2.6 !!!"));
 	}
 }
+
+// ------------------------------------------------------------
+// Source Processing
+// ------------------------------------------------------------
 
 void AvisynthSource::buildCommandLine(QStringList &cmdLine)
 {

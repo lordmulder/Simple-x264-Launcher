@@ -103,28 +103,40 @@ void X264Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdL
 void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
 {
 	int offset = -1;
+
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
 		bool ok1 = false, ok2 = false;
 		unsigned int temp1 = patterns[0]->cap(2).toUInt(&ok1);
 		unsigned int temp2 = patterns[0]->cap(3).toUInt(&ok2);
-		if(ok1) coreVers = temp1;
-		if(ok2) revision = temp2;
+		if(ok1 && ok2)
+		{
+			coreVers = temp1;
+			revision = temp2;
+		}
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
 		bool ok1 = false, ok2 = false;
 		unsigned int temp1 = patterns[1]->cap(2).toUInt(&ok1);
 		unsigned int temp2 = patterns[1]->cap(3).toUInt(&ok2);
-		if(ok1) coreVers = temp1;
-		if(ok2) revision = temp2;
+		if(ok1 && ok2)
+		{
+			coreVers = temp1;
+			revision = temp2;
+		}
 		modified = true;
+	}
+
+	if(!line.isEmpty())
+	{
+		log(line);
 	}
 }
 
 void X264Encoder::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("\nx264 revision: %1 (core #%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)).append(modified ? tr(" - with custom patches!") : QString()));
+	log(tr("\nx264 revision: %1 (core #%2)\n").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)).append(modified ? tr(" - with custom patches!") : QString()));
 }
 
 bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)
@@ -234,8 +246,6 @@ void X264Encoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 
 void X264Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass)
 {
-	log(tr("PARSE: \"%1\"").arg(line));
-
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{

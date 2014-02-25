@@ -62,6 +62,7 @@ protected:
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
 	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified) = 0;
+	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	void log(const QString &text) { emit messageLogged(text); }
 	void setStatus(const JobStatus &newStatus) { emit statusChanged(newStatus); } 

@@ -30,6 +30,28 @@
 #include <QTextCodec>
 #include <QDir>
 
+// ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
+#define PROCESS_PENDING_LINES(PROC, HANDLER, ...) do \
+{ \
+	while((PROC).bytesAvailable() > 0) \
+	{ \
+		QList<QByteArray> lines = (PROC).readLine().split('\r'); \
+		while(!lines.isEmpty()) \
+		{ \
+			const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified(); \
+			HANDLER(text, __VA_ARGS__); \
+		} \
+	} \
+} \
+while(0)
+
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
+
 AbstractSource::AbstractSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
 	AbstractTool(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause),
@@ -42,6 +64,10 @@ AbstractSource::~AbstractSource(void)
 {
 	/*Nothing to do here*/
 }
+
+// ------------------------------------------------------------
+// Check Source Properties
+// ------------------------------------------------------------
 
 bool AbstractSource::checkSourceProperties(unsigned int &frames)
 {
@@ -73,7 +99,7 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 
 	while(process.state() != QProcess::NotRunning)
 	{
-		if(m_abort)
+		if(*m_abort)
 		{
 			process.kill();
 			bAborted = true;
@@ -105,15 +131,12 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 		}
 		
 		waitCounter = 0;
-		
-		while(process.bytesAvailable() > 0)
-		{
-			QList<QByteArray> lines = process.readLine().split('\r');
-			while(!lines.isEmpty())
-			{
-				QString text = localCodec->toUnicode(lines.takeFirst().constData()).simplified();
-			}
-		}
+		PROCESS_PENDING_LINES(process, checkSourceProperties_parseLine, patterns, frames, fSizeW, fSizeH, fpsNom, fpsDen);
+	}
+
+	if(!(bTimeout || bAborted))
+	{
+		PROCESS_PENDING_LINES(process, checkSourceProperties_parseLine, patterns, frames, fSizeW, fSizeH, fpsNom, fpsDen);
 	}
 
 	process.waitForFinished();
@@ -165,6 +188,10 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 
 	return true;
 }
+
+// ------------------------------------------------------------
+// Source Processing
+// ------------------------------------------------------------
 
 bool AbstractSource::createProcess(QProcess &processEncode, QProcess&processInput)
 {

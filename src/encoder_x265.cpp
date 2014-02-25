@@ -115,7 +115,7 @@ void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 
 void X265Encoder::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("\nx265 version: 0.%1+%2").arg(QString::number(revision / REV_MULT), QString::number(revision % REV_MULT)));
+	log(tr("\nx265 version: 0.%1+%2\n").arg(QString::number(revision / REV_MULT), QString::number(revision % REV_MULT)));
 }
 
 bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)

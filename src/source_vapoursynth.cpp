@@ -46,6 +46,10 @@ VapoursynthSource::~VapoursynthSource(void)
 	/*Nothing to do here*/
 }
 
+// ------------------------------------------------------------
+// Check Version
+// ------------------------------------------------------------
+
 bool VapoursynthSource::isSourceAvailable()
 {
 	if(!(m_sysinfo->hasVPSSupport() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(m_sysinfo->getVPSPath()).isFile()))
@@ -67,6 +71,7 @@ void VapoursynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList
 void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
 {
 	int offset = -1;
+
 	if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
 		bool ok = false;
@@ -79,11 +84,16 @@ void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegEx
 		unsigned int temp = patterns[2]->cap(1).toUInt(&ok);
 		if(ok) coreVers = temp;
 	}
+
+	if(!line.isEmpty())
+	{
+		log(line);
+	}
 }
 
 void VapoursynthSource::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("VapourSynth version: r%1 (API r%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)));
+	log(tr("\nVapourSynth version: r%1 (API r%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)));
 }
 
 bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)
@@ -96,6 +106,10 @@ bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const b
 	}
 	return true;
 }
+
+// ------------------------------------------------------------
+// Check Source Properties
+// ------------------------------------------------------------
 
 void VapoursynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
@@ -110,6 +124,7 @@ void VapoursynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QS
 void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen)
 {
 	int offset = -1;
+
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
 		bool ok = false;
@@ -128,11 +143,16 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QLi
 		unsigned int temp = patterns[2]->cap(1).toUInt(&ok);
 		if(ok) fSizeH = temp;
 	}
+
 	if(!line.isEmpty())
 	{
 		log(line);
 	}
 }
+
+// ------------------------------------------------------------
+// Check Source Properties
+// ------------------------------------------------------------
 
 void VapoursynthSource::buildCommandLine(QStringList &cmdLine)
 {

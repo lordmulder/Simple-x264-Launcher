@@ -306,7 +306,7 @@ void EncodeThread::encode(void)
 		CHECK_STATUS(m_abort, (ok = (sourceRevision != UINT_MAX)));
 
 		//Print source versions
-		m_pipedSource->printVersion(sourceModified, sourceModified);
+		m_pipedSource->printVersion(sourceRevision, sourceModified);
 
 		//Is source version supported?
 		CHECK_STATUS(m_abort, (ok = m_pipedSource->isVersionSupported(sourceRevision, sourceModified)));

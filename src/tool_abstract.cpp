@@ -48,10 +48,6 @@ QMutex AbstractTool::s_mutexStartProcess;
 		{ \
 			const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified(); \
 			HANDLER(text, __VA_ARGS__); \
-			if(!text.isEmpty()) \
-			{ \
-				log(text); \
-			} \
 		} \
 	} \
 } \
@@ -147,7 +143,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 		X264_DELETE(pattern);
 	}
 
-	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
+	if(bTimeout || bAborted || (!checkVersion_succeeded(process.exitCode())))
 	{
 		if(!(bTimeout || bAborted))
 		{
@@ -163,6 +159,11 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 	}
 	
 	return (coreVers * REV_MULT) + (revision % REV_MULT);
+}
+
+bool AbstractTool::checkVersion_succeeded(const int &exitCode)
+{
+	return (exitCode == EXIT_SUCCESS);
 }
 
 // ------------------------------------------------------------

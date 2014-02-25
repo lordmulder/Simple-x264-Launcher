@@ -38,6 +38,10 @@
 #include <QThread>
 #include <QLocale>
 
+// ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
 #define APPEND_AND_CLEAR(LIST, STR) do \
 { \
 	if(!((STR).isEmpty())) \
@@ -47,6 +51,24 @@
 	} \
 } \
 while(0)
+
+#define PROCESS_PENDING_LINES(PROC, HANDLER, ...) do \
+{ \
+	while((PROC).bytesAvailable() > 0) \
+	{ \
+		QList<QByteArray> lines = (PROC).readLine().split('\r'); \
+		while(!lines.isEmpty()) \
+		{ \
+			const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified(); \
+			HANDLER(text, __VA_ARGS__); \
+		} \
+	} \
+} \
+while(0)
+
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
 
 AbstractEncoder::AbstractEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
@@ -62,6 +84,10 @@ AbstractEncoder::~AbstractEncoder(void)
 {
 	/*Nothing to do here*/
 }
+
+// ------------------------------------------------------------
+// Encoding Functions
+// ------------------------------------------------------------
 
 bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass, const QString &passLogFile)
 {
@@ -84,8 +110,6 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	QList<QRegExp*> patterns;
 	runEncodingPass_init(patterns);
 	
-	QTextCodec *localCodec = QTextCodec::codecForName("System");
-
 	bool bTimeout = false;
 	bool bAborted = false;
 
@@ -101,14 +125,14 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 		//Wait until new output is available
 		forever
 		{
-			if(m_abort)
+			if(*m_abort)
 			{
 				processEncode.kill();
 				processInput.kill();
 				bAborted = true;
 				break;
 			}
-			if(m_pause && (processEncode.state() == QProcess::Running))
+			if((*m_pause) && (processEncode.state() == QProcess::Running))
 			{
 				JobStatus previousStatus = m_jobStatus;
 				setStatus(JobStatus_Paused);
@@ -117,11 +141,11 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 				QProcess *proc[2] = { &processEncode, &processInput };
 				ok[0] = x264_suspendProcess(proc[0], true);
 				ok[1] = x264_suspendProcess(proc[1], true);
-				while(m_pause) m_semaphorePause->tryAcquire(1, 5000);
+				while(*m_pause) m_semaphorePause->tryAcquire(1, 5000);
 				while(m_semaphorePause->tryAcquire(1, 0));
 				ok[0] = x264_suspendProcess(proc[0], false);
 				ok[1] = x264_suspendProcess(proc[1], false);
-				if(!m_abort) setStatus(previousStatus);
+				if(!(*m_abort)) setStatus(previousStatus);
 				log(tr("Job resumed by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 				waitCounter = 0;
 				continue;
@@ -149,7 +173,7 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 					continue;
 				}
 			}
-			if(m_abort || (m_pause && (processEncode.state() == QProcess::Running)))
+			if((*m_abort) || ((*m_pause) && (processEncode.state() == QProcess::Running)))
 			{
 				continue;
 			}
@@ -163,15 +187,12 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 		}
 
 		//Process all output
-		while(processEncode.bytesAvailable() > 0)
-		{
-			QList<QByteArray> lines = processEncode.readLine().split('\r');
-			while(!lines.isEmpty())
-			{
-				const QString text = localCodec->toUnicode(lines.takeFirst().constData()).simplified();
-				runEncodingPass_parseLine(text, patterns, pass);
-			}
-		}
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass);
+	}
+	
+	if(!(bTimeout || bAborted))
+	{
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass);
 	}
 
 	processEncode.waitForFinished(5000);
@@ -242,6 +263,10 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	processInput.close();
 	return true;
 }
+
+// ------------------------------------------------------------
+// Utilities
+// ------------------------------------------------------------
 
 QStringList AbstractEncoder::splitParams(const QString &params, const QString &sourceFile, const QString &outputFile)
 {

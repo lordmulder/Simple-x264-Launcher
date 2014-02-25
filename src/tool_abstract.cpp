@@ -35,6 +35,32 @@
 
 QMutex AbstractTool::s_mutexStartProcess;
 
+// ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
+#define PROCESS_PENDING_LINES(PROC, HANDLER, ...) do \
+{ \
+	while((PROC).bytesAvailable() > 0) \
+	{ \
+		QList<QByteArray> lines = (PROC).readLine().split('\r'); \
+		while(!lines.isEmpty()) \
+		{ \
+			const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified(); \
+			HANDLER(text, __VA_ARGS__); \
+			if(!text.isEmpty()) \
+			{ \
+				log(text); \
+			} \
+		} \
+	} \
+} \
+while(0)
+
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
+
 AbstractTool::AbstractTool(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause)
 :
 	m_jobObject(jobObject),
@@ -48,6 +74,10 @@ AbstractTool::AbstractTool(JobObject *jobObject, const OptionsModel *options, co
 {
 	/*nothing to do here*/
 }
+
+// ------------------------------------------------------------
+// Check Version
+// ------------------------------------------------------------
 
 unsigned int AbstractTool::checkVersion(bool &modified)
 {
@@ -79,7 +109,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 
 	while(process.state() != QProcess::NotRunning)
 	{
-		if(m_abort)
+		if(*m_abort)
 		{
 			process.kill();
 			bAborted = true;
@@ -96,19 +126,12 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 				break;
 			}
 		}
-		while(process.bytesAvailable() > 0)
-		{
-			QList<QByteArray> lines = process.readLine().split('\r');
-			while(!lines.isEmpty())
-			{
-				const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified();
-				checkVersion_parseLine(text, patterns, coreVers, revision, modified);
-				if(!text.isEmpty())
-				{
-					log(text);
-				}
-			}
-		}
+		PROCESS_PENDING_LINES(process, checkVersion_parseLine, patterns, coreVers, revision, modified);
+	}
+
+	if(!(bTimeout || bAborted))
+	{
+		PROCESS_PENDING_LINES(process, checkVersion_parseLine, patterns, coreVers, revision, modified);
 	}
 
 	process.waitForFinished();
@@ -141,6 +164,10 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 	
 	return (coreVers * REV_MULT) + (revision % REV_MULT);
 }
+
+// ------------------------------------------------------------
+// Process Creation
+// ------------------------------------------------------------
 
 bool AbstractTool::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)
 {
@@ -179,9 +206,14 @@ bool AbstractTool::startProcess(QProcess &process, const QString &program, const
 	return false;
 }
 
+// ------------------------------------------------------------
+// Utilities
+// ------------------------------------------------------------
+
 QString AbstractTool::commandline2string(const QString &program, const QStringList &arguments)
 {
-	QString commandline = (program.contains(' ') ? QString("\"%1\"").arg(program) : program);
+	const QString nativeProgfram = QDir::toNativeSeparators(program);
+	QString commandline = (nativeProgfram.contains(' ') ? QString("\"%1\"").arg(nativeProgfram) : nativeProgfram);
 	
 	for(int i = 0; i < arguments.count(); i++)
 	{

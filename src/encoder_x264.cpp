@@ -33,6 +33,10 @@
 static const unsigned int X264_VERSION_X264_MINIMUM_REV = 2380;
 static const unsigned int X264_VERSION_X264_CURRENT_API = 142;
 
+// ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
 #define REMOVE_CUSTOM_ARG(LIST, ITER, FLAG, PARAM) do \
 { \
 	if(ITER != LIST.end()) \
@@ -65,6 +69,10 @@ while(0)
 } \
 while(0)
 
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
+
 X264Encoder::X264Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
 	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile),
@@ -80,6 +88,10 @@ X264Encoder::~X264Encoder(void)
 {
 	/*Nothing to do here*/
 }
+
+// ------------------------------------------------------------
+// Check Version
+// ------------------------------------------------------------
 
 void X264Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
@@ -131,6 +143,10 @@ bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 
 	return true;
 }
+
+// ------------------------------------------------------------
+// Encoding Functions
+// ------------------------------------------------------------
 
 void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
 {
@@ -210,14 +226,16 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 
 void X264Encoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 {
-	patterns << new QRegExp("\\[(\\d+)\\.(\\d+)%\\].+frames");   //regExpProgress
-	patterns << new QRegExp("indexing.+\\[(\\d+)\\.(\\d+)%\\]"); //regExpIndexing
-	patterns << new QRegExp("^(\\d+) frames:"); //regExpFrameCnt
+	patterns << new QRegExp("\\[(\\d+)\\.(\\d+)%\\].+frames");
+	patterns << new QRegExp("indexing.+\\[(\\d+)\\.(\\d+)%\\]");
+	patterns << new QRegExp("^(\\d+) frames:");
 	patterns << new QRegExp("\\[\\s*(\\d+)\\.(\\d+)%\\]\\s+(\\d+)/(\\d+)\\s(\\d+).(\\d+)\\s(\\d+).(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+):(\\d+):(\\d+)"); //regExpModified
 }
 
 void X264Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass)
 {
+	log(tr("PARSE: \"%1\"").arg(line));
+
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{

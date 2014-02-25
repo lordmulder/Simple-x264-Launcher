@@ -34,6 +34,10 @@
 static const unsigned int X265_VERSION_X264_MINIMUM_VER = 7;
 static const unsigned int X265_VERSION_X264_MINIMUM_REV = 167;
 
+// ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
 #define X264_UPDATE_PROGRESS(X) do \
 { \
 	bool ok = false; qint64 size_estimate = 0; \
@@ -66,6 +70,10 @@ while(0)
 } \
 while(0)
 
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
+
 X265Encoder::X265Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
 	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile),
@@ -81,6 +89,10 @@ X265Encoder::~X265Encoder(void)
 {
 	/*Nothing to do here*/
 }
+
+// ------------------------------------------------------------
+// Check Version
+// ------------------------------------------------------------
 
 void X265Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
@@ -119,6 +131,10 @@ bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 	
 	return true;
 }
+
+// ------------------------------------------------------------
+// Encoding Functions
+// ------------------------------------------------------------
 
 void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
 {

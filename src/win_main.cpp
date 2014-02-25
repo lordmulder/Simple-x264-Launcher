@@ -312,7 +312,14 @@ void MainWindow::startButtonPressed(void)
 void MainWindow::abortButtonPressed(void)
 {
 	ENSURE_APP_IS_IDLE();
-	m_jobList->abortJob(ui->jobsView->currentIndex());
+	m_status = STATUS_BLOCKED;
+
+	if(QMessageBox::question(this, tr("Abort Job?"), tr("<nobr>Do you really want to <b>abort</b> the selected job now?</nobr>"), tr("Back"), tr("Abort Job")) == 1)
+	{
+		m_jobList->abortJob(ui->jobsView->currentIndex());
+	}
+
+	m_status = STATUS_IDLE;
 }
 
 /*

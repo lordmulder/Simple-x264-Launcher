@@ -33,6 +33,7 @@ public:
 	AbstractSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile);
 	virtual ~AbstractSource(void);
 
+	virtual bool isSourceAvailable(void) = 0;
 	virtual bool checkSourceProperties(unsigned int &frames);
 	virtual bool createProcess(QProcess &processEncode, QProcess&processInput);
 	virtual void flushProcess(QProcess &processInput) = 0;

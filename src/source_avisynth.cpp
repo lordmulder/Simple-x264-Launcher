@@ -24,6 +24,7 @@
 #include "source_avisynth.h"
 
 #include "global.h"
+#include "model_sysinfo.h"
 #include "model_preferences.h"
 #include "binaries.h"
 
@@ -45,11 +46,21 @@ AvisynthSource::~AvisynthSource(void)
 	/*Nothing to do here*/
 }
 
+bool AvisynthSource::isSourceAvailable()
+{
+	if(!(m_sysinfo->hasAVSSupport()))
+	{
+		log(tr("\nAVS INPUT REQUIRES AVISYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
+		return false;
+	}
+	return true;
+}
+
 void AvisynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
 	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
 }
 
 void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)

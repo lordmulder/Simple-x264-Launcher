@@ -94,6 +94,18 @@ private:
 } \
 while(0)
 
+#define CONNECT(OBJ) do \
+{ \
+	if((OBJ)) \
+	{ \
+		connect((OBJ), SIGNAL(statusChanged(JobStatus)),      this, SLOT(setStatus(JobStatus)),      Qt::DirectConnection); \
+		connect((OBJ), SIGNAL(progressChanged(unsigned int)), this, SLOT(setProgress(unsigned int)), Qt::DirectConnection); \
+		connect((OBJ), SIGNAL(detailsChanged(QString)),       this, SLOT(setDetails(QString)),       Qt::DirectConnection); \
+		connect((OBJ), SIGNAL(messageLogged(QString)),        this, SLOT(log(QString)),              Qt::DirectConnection); \
+	} \
+} \
+while(0)
+
 /*
  * Input types
  */
@@ -154,17 +166,8 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	}
 
 	//Establish connections
-	connect(m_encoder, SIGNAL(statusChanged(JobStatus)), this, SIGNAL(setStatus(QString)), Qt::DirectConnection);
-	connect(m_encoder, SIGNAL(progressChanged(unsigned int)), this, SIGNAL(setProgress(QString)), Qt::DirectConnection);
-	connect(m_encoder, SIGNAL(messageLogged(QString)), this, SIGNAL(log(QString)), Qt::DirectConnection);
-	connect(m_encoder, SIGNAL(detailsChanged(QString)), this, SIGNAL(setDetails(QString)), Qt::DirectConnection);
-	if(m_pipedSource)
-	{
-		connect(m_pipedSource, SIGNAL(statusChanged(JobStatus)), this, SIGNAL(setStatus(QString)), Qt::DirectConnection);
-		connect(m_pipedSource, SIGNAL(progressChanged(unsigned int)), this, SIGNAL(setProgress(QString)), Qt::DirectConnection);
-		connect(m_pipedSource, SIGNAL(messageLogged(QString)), this, SIGNAL(log(QString)), Qt::DirectConnection);
-		connect(m_pipedSource, SIGNAL(detailsChanged(QString)), this, SIGNAL(setDetails(QString)), Qt::DirectConnection);
-	}
+	CONNECT(m_encoder);
+	CONNECT(m_pipedSource);
 }
 
 EncodeThread::~EncodeThread(void)
@@ -290,14 +293,13 @@ void EncodeThread::encode(void)
 	m_encoder->printVersion(encoderRevision, encoderModified);
 
 	//Is encoder version suppoprted?
-	if(!m_encoder->isVersionSupported(encoderRevision, encoderModified))
-	{
-		setStatus(JobStatus_Failed);
-		return;
-	}
+	CHECK_STATUS(m_abort, (ok = m_encoder->isVersionSupported(encoderRevision, encoderModified)));
 
 	if(m_pipedSource)
 	{
+		//Is source type available?
+		CHECK_STATUS(m_abort, (ok = m_pipedSource->isSourceAvailable()));
+
 		//Checking source version
 		bool sourceModified = false;
 		const unsigned int sourceRevision = m_pipedSource->checkVersion(sourceModified);
@@ -307,11 +309,7 @@ void EncodeThread::encode(void)
 		m_pipedSource->printVersion(sourceModified, sourceModified);
 
 		//Is source version supported?
-		if(!m_pipedSource->isVersionSupported(sourceRevision, sourceModified))
-		{
-			setStatus(JobStatus_Failed);
-			return;
-		}
+		CHECK_STATUS(m_abort, (ok = m_pipedSource->isVersionSupported(sourceRevision, sourceModified)));
 	}
 
 	// -----------------------------------------------------------------------------------
@@ -402,7 +400,11 @@ void EncodeThread::setProgress(const unsigned int &newProgress)
 
 void EncodeThread::setDetails(const QString &text)
 {
-	emit detailsChanged(m_jobId, text);
+	if((!text.isEmpty()) && (m_details.compare(text) != 0))
+	{
+		emit detailsChanged(m_jobId, text);
+		m_details = text;
+	}
 }
 
 int EncodeThread::getInputType(const QString &fileExt)

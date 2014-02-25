@@ -24,13 +24,14 @@
 #include "source_vapoursynth.h"
 
 #include "global.h"
+#include "model_sysinfo.h"
 #include "model_preferences.h"
 #include "binaries.h"
 
 #include <QDir>
 #include <QProcess>
 
-static const unsigned int VER_X264_VSPIPE_VER = 242;
+static const unsigned int VER_X264_VSPIPE_VER = 22;
 
 VapoursynthSource::VapoursynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
@@ -45,46 +46,52 @@ VapoursynthSource::~VapoursynthSource(void)
 	/*Nothing to do here*/
 }
 
+bool VapoursynthSource::isSourceAvailable()
+{
+	if(!(m_sysinfo->hasVPSSupport() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(m_sysinfo->getVPSPath()).isFile()))
+	{
+		log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
+		return false;
+	}
+	return true;
+}
+
 void VapoursynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
-	cmdLine << "--version";
-	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
-	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)\\b", Qt::CaseInsensitive);
+	cmdLine << "-version";
+	patterns << new QRegExp("\\bVapourSynth\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bCore\\s+r(\\d+)\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bAPI\\s+r(\\d+)\\b", Qt::CaseInsensitive);
 }
 
 void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
 {
 	int offset = -1;
-	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
+	if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		unsigned int temp1 = patterns[0]->cap(2).toUInt(&ok1);
-		unsigned int temp2 = patterns[0]->cap(3).toUInt(&ok2);
-		if(ok1) coreVers = temp1;
-		if(ok2) revision = temp2;
+		bool ok = false;
+		unsigned int temp = patterns[1]->cap(1).toUInt(&ok);
+		if(ok) revision = temp;
 	}
-	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
+	else if((offset = patterns[2]->lastIndexIn(line)) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		unsigned int temp1 = patterns[1]->cap(2).toUInt(&ok1);
-		unsigned int temp2 = patterns[1]->cap(3).toUInt(&ok2);
-		if(ok1) coreVers = temp1;
-		if(ok2) revision = temp2;
-		modified = true;
+		bool ok = false;
+		unsigned int temp = patterns[2]->cap(1).toUInt(&ok);
+		if(ok) coreVers = temp;
 	}
 }
 
 void VapoursynthSource::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision / REV_MULT), QString::number((revision % REV_MULT) / 10),QString::number((revision % REV_MULT) % 10)));
+	log(tr("VapourSynth version: r%1 (API r%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)));
 }
 
 bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	if((revision != UINT_MAX) && ((revision % REV_MULT) != VER_X264_VSPIPE_VER))
+	if((revision % REV_MULT) < VER_X264_VSPIPE_VER)
 	{
-		log(tr("\nERROR: Your version of avs2yuv is unsupported (Required version: v0.24 BugMaster's mod 2)"));
-		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));
+		log(tr("\nERROR: Your version of VapourSynth is unsupported (requires version r%1 or newer").arg(QString::number(VER_X264_VSPIPE_VER)));
+		log(tr("You can find the latest VapourSynth version at: http://www.vapoursynth.com/"));
 		return false;
 	}
 	return true;

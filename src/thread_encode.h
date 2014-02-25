@@ -92,6 +92,7 @@ protected:
 	//Internal status values
 	JobStatus m_status;
 	unsigned int m_progress;
+	QString m_details;
 
 	//Encoder and Source objects
 	AbstractEncoder *m_encoder;

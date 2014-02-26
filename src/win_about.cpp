@@ -53,9 +53,15 @@ AboutDialog::AboutDialog(QWidget *parent)
 			x264_version_date().toString(Qt::ISODate).toLatin1().constData(),
 			x264_version_time(),
 			x264_version_compiler(),
-			x264_version_arch()
+			x264_version_arch(),
+			QString::fromLatin1(QT_VERSION_STR)
 		)
 	);
+
+	//Enable hover
+	ui->labelGPL->setAttribute(Qt::WA_Hover, true);
+	((QWidget*)ui->labelGPL->parent())->setAttribute(Qt::WA_Hover, true);
+	((QWidget*)ui->labelGPL->parent()->parent())->setAttribute(Qt::WA_Hover, true);
 
 	//Switch to first tab
 	ui->tabWidget->setCurrentIndex(ui->tabWidget->indexOf(ui->tabAbout));
@@ -81,7 +87,9 @@ AboutDialog::~AboutDialog(void)
 
 void AboutDialog::showEvent(QShowEvent *event)
 {
-	//Fix dialog size
+	QDialog::showEvent(event);
+
+	//Fix dialog size - need to do this in Show event
 	const QSize hint = sizeHint();
 	setFixedSize(hint.isValid() ? hint : size());
 }

@@ -34,9 +34,6 @@
     <None Include="res\icons\movie.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="gui\win_about.ui">
-      <Filter>Dialogs</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\global.h">
@@ -103,9 +100,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\source_vapoursynth.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_about.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -321,6 +315,12 @@
     </CustomBuild>
     <CustomBuild Include="src\tool_abstract.h">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_about.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_about.ui">
+      <Filter>Dialogs</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

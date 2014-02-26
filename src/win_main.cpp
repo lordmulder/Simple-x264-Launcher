@@ -499,118 +499,13 @@ void MainWindow::showAbout(void)
 	ENSURE_APP_IS_IDLE();
 	m_status = STATUS_BLOCKED;
 	
-	AboutDialog *aboutDialog = new AboutDialog(this);
-	aboutDialog->exec();
-	X264_DELETE(aboutDialog);
-	m_status = STATUS_IDLE;
-
-	/*
-	QString text;
-	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor(), x264_version_build());
-	text += QString().sprintf("Copyright (c) 2004-%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
-	text += QString().sprintf("Built on %s at %s with %s for Win-%s.<br><br>", x264_version_date().toString(Qt::ISODate).toLatin1().constData(), x264_version_time(), x264_version_compiler(), x264_version_arch());
-	text += QString().sprintf("This program is free software: you can redistribute it and/or modify<br>");
-	text += QString().sprintf("it under the terms of the GNU General Public License &lt;http://www.gnu.org/&gt;.<br>");
-	text += QString().sprintf("Note that this program is distributed with ABSOLUTELY NO WARRANTY.<br><br>");
-	text += QString().sprintf("Please check the web-site at <a href=\"%s\">%s</a> for updates !!!<br></tt></nobr>", home_url, home_url);
-
-	QMessageBox aboutBox(this);
-	aboutBox.setIconPixmap(QIcon(":/images/movie.png").pixmap(64,64));
-	aboutBox.setWindowTitle(tr("About..."));
-	aboutBox.setText(text.replace("-", "&minus;"));
-	aboutBox.addButton(tr("About x264"), QMessageBox::NoRole);
-	aboutBox.addButton(tr("About x265"), QMessageBox::NoRole);
-	aboutBox.addButton(tr("About Avs"), QMessageBox::NoRole);
-	aboutBox.addButton(tr("About Vpy"), QMessageBox::NoRole);
-	aboutBox.addButton(tr("About Qt"), QMessageBox::NoRole);
-	aboutBox.setEscapeButton(aboutBox.addButton(tr("Close"), QMessageBox::NoRole));
-		
-	forever
+	if(AboutDialog *aboutDialog = new AboutDialog(this))
 	{
-		x264_beep(x264_beep_info);
-		switch(aboutBox.exec())
-		{
-		case 0:
-			{
-				QString text2;
-				text2 += tr("<nobr><tt>x264 - the best H.264/AVC encoder. Copyright (C) 2013-2014 x264 project.<br>");
-				text2 += tr("Free software library for encoding video streams into the H.264/MPEG-4 AVC format.<br>");
-				text2 += tr("Released under the terms of the GNU General Public License v2.<br><br>");
-				text2 += tr("Please visit <a href=\"%1\">%1</a> for obtaining a commercial x264 license.<br>").arg("http://x264licensing.com/");
-				text2 += tr("Read the <a href=\"%1\">user's manual</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://mewiki.project357.com/wiki/X264_Settings", "http://forum.doom9.org/forumdisplay.php?f=77");
-
-				QMessageBox x264Box(this);
-				x264Box.setIconPixmap(QIcon(":/images/x264.png").pixmap(48,48));
-				x264Box.setWindowTitle(tr("About x264"));
-				x264Box.setText(text2.replace("-", "&minus;"));
-				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
-				x264_beep(x264_beep_info);
-				x264Box.exec();
-			}
-			break;
-		case 1:
-			{
-				QString text2;
-				text2 += tr("<nobr><tt>x265 - H.265/HEVC encoder. Copyright (C) 2003-2014 x265 project.<br>");
-				text2 += tr("Commercially funded open source implementation of the H.265/HEVC compression standard.<br>");
-				text2 += tr("Released under the terms of the GNU General Public License v2.<br><br>");
-				text2 += tr("The x265 project is coordinated by <a href=\"%1\">MultiCoreWare</a>. Visit the <a href=\"%2\">x265 web-site</a> for details.<br>").arg("http://www.multicorewareinc.com/", "http://x265.org/");
-				text2 += tr("Read the <a href=\"%1\">user's manual</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr").arg("http://goo.gl/smws42", "https://forum.doom9.org/forumdisplay.php?f=81");
-
-				QMessageBox x264Box(this);
-				x264Box.setIconPixmap(QIcon(":/images/x265.png").pixmap(48,48));
-				x264Box.setWindowTitle(tr("About x264"));
-				x264Box.setText(text2.replace("-", "&minus;"));
-				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
-				x264_beep(x264_beep_info);
-				x264Box.exec();
-			}
-			break;
-		case 2:
-			{
-				QString text2;
-				text2 += tr("<nobr><tt>Avisynth - powerful video processing scripting language.<br>");
-				text2 += tr("Copyright (c) 2000 Ben Rudiak-Gould and all subsequent developers.<br>");
-				text2 += tr("Released under the terms of the GNU General Public License.<br><br>");
-				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://avisynth.nl/");
-				text2 += tr("Read the <a href=\"%1\">guide</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://avisynth.nl/index.php/First_script", "http://forum.doom9.org/forumdisplay.php?f=33");
-
-				QMessageBox x264Box(this);
-				x264Box.setIconPixmap(QIcon(":/images/avisynth.png").pixmap(48,67));
-				x264Box.setWindowTitle(tr("About Avisynth"));
-				x264Box.setText(text2.replace("-", "&minus;"));
-				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
-				x264_beep(x264_beep_info);
-				x264Box.exec();
-			}
-			break;
-		case 3:
-			{
-				QString text2;
-				text2 += tr("<nobr><tt>VapourSynth - application for video manipulation based on Python.<br>");
-				text2 += tr("Copyright (c) 2012 Fredrik Mellbin.<br>");
-				text2 += tr("Released under the terms of the GNU Lesser General Public.<br><br>");
-				text2 += tr("Please visit the web-site <a href=\"%1\">%1</a> for more information.<br>").arg("http://www.vapoursynth.com/");
-				text2 += tr("Read the <a href=\"%1\">documentation</a> to get started and use the <a href=\"%2\">support forum</a> for help!<br></tt></nobr>").arg("http://www.vapoursynth.com/doc/", "http://forum.doom9.org/showthread.php?t=165771");
-
-				QMessageBox x264Box(this);
-				x264Box.setIconPixmap(QIcon(":/images/python.png").pixmap(48,48));
-				x264Box.setWindowTitle(tr("About VapourSynth"));
-				x264Box.setText(text2.replace("-", "&minus;"));
-				x264Box.setEscapeButton(x264Box.addButton(tr("Close"), QMessageBox::NoRole));
-				x264_beep(x264_beep_info);
-				x264Box.exec();
-			}
-			break;
-		case 4:
-			QMessageBox::aboutQt(this);
-			break;
-		default:
-			m_status = STATUS_IDLE;
-			return;
-		}
+		aboutDialog->exec();
+		X264_DELETE(aboutDialog);
 	}
-	*/
+	
+	m_status = STATUS_IDLE;
 }
 
 /*
@@ -1075,7 +970,7 @@ void MainWindow::init(void)
 	//---------------------------------------
 
 	//Set Window title
-	setWindowTitle(QString("%1 [%2]").arg(tr("Simple %1 Launcher").arg(m_sysinfo->has256Support() ? "x264/x265" : "x264"), m_sysinfo->hasX64Support() ? "x64" : "x86"));
+	setWindowTitle(QString("%1 (%2)").arg(tr("Simple %1 Launcher").arg(m_sysinfo->has256Support() ? "x264/x265" : "x264"), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
 
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);
@@ -1264,6 +1159,7 @@ void MainWindow::showEvent(QShowEvent *e)
 
 	if(m_status == STATUS_PRE_INIT)
 	{
+		setWindowTitle(tr("%1 - Starting...").arg(windowTitle()));
 		QTimer::singleShot(0, this, SLOT(init()));
 	}
 }

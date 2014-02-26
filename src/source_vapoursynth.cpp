@@ -97,9 +97,9 @@ void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegEx
 	}
 }
 
-void VapoursynthSource::printVersion(const unsigned int &revision, const bool &modified)
+QString VapoursynthSource::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("\nVapourSynth version: r%1 (API r%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)));
+	return tr("\nVapourSynth version: r%1 (API r%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT));
 }
 
 bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)

@@ -49,7 +49,7 @@ public:
 
 	virtual unsigned int checkVersion(bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
-	virtual void printVersion(const unsigned int &revision, const bool &modified) = 0;
+	virtual QString printVersion(const unsigned int &revision, const bool &modified) = 0;
 
 	static const unsigned int REV_MULT = 10000;
 

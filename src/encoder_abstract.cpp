@@ -214,7 +214,12 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	{
 		if(!(bTimeout || bAborted))
 		{
-			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(processEncode.exitCode())));
+			const int exitCode = processEncode.exitCode();
+			if((exitCode < 0) || (exitCode >= 32))
+			{
+				log(tr("\nFATAL ERROR: The encoder process has crashed, your encode probably is *incomplete* !!!"));
+			}
+			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(exitCode)));
 		}
 		processEncode.close();
 		processInput.close();

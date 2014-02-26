@@ -90,6 +90,7 @@ void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*>
 			coreVers = temp1;
 			revision = temp2;
 		}
+		log(line);
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
@@ -103,6 +104,7 @@ void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*>
 			revision = (temp2 * 10) + (temp3 % 10);
 		}
 		modified = true;
+		log(line);
 	}
 }
 
@@ -111,9 +113,9 @@ bool AvisynthSource::checkVersion_succeeded(const int &exitCode)
 	return (exitCode == EXIT_SUCCESS) || (exitCode == 2);
 }
 
-void AvisynthSource::printVersion(const unsigned int &revision, const bool &modified)
+QString AvisynthSource::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision / REV_MULT), QString::number((revision % REV_MULT) / 10),QString::number((revision % REV_MULT) % 10)));
+	return tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision / REV_MULT), QString::number((revision % REV_MULT) / 10),QString::number((revision % REV_MULT) % 10));
 }
 
 bool AvisynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)

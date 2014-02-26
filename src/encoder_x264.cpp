@@ -147,9 +147,9 @@ void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 	}
 }
 
-void X264Encoder::printVersion(const unsigned int &revision, const bool &modified)
+QString X264Encoder::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("\nx264 revision: %1 (core #%2)\n").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)).append(modified ? tr(" - with custom patches!") : QString()));
+	return tr("x264 revision: %1 (core #%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)).append(modified ? tr(" - with custom patches!") : QString());
 }
 
 bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)

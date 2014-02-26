@@ -286,32 +286,38 @@ void EncodeThread::encode(void)
 	
 	log(tr("\n--- CHECK VERSION ---\n"));
 
+	unsigned int encoderRevision = UINT_MAX, sourceRevision = UINT_MAX;
+	bool encoderModified = false, sourceModified = false;
+
+	log("Detect video encoder version:\n");
+
 	//Check encoder version
-	bool encoderModified = false;
-	const unsigned int encoderRevision = m_encoder->checkVersion(encoderModified);
+	encoderRevision = m_encoder->checkVersion(encoderModified);
 	CHECK_STATUS(m_abort, (ok = (encoderRevision != UINT_MAX)));
-	
-	//Print source versions
-	m_encoder->printVersion(encoderRevision, encoderModified);
 
 	//Is encoder version suppoprted?
 	CHECK_STATUS(m_abort, (ok = m_encoder->isVersionSupported(encoderRevision, encoderModified)));
 
 	if(m_pipedSource)
 	{
+		log("\nDetect video source version:\n");
+
 		//Is source type available?
 		CHECK_STATUS(m_abort, (ok = m_pipedSource->isSourceAvailable()));
 
 		//Checking source version
-		bool sourceModified = false;
-		const unsigned int sourceRevision = m_pipedSource->checkVersion(sourceModified);
+		sourceRevision = m_pipedSource->checkVersion(sourceModified);
 		CHECK_STATUS(m_abort, (ok = (sourceRevision != UINT_MAX)));
-
-		//Print source versions
-		m_pipedSource->printVersion(sourceRevision, sourceModified);
 
 		//Is source version supported?
 		CHECK_STATUS(m_abort, (ok = m_pipedSource->isVersionSupported(sourceRevision, sourceModified)));
+	}
+
+	//Print tool versions
+	log(QString("\n> %1").arg(m_encoder->printVersion(encoderRevision, encoderModified)));
+	if(m_pipedSource)
+	{
+		log(QString("> %1").arg(m_pipedSource->printVersion(sourceRevision, sourceModified)));
 	}
 
 	// -----------------------------------------------------------------------------------

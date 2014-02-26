@@ -32,7 +32,7 @@
 
 //x265 version info
 static const unsigned int X265_VERSION_X264_MINIMUM_VER = 7;
-static const unsigned int X265_VERSION_X264_MINIMUM_REV = 167;
+static const unsigned int X265_VERSION_X264_MINIMUM_REV = 232;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -116,6 +116,7 @@ void X265Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdL
 void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
 {
 	int offset = -1;
+
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
 		bool ok1 = false, ok2 = false;
@@ -124,11 +125,16 @@ void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 		if(ok1) coreVers = temp1;
 		if(ok2) revision = temp2;
 	}
+
+	if(!line.isEmpty())
+	{
+		log(line);
+	}
 }
 
-void X265Encoder::printVersion(const unsigned int &revision, const bool &modified)
+QString X265Encoder::printVersion(const unsigned int &revision, const bool &modified)
 {
-	log(tr("\nx265 version: 0.%1+%2\n").arg(QString::number(revision / REV_MULT), QString::number(revision % REV_MULT)));
+	return tr("x265 version: 0.%1+%2").arg(QString::number(revision / REV_MULT), QString::number(revision % REV_MULT));
 }
 
 bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)
@@ -215,12 +221,10 @@ void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 	{
 		if(frames < 1) throw "Frames not set!";
 		cmdLine << "--frames" << QString::number(frames);
-		cmdLine << "--demuxer" << "y4m";
-		cmdLine << "--stdin" << "y4m" << "-";
+		cmdLine << "--y4m" << "-";
 	}
 	else
 	{
-		cmdLine << "--index" << QDir::toNativeSeparators(indexFile);
 		cmdLine << QDir::toNativeSeparators(m_sourceFile);
 	}
 }

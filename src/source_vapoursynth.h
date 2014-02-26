@@ -32,7 +32,7 @@ public:
 	virtual const QString &getName(void);
 
 	virtual bool isSourceAvailable(void);
-	virtual void printVersion(const unsigned int &revision, const bool &modified);
+	virtual QString printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
 
 	virtual void flushProcess(QProcess &processInput);

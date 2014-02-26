@@ -440,6 +440,9 @@ Section "!Install Files"
 	SetOutPath "$INSTDIR\toolset"
 	File /a /r `${X264_SOURCE_PATH}\toolset\*.*`
 
+	SetOutPath "$INSTDIR\sources"
+	File /a `${X264_SOURCE_PATH}\sources\*.tar`
+
 	SetOutPath "$INSTDIR"
 	File /a `${X264_SOURCE_PATH}\*.dll`
 	File /a `${X264_SOURCE_PATH}\*.txt`

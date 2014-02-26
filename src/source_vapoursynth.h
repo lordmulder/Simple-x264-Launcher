@@ -29,6 +29,8 @@ public:
 	VapoursynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile);
 	virtual ~VapoursynthSource(void);
 
+	virtual const QString &getName(void);
+
 	virtual bool isSourceAvailable(void);
 	virtual void printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
@@ -45,5 +47,6 @@ protected:
 	virtual const QString &getBinaryPath() { return m_binaryFile; }
 	virtual void buildCommandLine(QStringList &cmdLine);
 
+	const QString m_sourceName;
 	const QString m_binaryFile;
 };

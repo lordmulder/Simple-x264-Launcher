@@ -36,6 +36,7 @@ static const unsigned int VER_X264_VSPIPE_VER = 22;
 VapoursynthSource::VapoursynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
 	AbstractSource(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile),
+	m_sourceName("VapourSynth (vpy)"),
 	m_binaryFile(VPS_BINARY(m_sysinfo, m_preferences))
 {
 	/*Nothing to do here*/
@@ -46,13 +47,18 @@ VapoursynthSource::~VapoursynthSource(void)
 	/*Nothing to do here*/
 }
 
+const QString &VapoursynthSource::getName(void)
+{
+	return m_sourceName;
+}
+
 // ------------------------------------------------------------
 // Check Version
 // ------------------------------------------------------------
 
 bool VapoursynthSource::isSourceAvailable()
 {
-	if(!(m_sysinfo->hasVPSSupport() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(m_sysinfo->getVPSPath()).isFile()))
+	if(!(m_sysinfo->hasVPSSupport() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(VPS_BINARY(m_sysinfo, m_preferences)).isFile()))
 	{
 		log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
 		return false;
@@ -119,6 +125,8 @@ void VapoursynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QS
 	patterns << new QRegExp("\\bFrames:\\s+(\\d+)\\b");
 	patterns << new QRegExp("\\bWidth:\\s+(\\d+)\\b");
 	patterns << new QRegExp("\\bHeight:\\s+(\\d+)\\b");
+	patterns << new QRegExp("\\bFPS:\\s+(\\d+)\\b");
+	patterns << new QRegExp("\\bFPS:\\s+(\\d+)/(\\d+)\\b");
 }
 
 void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen)
@@ -142,6 +150,23 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QLi
 		bool ok = false;
 		unsigned int temp = patterns[2]->cap(1).toUInt(&ok);
 		if(ok) fSizeH = temp;
+	}
+	if((offset = patterns[3]->lastIndexIn(line)) >= 0)
+	{
+		bool ok = false;
+		unsigned int temp = patterns[3]->cap(1).toUInt(&ok);
+		if(ok) fpsNom = temp;
+	}
+	if((offset = patterns[4]->lastIndexIn(line)) >= 0)
+	{
+		bool ok1 = false, ok2 = false;
+		unsigned int temp1 = patterns[4]->cap(1).toUInt(&ok1);
+		unsigned int temp2 = patterns[4]->cap(2).toUInt(&ok2);
+		if(ok1 && ok2)
+		{
+			fpsNom = temp1;
+			fpsDen = temp2;
+		}
 	}
 
 	if(!line.isEmpty())

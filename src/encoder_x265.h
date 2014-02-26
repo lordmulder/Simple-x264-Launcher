@@ -29,6 +29,8 @@ public:
 	X265Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
 	virtual ~X265Encoder(void);
 
+	virtual const QString &getName(void);
+
 	virtual void printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
 
@@ -42,5 +44,6 @@ protected:
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
 	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass);
 
+	const QString m_encoderName;
 	const QString m_binaryFile;
 };

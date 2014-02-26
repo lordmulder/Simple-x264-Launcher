@@ -33,6 +33,10 @@ class QProcess;
 class QSemaphore;
 enum JobStatus;
 
+// ------------------------------------------------------------
+// Base Class
+// ------------------------------------------------------------
+
 class AbstractTool : public QObject
 {
 	Q_OBJECT
@@ -41,6 +45,8 @@ public:
 	AbstractTool(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause);
 	virtual ~AbstractTool(void) {/*NOP*/}
 	
+	virtual const QString &getName(void) = 0;
+
 	virtual unsigned int checkVersion(bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
 	virtual void printVersion(const unsigned int &revision, const bool &modified) = 0;
@@ -85,3 +91,21 @@ protected:
 	
 	static QMutex s_mutexStartProcess;
 };
+
+// ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
+#define PROCESS_PENDING_LINES(PROC, HANDLER, ...) do \
+{ \
+	while((PROC).bytesAvailable() > 0) \
+	{ \
+		QList<QByteArray> lines = (PROC).readLine().split('\r'); \
+		while(!lines.isEmpty()) \
+		{ \
+			const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified(); \
+			HANDLER(text, __VA_ARGS__); \
+		} \
+	} \
+} \
+while(0)

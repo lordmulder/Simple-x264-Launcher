@@ -40,6 +40,7 @@ static const unsigned int VER_X264_AVS2YUV_VER = 242;
 AvisynthSource::AvisynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
 	AbstractSource(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile),
+	m_sourceName("Avisynth (avs)"),
 	m_binaryFile(AVS_BINARY(m_sysinfo, m_preferences))
 {
 	/*Nothing to do here*/
@@ -48,6 +49,11 @@ AvisynthSource::AvisynthSource(JobObject *jobObject, const OptionsModel *options
 AvisynthSource::~AvisynthSource(void)
 {
 	/*Nothing to do here*/
+}
+
+const QString &AvisynthSource::getName(void)
+{
+	return m_sourceName;
 }
 
 // ------------------------------------------------------------

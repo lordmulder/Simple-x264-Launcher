@@ -69,6 +69,13 @@ while(0)
 } \
 while(0)
 
+static QString MAKE_NAME(const char *baseName, const OptionsModel *options)
+{
+	const QString arch = (options->encArch() == OptionsModel::EncArch_x64) ? "x64" : "x86";
+	const QString vari = (options->encVariant() == OptionsModel::EncVariant_HiBit ) ? "10-Bit" : "8-Bit";
+	return QString("%1, %2, %3").arg(QString::fromLatin1(baseName), arch, vari);
+}
+
 // ------------------------------------------------------------
 // Constructor & Destructor
 // ------------------------------------------------------------
@@ -76,6 +83,7 @@ while(0)
 X264Encoder::X264Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
 	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile),
+	m_encoderName(MAKE_NAME("x264 (H.264/AVC)", m_options)),
 	m_binaryFile(ENC_BINARY(sysinfo, options))
 {
 	if(options->encType() != OptionsModel::EncType_X264)
@@ -87,6 +95,11 @@ X264Encoder::X264Encoder(JobObject *jobObject, const OptionsModel *options, cons
 X264Encoder::~X264Encoder(void)
 {
 	/*Nothing to do here*/
+}
+
+const QString &X264Encoder::getName(void)
+{
+	return m_encoderName;
 }
 
 // ------------------------------------------------------------

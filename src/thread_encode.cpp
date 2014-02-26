@@ -258,22 +258,24 @@ void EncodeThread::encode(void)
 	//Print some basic info
 	log(tr("Simple x264 Launcher (Build #%1), built %2\n").arg(QString::number(x264_version_build()), x264_version_date().toString(Qt::ISODate)));
 	log(tr("Job started at %1, %2.\n").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
-	log(tr("Source file: %1").arg(QDir::toNativeSeparators(m_sourceFileName)));
-	log(tr("Output file: %1").arg(QDir::toNativeSeparators(m_outputFileName)));
+	log(tr("Source file : %1").arg(QDir::toNativeSeparators(m_sourceFileName)));
+	log(tr("Output file : %1").arg(QDir::toNativeSeparators(m_outputFileName)));
 	
 	//Print system info
 	log(tr("\n--- SYSTEMINFO ---\n"));
-	log(tr("Binary Path: %1").arg(QDir::toNativeSeparators(m_sysinfo->getAppPath())));
-	log(tr("Avisynth OK: %1").arg(m_sysinfo->hasAVSSupport() ? tr("Yes") : tr("No")));
-	log(tr("VapourSynth: %1").arg(m_sysinfo->hasVPSSupport() ? QDir::toNativeSeparators(m_sysinfo->getVPSPath()) : tr("N/A")));
+	log(tr("Binary Path : %1").arg(QDir::toNativeSeparators(m_sysinfo->getAppPath())));
+	log(tr("Avisynth    : %1").arg(m_sysinfo->hasAVSSupport() ? tr("Yes") : tr("No")));
+	log(tr("VapourSynth : %1").arg(m_sysinfo->hasVPSSupport() ? QDir::toNativeSeparators(m_sysinfo->getVPSPath()) : tr("N/A")));
 
 	//Print encoder settings
 	log(tr("\n--- SETTINGS ---\n"));
-	log(tr("RC Mode: %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));
-	log(tr("Preset:  %1").arg(m_options->preset()));
-	log(tr("Tuning:  %1").arg(m_options->tune()));
-	log(tr("Profile: %1").arg(m_options->profile()));
-	log(tr("Custom:  %1").arg(m_options->customEncParams().isEmpty() ? tr("(None)") : m_options->customEncParams()));
+	log(tr("Encoder : %1").arg(m_encoder->getName()));
+	log(tr("Source  : %1").arg(m_pipedSource ? m_pipedSource->getName() : tr("Native")));
+	log(tr("RC Mode : %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));
+	log(tr("Preset  : %1").arg(m_options->preset()));
+	log(tr("Tuning  : %1").arg(m_options->tune()));
+	log(tr("Profile : %1").arg(m_options->profile()));
+	log(tr("Custom  : %1").arg(m_options->customEncParams().isEmpty() ? tr("(None)") : m_options->customEncParams()));
 	
 	bool ok = false;
 	unsigned int frames = 0;

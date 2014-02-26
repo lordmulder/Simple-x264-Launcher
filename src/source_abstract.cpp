@@ -31,24 +31,6 @@
 #include <QDir>
 
 // ------------------------------------------------------------
-// Helper Macros
-// ------------------------------------------------------------
-
-#define PROCESS_PENDING_LINES(PROC, HANDLER, ...) do \
-{ \
-	while((PROC).bytesAvailable() > 0) \
-	{ \
-		QList<QByteArray> lines = (PROC).readLine().split('\r'); \
-		while(!lines.isEmpty()) \
-		{ \
-			const QString text = QString::fromUtf8(lines.takeFirst().constData()).simplified(); \
-			HANDLER(text, __VA_ARGS__); \
-		} \
-	} \
-} \
-while(0)
-
-// ------------------------------------------------------------
 // Constructor & Destructor
 // ------------------------------------------------------------
 

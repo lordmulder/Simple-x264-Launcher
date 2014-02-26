@@ -34,6 +34,9 @@
     <None Include="res\icons\movie.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="gui\win_about.ui">
+      <Filter>Dialogs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\global.h">
@@ -87,9 +90,6 @@
     <ClInclude Include="src\encoder_abstract.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\tool_abstract.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\encoder_x264.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -103,6 +103,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\source_vapoursynth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\win_about.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -248,6 +251,12 @@
     <ClCompile Include="tmp\moc\moc_tool_abstract.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\win_about.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_win_about.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -308,6 +317,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\ipc.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\tool_abstract.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

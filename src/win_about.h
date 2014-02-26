@@ -19,15 +19,29 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 3
-#define VER_X264_PATCH 3
-#define VER_X264_BUILD 801
+#include <QDialog>
 
-#define VER_X264_PORTABLE_EDITION (0)
+namespace Ui
+{
+	class AboutDialog;
+}
 
-#define VER_X264_PRE_RELEASE (0)
+class AboutDialog : public QDialog
+{
+	Q_OBJECT
+
+public:
+	AboutDialog(QWidget *parent);
+	~AboutDialog(void);
+
+protected:
+	void showEvent(QShowEvent *event);
+
+private:
+	Ui::AboutDialog *const ui;
+
+private slots:
+	void showAboutQt(void);
+};

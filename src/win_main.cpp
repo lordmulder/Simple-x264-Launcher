@@ -36,6 +36,7 @@
 #include "thread_encode.h"
 #include "taskbar7.h"
 #include "win_addJob.h"
+#include "win_about.h"
 #include "win_preferences.h"
 #include "win_updater.h"
 #include "binaries.h"
@@ -498,6 +499,12 @@ void MainWindow::showAbout(void)
 	ENSURE_APP_IS_IDLE();
 	m_status = STATUS_BLOCKED;
 	
+	AboutDialog *aboutDialog = new AboutDialog(this);
+	aboutDialog->exec();
+	X264_DELETE(aboutDialog);
+	m_status = STATUS_IDLE;
+
+	/*
 	QString text;
 	text += QString().sprintf("<nobr><tt>Simple x264 Launcher v%u.%02u.%u - use 64-Bit x264 with 32-Bit Avisynth<br>", x264_version_major(), x264_version_minor(), x264_version_build());
 	text += QString().sprintf("Copyright (c) 2004-%04d LoRd_MuldeR &lt;mulder2@gmx.de&gt;. Some rights reserved.<br>", qMax(x264_version_date().year(),QDate::currentDate().year()));
@@ -603,6 +610,7 @@ void MainWindow::showAbout(void)
 			return;
 		}
 	}
+	*/
 }
 
 /*

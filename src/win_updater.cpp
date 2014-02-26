@@ -474,7 +474,7 @@ bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 
 	for(size_t i = 0; FILE_INFO[i].name; i++)
 	{
-		const QString binPath = QString("%1/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(FILE_INFO[i].name));
+		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(FILE_INFO[i].name));
 		if(okay = okay && checkFileHash(binPath, FILE_INFO[i].hash))
 		{
 			binaries.insert(FILE_INFO[i].name, binPath);

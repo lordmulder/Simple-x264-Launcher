@@ -30,7 +30,7 @@
 #include <QRegExp>
 
 //x264 version info
-static const unsigned int X264_VERSION_X264_MINIMUM_REV = 2380;
+static const unsigned int X264_VERSION_X264_MINIMUM_REV = 2397;
 static const unsigned int X264_VERSION_X264_CURRENT_API = 142;
 
 // ------------------------------------------------------------

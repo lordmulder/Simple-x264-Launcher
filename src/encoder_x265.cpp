@@ -78,6 +78,35 @@ static QString MAKE_NAME(const char *baseName, const OptionsModel *options)
 }
 
 // ------------------------------------------------------------
+// Encoder Info
+// ------------------------------------------------------------
+
+class X265EncoderInfo : public AbstractEncoderInfo
+{
+public:
+	virtual QStringList supportedInputFormats(void) const
+	{
+		QStringList extLst;
+		extLst << "y4m";
+		return extLst;
+	}
+
+	virtual QStringList supportedOutputFormats(void) const
+	{
+		QStringList extLst;
+		extLst << "hevc";
+		return extLst;
+	}
+};
+
+static const X265EncoderInfo s_x265EncoderInfo;
+
+const AbstractEncoderInfo &X265Encoder::getEncoderInfo(void)
+{
+	return s_x265EncoderInfo;
+}
+
+// ------------------------------------------------------------
 // Constructor & Destructor
 // ------------------------------------------------------------
 

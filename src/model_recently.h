@@ -33,7 +33,7 @@ X264_FILE_TYPE_FILTERS[] =
 	{ "mkv", "Matroska Files" },
 	{ "mp4", "MPEG-4 Part 14 Container" },
 	{ "264", "AVC/H.264 Elementary Stream"},
-	{ "hevc", "HEVC/H.264 Elementary Stream"},
+	{ "hevc", "HEVC/H.265 Elementary Stream"},
 };
 
 class RecentlyUsed

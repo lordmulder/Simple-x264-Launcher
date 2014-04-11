@@ -34,6 +34,8 @@ public:
 	virtual QString printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
 
+	static const AbstractEncoderInfo& getEncoderInfo(void);
+
 protected:
 	virtual const QString &getBinaryPath() { return m_binaryFile; }
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile);

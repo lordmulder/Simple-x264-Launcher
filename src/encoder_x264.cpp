@@ -77,6 +77,48 @@ static QString MAKE_NAME(const char *baseName, const OptionsModel *options)
 }
 
 // ------------------------------------------------------------
+// Encoder Info
+// ------------------------------------------------------------
+
+class X264EncoderInfo : public AbstractEncoderInfo
+{
+public:
+	virtual QStringList supportedInputFormats(void) const
+	{
+		QStringList extLst;
+		extLst << "avi";
+		extLst << "mp4";
+		extLst << "mkv";
+		extLst << "flv";
+		extLst << "mpg";
+		extLst << "m2v";
+		extLst << "m2ts";
+		extLst << "ts";
+		extLst << "wmv";
+		extLst << "ogm";
+		extLst << "vob";
+		extLst << "y4m";
+		return extLst;
+	}
+
+	virtual QStringList supportedOutputFormats(void) const
+	{
+		QStringList extLst;
+		extLst << "264";
+		extLst << "mkv";
+		extLst << "mp4";
+		return extLst;
+	}
+};
+
+static const X264EncoderInfo s_x264EncoderInfo;
+
+const AbstractEncoderInfo &X264Encoder::getEncoderInfo(void)
+{
+	return s_x264EncoderInfo;
+}
+
+// ------------------------------------------------------------
 // Constructor & Destructor
 // ------------------------------------------------------------
 

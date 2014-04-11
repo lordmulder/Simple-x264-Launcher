@@ -27,6 +27,13 @@ class QRegExp;
 template<class T> class QList;
 class AbstractSource;
 
+class AbstractEncoderInfo
+{
+public:
+	virtual QStringList supportedInputFormats (void) const = 0;
+	virtual QStringList supportedOutputFormats(void) const = 0;
+};
+
 class AbstractEncoder : public AbstractTool
 {
 public:
@@ -34,6 +41,7 @@ public:
 	virtual ~AbstractEncoder(void);
 
 	virtual bool runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass = 0, const QString &passLogFile = QString());
+	static const AbstractEncoderInfo& getEncoderInfo(void);
 
 protected:
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile) = 0;

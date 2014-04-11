@@ -27,6 +27,8 @@
 #include "model_preferences.h"
 #include "model_sysinfo.h"
 #include "model_recently.h"
+#include "encoder_x264.h"
+#include "encoder_x265.h"
 #include "win_help.h"
 #include "win_editor.h"
 
@@ -496,34 +498,50 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
-	//Is the type of source supported? (as far as we can tell)
-	if((sourceFile.suffix().compare("AVS", Qt::CaseInsensitive) == 0) && (!m_sysinfo->hasAVSSupport()))
+	//Get encoder info
+	const AbstractEncoderInfo &encoderInfo = getEncoderInfo(ui->cbxEncoderType->currentIndex());
+
+	//Is the type of the source file supported? (as far as we can tell)
+	if(sourceFile.suffix().compare("AVS", Qt::CaseInsensitive) == 0)
 	{
-		if(QMessageBox::warning(this, tr("Avisynth unsupported!"), tr("<nobr>An Avisynth script was selected as input, although Avisynth is <b>not</b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+		if(!m_sysinfo->hasAVSSupport())
 		{
-			return;
+			if(QMessageBox::warning(this, tr("Avisynth unsupported!"), tr("<nobr>An Avisynth script was selected as input, although Avisynth is <b>not</b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+			{
+				return;
+			}
 		}
 	}
-	else if(((sourceFile.suffix().compare("VPY", Qt::CaseInsensitive) == 0) || (sourceFile.suffix().compare("PY", Qt::CaseInsensitive) == 0)) && (!m_sysinfo->hasVPSSupport()))
+	else if((sourceFile.suffix().compare("VPY", Qt::CaseInsensitive) == 0) || (sourceFile.suffix().compare("PY", Qt::CaseInsensitive) == 0))
 	{
-		if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+		if(!m_sysinfo->hasVPSSupport())
 		{
-			return;
+			if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+			{
+				return;
+			}
+		}
+	}
+	else
+	{
+		const QStringList inputFormats = encoderInfo.supportedInputFormats();
+		if(!inputFormats.contains(sourceFile.suffix(), Qt::CaseInsensitive))
+		{
+			if(QMessageBox::warning(this, tr("Unsupported input format"), tr("<nobr>The selected encoder does <b>not</b> support the selected input format!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+			{
+				return;
+			}
 		}
 	}
 
+
 	//Is output file extension supported by encoder?
+	const QStringList outputFormats = encoderInfo.supportedOutputFormats();
 	QFileInfo outputFile = QFileInfo(this->outputFile());
-	if((outputFile.suffix().compare("264", Qt::CaseInsensitive) == 0) && (ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265))
+	if(!outputFormats.contains(outputFile.suffix(), Qt::CaseInsensitive))
 	{
-		QMessageBox::warning(this, tr("H.264 unsupported!"), tr("<nobr>Sorry, x265 cannot output H.264/AVC files!</nobr>"));
-		ui->editOutput->setText(QString("%1/%2.hevc").arg(outputFile.absolutePath(), outputFile.completeBaseName()));
-		return;
-	}
-	else if((outputFile.suffix().compare("HEVC", Qt::CaseInsensitive) == 0) && (ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X264))
-	{
-		QMessageBox::warning(this, tr("H.264 unsupported!"), tr("<nobr>Sorry, x264 cannot output H.265/HEVC files!</nobr>"));
-		ui->editOutput->setText(QString("%1/%2.264").arg(outputFile.absolutePath(), outputFile.completeBaseName()));
+		QMessageBox::warning(this, tr("Unsupported output format"), tr("<nobr>Sorry, the selected encoder does not support the selected output format!</nobr>"));
+		ui->editOutput->setText(QDir::toNativeSeparators(QString("%1/%2.%3").arg(outputFile.absolutePath(), outputFile.completeBaseName(), outputFormats.first())));
 		return;
 	}
 
@@ -1119,4 +1137,18 @@ QString AddJobDialog::getInputFilterLst(void)
 		
 	filters << QString("All files (*.*)");
 	return filters.join(";;");
+}
+
+const AbstractEncoderInfo& AddJobDialog::getEncoderInfo(const int &encoder)
+{
+	switch(encoder)
+	{
+	case OptionsModel::EncType_X264:
+		return X264Encoder::getEncoderInfo();
+	case OptionsModel::EncType_X265:
+		return X265Encoder::getEncoderInfo();
+		break;
+	default:
+		THROW("Unsupported encoder type!");
+	}
 }

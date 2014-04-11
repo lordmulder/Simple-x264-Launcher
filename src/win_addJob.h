@@ -27,6 +27,7 @@ class OptionsModel;
 class RecentlyUsed;
 class SysinfoModel;
 class PreferencesModel;
+class AbstractEncoderInfo;
 class QComboBox;
 
 namespace Ui
@@ -59,6 +60,7 @@ public:
 	static QString AddJobDialog::getFilterStr(const int filterIndex);
 	static QString getFilterLst(void);
 	static QString getInputFilterLst(void);
+	const AbstractEncoderInfo& getEncoderInfo(const int &encoder);
 
 protected:
 	OptionsModel *const m_options;

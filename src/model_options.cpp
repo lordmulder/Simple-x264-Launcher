@@ -33,6 +33,19 @@
 #define COMPARE_STR(OTHER, NAME) ((this->NAME).compare((model->NAME), Qt::CaseInsensitive) == 0)
 #define ASSIGN_FROM(OTHER, NAME) ((this->NAME) = (OTHER.NAME))
 
+//Template keys
+static const char *KEY_ENCODER_TYPE    = "encoder_type";
+static const char *KEY_ENCODER_ARCH    = "encoder_arch";
+static const char *KEY_ENCODER_VARIANT = "encoder_variant";
+static const char *KEY_RATECTRL_MODE   = "rate_control_mode";
+static const char *KEY_TARGET_BITRATE  = "target_bitrate";
+static const char *KEY_TARGET_QUANT    = "target_quantizer";
+static const char *KEY_PRESET_NAME     = "preset_name";
+static const char *KEY_TUNING_NAME     = "tuning_name";
+static const char *KEY_PROFILE_NAME    = "profile_name";
+static const char *KEY_CUSTOM_ENCODER  = "custom_params_encoder";
+static const char *KEY_CUSTOM_AVS2YUV  = "custom_params_avs2yuv";
+
 OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 {
 	m_encoderType = EncType_X264;
@@ -120,18 +133,18 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	settings.beginGroup(templateName);
-	
-	settings.setValue("encoder_type", model->m_encoderType);
-	settings.setValue("encoder_arch", model->m_encoderArch);
-	settings.setValue("encoder_variant", model->m_encoderVariant);
-	settings.setValue("rate_control_mode", model->m_rcMode);
-	settings.setValue("target_bitrate", model->m_bitrate);
-	settings.setValue("target_quantizer", model->m_quantizer);
-	settings.setValue("preset_name", model->m_preset);
-	settings.setValue("tuning_name", model->m_tune);
-	settings.setValue("profile_name", model->m_profile);
-	settings.setValue("custom_params_encoder", model->m_custom_encoder);
-	settings.setValue("custom_params_avs2yuv", model->m_custom_avs2yuv);
+
+	settings.setValue(KEY_ENCODER_TYPE,    model->m_encoderType);
+	settings.setValue(KEY_ENCODER_ARCH,    model->m_encoderArch);
+	settings.setValue(KEY_ENCODER_VARIANT, model->m_encoderVariant);
+	settings.setValue(KEY_RATECTRL_MODE,   model->m_rcMode);
+	settings.setValue(KEY_TARGET_BITRATE,  model->m_bitrate);
+	settings.setValue(KEY_TARGET_QUANT,    model->m_quantizer);
+	settings.setValue(KEY_PRESET_NAME,     model->m_preset);
+	settings.setValue(KEY_TUNING_NAME,     model->m_tune);
+	settings.setValue(KEY_PROFILE_NAME,    model->m_profile);
+	settings.setValue(KEY_CUSTOM_ENCODER,  model->m_custom_encoder);
+	settings.setValue(KEY_CUSTOM_AVS2YUV,  model->m_custom_avs2yuv);
 	
 	settings.endGroup();
 	settings.sync();
@@ -152,38 +165,44 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	settings.beginGroup(name);
 
 	//For backward-compatibility
-	if(settings.contains("custom_params"))
+	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };
+	for(int i = 0; legacyKey[i]; i++)
 	{
-		settings.setValue("custom_params_x264", settings.value("custom_params"));
-		settings.remove("custom_params"); settings.sync();
+		if(settings.contains(legacyKey[i]))
+		{
+			settings.setValue(KEY_CUSTOM_ENCODER, settings.value(legacyKey[i]));
+			settings.remove(legacyKey[i]);
+			settings.sync();
+		}
 	}
 
 	bool complete = true;
-	if(!settings.contains("encoder_type")) complete = false;
-	if(!settings.contains("encoder_arch")) complete = false;
-	if(!settings.contains("encoder_variant")) complete = false;
-	if(!settings.contains("rate_control_mode")) complete = false;
-	if(!settings.contains("target_bitrate")) complete = false;
-	if(!settings.contains("target_quantizer")) complete = false;
-	if(!settings.contains("preset_name")) complete = false;
-	if(!settings.contains("tuning_name")) complete = false;
-	if(!settings.contains("profile_name")) complete = false;
-	if(!settings.contains("custom_params_encoder")) complete = false;
-	if(!settings.contains("custom_params_avs2yuv")) complete = false;
+
+	if(!settings.contains(KEY_ENCODER_TYPE))    complete = false;
+	if(!settings.contains(KEY_ENCODER_ARCH))    complete = false;
+	if(!settings.contains(KEY_ENCODER_VARIANT)) complete = false;
+	if(!settings.contains(KEY_RATECTRL_MODE))   complete = false;
+	if(!settings.contains(KEY_TARGET_BITRATE))  complete = false;
+	if(!settings.contains(KEY_TARGET_QUANT))    complete = false;
+	if(!settings.contains(KEY_PRESET_NAME))     complete = false;
+	if(!settings.contains(KEY_TUNING_NAME))     complete = false;
+	if(!settings.contains(KEY_PROFILE_NAME))    complete = false;
+	if(!settings.contains(KEY_CUSTOM_ENCODER))  complete = false;
+	if(!settings.contains(KEY_CUSTOM_AVS2YUV))  complete = false;
 
 	if(complete)
 	{
-		model->setEncType(static_cast<OptionsModel::EncType>(settings.value("encoder_type", model->m_encoderType).toInt()));
-		model->setEncArch(static_cast<OptionsModel::EncArch>(settings.value("encoder_arch", model->m_encoderArch).toInt()));
-		model->setEncVariant(static_cast<OptionsModel::EncVariant>(settings.value("encoder_variant", model->m_encoderVariant).toInt()));
-		model->setRCMode(static_cast<OptionsModel::RCMode>(settings.value("rate_control_mode", model->m_rcMode).toInt()));
-		model->setBitrate(settings.value("target_bitrate", model->m_bitrate).toUInt());
-		model->setQuantizer(settings.value("target_quantizer", model->m_quantizer).toDouble());
-		model->setPreset(settings.value("preset_name", model->m_preset).toString());
-		model->setTune(settings.value("tuning_name", model->m_tune).toString());
-		model->setProfile(settings.value("profile_name", model->m_profile).toString());
-		model->setCustomEncParams(settings.value("custom_params_x264", model->m_custom_encoder).toString());
-		model->setCustomAvs2YUV(settings.value("custom_params_avs2yuv", model->m_custom_avs2yuv).toString());
+		model->setEncType        (static_cast<OptionsModel::EncType>   (settings.value(KEY_ENCODER_TYPE,    model->m_encoderType)   .toInt()));
+		model->setEncArch        (static_cast<OptionsModel::EncArch>   (settings.value(KEY_ENCODER_ARCH,    model->m_encoderArch)   .toInt()));
+		model->setEncVariant     (static_cast<OptionsModel::EncVariant>(settings.value(KEY_ENCODER_VARIANT, model->m_encoderVariant).toInt()));
+		model->setRCMode         (static_cast<OptionsModel::RCMode>    (settings.value(KEY_RATECTRL_MODE,   model->m_rcMode)        .toInt()));
+		model->setBitrate        (settings.value(KEY_TARGET_BITRATE, model->m_bitrate).toUInt()         );
+		model->setQuantizer      (settings.value(KEY_TARGET_QUANT,   model->m_quantizer).toDouble()     );
+		model->setPreset         (settings.value(KEY_PRESET_NAME,    model->m_preset).toString()        );
+		model->setTune           (settings.value(KEY_TUNING_NAME,    model->m_tune).toString()          );
+		model->setProfile        (settings.value(KEY_PROFILE_NAME,   model->m_profile).toString()       );
+		model->setCustomEncParams(settings.value(KEY_CUSTOM_ENCODER, model->m_custom_encoder).toString());
+		model->setCustomAvs2YUV  (settings.value(KEY_CUSTOM_AVS2YUV, model->m_custom_avs2yuv).toString());
 	}
 
 	settings.endGroup();

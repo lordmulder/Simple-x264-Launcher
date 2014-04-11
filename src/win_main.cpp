@@ -176,8 +176,8 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 
 	//Setup web-links
 	SETUP_WEBLINK(ui->actionWebMulder,          home_url);
-	SETUP_WEBLINK(ui->actionWebX264,            "http://www.x264.com/");
-	SETUP_WEBLINK(ui->actionWebX265,            "http://www.x265.org/");
+	SETUP_WEBLINK(ui->actionWebX264,            "http://www.videolan.org/developers/x264.html");
+	SETUP_WEBLINK(ui->actionWebX265,            "http://www.videolan.org/developers/x265.html");
 	SETUP_WEBLINK(ui->actionWebKomisar,         "http://komisar.gin.by/");
 	SETUP_WEBLINK(ui->actionWebVideoLAN,        "http://download.videolan.org/pub/x264/binaries/");
 	SETUP_WEBLINK(ui->actionWebJEEB,            "http://x264.fushizen.eu/");

@@ -144,8 +144,6 @@ void AvisynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStri
 
 void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen)
 {
-	qWarning("parseLine \"%1\"", line.toUtf8().constData());
-
 	int offset = -1;
 
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)

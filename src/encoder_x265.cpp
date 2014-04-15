@@ -31,8 +31,8 @@
 #include <QRegExp>
 
 //x265 version info
-static const unsigned int X265_VERSION_X264_MINIMUM_VER = 9;
-static const unsigned int X265_VERSION_X264_MINIMUM_REV = 29;
+static const unsigned int VERSION_X265_MINIMUM_VER = 9;
+static const unsigned int VERSION_X265_MINIMUM_REV = 29;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -97,6 +97,20 @@ public:
 		extLst << "hevc";
 		return extLst;
 	}
+
+	virtual bool isRCModeSupported(const int rcMode) const
+	{
+		switch(rcMode)
+		{
+		case OptionsModel::RCMode_CRF:
+		case OptionsModel::RCMode_CQ:
+		case OptionsModel::RCMode_ABR:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 };
 
 static const X265EncoderInfo s_x265EncoderInfo;
@@ -171,10 +185,15 @@ bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 	const unsigned int ver = (revision / REV_MULT);
 	const unsigned int rev = (revision % REV_MULT);
 
-	if((ver < X265_VERSION_X264_MINIMUM_VER) || (rev < X265_VERSION_X264_MINIMUM_REV))
+	if((ver < VERSION_X265_MINIMUM_VER) || ((ver == VERSION_X265_MINIMUM_VER) && (rev < VERSION_X265_MINIMUM_REV)))
 	{
-		log(tr("\nERROR: Your version of x265 is too old! (Minimum required revision is 0.%1+%2)").arg(QString::number(X265_VERSION_X264_MINIMUM_VER), QString::number(X265_VERSION_X264_MINIMUM_REV)));
+		log(tr("\nERROR: Your version of x265 is too old! (Minimum required revision is 0.%1+%2)").arg(QString::number(VERSION_X265_MINIMUM_VER), QString::number(VERSION_X265_MINIMUM_REV)));
 		return false;
+	}
+	else if(ver > VERSION_X265_MINIMUM_VER)
+	{
+		log(tr("\nWARNING: Your version of x265 is newer than the latest tested version, take care!"));
+		log(tr("This application works best with x265 version %1. Newer versions may work or not.").arg(QString::number(VERSION_X265_MINIMUM_VER)));
 	}
 	
 	return true;

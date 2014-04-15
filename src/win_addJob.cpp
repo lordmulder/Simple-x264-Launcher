@@ -501,6 +501,21 @@ void AddJobDialog::accept(void)
 	//Get encoder info
 	const AbstractEncoderInfo &encoderInfo = getEncoderInfo(ui->cbxEncoderType->currentIndex());
 
+	//Is selected RC mode supported?
+	if(!encoderInfo.isRCModeSupported(ui->cbxRateControlMode->currentIndex()))
+	{
+		QMessageBox::warning(this, tr("Bad RC Mode!"), tr("<nobr>The selected RC mode is not supported by the selected encoder!</nobr>"));
+		for(int i = 0; i < ui->cbxRateControlMode->count(); i++)
+		{
+			if(encoderInfo.isRCModeSupported(i))
+			{
+				ui->cbxRateControlMode->setCurrentIndex(i);
+				break;
+			}
+		}
+		return;
+	}
+
 	//Is the type of the source file supported? (as far as we can tell)
 	if(sourceFile.suffix().compare("AVS", Qt::CaseInsensitive) == 0)
 	{

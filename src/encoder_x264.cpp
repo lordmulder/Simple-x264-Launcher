@@ -30,8 +30,8 @@
 #include <QRegExp>
 
 //x264 version info
-static const unsigned int X264_VERSION_X264_MINIMUM_REV = 2397;
-static const unsigned int X264_VERSION_X264_CURRENT_API = 142;
+static const unsigned int VERSION_X264_MINIMUM_REV = 2397;
+static const unsigned int VERSION_X264_CURRENT_API = 142;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -108,6 +108,20 @@ public:
 		extLst << "mkv";
 		extLst << "mp4";
 		return extLst;
+	}
+
+	virtual bool isRCModeSupported(const int rcMode) const
+	{
+		switch(rcMode)
+		{
+		case OptionsModel::RCMode_CRF:
+		case OptionsModel::RCMode_CQ:
+		case OptionsModel::RCMode_2Pass:
+		case OptionsModel::RCMode_ABR:
+			return true;
+		default:
+			return false;
+		}
 	}
 };
 
@@ -196,16 +210,19 @@ QString X264Encoder::printVersion(const unsigned int &revision, const bool &modi
 
 bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	if((revision % REV_MULT) < X264_VERSION_X264_MINIMUM_REV)
+	const unsigned int ver = (revision / REV_MULT);
+	const unsigned int rev = (revision % REV_MULT);
+
+	if((rev % REV_MULT) < VERSION_X264_MINIMUM_REV)
 	{
-		log(tr("\nERROR: Your revision of x264 is too old! (Minimum required revision is %1)").arg(QString::number(X264_VERSION_X264_MINIMUM_REV)));
+		log(tr("\nERROR: Your revision of x264 is too old! Minimum required revision is %1.").arg(QString::number(VERSION_X264_MINIMUM_REV)));
 		return false;
 	}
 	
-	if((revision / REV_MULT) != X264_VERSION_X264_CURRENT_API)
+	if(ver != VERSION_X264_CURRENT_API)
 	{
-		log(tr("\nWARNING: Your revision of x264 uses an unsupported core (API) version, take care!"));
-		log(tr("This application works best with x264 core (API) version %2.").arg(QString::number(X264_VERSION_X264_CURRENT_API)));
+		log(tr("\nWARNING: Your x264 binary uses an untested core (API) version, take care!"));
+		log(tr("This application works best with x264 core (API) version %1. Newer versions may work or not.").arg(QString::number(VERSION_X264_CURRENT_API)));
 	}
 
 	return true;

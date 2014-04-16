@@ -175,6 +175,7 @@ pushd "%PACK_PATH%"
 popd
 
 if not "%ERRORLEVEL%"=="0" goto BuildError
+attrib +R "%OUT_PATH%.zip"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Clean up

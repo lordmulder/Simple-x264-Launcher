@@ -703,58 +703,8 @@
                 <string>This option tweaks the encoder for a specific type of content of for a specific application scenario. Make sure you pick the Tuning that matches your type of source best!</string>
                </property>
                <property name="currentIndex">
-                <number>1</number>
+                <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>None</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Film</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Animation</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Grain</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Stillimage</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>PSNR</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>SSIM</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Fastdecode</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Zerolatency</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Touhou</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>

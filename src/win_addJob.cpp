@@ -161,7 +161,7 @@ protected:
 				if(m_icon) { if(m_icon->isHidden()) m_icon->show(); }
 				if(QWidget *w = m_notifier->topLevelWidget()->focusWidget())
 				{
-					QToolTip::showText(static_cast<QWidget*>(w->parent())->mapToGlobal(w->pos()), QString("<nobr>%1</nobr>").arg(tr("<b>Warning:</b> You entered a parameter that is incomaptible with using %1 from a GUI.<br>Please note that the GUI will automatically set <i>this</i> parameter for you (if required).").arg(toolName)), m_notifier, QRect());
+					QToolTip::showText(static_cast<QWidget*>(w->parent())->mapToGlobal(w->pos()), tr("<b>Warning:</b> You entered a parameter that is forbidden. Please note that the GUI will automatically set <i>this</i> parameter for you (if required)."), m_notifier, QRect());
 				}
 			}
 		}
@@ -195,7 +195,7 @@ public:
 			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), true);
 		}
 
-		return setStatus(invalid, "x264") ? QValidator::Intermediate : QValidator::Acceptable;
+		return setStatus(invalid, "encoder") ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 };
 
@@ -245,6 +245,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	setMaximumHeight(height());
 
 	//Init combobox items
+	ui->cbxTuning ->addItem(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
 	ui->cbxProfile->addItem(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
 
 	//Hide optional controls
@@ -443,6 +444,21 @@ void AddJobDialog::encoderIndexChanged(int index)
 	//Update encoder variants
 	ui->cbxEncoderVariant->setItemText(OptionsModel::EncVariant_LoBit, encoderInfo.getVariantId(OptionsModel::EncVariant_LoBit));
 	ui->cbxEncoderVariant->setItemText(OptionsModel::EncVariant_HiBit, encoderInfo.getVariantId(OptionsModel::EncVariant_HiBit));
+
+	//Update tunings
+	QStringList tunings = encoderInfo.getTunings();
+	if(tunings.empty())
+	{
+		ui->cbxTuning->setEnabled(false);
+		ui->cbxTuning->setCurrentIndex(0);
+	}
+	else
+	{
+		ui->cbxTuning->setEnabled(true);
+		ui->cbxTuning->clear();
+		ui->cbxTuning->addItem(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+		ui->cbxTuning->addItems(tunings);
+	}
 
 	variantIndexChanged(ui->cbxEncoderVariant->currentIndex());
 }
@@ -724,11 +740,27 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	forever
 	{
 		bool ok = false;
-		name = QInputDialog::getText(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(144, ' '), QLineEdit::Normal, name, &ok).simplified();
+		
+		QStringList items;
+		items << name;
+		for(int i = 0; i < ui->cbxTemplate->count(); i++)
+		{
+			const QString tempName = ui->cbxTemplate->itemText(i);
+			if(!(tempName.contains('<') || tempName.contains('>')))
+			{
+				items << tempName;
+			}
+		}
+		
+		name = QInputDialog::getItem(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(144, ' '), items, 0, true, &ok).simplified();
 		if(!ok)
 		{
 			X264_DELETE(options);
 			return;
+		}
+		if(name.isEmpty())
+		{
+			continue;
 		}
 		if(name.contains('<') || name.contains('>') || name.contains('\\') || name.contains('/') || name.contains('"'))
 		{

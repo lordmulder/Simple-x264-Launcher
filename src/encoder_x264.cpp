@@ -97,6 +97,17 @@ public:
 		}
 	}
 
+	virtual QStringList getTunings(void) const
+	{
+		QStringList tunings;
+
+		tunings << "Film"       << "Animation"   << "Grain";
+		tunings << "StillImage" << "PSNR"        << "SSIM";
+		tunings << "FastDecode" << "ZeroLatency" << "Touhou";
+		
+		return tunings;
+	}
+
 	virtual QStringList getProfiles(const int &variant) const
 	{
 		QStringList profiles;
@@ -116,27 +127,16 @@ public:
 	virtual QStringList supportedInputFormats(void) const
 	{
 		QStringList extLst;
-		extLst << "avi";
-		extLst << "mp4";
-		extLst << "mkv";
-		extLst << "flv";
-		extLst << "mpg";
-		extLst << "m2v";
-		extLst << "m2ts";
-		extLst << "ts";
-		extLst << "wmv";
-		extLst << "ogm";
-		extLst << "vob";
-		extLst << "y4m";
+		extLst << "avi" << "mp4" << "mkv" << "flv";
+		extLst << "mpg" << "m2v" << "m2ts" << "ts";
+		extLst << "wmv" << "ogm" << "vob" << "y4m";
 		return extLst;
 	}
 
 	virtual QStringList supportedOutputFormats(void) const
 	{
 		QStringList extLst;
-		extLst << "264";
-		extLst << "mkv";
-		extLst << "mp4";
+		extLst << "264" << "mkv" << "mp4";
 		return extLst;
 	}
 
@@ -291,9 +291,12 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 
 	cmdLine << "--preset" << m_options->preset().toLower();
 
-	if(m_options->tune().compare("none", Qt::CaseInsensitive))
+	if(!m_options->tune().simplified().isEmpty())
 	{
-		cmdLine << "--tune" << m_options->tune().toLower();
+		if(m_options->tune().simplified().compare(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED), Qt::CaseInsensitive) != 0)
+		{
+			cmdLine << "--tune" << m_options->tune().simplified().toLower();
+		}
 	}
 
 	if(!m_options->profile().simplified().isEmpty())

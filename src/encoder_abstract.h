@@ -32,6 +32,7 @@ class AbstractEncoderInfo
 public:
 	virtual QString getVariantId(const int &variant)    const = 0;
 	virtual QStringList getProfiles(const int &variant) const = 0;
+	virtual QStringList getTunings(void)                const = 0;
 	virtual QStringList supportedInputFormats(void)     const = 0;
 	virtual QStringList supportedOutputFormats(void)    const = 0;
 	virtual bool isRCModeSupported(const int rcMode)    const = 0;

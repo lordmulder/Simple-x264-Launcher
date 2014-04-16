@@ -46,6 +46,7 @@ static const char *KEY_PROFILE_NAME    = "profile_name";
 static const char *KEY_CUSTOM_ENCODER  = "custom_params_encoder";
 static const char *KEY_CUSTOM_AVS2YUV  = "custom_params_avs2yuv";
 
+const char *const OptionsModel::TUNING_UNSPECIFIED   = "<None>";
 const char *const OptionsModel::PROFILE_UNRESTRICTED = "<Unrestricted>";
 
 OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
@@ -57,7 +58,7 @@ OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 	m_bitrate = 1200;
 	m_quantizer = 22;
 	m_preset = "Medium";
-	m_tune = "None";
+	m_tune = QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED);
 	m_profile = QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED);
 	m_custom_encoder = QString();
 	m_custom_avs2yuv = QString();

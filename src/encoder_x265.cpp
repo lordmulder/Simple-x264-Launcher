@@ -97,6 +97,13 @@ public:
 		}
 	}
 
+	virtual QStringList getTunings(void) const
+	{
+		QStringList tunings;
+		tunings << "SSIM" << "FastDecode" << "ZeroLatency";
+		return tunings;
+	}
+
 	virtual QStringList getProfiles(const int &variant) const
 	{
 		return QStringList();
@@ -251,9 +258,12 @@ void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 
 	cmdLine << "--preset" << m_options->preset().toLower();
 
-	if(m_options->tune().compare("none", Qt::CaseInsensitive))
+	if(!m_options->tune().simplified().isEmpty())
 	{
-		cmdLine << "--tune" << m_options->tune().toLower();
+		if(m_options->tune().simplified().compare(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED), Qt::CaseInsensitive) != 0)
+		{
+			cmdLine << "--tune" << m_options->tune().simplified().toLower();
+		}
 	}
 
 	if(m_options->profile().compare("auto", Qt::CaseInsensitive) != 0)

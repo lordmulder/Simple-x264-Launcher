@@ -60,6 +60,7 @@ public:
 		RCMode_ABR = 3,
 	};
 
+	static const char *const TUNING_UNSPECIFIED;
 	static const char *const PROFILE_UNRESTRICTED;
 
 	//Getter

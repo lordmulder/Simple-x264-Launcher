@@ -55,7 +55,7 @@
           <item>
            <widget class="QLineEdit" name="editSource">
             <property name="toolTip">
-             <string>Select the source video file. This can be an Avisynth/VapourSynth script or any type of video file supported by FFmpegSource2 (libavformat).</string>
+             <string>Select the source video file. This can be an Avisynth or VapourSynth script. Alternatively, you can select any type of video file supported &quot;natively&quot; by the selected encoder.</string>
             </property>
             <property name="readOnly">
              <bool>true</bool>
@@ -90,7 +90,7 @@
            <string>Select the output H.264/AVC file. This can be a Matroska (MKV,) MPEG-4 Part-14 (MP4) or &quot;raw&quot; H.264 file.</string>
           </property>
           <property name="text">
-           <string>Output H.264/MP4/MKV File:</string>
+           <string>Output H.264/HEVC/MP4/MKV File:</string>
           </property>
          </widget>
         </item>
@@ -99,7 +99,7 @@
           <item>
            <widget class="QLineEdit" name="editOutput">
             <property name="toolTip">
-             <string>Select the output H.264/AVC file. This can be a Matroska (MKV,) MPEG-4 Part-14 (MP4) or &quot;raw&quot; H.264 file.</string>
+             <string>Select the output file. This can be a Matroska (MKV), MPEG-4 Part-14 (MP4) or a &quot;raw&quot; stream (H.264/HEVC).</string>
             </property>
             <property name="readOnly">
              <bool>true</bool>
@@ -162,7 +162,7 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>Here you can load a user-defined template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new template.</string>
+           <string>Here you can load a &lt;i&gt;user-defined&lt;/i&gt; template that you have saved before. Use the &quot;Save As&quot; button to save your current configuration to a new template.</string>
           </property>
           <property name="currentIndex">
            <number>-1</number>
@@ -247,6 +247,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxEncoderType">
+               <property name="toolTip">
+                <string>Choose the &lt;b&gt;encoder&lt;/b&gt; to be used (e.g. x264 vs. x265). This also decides which output &lt;i&gt;format&lt;/i&gt; you will get (e.g. H.264 vs. HEVC).</string>
+               </property>
                <item>
                 <property name="text">
                  <string>x264 (AVC)</string>
@@ -291,6 +294,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxEncoderArch">
+               <property name="toolTip">
+                <string>Choose the &lt;b&gt;architecture&lt;/b&gt; of the encoder (e.g. 32-Bit vs. 64-Bit). Generally the &quot;native&quot; architecture of your system should give the best performance.</string>
+               </property>
                <property name="currentIndex">
                 <number>1</number>
                </property>
@@ -338,6 +344,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="cbxEncoderVariant">
+               <property name="toolTip">
+                <string>Choose the &lt;b&gt;variant&lt;/b&gt; of the encoder (e.g. 8-Bit vs. 10-Bit). If you don't know which variant you need, stick with the &lt;i&gt;default&lt;/i&gt; one!</string>
+               </property>
                <item>
                 <property name="text">
                  <string>8-Bit</string>
@@ -405,7 +414,7 @@
              <item>
               <widget class="QComboBox" name="cbxRateControlMode">
                <property name="toolTip">
-                <string>Select the x264 rate-control mode. Use 'CRF' mode to hit a specific level of quality or use '2-Pass' mode to hit a specific file size.</string>
+                <string>Select the &lt;b&gt;rate-control&lt;/b&gt; mode. Use &lt;i&gt;CRF&lt;/i&gt; mode in order to hit a specific level of quality. Or use &lt;i&gt;2-Pass&lt;/i&gt; mode in order to hit a specific file size.</string>
                </property>
                <property name="currentIndex">
                 <number>0</number>
@@ -468,7 +477,7 @@
              <item>
               <widget class="QDoubleSpinBox" name="spinQuantizer">
                <property name="toolTip">
-                <string>Select the quantizer or CRF value. Smaller value means better quality, but bigger file. Higher value means smaller file, but lower quality. A value of '0' triggers lossless mode.</string>
+                <string>Select the &lt;b&gt;quantizer&lt;/b&gt; or the &lt;b&gt;CRF&lt;/b&gt; value. Smaller values result in better quality, at the cost of increased file size. Higher values result in smaller files, at the cost of reduced quality. A value of &lt;b&gt;0&lt;/b&gt; triggers &lt;i&gt;lossless&lt;/i&gt; mode.</string>
                </property>
                <property name="decimals">
                 <number>1</number>
@@ -517,7 +526,7 @@
              <item>
               <widget class="QSpinBox" name="spinBitrate">
                <property name="toolTip">
-                <string>Select the target average(!) bitrate, in kilobit/sec. Higher value means better quality, but bigger file. Lower value means smaller file, but lower quality.</string>
+                <string>Select the target &lt;b&gt;average&lt;/b&gt; bitrate, in kilobit per second (kbps). Higher values result in better quality, at the cost of increased file size. Lower values result in smaller files, at the cost of reduced quality.</string>
                </property>
                <property name="minimum">
                 <number>10</number>
@@ -598,7 +607,7 @@
              <item>
               <widget class="QComboBox" name="cbxPreset">
                <property name="toolTip">
-                <string>This option controls the &quot;Speed -vs- Quality&quot; trade-off. Use a slower preset to improve the quality at the same bitrate (file size). Use a faster preset to save encoding time, at the cost of reduced quality.</string>
+                <string>This option controls the &quot;Speed -vs- Quality&quot; trade-off of the encoder. Use a &lt;i&gt;slower&lt;/i&gt; Preset in order to improve the quality at the same bitrate (file size), at the cost of increased encoding time. Or use a &lt;i&gt;faster&lt;/i&gt; Preset in order to save encoding time, at the cost of reduced quality.</string>
                </property>
                <property name="currentIndex">
                 <number>5</number>
@@ -691,7 +700,7 @@
              <item>
               <widget class="QComboBox" name="cbxTuning">
                <property name="toolTip">
-                <string>This option tweaks x264 for a specific type of source/content. For real-life footage, CGI and most other stuff, use the &quot;Film&quot; option. For anime/cartoon use the &quot;Animation&quot; option.</string>
+                <string>This option tweaks the encoder for a specific type of content of for a specific application scenario. Make sure you pick the Tuning that matches your type of source best!</string>
                </property>
                <property name="currentIndex">
                 <number>1</number>
@@ -784,46 +793,11 @@
              <item>
               <widget class="QComboBox" name="cbxProfile">
                <property name="toolTip">
-                <string>This option can be used to enforce the restrictions of a specific H.264/AVC Proifle, though it won't force a higher profile than needed. Use &quot;Auto&quot; for an unrestricted encode.</string>
+                <string>This option can be used to enforce the &lt;i&gt;restrictions&lt;/i&gt; of a specific Profile, but it won't force a higher Profile than what is needed. &lt;i&gt;Unrestricted&lt;/i&gt; mode is recommended, unless you know with certainty that you need to enforce a specific Profile.</string>
                </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>Auto</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Baseline</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Main</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>High</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>High10</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>High422</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>High444</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>
@@ -1073,7 +1047,7 @@
               <enum>Qt::ActionsContextMenu</enum>
              </property>
              <property name="toolTip">
-              <string>&lt;nobr&gt;All command&amp;minus;line parameters you enter here will be passed to x264 unmodified and unchecked. Some parameters are forbidden, as they are reserved for the GUI.&lt;br&gt;The following macros can be used:&lt;tt&gt; $(INPUT)&lt;/tt&gt; expands to the current source file path and&lt;tt&gt; $(OUTPUT)&lt;/tt&gt; expands to the current output file path.&lt;/nobr&gt;</string>
+              <string>Here you can enter &lt;i&gt;additional&lt;/i&gt; parameters to be passed to the encoder. All command-line parameters you enter here will be passed to the encoder &lt;i&gt;unmodified&lt;/i&gt; and completely &lt;i&gt;unchecked&lt;/i&gt;. Some parameters are forbidden, as they are reserved for the GUI. Furthermore, the following macros can be used:&lt;tt&gt; $(INPUT)&lt;/tt&gt; expands to the current source file path and&lt;tt&gt; $(OUTPUT)&lt;/tt&gt; expands to the current output file path.</string>
              </property>
              <property name="placeholderText">
               <string>You can enter custom command-line options here...</string>
@@ -1287,7 +1261,7 @@
               <enum>Qt::ActionsContextMenu</enum>
              </property>
              <property name="toolTip">
-              <string>All command-line parameters you enter here will be passed to Avs2YUV unmodified and unchecked. Only relevant for Avisynth input!</string>
+              <string>Here you can enter &lt;i&gt;additional&lt;/i&gt; parameters to be passed to Avs2YUV. All command-line parameters you enter here will be passed to Avs2YUV &lt;i&gt;unmodified&lt;/i&gt; and completely &lt;i&gt;unchecked&lt;/i&gt;. Only relevant for Avisynth input!</string>
              </property>
              <property name="placeholderText">
               <string>You can enter custom command-line options here...</string>

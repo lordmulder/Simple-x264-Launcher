@@ -84,6 +84,35 @@ static QString MAKE_NAME(const char *baseName, const OptionsModel *options)
 class X264EncoderInfo : public AbstractEncoderInfo
 {
 public:
+	virtual QString getVariantId(const int &variant) const
+	{
+		switch(variant)
+		{
+		case OptionsModel::EncVariant_LoBit:
+			return QString::fromLatin1("8-Bit");
+		case OptionsModel::EncVariant_HiBit:
+			return QString::fromLatin1("10-Bit");
+		default:
+			return QString::fromLatin1("N/A");
+		}
+	}
+
+	virtual QStringList getProfiles(const int &variant) const
+	{
+		QStringList profiles;
+
+		if(variant == OptionsModel::EncVariant_LoBit)
+		{
+			profiles << "Baseline" << "Main" << "High";
+		}
+		if((variant == OptionsModel::EncVariant_LoBit) || (variant == OptionsModel::EncVariant_HiBit))
+		{
+			profiles << "High10" << "High422" << "High444";
+		}
+
+		return profiles;
+	}
+
 	virtual QStringList supportedInputFormats(void) const
 	{
 		QStringList extLst;
@@ -267,11 +296,11 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 		cmdLine << "--tune" << m_options->tune().toLower();
 	}
 
-	if(m_options->profile().compare("auto", Qt::CaseInsensitive) != 0)
+	if(!m_options->profile().simplified().isEmpty())
 	{
-		if((m_options->encType() == OptionsModel::EncType_X264) && (m_options->encVariant() == OptionsModel::EncVariant_LoBit))
+		if(m_options->profile().simplified().compare(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED), Qt::CaseInsensitive) != 0)
 		{
-			cmdLine << "--profile" << m_options->profile().toLower();
+			cmdLine << "--profile" << m_options->profile().simplified().toLower();
 		}
 	}
 

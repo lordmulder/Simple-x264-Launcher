@@ -30,9 +30,11 @@ class AbstractSource;
 class AbstractEncoderInfo
 {
 public:
-	virtual QStringList supportedInputFormats (void) const = 0;
-	virtual QStringList supportedOutputFormats(void) const = 0;
-	virtual bool isRCModeSupported(const int rcMode) const = 0;
+	virtual QString getVariantId(const int &variant)    const = 0;
+	virtual QStringList getProfiles(const int &variant) const = 0;
+	virtual QStringList supportedInputFormats(void)     const = 0;
+	virtual QStringList supportedOutputFormats(void)    const = 0;
+	virtual bool isRCModeSupported(const int rcMode)    const = 0;
 };
 
 class AbstractEncoder : public AbstractTool

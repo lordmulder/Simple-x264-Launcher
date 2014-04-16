@@ -60,6 +60,8 @@ public:
 		RCMode_ABR = 3,
 	};
 
+	static const char *const PROFILE_UNRESTRICTED;
+
 	//Getter
 	EncType encType(void) const { return m_encoderType; }
 	EncArch encArch(void) const { return m_encoderArch; }

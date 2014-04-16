@@ -244,18 +244,21 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	setMinimumSize(size());
 	setMaximumHeight(height());
 
+	//Init combobox items
+	ui->cbxProfile->addItem(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
+
 	//Hide optional controls
 	ui->checkBoxApplyToAll->setVisible(false);
 
 	//Monitor combobox changes
-	connect(ui->cbxEncoderType, SIGNAL(currentIndexChanged(int)), this, SLOT(encoderIndexChanged(int)));
-	connect(ui->cbxEncoderVariant, SIGNAL(currentIndexChanged(int)), this, SLOT(variantIndexChanged(int)));
+	connect(ui->cbxEncoderType,     SIGNAL(currentIndexChanged(int)), this, SLOT(encoderIndexChanged(int)));
+	connect(ui->cbxEncoderVariant,  SIGNAL(currentIndexChanged(int)), this, SLOT(variantIndexChanged(int)));
 	connect(ui->cbxRateControlMode, SIGNAL(currentIndexChanged(int)), this, SLOT(modeIndexChanged(int)));
 
 	//Activate buttons
-	connect(ui->buttonBrowseSource, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
-	connect(ui->buttonBrowseOutput, SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
-	connect(ui->buttonSaveTemplate, SIGNAL(clicked()), this, SLOT(saveTemplateButtonClicked()));
+	connect(ui->buttonBrowseSource,   SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
+	connect(ui->buttonBrowseOutput,   SIGNAL(clicked()), this, SLOT(browseButtonClicked()));
+	connect(ui->buttonSaveTemplate,   SIGNAL(clicked()), this, SLOT(saveTemplateButtonClicked()));
 	connect(ui->buttonDeleteTemplate, SIGNAL(clicked()), this, SLOT(deleteTemplateButtonClicked()));
 
 	//Setup validator
@@ -435,25 +438,34 @@ void AddJobDialog::dropEvent(QDropEvent *event)
 
 void AddJobDialog::encoderIndexChanged(int index)
 {
-	const bool isX265 = (index > 0);
-	const bool noProf = isX265 || (ui->cbxEncoderVariant->currentIndex() > 0);
+	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(ui->cbxEncoderType->currentIndex());
 
-	ui->cbxEncoderVariant->setItemText(1, isX265 ? tr("16-Bit") : tr("10-Bit"));
-	ui->labelProfile->setEnabled(!noProf);
-	ui->cbxProfile->setEnabled(!noProf);
-	if(noProf) ui->cbxProfile->setCurrentIndex(0);
+	//Update encoder variants
+	ui->cbxEncoderVariant->setItemText(OptionsModel::EncVariant_LoBit, encoderInfo.getVariantId(OptionsModel::EncVariant_LoBit));
+	ui->cbxEncoderVariant->setItemText(OptionsModel::EncVariant_HiBit, encoderInfo.getVariantId(OptionsModel::EncVariant_HiBit));
 
 	variantIndexChanged(ui->cbxEncoderVariant->currentIndex());
 }
 
 void AddJobDialog::variantIndexChanged(int index)
 {
-	const bool noProf = (index > 0) || (ui->cbxEncoderType->currentIndex() > 0);
+	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(ui->cbxEncoderType->currentIndex());
 
-	ui->labelProfile->setEnabled(!noProf);
-	ui->cbxProfile->setEnabled(!noProf);
-	if(noProf) ui->cbxProfile->setCurrentIndex(0);
-
+	//Update encoder profiles
+	QStringList profiles = encoderInfo.getProfiles(index);
+	if(profiles.empty())
+	{
+		ui->cbxProfile->setEnabled(false);
+		ui->cbxProfile->setCurrentIndex(0);
+	}
+	else
+	{
+		ui->cbxProfile->setEnabled(true);
+		ui->cbxProfile->clear();
+		ui->cbxProfile->addItem(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
+		ui->cbxProfile->addItems(profiles);
+	}
+	
 	modeIndexChanged(ui->cbxRateControlMode->currentIndex());
 }
 
@@ -551,8 +563,7 @@ void AddJobDialog::accept(void)
 			}
 		}
 	}
-
-
+	
 	//Is output file extension supported by encoder?
 	const QStringList outputFormats = encoderInfo.supportedOutputFormats();
 	QFileInfo outputFile = QFileInfo(this->outputFile());
@@ -660,11 +671,6 @@ void AddJobDialog::templateSelected(void)
 		REMOVE_USAFED_ITEM;
 		restoreOptions(options);
 	}
-
-	//Force updates
-	encoderIndexChanged(ui->cbxEncoderType->currentIndex());
-	variantIndexChanged(ui->cbxEncoderVariant->currentIndex());
-	modeIndexChanged(ui->cbxRateControlMode->currentIndex());
 }
 
 void AddJobDialog::saveTemplateButtonClicked(void)
@@ -922,7 +928,7 @@ void AddJobDialog::loadTemplateList(void)
 
 void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 {
-	int index = -1;
+	int index = 0;
 	if(QAbstractItemModel *model = cbox->model())
 	{
 		for(int i = 0; i < cbox->model()->rowCount(); i++)
@@ -939,12 +945,15 @@ void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 
 void AddJobDialog::restoreOptions(const OptionsModel *options)
 {
-	BLOCK_SIGNALS(true);
+	BLOCK_SIGNALS(false);
 
 	ui->cbxEncoderType->setCurrentIndex(options->encType());
 	ui->cbxEncoderArch->setCurrentIndex(options->encArch());
 	ui->cbxEncoderVariant->setCurrentIndex(options->encVariant());
 	ui->cbxRateControlMode->setCurrentIndex(options->rcMode());
+
+	BLOCK_SIGNALS(true);
+
 	ui->spinQuantizer->setValue(options->quantizer());
 	ui->spinBitrate->setValue(options->bitrate());
 	updateComboBox(ui->cbxPreset, options->preset());
@@ -962,11 +971,14 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 	options->setEncArch(static_cast<OptionsModel::EncArch>(ui->cbxEncoderArch->currentIndex()));
 	options->setEncVariant(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant->currentIndex()));
 	options->setRCMode(static_cast<OptionsModel::RCMode>(ui->cbxRateControlMode->currentIndex()));
+	
 	options->setQuantizer(ui->spinQuantizer->value());
 	options->setBitrate(ui->spinBitrate->value());
-	options->setPreset(ui->cbxPreset->model()->data(ui->cbxPreset->model()->index(ui->cbxPreset->currentIndex(), 0)).toString());
-	options->setTune(ui->cbxTuning->model()->data(ui->cbxTuning->model()->index(ui->cbxTuning->currentIndex(), 0)).toString());
+	
+	options->setPreset (ui->cbxPreset ->model()->data(ui->cbxPreset ->model()->index(ui->cbxPreset ->currentIndex(), 0)).toString());
+	options->setTune   (ui->cbxTuning ->model()->data(ui->cbxTuning ->model()->index(ui->cbxTuning ->currentIndex(), 0)).toString());
 	options->setProfile(ui->cbxProfile->model()->data(ui->cbxProfile->model()->index(ui->cbxProfile->currentIndex(), 0)).toString());
+
 	options->setCustomEncParams(ui->editCustomX264Params->hasAcceptableInput() ? ui->editCustomX264Params->text().simplified() : QString());
 	options->setCustomAvs2YUV(ui->editCustomAvs2YUVParams->hasAcceptableInput() ? ui->editCustomAvs2YUVParams->text().simplified() : QString());
 }

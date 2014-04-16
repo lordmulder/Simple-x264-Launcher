@@ -46,6 +46,8 @@ static const char *KEY_PROFILE_NAME    = "profile_name";
 static const char *KEY_CUSTOM_ENCODER  = "custom_params_encoder";
 static const char *KEY_CUSTOM_AVS2YUV  = "custom_params_avs2yuv";
 
+const char *const OptionsModel::PROFILE_UNRESTRICTED = "<Unrestricted>";
+
 OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 {
 	m_encoderType = EncType_X264;
@@ -56,9 +58,9 @@ OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 	m_quantizer = 22;
 	m_preset = "Medium";
 	m_tune = "None";
-	m_profile = "Auto";
-	m_custom_encoder = "";
-	m_custom_avs2yuv = "";
+	m_profile = QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED);
+	m_custom_encoder = QString();
+	m_custom_avs2yuv = QString();
 }
 
 OptionsModel::OptionsModel(const OptionsModel &rhs)

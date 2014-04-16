@@ -1,4 +1,4 @@
-Simple x264 Launcher - graphical front-end for x264 and x265
+Simple x264/x265 Launcher - graphical front-end for x264 and x265
 Copyright (C) 2004-2014 LoRd_MuldeR <MuldeR2@GMX.de>
 
 

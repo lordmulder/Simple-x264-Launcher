@@ -1105,7 +1105,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 		}
 		break;
 	default:
-		throw std::exception("Unknown command received!");
+		THROW("Unknown command received!");
 	}
 }
 

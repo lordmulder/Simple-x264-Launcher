@@ -23,6 +23,7 @@
 
 #define _CRT_RAND_S
 #include <cstdlib>
+#include <stdexcept>
 
 //Forward declarations
 class QString;
@@ -113,6 +114,17 @@ extern const x264_os_version_t x264_winver_win70;
 extern const x264_os_version_t x264_winver_win80;
 extern const x264_os_version_t x264_winver_win81;
 
+//Exception class
+class X264Exception : public std::runtime_error
+{
+public:
+	X264Exception(const char *message, ...);
+	virtual const char* what() const { return m_message; }
+private:
+	static const size_t MAX_MSGLEN = 256;
+	char m_message[MAX_MSGLEN];
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
@@ -130,7 +142,7 @@ const QString &x264_data_path(void);
 size_t x264_dbg_private_bytes(void);
 x264_cpu_t x264_detect_cpu_features(const int argc, char **argv);
 bool x264_enable_close_button(const QWidget *win, const bool bEnable);
-void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage = NULL);
+void x264_fatal_exit(const wchar_t* exitMessage, const char* errorBoxMessage = NULL);
 void x264_finalization(void);
 void x264_init_console(const int argc, char **argv);
 void x264_init_process(QProcess &process, const QString &wokringDir, const bool bReplaceTempDir = true);
@@ -193,16 +205,9 @@ const char *x264_version_time(void);
 #endif
 
 //Helper macro for throwing exceptions
-#define THROW(MESSAGE) do \
+#define THROW(MESSAGE, ...) do \
 { \
-	throw std::runtime_error((MESSAGE)); \
-} \
-while(0)
-#define THROW_FMT(FORMAT, ...) do \
-{ \
-	char _error_msg[512]; \
-	_snprintf_s(_error_msg, 512, _TRUNCATE, (FORMAT), __VA_ARGS__); \
-	throw std::runtime_error(_error_msg); \
+	throw X264Exception((MESSAGE), __VA_ARGS__); \
 } \
 while(0)
 

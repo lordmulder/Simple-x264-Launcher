@@ -30,7 +30,7 @@ static ITaskbarList3 *s_ptbl = NULL;
 
 WinSevenTaskbar::WinSevenTaskbar(void)
 {
-	throw "Cannot create instance of this class!";
+	THROW("Cannot create instance of this class!");
 }
 
 WinSevenTaskbar::~WinSevenTaskbar(void)

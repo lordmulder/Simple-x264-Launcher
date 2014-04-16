@@ -33,6 +33,8 @@
 */
 
 #include "checksum.h"
+
+#include "global.h"
 #include "3rd_party/blake2.h"
 
 #include <malloc.h>
@@ -49,7 +51,7 @@ class QBlake2ChecksumContext
 	{
 		if(!(state = (blake2b_state*) _aligned_malloc(sizeof(blake2b_state), 64)))
 		{
-			throw std::runtime_error("Aligend malloc has failed!");
+			THROW("Aligend malloc has failed!");
 		}
 		memset(state, 0, sizeof(blake2b_state));
 	}
@@ -89,14 +91,14 @@ void QBlake2Checksum::update(const QByteArray &data)
 {
 	if(m_finalized)
 	{
-		throw std::runtime_error("BLAKE2 was already finalized!");
+		THROW("BLAKE2 was already finalized!");
 	}
 
 	if(data.size() > 0)
 	{
 		if(blake2b_update(m_context->state, (const uint8_t*) data.constData(), data.size()) != 0)
 		{
-			throw std::runtime_error("BLAKE2 internal error!");
+			THROW("BLAKE2 internal error!");
 		}
 	}
 }
@@ -129,7 +131,7 @@ QByteArray QBlake2Checksum::finalize(const bool bAsHex)
 	{
 		if(blake2b_final(m_context->state, (uint8_t*) m_hash.data(), m_hash.size()) != 0)
 		{
-			throw std::runtime_error("BLAKE2 internal error!");
+			THROW("BLAKE2 internal error!");
 		}
 
 		m_finalized = true;

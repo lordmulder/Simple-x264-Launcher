@@ -21,9 +21,9 @@
 
 #include "encoder_x265.h"
 
+#include "global.h"
 #include "model_options.h"
 #include "model_status.h"
-#include "binaries.h"
 #include "binaries.h"
 
 #include <QStringList>
@@ -132,7 +132,7 @@ X265Encoder::X265Encoder(JobObject *jobObject, const OptionsModel *options, cons
 {
 	if(options->encType() != OptionsModel::EncType_X265)
 	{
-		throw "Invalid encoder type!";
+		THROW("Invalid encoder type!");
 	}
 }
 
@@ -221,7 +221,7 @@ void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 		cmdLine << "--bitrate" << QString::number(m_options->bitrate());
 		break;
 	default:
-		throw "Bad rate-control mode !!!";
+		THROW("Bad rate-control mode !!!");
 		break;
 	}
 	
@@ -267,7 +267,7 @@ void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 	
 	if(usePipe)
 	{
-		if(frames < 1) throw "Frames not set!";
+		if(frames < 1) THROW("Frames not set!");
 		cmdLine << "--frames" << QString::number(frames);
 		cmdLine << "--y4m" << "-";
 	}

@@ -442,6 +442,8 @@ void AddJobDialog::encoderIndexChanged(int index)
 	ui->labelProfile->setEnabled(!noProf);
 	ui->cbxProfile->setEnabled(!noProf);
 	if(noProf) ui->cbxProfile->setCurrentIndex(0);
+
+	variantIndexChanged(ui->cbxEncoderVariant->currentIndex());
 }
 
 void AddJobDialog::variantIndexChanged(int index)
@@ -451,12 +453,14 @@ void AddJobDialog::variantIndexChanged(int index)
 	ui->labelProfile->setEnabled(!noProf);
 	ui->cbxProfile->setEnabled(!noProf);
 	if(noProf) ui->cbxProfile->setCurrentIndex(0);
+
+	modeIndexChanged(ui->cbxRateControlMode->currentIndex());
 }
 
 void AddJobDialog::modeIndexChanged(int index)
 {
-	ui->spinQuantizer->setEnabled(index == 0 || index == 1);
-	ui->spinBitrate->setEnabled(index == 2 || index == 3);
+	ui->spinQuantizer->setEnabled(index == OptionsModel::RCMode_CRF || index == OptionsModel::RCMode_CQ);
+	ui->spinBitrate  ->setEnabled(index == OptionsModel::RCMode_ABR || index == OptionsModel::RCMode_2Pass);
 }
 
 void AddJobDialog::accept(void)

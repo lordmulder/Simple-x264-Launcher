@@ -304,7 +304,7 @@ void UpdaterDialog::threadStatusChanged(int status)
 		UPDATE_ICON(3, "play");
 		break;
 	default:
-		throw "Unknown status code!";
+		THROW("Unknown status code!");
 	}
 }
 

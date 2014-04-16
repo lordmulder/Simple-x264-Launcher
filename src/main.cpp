@@ -187,6 +187,15 @@ void handleMultipleInstances(const QStringList &args, IPC *ipc)
 LONG WINAPI x264_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInfo);
 void x264_invalid_param_handler(const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t);
 
+#define PRINT_ERROR(MESSAGE, ...) do \
+{ \
+	fflush(stdout); \
+	fflush(stderr); \
+	fprintf(stderr, (MESSAGE), __VA_ARGS__); \
+	fflush(stderr); \
+} \
+while(0)
+
 static int _main(int argc, char* argv[])
 {
 	if(X264_DEBUG)
@@ -206,25 +215,29 @@ static int _main(int argc, char* argv[])
 			iResult = x264_main(argc, argv);
 			x264_finalization();
 		}
+		catch(const X264Exception &e)
+		{
+			PRINT_ERROR("\nGURU MEDITATION !!!\n\nException error message: %s\n", e.what());
+			x264_fatal_exit(L"An internal error was detected, application will exit!", e.what());
+		}
+		catch(const std::exception &e)
+		{
+			PRINT_ERROR("\nGURU MEDITATION !!!\n\nException error message: %s\n", e.what());
+			x264_fatal_exit(L"Unhandeled C++ exception error, application will exit!", e.what());
+		}
 		catch(char *error)
 		{
-			fflush(stdout);
-			fflush(stderr);
-			fprintf(stderr, "\nGURU MEDITATION !!!\n\nException error message: %s\n", error);
+			PRINT_ERROR("\nGURU MEDITATION !!!\n\nException error message: %s\n", error);
 			x264_fatal_exit(L"Unhandeled C++ exception error, application will exit!");
 		}
 		catch(int error)
 		{
-			fflush(stdout);
-			fflush(stderr);
-			fprintf(stderr, "\nGURU MEDITATION !!!\n\nException error code: 0x%X\n", error);
+			PRINT_ERROR("\nGURU MEDITATION !!!\n\nException error code: 0x%X\n", error);
 			x264_fatal_exit(L"Unhandeled C++ exception error, application will exit!");
 		}
 		catch(...)
 		{
-			fflush(stdout);
-			fflush(stderr);
-			fprintf(stderr, "\nGURU MEDITATION !!!\n");
+			PRINT_ERROR("\nGURU MEDITATION !!!\n\nUnknown C++ exception!\n");
 			x264_fatal_exit(L"Unhandeled C++ exception error, application will exit!");
 		}
 		return iResult;

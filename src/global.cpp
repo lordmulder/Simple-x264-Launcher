@@ -650,7 +650,7 @@ void x264_message_handler(QtMsgType type, const char *msg)
 	if((type == QtCriticalMsg) || (type == QtFatalMsg))
 	{
 		lock.unlock();
-		x264_fatal_exit(L"The application has encountered a critical error and will exit now!", QWCHAR(QString::fromUtf8(msg)));
+		x264_fatal_exit(L"The application has encountered a critical error and will exit now!", QString::fromUtf8(msg).toLatin1().constData());
 	}
 }
 
@@ -2184,6 +2184,19 @@ bool x264_set_thread_execution_state(const bool systemRequired)
 }
 
 /*
+ * Exception class
+ */
+X264Exception::X264Exception(const char *message, ...)
+:
+	runtime_error(message)
+{
+	va_list args;
+	va_start(args, message);
+	vsnprintf_s(m_message, MAX_MSGLEN, _TRUNCATE, message, args);
+	va_end(args);
+}
+
+/*
  * Check for debugger (detect routine)
  */
 static __forceinline bool x264_check_for_debugger(void)
@@ -2241,7 +2254,7 @@ static HANDLE x264_debug_thread_init()
  * Fatal application exit
  */
 #pragma intrinsic(_InterlockedExchange)
-void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage)
+void x264_fatal_exit(const wchar_t* exitMessage, const char* errorBoxMessage)
 {
 	static volatile long bFatalFlag = 0L;
 
@@ -2255,7 +2268,7 @@ void x264_fatal_exit(const wchar_t* exitMessage, const wchar_t* errorBoxMessage)
 	
 		if(errorBoxMessage)
 		{
-			MessageBoxW(NULL, errorBoxMessage, L"Simple x264 Launcher - GURU MEDITATION", MB_ICONERROR | MB_TOPMOST | MB_TASKMODAL);
+			MessageBoxA(NULL, errorBoxMessage, "Simple x264 Launcher - GURU MEDITATION", MB_ICONERROR | MB_TOPMOST | MB_TASKMODAL);
 		}
 
 		FatalAppExit(0, exitMessage);
@@ -2332,7 +2345,7 @@ size_t x264_dbg_private_bytes(void)
 	GetProcessMemoryInfo(GetCurrentProcess(), (PPROCESS_MEMORY_COUNTERS) &memoryCounters, sizeof(PROCESS_MEMORY_COUNTERS_EX));
 	return memoryCounters.PrivateUsage;
 #else
-	throw "Cannot call this function in a non-debug build!";
+	THROW("Cannot call this function in a non-debug build!");
 #endif //X264_DEBUG
 }
 

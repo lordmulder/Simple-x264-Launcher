@@ -326,3 +326,8 @@ QString AbstractEncoder::sizeToString(qint64 size)
 
 	return tr("N/A");
 }
+
+const AbstractEncoderInfo& AbstractEncoder::getEncoderInfo(void)
+{
+	THROW("[getEncoderInfo] This function must be overwritten in sub-classes!");
+}

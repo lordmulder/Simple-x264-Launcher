@@ -42,6 +42,7 @@ public:
 	virtual ~AbstractEncoder(void);
 
 	virtual bool runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass = 0, const QString &passLogFile = QString());
+	
 	static const AbstractEncoderInfo& getEncoderInfo(void);
 
 protected:

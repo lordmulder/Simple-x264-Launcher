@@ -259,7 +259,7 @@ bool IPCCore::pushCommand(const int &command, const QStringList *args, const uns
 {
 	if(m_initialized < 0)
 	{
-		throw std::runtime_error("IPC not initialized!");
+		THROW("IPC not initialized!");
 	}
 
 	if(!m_semaphoreWr->acquire())
@@ -320,7 +320,7 @@ bool IPCCore::popCommand(int &command, QStringList &args, unsigned int &flags)
 
 	if(m_initialized < 0)
 	{
-		throw std::runtime_error("IPC not initialized!");
+		THROW("IPC not initialized!");
 	}
 
 	if(!m_semaphoreRd->acquire())

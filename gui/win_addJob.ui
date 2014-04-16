@@ -250,6 +250,9 @@
                <property name="toolTip">
                 <string>Choose the &lt;b&gt;encoder&lt;/b&gt; to be used (e.g. x264 vs. x265). This also decides which output &lt;i&gt;format&lt;/i&gt; you will get (e.g. H.264 vs. HEVC).</string>
                </property>
+               <property name="currentIndex">
+                <number>-1</number>
+               </property>
                <item>
                 <property name="text">
                  <string>x264 (AVC)</string>
@@ -298,7 +301,7 @@
                 <string>Choose the &lt;b&gt;architecture&lt;/b&gt; of the encoder (e.g. 32-Bit vs. 64-Bit). Generally the &quot;native&quot; architecture of your system should give the best performance.</string>
                </property>
                <property name="currentIndex">
-                <number>1</number>
+                <number>-1</number>
                </property>
                <item>
                 <property name="text">
@@ -346,6 +349,9 @@
               <widget class="QComboBox" name="cbxEncoderVariant">
                <property name="toolTip">
                 <string>Choose the &lt;b&gt;variant&lt;/b&gt; of the encoder (e.g. 8-Bit vs. 10-Bit). If you don't know which variant you need, stick with the &lt;i&gt;default&lt;/i&gt; one!</string>
+               </property>
+               <property name="currentIndex">
+                <number>-1</number>
                </property>
                <item>
                 <property name="text">
@@ -417,7 +423,7 @@
                 <string>Select the &lt;b&gt;rate-control&lt;/b&gt; mode. Use &lt;i&gt;CRF&lt;/i&gt; mode in order to hit a specific level of quality. Or use &lt;i&gt;2-Pass&lt;/i&gt; mode in order to hit a specific file size.</string>
                </property>
                <property name="currentIndex">
-                <number>0</number>
+                <number>-1</number>
                </property>
                <item>
                 <property name="text">
@@ -610,7 +616,7 @@
                 <string>This option controls the &quot;Speed -vs- Quality&quot; trade-off of the encoder. Use a &lt;i&gt;slower&lt;/i&gt; Preset in order to improve the quality at the same bitrate (file size), at the cost of increased encoding time. Or use a &lt;i&gt;faster&lt;/i&gt; Preset in order to save encoding time, at the cost of reduced quality.</string>
                </property>
                <property name="currentIndex">
-                <number>5</number>
+                <number>-1</number>
                </property>
                <item>
                 <property name="text">

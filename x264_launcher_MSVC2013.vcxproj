@@ -314,6 +314,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="src\checksum.h" />
     <ClInclude Include="src\cli.h" />
     <ClInclude Include="src\encoder_abstract.h" />
+    <ClInclude Include="src\encoder_factory.h" />
     <ClInclude Include="src\encoder_x264.h" />
     <ClInclude Include="src\encoder_x265.h" />
     <ClInclude Include="src\global.h" />
@@ -401,6 +402,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\checksum.cpp" />
     <ClCompile Include="src\cli.cpp" />
     <ClCompile Include="src\encoder_abstract.cpp" />
+    <ClCompile Include="src\encoder_factory.cpp" />
     <ClCompile Include="src\encoder_x264.cpp" />
     <ClCompile Include="src\encoder_x265.cpp" />
     <ClCompile Include="src\ipc.cpp" />

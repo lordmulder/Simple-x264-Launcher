@@ -19,15 +19,16 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 3
-#define VER_X264_PATCH 5
-#define VER_X264_BUILD 816
+#include "encoder_abstract.h"
 
-#define VER_X264_PORTABLE_EDITION (0)
+class EncoderFactory
+{
+public:
+	static AbstractEncoder *createEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
+	static const AbstractEncoderInfo& getEncoderInfo(const int &encoderType);
 
-#define VER_X264_PRE_RELEASE (0)
+private:
+	EncoderFactory(void) {/*Disabled*/}
+};

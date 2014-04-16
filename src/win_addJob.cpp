@@ -27,8 +27,7 @@
 #include "model_preferences.h"
 #include "model_sysinfo.h"
 #include "model_recently.h"
-#include "encoder_x264.h"
-#include "encoder_x265.h"
+#include "encoder_factory.h"
 #include "win_help.h"
 #include "win_editor.h"
 
@@ -499,7 +498,7 @@ void AddJobDialog::accept(void)
 	}
 
 	//Get encoder info
-	const AbstractEncoderInfo &encoderInfo = getEncoderInfo(ui->cbxEncoderType->currentIndex());
+	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(ui->cbxEncoderType->currentIndex());
 
 	//Is selected RC mode supported?
 	if(!encoderInfo.isRCModeSupported(ui->cbxRateControlMode->currentIndex()))
@@ -1152,18 +1151,4 @@ QString AddJobDialog::getInputFilterLst(void)
 		
 	filters << QString("All files (*.*)");
 	return filters.join(";;");
-}
-
-const AbstractEncoderInfo& AddJobDialog::getEncoderInfo(const int &encoder)
-{
-	switch(encoder)
-	{
-	case OptionsModel::EncType_X264:
-		return X264Encoder::getEncoderInfo();
-	case OptionsModel::EncType_X265:
-		return X265Encoder::getEncoderInfo();
-		break;
-	default:
-		THROW("Unsupported encoder type!");
-	}
 }

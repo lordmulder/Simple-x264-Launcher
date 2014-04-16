@@ -102,6 +102,9 @@
     <ClInclude Include="src\source_vapoursynth.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\encoder_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -250,6 +253,9 @@
     </ClCompile>
     <ClCompile Include="tmp\moc\moc_win_about.cpp">
       <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\encoder_factory.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

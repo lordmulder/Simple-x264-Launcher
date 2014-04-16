@@ -30,8 +30,7 @@
 #include "binaries.h"
 
 //Encoders
-#include "encoder_x264.h"
-#include "encoder_x265.h"
+#include "encoder_factory.h"
 
 //Source
 #include "source_avisynth.h"
@@ -142,17 +141,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_pause = false;
 
 	//Create encoder object
-	switch(options->encType())
-	{
-	case OptionsModel::EncType_X264:
-		m_encoder = new X264Encoder(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName, m_outputFileName);
-		break;
-	case OptionsModel::EncType_X265:
-		m_encoder = new X265Encoder(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName, m_outputFileName);
-		break;
-	default:
-		throw "Unknown encoder type encountered!";
-	}
+	m_encoder = EncoderFactory::createEncoder(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName, m_outputFileName);
 
 	//Create input handler object
 	switch(getInputType(QFileInfo(m_sourceFileName).suffix()))

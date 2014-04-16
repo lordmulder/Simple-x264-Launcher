@@ -178,6 +178,14 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 			settings.sync();
 		}
 	}
+	if(settings.value(KEY_PROFILE_NAME).toString().compare("auto", Qt::CaseInsensitive) == 0)
+	{
+		settings.setValue(KEY_PROFILE_NAME, QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
+	}
+	if(settings.value(KEY_TUNING_NAME).toString().compare("none", Qt::CaseInsensitive) == 0)
+	{
+		settings.setValue(KEY_TUNING_NAME, QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+	}
 
 	bool complete = true;
 

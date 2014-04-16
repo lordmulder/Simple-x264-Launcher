@@ -79,22 +79,6 @@
 	WIDGET->addAction(_action); \
 } 
 
-#define BLOCK_SIGNALS(FLAG) do \
-{ \
-	ui->cbxEncoderType->blockSignals(FLAG); \
-	ui->cbxEncoderArch->blockSignals(FLAG); \
-	ui->cbxEncoderVariant->blockSignals(FLAG); \
-	ui->cbxRateControlMode->blockSignals(FLAG); \
-	ui->spinQuantizer->blockSignals(FLAG); \
-	ui->spinBitrate->blockSignals(FLAG); \
-	ui->cbxPreset->blockSignals(FLAG); \
-	ui->cbxTuning->blockSignals(FLAG); \
-	ui->cbxProfile->blockSignals(FLAG); \
-	ui->editCustomX264Params->blockSignals(FLAG); \
-	ui->editCustomAvs2YUVParams->blockSignals(FLAG); \
-} \
-while(0)
-
 Q_DECLARE_METATYPE(const void*)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -231,12 +215,13 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	m_sysinfo(sysinfo),
 	m_preferences(preferences),
 	m_defaults(new OptionsModel(sysinfo)),
-	ui(new Ui::AddJobDialog())
+	ui(new Ui::AddJobDialog()),
+	m_monitorConfigChanges(true)
 {
 	//Init the dialog, from the .ui file
 	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
-	
+
 	//Fix dialog size
 	ui->buttonSaveTemplate->setMaximumHeight(20);
 	ui->buttonDeleteTemplate->setMaximumHeight(20);
@@ -668,11 +653,16 @@ void AddJobDialog::browseButtonClicked(void)
 
 void AddJobDialog::configurationChanged(void)
 {
+	if(!m_monitorConfigChanges)
+	{
+		return;
+	}
+
 	const OptionsModel* options = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(ui->cbxTemplate->currentIndex()).value<const void*>());
 	if(options)
 	{
 		ui->cbxTemplate->blockSignals(true);
-		ui->cbxTemplate->insertItem(0, tr("<Unsaved Configuration>"), QVariant::fromValue<const void*>(NULL));
+		ui->cbxTemplate->insertItem(0, tr("<Modified Configuration>"), QVariant::fromValue<const void*>(NULL));
 		ui->cbxTemplate->setCurrentIndex(0);
 		ui->cbxTemplate->blockSignals(false);
 	}
@@ -726,7 +716,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		{
 			if(options->equals(test))
 			{
-				QMessageBox::warning (this, tr("Oups"), tr("<nobr>There already is a template for the current settings!</nobr>"));
+				QMessageBox::information (this, tr("Oups"), tr("<nobr>The current settings are already saved as template:<br><b>%1</b></nobr>").arg(ui->cbxTemplate->itemText(i)));
 				ui->cbxTemplate->blockSignals(true);
 				ui->cbxTemplate->setCurrentIndex(i);
 				ui->cbxTemplate->blockSignals(false);
@@ -825,13 +815,12 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 		return;
 	}
 
-	int ret = QMessageBox::question (this, tr("Delete Template"), tr("<nobr>Do you really want to delete the selected template?</nobr>"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+	int ret = QMessageBox::question (this, tr("Delete Template"), tr("<nobr>Do you really want to delete the selected template?<br><b>%1</b></nobr>").arg(name), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 	if(ret != QMessageBox::Yes)
 	{
 		return;
 	}
-
-
+	
 	OptionsModel::deleteTemplate(name);
 	const OptionsModel *item = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(index).value<const void*>());
 	ui->cbxTemplate->removeItem(index);
@@ -977,24 +966,26 @@ void AddJobDialog::updateComboBox(QComboBox *cbox, const QString &text)
 
 void AddJobDialog::restoreOptions(const OptionsModel *options)
 {
-	BLOCK_SIGNALS(false);
+	//Ignore config changes while restoring template!
+	m_monitorConfigChanges = false;
 
-	ui->cbxEncoderType->setCurrentIndex(options->encType());
-	ui->cbxEncoderArch->setCurrentIndex(options->encArch());
-	ui->cbxEncoderVariant->setCurrentIndex(options->encVariant());
+	ui->cbxEncoderType    ->setCurrentIndex(options->encType());
+	ui->cbxEncoderArch    ->setCurrentIndex(options->encArch());
+	ui->cbxEncoderVariant ->setCurrentIndex(options->encVariant());
 	ui->cbxRateControlMode->setCurrentIndex(options->rcMode());
 
-	BLOCK_SIGNALS(true);
-
 	ui->spinQuantizer->setValue(options->quantizer());
-	ui->spinBitrate->setValue(options->bitrate());
-	updateComboBox(ui->cbxPreset, options->preset());
-	updateComboBox(ui->cbxTuning, options->tune());
+	ui->spinBitrate  ->setValue(options->bitrate());
+
+	updateComboBox(ui->cbxPreset,  options->preset());
+	updateComboBox(ui->cbxTuning,  options->tune());
 	updateComboBox(ui->cbxProfile, options->profile());
-	ui->editCustomX264Params->setText(options->customEncParams());
+
+	ui->editCustomX264Params   ->setText(options->customEncParams());
 	ui->editCustomAvs2YUVParams->setText(options->customAvs2YUV());
 
-	BLOCK_SIGNALS(false);
+	//Make sure we will monitor config changes again!
+	m_monitorConfigChanges = true;
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)

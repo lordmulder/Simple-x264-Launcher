@@ -139,6 +139,21 @@ if exist "%OUT_PATH%.sfx" (
 	set "OUT_PATH=%OUT_PATH%.new"
 	goto GenerateOutfileName
 )
+if exist "%OUT_PATH%.zip" (
+	set "OUT_PATH=%OUT_PATH%.new"
+	goto GenerateOutfileName
+)
+
+REM ///////////////////////////////////////////////////////////////////////////
+REM // Create Tag
+REM ///////////////////////////////////////////////////////////////////////////
+echo Simple x264/x265 Launcher - graphical front-end for x264 and x265 > "%PACK_PATH%\BUILD_TAG.txt"
+echo Copyright (C) 2004-2014 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
+echo. >> "%PACK_PATH%\BUILD_TAG.txt"
+echo Build #%BUILD_NO%, created on %ISO_DATE% at %ISO_TIME% >> "%PACK_PATH%\BUILD_TAG.txt"
+echo. >> "%PACK_PATH%\BUILD_TAG.txt"
+echo. >> "%PACK_PATH%\BUILD_TAG.txt"
+"%~dp0\etc\cat.exe" "%~dp0\etc\setup\build.nfo" >> "%PACK_PATH%\BUILD_TAG.txt"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
@@ -151,6 +166,19 @@ if not "%ERRORLEVEL%"=="0" goto BuildError
 
 attrib +R "%OUT_PATH%.exe"
 attrib +R "%OUT_PATH%.sfx"
+
+REM ///////////////////////////////////////////////////////////////////////////
+REM // Build ZIP package
+REM ///////////////////////////////////////////////////////////////////////////
+pushd "%PACK_PATH%"
+"%~dp0\etc\zip.exe" -r -9 -z "%OUT_PATH%.zip" "*.*" < "%PACK_PATH%\BUILD_TAG.txt"
+popd
+
+if not "%ERRORLEVEL%"=="0" goto BuildError
+
+REM ///////////////////////////////////////////////////////////////////////////
+REM // Clean up
+REM ///////////////////////////////////////////////////////////////////////////
 rmdir /Q /S "%PACK_PATH%"
 
 REM ///////////////////////////////////////////////////////////////////////////

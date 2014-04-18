@@ -5,23 +5,40 @@ Copyright (C) 2004-2014 LoRd_MuldeR <MuldeR2@GMX.de>
 1. Introduction
 ---------------
 
-This program is a simple GUI front-end for the x264 H.264/AVC encoder
-and (in newer versions) also supports the x265 H.265/HEVC encoder.
+This application is a lightweight GUI front-end for the x264 H.264/AVC
+as well as the x265 H.265/HEVC encoder, based on the Qt toolkit.
 
-Avisynth/VapourSynth input as well as built-in decoders are supported.
+Some key features of the Simple x264/x265 Launcher software include:
+
+* Support for creating H.264/AVC (x264) and H.265/HEVC (x265) files
+* Fully self-contained, *no* additional Codecs or Plugin's are required
+* 64-Bit as well as 32-Bit encoder binaries are fully supported
+* Optionally the "high bit-depth" encoder variants can be selected
+* Batch encoding (job control) support is implemented
+* If desired, multiple encoding jobs can be executed concurrently
+* Adding new jobs via command-line interface is supported
+* Input from the Avisynth *and* VapurSynth frame servers is supported
+* 32-Bit Avisynth/VapourSynth can be mixed with 64-Bit x264/x265
+* Straightforward encoder setup thanks to the Preset and Tuning system
+* Custom encoder parameters can be added, if desired
+* Easily manage your encoder configurations with user-defined templates
+* Consistent "look & feel" on all systems thanks to the Qt toolkit
 
 
 2. System Requirements
 ----------------------
 
-1. Windows XP with Service Pack 2 and later 
-2. 64-Bit Windows is highly recommended, but 32-Bit Windows is okay
-3. The CPU must support at least the MMX and SSE-1 instruction sets
-4. Avisynth input only available with Avisynth 2.5+ installed
-5. VapourSynth input only available with VapourSynth R19+ installed
-6. YV16/YV24 color spaces require Avisynth 2.6 [see section 10]
+* Windows XP with Service Pack 2 or any later Windows system
+* 64-Bit Windows is highly recommended (32-Bit Windows works as well)
+* The CPU must support at least the MMX and SSE instruction sets
+* Avisynth input only available with Avisynth 2.5+ installed
+* VapourSynth input only available with VapourSynth R19+ installed
+* YV16/YV24 color spaces require Avisynth 2.6 (see section 10)
 
-100% standalone, does *not* require Mircrosoft.NET or other runtimes
+Simple x264 Launcher is 100% standalone, i.e. it does *not* require
+Mircrosoft.NET, Java Runtime Environment or other dependencies.
+
+The required Qt DLLs and encoder binaries are included in the setup.
 
 
 3. Anti-Virus Warning
@@ -53,6 +70,8 @@ INFECTION WITH MULTIPLE ANTIVIRUS ENGNINES. THANKS!
 4. License
 ----------
 
+Simple x264/x265 Launcher is Copyright (C) 2004-2014 LoRd_MuldeR.
+
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
@@ -70,7 +89,27 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 http://www.gnu.org/licenses/gpl-2.0.txt
 
 
-5. Portable Mode
+5. Third-Party Software
+-----------------------
+
+All third-party binaries included in this distribution package are
+redistributed in full accordance with the GNU General Public License,
+version 2. For further information see the respective web sites!
+
+The x264 encoder software is Copyright (C) 2003-2014 x264 project
+http://www.videolan.org/developers/x264.html
+
+The x265 encoder software is Copyright (C) 2013-2014 x265 project
+http://www.videolan.org/developers/x265.html
+
+Avisynth is Copyright (C) 2000 Ben Rudiak-Gould & subsequent developers
+http://avisynth.nl/index.php/Main_Page
+
+VapourSynth is Copyright (C) 2012-2014 Fredrik Mellbin
+http://www.vapoursynth.com/
+
+
+6. Portable Mode
 ----------------
 
 This application can be run in "portable" mode. Just rename the EXE
@@ -81,25 +120,25 @@ application directly from your USB stick on different computers. Note,
 however, that in portable mode the install folder must be writable!
 
 
-6. Updating Your x264 Binaries
-------------------------------
+7. Updating Your Encoder Binaries
+---------------------------------
 
-This application works best with the x264 binaries that are included in
-the distribution package. That's because these binaries have been
+This application works best with the encoder binaries that are included
+in the distribution package. That's because these binaries have been
 tested to work properly with the GUI. Nonetheless in some cases you may
-want to replace the included binaries with a newer version of x264 or
+want to replace the included binaries with a newer encoder version or
 with an alternative build of the same version. Generally newer versions
-of x264 should work with the GUI too, though there is NO guarantee. In
-rare cases the CLI syntax (or console output) of x264 may change in a
-way that breaks the compatibility and therefore will require an update
-of the GUI itself. Furthermore this application does NOT provide any
-support for unofficial x264 patches. Usually x264 builds that contain
-unofficial patches will work anyway, but again there is NO guarantee.
-Using old/outdated x264 binaries with this application is NOT supported
-or intended. Report bugs rather than reverting to an old version!
+of x264/x265 should work properly, though there is NO guarantee! In
+rare cases the CLI syntax (or console output) may have changed in a way
+that breaks the compatibility and therefore will require an update of
+the GUI itself. Furthermore this application does NOT provide any
+support for "unofficial" patches. Usually custom builds that contain
+"unofficial" patches will work anyway, but again there is NO guarantee.
+Using old (outdated) binaries with this application is NOT supported or
+intended. Please report bugs rather than reverting to an old version!
 
 
-7. Timeout Warning
+8. Timeout Warning
 ------------------
 
 This application provides "deadlock" prevention. This means that if an
@@ -116,13 +155,13 @@ long time to index the source file. In that case, we recommend to index
 the source file beforehand, e.g. by using the 'ffmsindex' tool.
 
 
-8. Custom Parameters
+9. Custom Parameters
 --------------------
 
 This application provides a "Custom Parameters" edit box. All command-
-line parameters you enter there will be passed to x264 unmodified. This
-way you can send arbitrary parameters to x264 - even such ones that are
-only available in patched builds of x264. See the x264 Wiki or the Help
+line parameters that you enter there will be passed to x264 or x265
+unmodified. You can send arbitrary parameters - even such ones that are
+only available in patched builds. See the x264/x265 manuals or the Help
 Screen for a list of available parameters. However be aware that the
 GUI will not check your parameters at all! Thus using an unknown or
 unsupported parameter will cause your encode to fail. Using an existing
@@ -131,14 +170,14 @@ not least, some parameters are forbidden by the GUI. If some parameter
 is forbidden, that's because the GUI will set that parameter for you
 (if required) or because that parameter is NOT compatible with the GUI.
 
-Hint: Occasionally your custom parameters string may become very long,
+HINT: Occasionally your custom parameters string may become very long,
 especially when working with zones. In that case you can right-click on
 the "Custom Parameters" edit box and choose "Open the Text-Editor".
-This will open a multi-line text editor for easier parameter handling.
+This will open a multi-line text editor for easier parameter handling!
 
 
-9. Color Spaces / Chroma Subsampling
-------------------------------------
+10. Color Spaces / Chroma Subsampling
+-------------------------------------
 
 Avs2YUV converts the output of your Avisynth script to the YV12 format,
 i.e. YUV data with 4:2:0 chroma subsampling and 8-Bit precision.
@@ -161,7 +200,7 @@ In short, to encode YUY2 from Avisynth, you have to pass "-csp I422" to
 Avs2YUV and "--output-csp i422" to x264 to avoid 4:2:0 downsampling.
 
 
-10. Audio Processing/Encoding
+11. Audio Processing/Encoding
 -----------------------------
 
 This application is a front-end to the x264 encoder. And, as x264 does
@@ -191,7 +230,7 @@ if you want to encode audio from an Avisynth script, you must pass the
 For convenience, the string "--audiofile $(INPUT)" may be used.
 
 
-11. OpenCL Support
+12. OpenCL Support
 -----------------------
 
 Newer builds of x264 now support OpenCL Lookahead, i.e. GPU accelerated
@@ -204,7 +243,7 @@ use the "--opencl" option. Therefore, the "dummy" OpenCL.DLL included
 in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 
 
-12. Command-line Syntax
+13. Command-line Syntax
 -----------------------
 
 PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher, they
@@ -233,13 +272,33 @@ Some details on the "--add-job" command-line switch:
   If neither of those switches is used, the default startup behavior applies.
 
 
-13. Help & Support
+14. Help & Support
 ------------------
 
 For help and support, please join the discussion at:
 http://forum.doom9.org/showthread.php?t=144140
 
-Please do NOT send me e-mail with support requests. Thanks!
+Please *avoid* sending me e-mail with support requests. Thank you!
+
+(I get a lot of mail every day and cannot answer everything)
+
+
+15. Source Codes
+----------------
+
+Simple x264/x265 Launcher is written in C++ and currently developed
+with Microsoft Visual Studio 2013. It is based on the Qt toolkit.
+
+The source codes can be obtained from the official Git repository:
+* https://github.com/lordmulder/Simple-x264-Launcher
+* https://gitorious.org/simple-x264-launcher/simple-x264-launcher
+* https://bitbucket.org/lord_mulder/simple-x264-launcher
+
+Download Visual Studio Express 2013 for Windows *Desktop* here:
+http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs
+
+Download the latest Qt toolkit (4.8.x) from the Qt Project web-site:
+http://download.qt-project.org/official_releases/qt/4.8/
 
 
 e.o.f.

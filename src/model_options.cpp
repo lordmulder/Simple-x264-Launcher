@@ -124,7 +124,7 @@ bool OptionsModel::equals(const OptionsModel *model)
 	return equal;
 }
 
-bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
+bool OptionsModel::saveTemplate(const OptionsModel *model, const QString &name)
 {
 	const QString templateName = name.simplified();
 	const QString appDir = x264_data_path();
@@ -137,22 +137,12 @@ bool OptionsModel::saveTemplate(OptionsModel *model, const QString &name)
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	settings.beginGroup(templateName);
 
-	settings.setValue(KEY_ENCODER_TYPE,    model->m_encoderType);
-	settings.setValue(KEY_ENCODER_ARCH,    model->m_encoderArch);
-	settings.setValue(KEY_ENCODER_VARIANT, model->m_encoderVariant);
-	settings.setValue(KEY_RATECTRL_MODE,   model->m_rcMode);
-	settings.setValue(KEY_TARGET_BITRATE,  model->m_bitrate);
-	settings.setValue(KEY_TARGET_QUANT,    model->m_quantizer);
-	settings.setValue(KEY_PRESET_NAME,     model->m_preset);
-	settings.setValue(KEY_TUNING_NAME,     model->m_tune);
-	settings.setValue(KEY_PROFILE_NAME,    model->m_profile);
-	settings.setValue(KEY_CUSTOM_ENCODER,  model->m_custom_encoder);
-	settings.setValue(KEY_CUSTOM_AVS2YUV,  model->m_custom_avs2yuv);
-	
+	const bool okay = saveOptions(model, settings);
+
 	settings.endGroup();
 	settings.sync();
 	
-	return true;
+	return okay;
 }
 
 bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
@@ -167,57 +157,10 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
 	settings.beginGroup(name);
 
-	//For backward-compatibility
-	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };
-	for(int i = 0; legacyKey[i]; i++)
-	{
-		if(settings.contains(legacyKey[i]))
-		{
-			settings.setValue(KEY_CUSTOM_ENCODER, settings.value(legacyKey[i]));
-			settings.remove(legacyKey[i]);
-			settings.sync();
-		}
-	}
-	if(settings.value(KEY_PROFILE_NAME).toString().compare("auto", Qt::CaseInsensitive) == 0)
-	{
-		settings.setValue(KEY_PROFILE_NAME, QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
-	}
-	if(settings.value(KEY_TUNING_NAME).toString().compare("none", Qt::CaseInsensitive) == 0)
-	{
-		settings.setValue(KEY_TUNING_NAME, QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
-	}
-
-	bool complete = true;
-
-	if(!settings.contains(KEY_ENCODER_TYPE))    complete = false;
-	if(!settings.contains(KEY_ENCODER_ARCH))    complete = false;
-	if(!settings.contains(KEY_ENCODER_VARIANT)) complete = false;
-	if(!settings.contains(KEY_RATECTRL_MODE))   complete = false;
-	if(!settings.contains(KEY_TARGET_BITRATE))  complete = false;
-	if(!settings.contains(KEY_TARGET_QUANT))    complete = false;
-	if(!settings.contains(KEY_PRESET_NAME))     complete = false;
-	if(!settings.contains(KEY_TUNING_NAME))     complete = false;
-	if(!settings.contains(KEY_PROFILE_NAME))    complete = false;
-	if(!settings.contains(KEY_CUSTOM_ENCODER))  complete = false;
-	if(!settings.contains(KEY_CUSTOM_AVS2YUV))  complete = false;
-
-	if(complete)
-	{
-		model->setEncType        (static_cast<OptionsModel::EncType>   (settings.value(KEY_ENCODER_TYPE,    model->m_encoderType)   .toInt()));
-		model->setEncArch        (static_cast<OptionsModel::EncArch>   (settings.value(KEY_ENCODER_ARCH,    model->m_encoderArch)   .toInt()));
-		model->setEncVariant     (static_cast<OptionsModel::EncVariant>(settings.value(KEY_ENCODER_VARIANT, model->m_encoderVariant).toInt()));
-		model->setRCMode         (static_cast<OptionsModel::RCMode>    (settings.value(KEY_RATECTRL_MODE,   model->m_rcMode)        .toInt()));
-		model->setBitrate        (settings.value(KEY_TARGET_BITRATE, model->m_bitrate).toUInt()         );
-		model->setQuantizer      (settings.value(KEY_TARGET_QUANT,   model->m_quantizer).toDouble()     );
-		model->setPreset         (settings.value(KEY_PRESET_NAME,    model->m_preset).toString()        );
-		model->setTune           (settings.value(KEY_TUNING_NAME,    model->m_tune).toString()          );
-		model->setProfile        (settings.value(KEY_PROFILE_NAME,   model->m_profile).toString()       );
-		model->setCustomEncParams(settings.value(KEY_CUSTOM_ENCODER, model->m_custom_encoder).toString());
-		model->setCustomAvs2YUV  (settings.value(KEY_CUSTOM_AVS2YUV, model->m_custom_avs2yuv).toString());
-	}
+	const bool okay = loadOptions(model, settings);
 
 	settings.endGroup();
-	return complete;
+	return okay;
 }
 
 QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(const SysinfoModel *sysinfo)
@@ -265,4 +208,74 @@ bool OptionsModel::deleteTemplate(const QString &name)
 	}
 
 	return false;
+}
+
+bool OptionsModel::saveOptions(const OptionsModel *model, QSettings &settingsFile)
+{
+	settingsFile.setValue(KEY_ENCODER_TYPE,    model->m_encoderType);
+	settingsFile.setValue(KEY_ENCODER_ARCH,    model->m_encoderArch);
+	settingsFile.setValue(KEY_ENCODER_VARIANT, model->m_encoderVariant);
+	settingsFile.setValue(KEY_RATECTRL_MODE,   model->m_rcMode);
+	settingsFile.setValue(KEY_TARGET_BITRATE,  model->m_bitrate);
+	settingsFile.setValue(KEY_TARGET_QUANT,    model->m_quantizer);
+	settingsFile.setValue(KEY_PRESET_NAME,     model->m_preset);
+	settingsFile.setValue(KEY_TUNING_NAME,     model->m_tune);
+	settingsFile.setValue(KEY_PROFILE_NAME,    model->m_profile);
+	settingsFile.setValue(KEY_CUSTOM_ENCODER,  model->m_custom_encoder);
+	settingsFile.setValue(KEY_CUSTOM_AVS2YUV,  model->m_custom_avs2yuv);
+	
+	return true;
+}
+
+bool OptionsModel::loadOptions(OptionsModel *model, QSettings &settingsFile)
+{
+	//For backward-compatibility
+	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };
+	for(int i = 0; legacyKey[i]; i++)
+	{
+		if(settingsFile.contains(legacyKey[i]))
+		{
+			settingsFile.setValue(KEY_CUSTOM_ENCODER, settingsFile.value(legacyKey[i]));
+			settingsFile.remove(legacyKey[i]);
+		}
+	}
+	if(settingsFile.value(KEY_PROFILE_NAME).toString().compare("auto", Qt::CaseInsensitive) == 0)
+	{
+		settingsFile.setValue(KEY_PROFILE_NAME, QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
+	}
+	if(settingsFile.value(KEY_TUNING_NAME).toString().compare("none", Qt::CaseInsensitive) == 0)
+	{
+		settingsFile.setValue(KEY_TUNING_NAME, QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+	}
+
+	bool complete = true;
+
+	if(!settingsFile.contains(KEY_ENCODER_TYPE))    complete = false;
+	if(!settingsFile.contains(KEY_ENCODER_ARCH))    complete = false;
+	if(!settingsFile.contains(KEY_ENCODER_VARIANT)) complete = false;
+	if(!settingsFile.contains(KEY_RATECTRL_MODE))   complete = false;
+	if(!settingsFile.contains(KEY_TARGET_BITRATE))  complete = false;
+	if(!settingsFile.contains(KEY_TARGET_QUANT))    complete = false;
+	if(!settingsFile.contains(KEY_PRESET_NAME))     complete = false;
+	if(!settingsFile.contains(KEY_TUNING_NAME))     complete = false;
+	if(!settingsFile.contains(KEY_PROFILE_NAME))    complete = false;
+	if(!settingsFile.contains(KEY_CUSTOM_ENCODER))  complete = false;
+	if(!settingsFile.contains(KEY_CUSTOM_AVS2YUV))  complete = false;
+
+	if(complete)
+	{
+		model->setEncType        (static_cast<OptionsModel::EncType>   (settingsFile.value(KEY_ENCODER_TYPE,    model->m_encoderType)   .toInt()));
+		model->setEncArch        (static_cast<OptionsModel::EncArch>   (settingsFile.value(KEY_ENCODER_ARCH,    model->m_encoderArch)   .toInt()));
+		model->setEncVariant     (static_cast<OptionsModel::EncVariant>(settingsFile.value(KEY_ENCODER_VARIANT, model->m_encoderVariant).toInt()));
+		model->setRCMode         (static_cast<OptionsModel::RCMode>    (settingsFile.value(KEY_RATECTRL_MODE,   model->m_rcMode)        .toInt()));
+		model->setBitrate        (settingsFile.value(KEY_TARGET_BITRATE, model->m_bitrate)       .toUInt()  );
+		model->setQuantizer      (settingsFile.value(KEY_TARGET_QUANT,   model->m_quantizer)     .toDouble());
+		model->setPreset         (settingsFile.value(KEY_PRESET_NAME,    model->m_preset)        .toString());
+		model->setTune           (settingsFile.value(KEY_TUNING_NAME,    model->m_tune)          .toString());
+		model->setProfile        (settingsFile.value(KEY_PROFILE_NAME,   model->m_profile)       .toString());
+		model->setCustomEncParams(settingsFile.value(KEY_CUSTOM_ENCODER, model->m_custom_encoder).toString());
+		model->setCustomAvs2YUV  (settingsFile.value(KEY_CUSTOM_AVS2YUV, model->m_custom_avs2yuv).toString());
+	}
+	
+	return complete;
 }

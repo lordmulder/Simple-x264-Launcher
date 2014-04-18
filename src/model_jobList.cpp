@@ -28,6 +28,14 @@
 
 #include <QIcon>
 #include <QFileInfo>
+#include <QSettings>
+
+static const char *KEY_ENTRY_COUNT = "entry_count";
+static const char *KEY_SOURCE_FILE = "source_file";
+static const char *KEY_OUTPUT_FILE = "output_file";
+static const char *KEY_ENC_OPTIONS = "enc_options";
+
+static const char *JOB_TEMPLATE = "job_%08x";
 
 JobListModel::JobListModel(PreferencesModel *preferences)
 {
@@ -235,17 +243,27 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 
 	switch(thread->options()->rcMode())
 	{
+	case OptionsModel::EncType_X264:
+		config = QString("x264");
+		break;
+	case OptionsModel::EncType_X265:
+		config = QString("x265");
+		break;
+	}
+	
+	switch(thread->options()->rcMode())
+	{
 	case OptionsModel::RCMode_CRF:
-		config = QString("CRF@%1").arg(QString::number(thread->options()->quantizer()));
+		config = QString("%1 CRF@%2")  .arg(config, QString::number(thread->options()->quantizer()));
 		break;
 	case OptionsModel::RCMode_CQ:
-		config = QString("CQ@%1").arg(QString::number(qRound(thread->options()->quantizer())));
+		config = QString("%1 CQ@%2")   .arg(config, QString::number(qRound(thread->options()->quantizer())));
 		break;
 	case OptionsModel::RCMode_2Pass:
-		config = QString("2Pass@%1").arg(QString::number(thread->options()->bitrate()));
+		config = QString("%1 2Pass@%2").arg(config, QString::number(thread->options()->bitrate()));
 		break;
 	case OptionsModel::RCMode_ABR:
-		config = QString("ABR@%1").arg(QString::number(thread->options()->bitrate()));
+		config = QString("%1 ABR@%2")  .arg(config, QString::number(thread->options()->bitrate()));
 		break;
 	}
 
@@ -524,4 +542,90 @@ void JobListModel::updateDetails(const QUuid &jobId, const QString &details)
 		m_details.insert(jobId, details);
 		emit dataChanged(createIndex(index, 3), createIndex(index, 3));
 	}
+}
+
+size_t JobListModel::saveQueuedJobs(void)
+{
+	const QString appDir = x264_data_path();
+	QSettings settings(QString("%1/queue.ini").arg(appDir), QSettings::IniFormat);
+	
+	settings.clear();
+	settings.setValue(KEY_ENTRY_COUNT, 0);
+	size_t jobCounter = 0;
+
+	for(QList<QUuid>::ConstIterator iter = m_jobs.constBegin(); iter != m_jobs.constEnd(); iter++)
+	{
+		if(m_status.value(*iter) == JobStatus_Enqueued)
+		{
+			if(const EncodeThread *thread = m_threads.value(*iter))
+			{
+				settings.beginGroup(QString().sprintf(JOB_TEMPLATE, jobCounter++));
+				settings.setValue(KEY_SOURCE_FILE, thread->sourceFileName());
+				settings.setValue(KEY_OUTPUT_FILE, thread->outputFileName());
+
+				settings.beginGroup(KEY_ENC_OPTIONS);
+				OptionsModel::saveOptions(thread->options(), settings);
+
+				settings.endGroup();
+				settings.endGroup();
+
+				settings.setValue(KEY_ENTRY_COUNT, jobCounter);
+			}
+		}
+	}
+
+	settings.sync();
+	return jobCounter;
+}
+
+size_t JobListModel::loadQueuedJobs(const SysinfoModel *sysinfo)
+{
+	const QString appDir = x264_data_path();
+	QSettings settings(QString("%1/queue.ini").arg(appDir), QSettings::IniFormat);
+
+	bool ok = false;
+	const size_t jobCounter = settings.value(KEY_ENTRY_COUNT, 0).toUInt(&ok);
+
+	if((!ok) || (jobCounter < 1))
+	{
+		return 0;
+	}
+
+	size_t jobsCreated = 0;
+
+	for(size_t i = 0; i < jobCounter; i++)
+	{
+		settings.beginGroup(QString().sprintf(JOB_TEMPLATE, i));
+		const QString sourceFileName = settings.value(KEY_SOURCE_FILE, QString()).toString().trimmed();
+		const QString outputFileName = settings.value(KEY_OUTPUT_FILE, QString()).toString().trimmed();
+
+		if(sourceFileName.isEmpty() || outputFileName.isEmpty())
+		{
+			settings.endGroup();
+			continue;
+		}
+
+		settings.beginGroup(KEY_ENC_OPTIONS);
+		OptionsModel options(sysinfo);
+		const bool okay = OptionsModel::loadOptions(&options, settings);
+
+		settings.endGroup();
+		settings.endGroup();
+
+		if(okay)
+		{
+			EncodeThread *thread = new EncodeThread(sourceFileName, outputFileName, &options, sysinfo, m_preferences);
+			insertJob(thread);
+			jobsCreated++;
+		}
+	}
+
+	return jobsCreated;
+}
+
+void JobListModel::clearQueuedJobs(void)
+{
+	const QString appDir = x264_data_path();
+	QSettings settings(QString("%1/queue.ini").arg(appDir), QSettings::IniFormat);
+	settings.clear();
 }

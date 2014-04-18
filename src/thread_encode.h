@@ -46,9 +46,9 @@ public:
 	~EncodeThread(void);
 
 	QUuid getId(void) { return this->m_jobId; };
-	const QString &sourceFileName(void) { return this->m_sourceFileName; }
-	const QString &outputFileName(void) { return this->m_outputFileName; }
-	const OptionsModel *options(void) { return m_options; }
+	const QString &sourceFileName(void) const { return this->m_sourceFileName; }
+	const QString &outputFileName(void) const { return this->m_outputFileName; }
+	const OptionsModel *options(void)   const { return m_options; }
 	
 	void pauseJob(void)
 	{

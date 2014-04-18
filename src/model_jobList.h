@@ -60,6 +60,10 @@ public:
 	const OptionsModel *getJobOptions(const QModelIndex &index);
 	QModelIndex getJobIndexById(const QUuid &id);
 
+	size_t saveQueuedJobs(void);
+	size_t loadQueuedJobs(const SysinfoModel *sysinfo);
+	void clearQueuedJobs(void);
+
 protected:
 	QList<QUuid> m_jobs;
 	QMap<QUuid, QString> m_name;

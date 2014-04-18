@@ -970,7 +970,7 @@ void MainWindow::init(void)
 	//---------------------------------------
 
 	//Set Window title
-	setWindowTitle(QString("%1 (%2)").arg(tr("Simple %1 Launcher").arg(m_sysinfo->has256Support() ? "x264/x265" : "x264"), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
+	setWindowTitle(QString("%1 (%2)").arg(windowTitle(), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
 
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);
@@ -990,6 +990,12 @@ void MainWindow::init(void)
 				return;
 			}
 		}
+	}
+
+	//Load queued jobs
+	if(m_jobList->loadQueuedJobs(m_sysinfo) > 0)
+	{
+		m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 	}
 }
 
@@ -1159,7 +1165,6 @@ void MainWindow::showEvent(QShowEvent *e)
 
 	if(m_status == STATUS_PRE_INIT)
 	{
-		setWindowTitle(tr("%1 - Starting...").arg(windowTitle()));
 		QTimer::singleShot(0, this, SLOT(init()));
 	}
 }
@@ -1169,6 +1174,8 @@ void MainWindow::showEvent(QShowEvent *e)
  */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
+	bool bJobsHaveBeenSaved = false;
+
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
 	{
 		e->ignore();
@@ -1176,6 +1183,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 		return;
 	}
 
+	//Make sure we have no running jobs left!
 	if(m_status != STATUS_EXITTING)
 	{
 		if(countRunningJobs() > 0)
@@ -1186,30 +1194,50 @@ void MainWindow::closeEvent(QCloseEvent *e)
 			m_status = STATUS_IDLE;
 			return;
 		}
-	
+
+		//Save pending jobs for next time, if desired by user
 		if(countPendingJobs() > 0)
 		{
 			m_status = STATUS_BLOCKED;
-			int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("Do you really want to quit and discard the pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-			if(ret != QMessageBox::Yes)
+			int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("You still have pending jobs. How do you want to proceed?"), tr("Save Pending Jobs"), tr("Discard"));
+			if(ret == 0)
 			{
-				e->ignore();
-				m_status = STATUS_IDLE;
-				return;
+				if(m_jobList->saveQueuedJobs() > 0)
+				{
+					bJobsHaveBeenSaved = true;
+				}
+			}
+			else
+			{
+				if(QMessageBox::warning(this, tr("Jobs Are Pending"), tr("Do you really want to discard all pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes)
+				{
+					e->ignore();
+					m_status = STATUS_IDLE;
+					return;
+				}
 			}
 		}
 	}
+	
+	//Clear "old" pending jobs for next startup (only if we have not saved "new" jobs already!)
+	if(!bJobsHaveBeenSaved)
+	{
+		m_jobList->clearQueuedJobs();
+	}
 
+	//Delete remaining jobs
 	while(m_jobList->rowCount(QModelIndex()) > 0)
 	{
-		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+		if((m_jobList->rowCount(QModelIndex()) % 10) == 0)
+		{
+			qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+		}
 		if(!m_jobList->deleteJob(m_jobList->index(0, 0, QModelIndex())))
 		{
 			e->ignore();
 			m_status = STATUS_BLOCKED;
-			QMessageBox::warning(this, tr("Failed To Exit"), tr("Sorry, at least one job could not be deleted!"));
+			QMessageBox::warning(this, tr("Failed To Exit"), tr("Warning: At least one job could not be deleted!"));
 			m_status = STATUS_IDLE;
-			return;
 		}
 	}
 	

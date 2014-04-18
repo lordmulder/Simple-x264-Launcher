@@ -268,8 +268,10 @@ static inline bool _CHECK_FLAG(const int argc, char **argv, const char *flag)
 			static const char *g_x264_version_compiler = "MSVC 2012.1";
 		#elif (_MSC_FULL_VER < 170060610)
 			static const char *g_x264_version_compiler = "MSVC 2012.2";
-		#elif (_MSC_FULL_VER == 170060610)
+		#elif (_MSC_FULL_VER < 170061030)
 			static const char *g_x264_version_compiler = "MSVC 2012.3";
+		#elif (_MSC_FULL_VER == 170061030)
+			static const char *g_x264_version_compiler = "MSVC 2012.4";
 		#else
 			#error Compiler version is not supported yet!
 		#endif

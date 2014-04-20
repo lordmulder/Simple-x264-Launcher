@@ -128,6 +128,12 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 		process.waitForFinished(-1);
 	}
 
+	while(!patterns.isEmpty())
+	{
+		QRegExp *pattern = patterns.takeFirst();
+		X264_DELETE(pattern);
+	}
+
 	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)
 	{
 		if(!(bTimeout || bAborted))

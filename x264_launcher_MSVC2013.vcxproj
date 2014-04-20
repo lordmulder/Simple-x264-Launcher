@@ -58,6 +58,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;QT_DEBUG;QT_DLL;QT_GUI_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;$(SolutionDir)tmp\uic;$(SolutionDir)etc\vld\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
+      <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -89,8 +90,8 @@ copy /Y "$(QTDIR)\plugins\imageformats\qsvgd4.dll" "$(TargetDir)\imageformats"
 copy /Y "$(QTDIR)\plugins\imageformats\qjpegd4.dll" "$(TargetDir)\imageformats"
 copy /Y "$(QTDIR)\plugins\imageformats\qtiffd4.dll" "$(TargetDir)\imageformats"
 copy /Y "$(QTDIR)\plugins\imageformats\qgifd4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.dll" "$(TargetDir)"
-copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"
+copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.dll" "$(TargetDir)"
+copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.manifest" "$(TargetDir)"
 </Command>
     </PostBuildEvent>
     <PostBuildEvent>

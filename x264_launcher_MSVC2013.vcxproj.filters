@@ -108,9 +108,6 @@
     <ClInclude Include="src\mediainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\key_filter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -342,6 +339,9 @@
     </CustomBuild>
     <CustomBuild Include="gui\win_about.ui">
       <Filter>Dialogs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\input_filter.h">
+      <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

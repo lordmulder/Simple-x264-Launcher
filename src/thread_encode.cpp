@@ -156,6 +156,7 @@ EncodeThread::~EncodeThread(void)
 	X264_DELETE(m_encoder);
 	X264_DELETE(m_jobObject);
 	X264_DELETE(m_options);
+	X264_DELETE(m_pipedSource);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

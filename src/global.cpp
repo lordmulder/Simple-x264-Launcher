@@ -2283,6 +2283,23 @@ void x264_fatal_exit(const wchar_t* exitMessage, const char* errorBoxMessage)
 }
 
 /*
+ * Output string to debugger [debug only]
+ */
+void x264_dbg_output_string(const char* format, ...)
+{
+#if X264_DEBUG
+	char buffer[256];
+	va_list args;
+	va_start (args, format);
+	vsnprintf_s(buffer, 256, _TRUNCATE, format, args);
+	OutputDebugStringA(buffer);
+	va_end(args);
+#else
+	THROW("Cannot call this function in a non-debug build!");
+#endif //LAMEXP_DEBUG
+}
+
+/*
  * Entry point checks
  */
 static DWORD x264_entry_check(void);

@@ -139,6 +139,7 @@ bool x264_change_process_priority(const int priority);
 bool x264_change_process_priority(void *hProcess, const int priority);
 QDate x264_current_date_safe(void);
 const QString &x264_data_path(void);
+void x264_dbg_output_string(const char* format, ...);
 size_t x264_dbg_private_bytes(void);
 x264_cpu_t x264_detect_cpu_features(const int argc, char **argv);
 bool x264_enable_close_button(const QWidget *win, const bool bEnable);
@@ -219,7 +220,7 @@ while(0)
 		RETV = FUNC(__VA_ARGS__); \
 		size_t _privateBytesLeak = (x264_dbg_private_bytes() - _privateBytesBefore) / 1024; \
 		if(_privateBytesLeak > 0) { \
-			x264_dbg_dbg_output_string("\nMemory leak: Lost %u KiloBytes of PrivateUsage memory!\n\n", _privateBytesLeak); \
+			x264_dbg_output_string("\nMemory leak: Lost %u KiloBytes of PrivateUsage memory!\n\n", _privateBytesLeak); \
 		} \
 	} \
 	while(0)

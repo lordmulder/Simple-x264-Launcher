@@ -59,6 +59,8 @@
       <AdditionalIncludeDirectories>$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;$(SolutionDir)tmp\uic;$(SolutionDir)etc\vld\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
+      <OmitFramePointers>false</OmitFramePointers>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -71,25 +73,29 @@
       <Command>del /S /Q "$(TargetDir)\*.dll"
 rmdir /S /Q "$(TargetDir)\toolset"
 rmdir /S /Q "$(TargetDir)\imageformats"
+
 mkdir "$(TargetDir)\toolset\x86"
 mkdir "$(TargetDir)\toolset\x64"
 mkdir "$(TargetDir)\toolset\common"
 mkdir "$(TargetDir)\imageformats"
+
 copy /Y "$(SolutionDir)res\toolset\x86\*.exe" "$(TargetDir)\toolset\x86\"
 copy /Y "$(SolutionDir)res\toolset\x86\*.dll" "$(TargetDir)\toolset\x86\"
 copy /Y "$(SolutionDir)res\toolset\x64\*.exe" "$(TargetDir)\toolset\x64\"
 copy /Y "$(SolutionDir)res\toolset\x64\*.dll" "$(TargetDir)\toolset\x64\"
 copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
 copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
-copy /Y "$(QTDIR)\bin\QtCored4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\bin\QtGuid4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\bin\QtSvgd4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\bin\QtXmld4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\plugins\imageformats\qicod4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qsvgd4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qjpegd4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qtiffd4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qgifd4.dll" "$(TargetDir)\imageformats"
+
+for %%i in (QtCored4, QtGuid4, QtSvgd4, QtXmld4) do (
+    copy /Y "$(QTDIR)\bin\%%i.dll" "$(TargetDir)"
+    copy /Y "$(QTDIR)\bin\%%i.pdb" "$(TargetDir)"
+)
+
+for %%i in (qicod4, qsvgd4, qjpegd4, qtiffd4, qgifd4) do (
+    copy /Y "$(QTDIR)\plugins\imageformats\%%i.dll" "$(TargetDir)\imageformats"
+    copy /Y "$(QTDIR)\plugins\imageformats\%%i.pdb" "$(TargetDir)\imageformats"
+)
+
 copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.dll" "$(TargetDir)"
 copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.manifest" "$(TargetDir)"
 </Command>

@@ -48,6 +48,60 @@
     <ClInclude Include="src\taskbar7.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\3rd_party\avisynth_c.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\3rd_party\blake2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\binaries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\checksum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cli.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\encoder_abstract.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\encoder_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\encoder_x264.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\encoder_x265.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\job_object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mediainfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model_preferences.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model_recently.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model_status.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model_sysinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\source_abstract.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\source_avisynth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\source_vapoursynth.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -113,11 +167,101 @@
     <ClCompile Include="tmp\moc\moc_win_editor.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_ipc.cpp">
+    <ClCompile Include="src\3rd_party\blake2.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_thread_ipc.cpp">
-      <Filter>Generated Files</Filter>
+    <ClCompile Include="src\3rd_party\qtmain_win.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\binaries.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\checksum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cli.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\encoder_abstract.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\encoder_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\encoder_x264.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\encoder_x265.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\job_object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mediainfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model_preferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model_recently.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source_abstract.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source_avisynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source_vapoursynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_avisynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_updater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_vapoursynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tool_abstract.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\win_about.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\win_updater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_input_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_ipc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_thread_avisynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_thread_updater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_thread_vapoursynth.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_tool_abstract.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_win_about.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_win_updater.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -163,8 +307,35 @@
     <CustomBuild Include="src\win_editor.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\thread_ipc.h">
+    <CustomBuild Include="src\win_about.h">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_updater.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\ipc.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\input_filter.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_avisynth.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_vapoursynth.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_updater.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\tool_abstract.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_about.ui">
+      <Filter>Dialogs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_updater.ui">
+      <Filter>Dialogs</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -176,5 +347,10 @@
     <Object Include="asm\cpu-detect.obj">
       <Filter>Assembly</Filter>
     </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="etc\manifest\compat.manifest">
+      <Filter>Resource Files</Filter>
+    </Manifest>
   </ItemGroup>
 </Project>

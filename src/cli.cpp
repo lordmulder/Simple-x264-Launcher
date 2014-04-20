@@ -49,6 +49,7 @@ s_parameters[] =
 	MAKE_ARG( "skip-vapoursynth-check", 0, CLI_PARAM_SKIP_VPS_CHECK   ),
 	MAKE_ARG( "no-deadlock-detection",  0, CLI_PARAM_NO_DEADLOCK      ),
 	MAKE_ARG( "no-style",               0, CLI_PARAM_NO_GUI_STYLE     ),
+	MAKE_ARG( "first-run",              0, CLI_PARAM_FIRST_RUN        ),
 	MAKE_ARG( "console",                0, CLI_PARAM_OTHER            ),
 	MAKE_ARG( "no-console",             0, CLI_PARAM_OTHER            ),
 	MAKE_ARG( "force-cpu-no-64bit",     0, CLI_PARAM_OTHER            ),

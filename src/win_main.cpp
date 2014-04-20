@@ -747,6 +747,8 @@ void MainWindow::init(void)
 
 	updateLabelPos();
 
+	const QStringList arguments = x264_arguments();
+
 	//---------------------------------------
 	// Create the IPC listener thread
 	//---------------------------------------
@@ -870,8 +872,6 @@ void MainWindow::init(void)
 	//---------------------------------------
 	// Check CPU capabilities
 	//---------------------------------------
-	
-	const QStringList arguments = x264_arguments();
 
 	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
 	if(!m_sysinfo->hasMMXSupport())
@@ -989,9 +989,9 @@ void MainWindow::init(void)
 	if(x264_version_date().addMonths(6) < x264_current_date_safe())
 	{
 		QString text;
-		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 6 months old!").replace("-", "&minus;"));
-		text += QString("<nobr><tt>%1<br><a href=\"%2\">%3</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace("-", "&minus;"), QString::fromLatin1(update_url), QString::fromLatin1(update_url).replace("-", "&minus;"));
-		text += QString("<nobr><tt>%1</tt></nobr><br>").arg(tr("Alternatively, click 'Check for Updates' to run the auto-update utility.").replace("-", "&minus;"));
+		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 6 months old!").replace('-', "&minus;"));
+		text += QString("<nobr><tt>%1<br><a href=\"%2\">%3</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace('-', "&minus;"), QString::fromLatin1(update_url), QString::fromLatin1(update_url).replace("-", "&minus;"));
+		text += QString("<nobr><tt>%1</tt></nobr><br>").arg(tr("Alternatively, click 'Check for Updates' to run the auto-update utility.").replace('-', "&minus;"));
 		QMessageBox msgBox(this);
 		msgBox.setIconPixmap(QIcon(":/images/update.png").pixmap(56,56));
 		msgBox.setWindowTitle(tr("Update Notification"));
@@ -1029,7 +1029,13 @@ void MainWindow::init(void)
 	if(!parseCommandLineArgs())
 	{
 		//Update reminder
-		if((!m_preferences->getNoUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
+		if(CLIParser::checkFlag(CLI_PARAM_FIRST_RUN, arguments))
+		{
+			qWarning("First run -> resetting update check now!");
+			m_recentlyUsed->setLastUpdateCheck(0);
+			RecentlyUsed::saveRecentlyUsed(m_recentlyUsed);
+		}
+		else if((!m_preferences->getNoUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
 		{
 			if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
 			{
@@ -1061,7 +1067,7 @@ void MainWindow::updateLabelPos(void)
  */
 void MainWindow::copyLogToClipboard(bool checked)
 {
-	qDebug("copyLogToClipboard");
+	qDebug("Coyping logfile to clipboard...");
 	
 	if(LogFileModel *log = dynamic_cast<LogFileModel*>(ui->logView->model()))
 	{

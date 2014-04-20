@@ -38,6 +38,7 @@ static const int CLI_PARAM_SKIP_VPS_CHECK   =  7;
 static const int CLI_PARAM_SKIP_X264_CHECK  =  8;
 static const int CLI_PARAM_NO_DEADLOCK      =  9;
 static const int CLI_PARAM_NO_GUI_STYLE     = 10;
+static const int CLI_PARAM_FIRST_RUN        = 11;
 static const int CLI_PARAM_OTHER            = 42;
 
 ///////////////////////////////////////////////////////////////////////////////

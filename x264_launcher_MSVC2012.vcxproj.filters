@@ -34,12 +34,6 @@
     <None Include="res\icons\movie.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="gui\win_about.ui">
-      <Filter>Dialogs</Filter>
-    </None>
-    <None Include="gui\win_updater.ui">
-      <Filter>Dialogs</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\3rd_party\blake2.h">
@@ -72,16 +66,7 @@
     <ClInclude Include="src\global.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ipc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\job_object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\model_jobList.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\model_logFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\model_options.h">
@@ -117,43 +102,10 @@
     <ClInclude Include="src\taskbar7.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_avisynth.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\thread_encode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\thread_updater.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\thread_vapoursynth.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tool_abstract.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\win_about.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_addJob.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_editor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_help.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_main.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_preferences.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_updater.h">
+    <ClInclude Include="src\mediainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -308,6 +260,15 @@
     <ClCompile Include="tmp\moc\moc_win_updater.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mediainfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_input_filter.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="res\resources.qrc">
@@ -327,6 +288,56 @@
     </CustomBuild>
     <CustomBuild Include="gui\win_editor.ui">
       <Filter>Dialogs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="gui\win_about.ui" />
+    <CustomBuild Include="gui\win_updater.ui" />
+    <CustomBuild Include="src\ipc.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\model_jobList.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\model_logFile.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_avisynth.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_encode.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_updater.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_vapoursynth.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\tool_abstract.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_about.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_addJob.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_editor.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_help.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_main.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_preferences.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\win_updater.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\input_filter.h">
+      <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

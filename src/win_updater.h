@@ -37,7 +37,7 @@ class UpdaterDialog : public QDialog
 	Q_OBJECT
 
 public:
-	UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo);
+	UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const char *const updateUrl);
 	~UpdaterDialog(void);
 
 	static const int READY_TO_INSTALL_UPDATE = 42;
@@ -67,6 +67,7 @@ private:
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
 
 	const SysinfoModel *const m_sysinfo;
+	const char *const m_updateUrl;
 
 	bool m_firstShow;
 	bool m_success;

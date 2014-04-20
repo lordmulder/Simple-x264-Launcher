@@ -64,11 +64,12 @@ while(0)
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
 
-UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo)
+UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const char *const updateUrl)
 :
 	QDialog(parent),
 	ui(new Ui::UpdaterDialog()),
 	m_sysinfo(sysinfo),
+	m_updateUrl(updateUrl),
 	m_status(UpdateCheckThread::UpdateStatus_NotStartedYet),
 	m_thread(NULL),
 	m_updaterProcess(NULL),
@@ -193,7 +194,11 @@ void UpdaterDialog::initUpdate(void)
 	if(!checkBinaries(wgetBin, gpgvBin))
 	{
 		ui->buttonCancel->setEnabled(true);
-		QMessageBox::critical(this, tr("File Error"), tr("At least one file required by web-update is missing or corrupted.<br>Please re-install this application and then try again!"));
+		const QString message = QString("%1<br><br><nobr><a href=\"%2\">%3</a></nobr><br>").arg(tr("At least one file required by the web-update tool is missing or corrupted.<br>Please re-install this application and then try again!"), QString::fromLatin1(m_updateUrl), QString::fromLatin1(m_updateUrl).replace("-", "&minus;"));
+		if(QMessageBox::critical(this, tr("File Error"), message, tr("Download Latest Version"), tr("Discard")) == 0)
+		{
+			QDesktopServices::openUrl(QUrl(QString::fromLatin1(m_updateUrl)));
+		}
 		close(); return;
 	}
 
@@ -456,7 +461,7 @@ bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 	}
 	FILE_INFO[] =
 	{
-		{ "wget.exe", "7b522345239bcb95b5b0f7f50a883ba5957894a1feb769763e38ed789a8a0f63fead0155f54b9ffd0f1cdc5dfd855d207a6e7a8e4fd192589a8838ce646c504e" },
+		{ "wget.exe", "17b522345239bcb95b5b0f7f50a883ba5957894a1feb769763e38ed789a8a0f63fead0155f54b9ffd0f1cdc5dfd855d207a6e7a8e4fd192589a8838ce646c504e" },
 		{ "gpgv.exe", "b42b7ef5650cd78d92773f03d4eefc90d9ba6ffe6af19d389851e32b5ab1c58c91c3dfceb2cbe0d0d13774ee2cf100c20f0add7f33463229999da5aaa861f064" },
 		{ "gpgv.gpg", "58e0f0e462bbd0b5aa4f638801c1097da7da4b3eb38c8c88ad1db23705c0f11e174b083fa55fe76bd3ba196341c967833a6f3427d6f63ad8565900745535d8fa" },
 		{ "wupd.exe", "e8ee5fb11e4964c0091311a41b46e2ea49cf675755ee830c38a26027c81aecc78842c25facc0ac6b797586e4c4b22ac116dd1735b0b11b67c13e4a17fb1e5f5e" },

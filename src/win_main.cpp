@@ -60,9 +60,9 @@
 
 #include <ctime>
 
-const char *home_url = "http://muldersoft.com/";
-const char *update_url = "https://github.com/lordmulder/Simple-x264-Launcher/releases/latest";
-const char *tpl_last = "<LAST_USED>";
+static const char *home_url = "http://muldersoft.com/";
+static const char *update_url = "https://github.com/lordmulder/Simple-x264-Launcher/releases/latest";
+static const char *tpl_last = "<LAST_USED>";
 
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
@@ -499,7 +499,6 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			if((status == JobStatus_Completed) || (status == JobStatus_Failed))
 			{
 				if(m_preferences->getAutoRunNextJob()) QTimer::singleShot(0, this, SLOT(launchNextJob()));
-				if(m_preferences->getShutdownComputer()) QTimer::singleShot(0, this, SLOT(shutdownComputer()));
 				if(m_preferences->getSaveLogFiles()) saveLogFile(m_jobList->index(i, 1, QModelIndex()));
 			}
 		}
@@ -593,9 +592,7 @@ void MainWindow::showPreferences(void)
  */
 void MainWindow::launchNextJob(void)
 {
-	qDebug("launchNextJob(void)");
-	
-	const int rows = m_jobList->rowCount(QModelIndex());
+	qDebug("Launching next job...");
 
 	if(countRunningJobs() >= m_preferences->getMaxRunningJobCount())
 	{
@@ -603,23 +600,27 @@ void MainWindow::launchNextJob(void)
 		return;
 	}
 
-	int startIdx= ui->jobsView->currentIndex().isValid() ? qBound(0, ui->jobsView->currentIndex().row(), rows-1) : 0;
+	const int rows = m_jobList->rowCount(QModelIndex());
 
 	for(int i = 0; i < rows; i++)
 	{
-		int currentIdx = (i + startIdx) % rows;
-		JobStatus status = m_jobList->getJobStatus(m_jobList->index(currentIdx, 0, QModelIndex()));
-		if(status == JobStatus_Enqueued)
+		const QModelIndex currentIndex = m_jobList->index(i, 0, QModelIndex());
+		if(m_jobList->getJobStatus(currentIndex) == JobStatus_Enqueued)
 		{
-			if(m_jobList->startJob(m_jobList->index(currentIdx, 0, QModelIndex())))
+			if(m_jobList->startJob(currentIndex))
 			{
-				ui->jobsView->selectRow(currentIdx);
+				ui->jobsView->selectRow(currentIndex.row());
 				return;
 			}
 		}
 	}
 		
-	qWarning("No enqueued jobs left!");
+	qWarning("No enqueued jobs left to be started!");
+
+	if(m_preferences->getShutdownComputer())
+	{
+		QTimer::singleShot(0, this, SLOT(shutdownComputer()));
+	}
 }
 
 /*
@@ -989,7 +990,7 @@ void MainWindow::init(void)
 	{
 		QString text;
 		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 6 months old!").replace("-", "&minus;"));
-		text += QString("<nobr><tt>%1<br><a href=\"%2\">%2</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace("-", "&minus;"), QString::fromLatin1(update_url));
+		text += QString("<nobr><tt>%1<br><a href=\"%2\">%3</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace("-", "&minus;"), QString::fromLatin1(update_url), QString::fromLatin1(update_url).replace("-", "&minus;"));
 		text += QString("<nobr><tt>%1</tt></nobr><br>").arg(tr("Alternatively, click 'Check for Updates' to run the auto-update utility.").replace("-", "&minus;"));
 		QMessageBox msgBox(this);
 		msgBox.setIconPixmap(QIcon(":/images/update.png").pixmap(56,56));
@@ -1088,6 +1089,9 @@ void MainWindow::handlePendingFiles(void)
 	}
 }
 
+/*
+ * Handle incoming IPC command
+ */
 void MainWindow::handleCommand(const int &command, const QStringList &args, const quint32 &flags)
 {
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
@@ -1162,6 +1166,9 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 	}
 }
 
+/*
+ * Check for new updates
+ */
 void MainWindow::checkUpdates(void)
 {
 	ENSURE_APP_IS_IDLE();
@@ -1174,7 +1181,7 @@ void MainWindow::checkUpdates(void)
 		return;
 	}
 
-	UpdaterDialog *updater = new UpdaterDialog(this, m_sysinfo);
+	UpdaterDialog *updater = new UpdaterDialog(this, m_sysinfo, update_url);
 	const int ret = updater->exec();
 
 	if(updater->getSuccess())
@@ -1199,6 +1206,9 @@ void MainWindow::checkUpdates(void)
 	}
 }
 
+/*
+ * Handle mouse event for version label
+ */
 void MainWindow::versionLabelMouseClicked(const int &tag)
 {
 	if(tag == 0)
@@ -1207,6 +1217,9 @@ void MainWindow::versionLabelMouseClicked(const int &tag)
 	}
 }
 
+/*
+ * Handle key event for job list
+ */
 void MainWindow::jobListKeyPressed(const int &tag)
 {
 	switch(tag)

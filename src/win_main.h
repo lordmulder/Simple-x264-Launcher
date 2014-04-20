@@ -32,6 +32,7 @@ class QFile;
 class QLibrary;
 class PreferencesModel;
 class RecentlyUsed;
+class InputEventFilter;
 class QModelIndex;
 class QLabel;
 enum JobStatus;
@@ -53,7 +54,6 @@ protected:
 	virtual void closeEvent(QCloseEvent *e);
 	virtual void showEvent(QShowEvent *e);
 	virtual void resizeEvent(QResizeEvent *e);
-	virtual bool eventFilter(QObject *o, QEvent *e);
 	virtual void dragEnterEvent(QDragEnterEvent *event);
 	virtual void dropEvent(QDropEvent *event);
 	virtual bool winEvent(MSG *message, long *result);
@@ -75,6 +75,9 @@ private:
 
 	QLabel *m_label;
 	IPC *const m_ipc;
+
+	InputEventFilter *m_inputFilter_jobList;
+	InputEventFilter *m_inputFilter_version;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;
@@ -110,7 +113,9 @@ private slots:
 	void jobSelected(const QModelIndex &current, const QModelIndex &previous);
 	void jobChangedData(const  QModelIndex &top, const  QModelIndex &bottom);
 	void jobLogExtended(const QModelIndex & parent, int start, int end);
+	void jobListKeyPressed(const int &tag);
 	void launchNextJob();
+	void moveButtonPressed(void);
 	void pauseButtonPressed(bool checked);
 	void restartButtonPressed(void);
 	void saveLogFile(const QModelIndex &index);
@@ -120,4 +125,5 @@ private slots:
 	void shutdownComputer(void);
 	void startButtonPressed(void);
 	void updateLabelPos(void);
+	void versionLabelMouseClicked(const int &tag);
 };

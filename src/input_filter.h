@@ -19,15 +19,35 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 3
-#define VER_X264_PATCH 7
-#define VER_X264_BUILD 843
+#include <QObject>
 
-#define VER_X264_PORTABLE_EDITION (0)
+template<class K, class T> class QHash;
+class QKeyEvent;
+class QMouseEvent;
 
-#define VER_X264_PRE_RELEASE (0)
+class InputEventFilter : public QObject
+{
+	Q_OBJECT
+
+public:
+	InputEventFilter(QWidget *target);
+	~InputEventFilter(void);
+
+	void addKeyFilter(const int &keyCode, const int &tag);
+	void addMouseFilter(const int &keyCode, const int &tag);
+
+signals:
+	void keyPressed(const int &tag);
+	void mouseClicked(const int &tag);
+
+protected:
+	bool eventFilter(QObject *obj, QEvent *event);
+	bool eventFilter(QKeyEvent *keyEvent);
+	bool eventFilter(QMouseEvent *mouseEvent);
+
+	QWidget *const m_target;
+	QHash<int, int> *m_keyMapping;
+	QHash<int, int> *m_mouseMapping;
+};

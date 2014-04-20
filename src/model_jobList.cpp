@@ -37,6 +37,8 @@ static const char *KEY_ENC_OPTIONS = "enc_options";
 
 static const char *JOB_TEMPLATE = "job_%08x";
 
+#define VALID_INDEX(INDEX) ((INDEX).isValid() && ((INDEX).row() >= 0) && ((INDEX).row() < m_jobs.count()))
+
 JobListModel::JobListModel(PreferencesModel *preferences)
 {
 	m_preferences = preferences;
@@ -311,7 +313,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 
 bool JobListModel::startJob(const QModelIndex &index)
 {
-	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	if(VALID_INDEX(index))
 	{
 		QUuid id = m_jobs.at(index.row());
 		if(m_status.value(id) == JobStatus_Enqueued)
@@ -328,7 +330,7 @@ bool JobListModel::startJob(const QModelIndex &index)
 
 bool JobListModel::pauseJob(const QModelIndex &index)
 {
-	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	if(VALID_INDEX(index))
 	{
 		QUuid id = m_jobs.at(index.row());
 		JobStatus status = m_status.value(id);
@@ -346,7 +348,7 @@ bool JobListModel::pauseJob(const QModelIndex &index)
 
 bool JobListModel::resumeJob(const QModelIndex &index)
 {
-	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	if(VALID_INDEX(index))
 	{
 		QUuid id = m_jobs.at(index.row());
 		JobStatus status = m_status.value(id);
@@ -363,7 +365,7 @@ bool JobListModel::resumeJob(const QModelIndex &index)
 
 bool JobListModel::abortJob(const QModelIndex &index)
 {
-	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	if(VALID_INDEX(index))
 	{
 		QUuid id = m_jobs.at(index.row());
 		if(m_status.value(id) == JobStatus_Indexing || m_status.value(id) == JobStatus_Running ||
@@ -380,7 +382,7 @@ bool JobListModel::abortJob(const QModelIndex &index)
 
 bool JobListModel::deleteJob(const QModelIndex &index)
 {
-	if(index.isValid() && index.row() >= 0 && index.row() < m_jobs.count())
+	if(VALID_INDEX(index))
 	{
 		QUuid id = m_jobs.at(index.row());
 		if(m_status.value(id) == JobStatus_Completed || m_status.value(id) == JobStatus_Failed ||
@@ -406,6 +408,29 @@ bool JobListModel::deleteJob(const QModelIndex &index)
 				X264_DELETE(logFile);
 				return true;
 			}
+		}
+	}
+
+	return false;
+}
+
+bool JobListModel::moveJob(const QModelIndex &index, const int &direction)
+{
+	if(VALID_INDEX(index))
+	{
+		if((direction == MOVE_UP) && (index.row() > 0))
+		{
+			beginMoveRows(QModelIndex(), index.row(), index.row(), QModelIndex(), index.row() - 1);
+			m_jobs.swap(index.row(), index.row() - 1);
+			endMoveRows();
+			return true;
+		}
+		if((direction == MOVE_DOWN) && (index.row() < m_jobs.size() - 1))
+		{
+			beginMoveRows(QModelIndex(), index.row(), index.row(), QModelIndex(), index.row() + 2);
+			m_jobs.swap(index.row(), index.row() + 1);
+			endMoveRows();
+			return true;
 		}
 	}
 
@@ -591,8 +616,16 @@ size_t JobListModel::loadQueuedJobs(const SysinfoModel *sysinfo)
 		return 0;
 	}
 
-	size_t jobsCreated = 0;
+	const QStringList groups = settings.childGroups();
+	for(size_t i = 0; i < jobCounter; i++)
+	{
+		if(!groups.contains(QString().sprintf(JOB_TEMPLATE, i)))
+		{
+			return 0;
+		}
+	}
 
+	size_t jobsCreated = 0;
 	for(size_t i = 0; i < jobCounter; i++)
 	{
 		settings.beginGroup(QString().sprintf(JOB_TEMPLATE, i));
@@ -628,4 +661,6 @@ void JobListModel::clearQueuedJobs(void)
 	const QString appDir = x264_data_path();
 	QSettings settings(QString("%1/queue.ini").arg(appDir), QSettings::IniFormat);
 	settings.clear();
+	settings.setValue(KEY_ENTRY_COUNT, 0);
+	settings.sync();
 }

@@ -52,6 +52,7 @@ public:
 	bool resumeJob(const QModelIndex &index);
 	bool abortJob(const QModelIndex &index);
 	bool deleteJob(const QModelIndex &index);
+	bool moveJob(const QModelIndex &index, const int &direction);
 	LogFileModel *getLogFile(const QModelIndex &index);
 	const QString &getJobSourceFile(const QModelIndex &index);
 	const QString &getJobOutputFile(const QModelIndex &index);
@@ -63,6 +64,13 @@ public:
 	size_t saveQueuedJobs(void);
 	size_t loadQueuedJobs(const SysinfoModel *sysinfo);
 	void clearQueuedJobs(void);
+
+	typedef enum
+	{
+		MOVE_UP   = +1,
+		MOVE_DOWN = -1
+	}
+	move_t;
 
 protected:
 	QList<QUuid> m_jobs;

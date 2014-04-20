@@ -4,6 +4,8 @@
     <file>icons/movie.ico</file>
     <file>buttons/accept.png</file>
     <file>buttons/add.png</file>
+    <file>buttons/arrow_down.png</file>
+    <file>buttons/arrow_up.png</file>
     <file>buttons/bomb.png</file>
     <file>buttons/book_open.png</file>
     <file>buttons/cancel.png</file>

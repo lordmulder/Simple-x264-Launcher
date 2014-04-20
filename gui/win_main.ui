@@ -403,6 +403,9 @@
     <addaction name="actionJob_Browse"/>
     <addaction name="actionJob_Delete"/>
     <addaction name="actionJob_Restart"/>
+    <addaction name="separator"/>
+    <addaction name="actionJob_MoveUp"/>
+    <addaction name="actionJob_MoveDown"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuJob"/>
@@ -739,6 +742,30 @@
    </property>
    <property name="text">
     <string>Codecs.com Mirror</string>
+   </property>
+  </action>
+  <action name="actionJob_MoveUp">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/arrow_up.png</normaloff>:/buttons/arrow_up.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Up</string>
+   </property>
+  </action>
+  <action name="actionJob_MoveDown">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/arrow_down.png</normaloff>:/buttons/arrow_down.png</iconset>
+   </property>
+   <property name="text">
+    <string>Move Down</string>
    </property>
   </action>
  </widget>

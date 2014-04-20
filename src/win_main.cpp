@@ -35,6 +35,7 @@
 #include "thread_vapoursynth.h"
 #include "thread_encode.h"
 #include "taskbar7.h"
+#include "input_filter.h"
 #include "win_addJob.h"
 #include "win_about.h"
 #include "win_preferences.h"
@@ -70,7 +71,6 @@ const char *tpl_last = "<LAST_USED>";
 #define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 #define SETUP_WEBLINK(OBJ, URL) do { (OBJ)->setData(QVariant(QUrl(URL))); connect((OBJ), SIGNAL(triggered()), this, SLOT(showWebLink())); } while(0)
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -125,7 +125,6 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 
 	//Update title
 	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
-	ui->labelBuildDate->installEventFilter(this);
 	
 	if(X264_DEBUG)
 	{
@@ -152,6 +151,18 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	ui->jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
 	connect(ui->jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
 
+	//Setup key listener
+	m_inputFilter_jobList = new InputEventFilter(ui->jobsView);
+	m_inputFilter_jobList->addKeyFilter(Qt::ControlModifier | Qt::Key_Up,   1);
+	m_inputFilter_jobList->addKeyFilter(Qt::ControlModifier | Qt::Key_Down, 2);
+	connect(m_inputFilter_jobList, SIGNAL(keyPressed(int)), this, SLOT(jobListKeyPressed(int)));
+	
+	//Setup mouse listener
+	m_inputFilter_version = new InputEventFilter(ui->labelBuildDate);
+	m_inputFilter_version->addMouseFilter(Qt::LeftButton,  0);
+	m_inputFilter_version->addMouseFilter(Qt::RightButton, 0);
+	connect(m_inputFilter_version, SIGNAL(mouseClicked(int)), this, SLOT(versionLabelMouseClicked(int)));
+
 	//Create context menu
 	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), ui->logView);
 	actionClipboard->setEnabled(false);
@@ -160,13 +171,15 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	ui->jobsView->addActions(ui->menuJob->actions());
 
 	//Enable buttons
-	connect(ui->buttonAddJob, SIGNAL(clicked()), this, SLOT(addButtonPressed()));
-	connect(ui->buttonStartJob, SIGNAL(clicked()), this, SLOT(startButtonPressed()));
-	connect(ui->buttonAbortJob, SIGNAL(clicked()), this, SLOT(abortButtonPressed()));
-	connect(ui->buttonPauseJob, SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
-	connect(ui->actionJob_Delete, SIGNAL(triggered()), this, SLOT(deleteButtonPressed()));
-	connect(ui->actionJob_Restart, SIGNAL(triggered()), this, SLOT(restartButtonPressed()));
-	connect(ui->actionJob_Browse, SIGNAL(triggered()), this, SLOT(browseButtonPressed()));
+	connect(ui->buttonAddJob,       SIGNAL(clicked()),     this, SLOT(addButtonPressed()      ));
+	connect(ui->buttonStartJob,     SIGNAL(clicked()),     this, SLOT(startButtonPressed()    ));
+	connect(ui->buttonAbortJob,     SIGNAL(clicked()),     this, SLOT(abortButtonPressed()    ));
+	connect(ui->buttonPauseJob,     SIGNAL(toggled(bool)), this, SLOT(pauseButtonPressed(bool)));
+	connect(ui->actionJob_Delete,   SIGNAL(triggered()),   this, SLOT(deleteButtonPressed()   ));
+	connect(ui->actionJob_Restart,  SIGNAL(triggered()),   this, SLOT(restartButtonPressed()  ));
+	connect(ui->actionJob_Browse,   SIGNAL(triggered()),   this, SLOT(browseButtonPressed()   ));
+	connect(ui->actionJob_MoveUp,   SIGNAL(triggered()),   this, SLOT(moveButtonPressed()     ));
+	connect(ui->actionJob_MoveDown, SIGNAL(triggered()),   this, SLOT(moveButtonPressed()     ));
 
 	//Enable menu
 	connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(openActionTriggered()));
@@ -222,6 +235,8 @@ MainWindow::~MainWindow(void)
 	X264_DELETE(m_options);
 	X264_DELETE(m_pendingFiles);
 	X264_DELETE(m_label);
+	X264_DELETE(m_inputFilter_jobList);
+	X264_DELETE(m_inputFilter_version);
 
 	while(!m_toolsList.isEmpty())
 	{
@@ -352,6 +367,37 @@ void MainWindow::browseButtonPressed(void)
 	}
 
 	m_status = STATUS_IDLE;
+}
+
+/*
+ * The "browse" button was clicked
+ */
+void MainWindow::moveButtonPressed(void)
+{
+	ENSURE_APP_IS_IDLE();
+
+	if(sender() == ui->actionJob_MoveUp)
+	{
+		qDebug("Move job %d (direction: UP)", ui->jobsView->currentIndex().row());
+		if(!m_jobList->moveJob(ui->jobsView->currentIndex(), JobListModel::MOVE_UP))
+		{
+			x264_beep(x264_beep_error);
+		}
+		ui->jobsView->scrollTo(ui->jobsView->currentIndex(), QAbstractItemView::PositionAtCenter);
+	}
+	else if(sender() == ui->actionJob_MoveDown)
+	{
+		qDebug("Move job %d (direction: DOWN)", ui->jobsView->currentIndex().row());
+		if(!m_jobList->moveJob(ui->jobsView->currentIndex(), JobListModel::MOVE_DOWN))
+		{
+			x264_beep(x264_beep_error);
+		}
+		ui->jobsView->scrollTo(ui->jobsView->currentIndex(), QAbstractItemView::PositionAtCenter);
+	}
+	else
+	{
+		qWarning("[moveButtonPressed] Error: Unknown sender!");
+	}
 }
 
 /*
@@ -996,6 +1042,7 @@ void MainWindow::init(void)
 	if(m_jobList->loadQueuedJobs(m_sysinfo) > 0)
 	{
 		m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+		m_jobList->clearQueuedJobs();
 	}
 }
 
@@ -1152,6 +1199,27 @@ void MainWindow::checkUpdates(void)
 	}
 }
 
+void MainWindow::versionLabelMouseClicked(const int &tag)
+{
+	if(tag == 0)
+	{
+		QTimer::singleShot(0, this, SLOT(showAbout()));
+	}
+}
+
+void MainWindow::jobListKeyPressed(const int &tag)
+{
+	switch(tag)
+	{
+	case 1:
+		ui->actionJob_MoveUp->trigger();
+		break;
+	case 2:
+		ui->actionJob_MoveDown->trigger();
+		break;
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Event functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -1174,8 +1242,6 @@ void MainWindow::showEvent(QShowEvent *e)
  */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	bool bJobsHaveBeenSaved = false;
-
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
 	{
 		e->ignore();
@@ -1202,10 +1268,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 			int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("You still have pending jobs. How do you want to proceed?"), tr("Save Pending Jobs"), tr("Discard"));
 			if(ret == 0)
 			{
-				if(m_jobList->saveQueuedJobs() > 0)
-				{
-					bJobsHaveBeenSaved = true;
-				}
+				m_jobList->saveQueuedJobs();
 			}
 			else
 			{
@@ -1219,12 +1282,6 @@ void MainWindow::closeEvent(QCloseEvent *e)
 		}
 	}
 	
-	//Clear "old" pending jobs for next startup (only if we have not saved "new" jobs already!)
-	if(!bJobsHaveBeenSaved)
-	{
-		m_jobList->clearQueuedJobs();
-	}
-
 	//Delete remaining jobs
 	while(m_jobList->rowCount(QModelIndex()) > 0)
 	{
@@ -1253,19 +1310,6 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 {
 	QMainWindow::resizeEvent(e);
 	updateLabelPos();
-}
-
-/*
- * Event filter
- */
-bool MainWindow::eventFilter(QObject *o, QEvent *e)
-{
-	if((o == ui->labelBuildDate) && (e->type() == QEvent::MouseButtonPress))
-	{
-		QTimer::singleShot(0, this, SLOT(showAbout()));
-		return true;
-	}
-	return false;
 }
 
 /*
@@ -1493,6 +1537,8 @@ void MainWindow::updateButtons(JobStatus status)
 	ui->actionJob_Delete->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
 	ui->actionJob_Restart->setEnabled(status == JobStatus_Completed || status == JobStatus_Aborted || status == JobStatus_Failed || status == JobStatus_Enqueued);
 	ui->actionJob_Browse->setEnabled(status == JobStatus_Completed);
+	ui->actionJob_MoveUp->setEnabled(status != JobStatus_Undefined);
+	ui->actionJob_MoveDown->setEnabled(status != JobStatus_Undefined);
 
 	ui->actionJob_Start->setEnabled(ui->buttonStartJob->isEnabled());
 	ui->actionJob_Abort->setEnabled(ui->buttonAbortJob->isEnabled());

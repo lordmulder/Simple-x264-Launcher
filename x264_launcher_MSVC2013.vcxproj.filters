@@ -108,6 +108,9 @@
     <ClInclude Include="src\mediainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\key_filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -262,6 +265,12 @@
     </ClCompile>
     <ClCompile Include="src\mediainfo.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\moc\moc_input_filter.cpp">
+      <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

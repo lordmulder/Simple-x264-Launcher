@@ -184,7 +184,7 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	processEncode.waitForFinished(5000);
 	if(processEncode.state() != QProcess::NotRunning)
 	{
-		qWarning("x264 process still running, going to kill it!");
+		qWarning("Encoder process still running, going to kill it!");
 		processEncode.kill();
 		processEncode.waitForFinished(-1);
 	}
@@ -217,7 +217,8 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 			const int exitCode = processEncode.exitCode();
 			if((exitCode < 0) || (exitCode >= 32))
 			{
-				log(tr("\nFATAL ERROR: The encoder process has crashed, your encode probably is *incomplete* !!!"));
+				log(tr("\nFATAL ERROR: The encoder process has *crashed* -> your encode probably is *incomplete* !!!"));
+				log(tr("Note that this indicates a bug in the current encoder, *not* in Simple x264/x265 Launcher."));
 			}
 			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(exitCode)));
 		}

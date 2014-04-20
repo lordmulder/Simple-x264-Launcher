@@ -106,7 +106,6 @@ protected:
 	void encode(void);
 
 	//Static functions
-	static int getInputType(const QString &fileExt);
 	static QString getPasslogFile(const QString &outputFile);
 
 signals:

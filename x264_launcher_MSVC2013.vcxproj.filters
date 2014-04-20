@@ -105,6 +105,9 @@
     <ClInclude Include="src\encoder_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\mediainfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -255,6 +258,9 @@
       <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\encoder_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mediainfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -28,6 +28,7 @@
 #include "model_sysinfo.h"
 #include "job_object.h"
 #include "binaries.h"
+#include "mediainfo.h"
 
 //Encoders
 #include "encoder_factory.h"
@@ -105,21 +106,6 @@ while(0)
 } \
 while(0)
 
-/*
- * Input types
- */
-typedef enum
-{
-	INPUT_NATIVE = 0,
-	INPUT_AVISYN = 1,
-	INPUT_VAPOUR = 2
-};
-
-/*
- * Static vars
- */
-//static const char *VPS_TEST_FILE = "import vapoursynth as vs\ncore = vs.get_core()\nv = core.std.BlankClip()\nv.set_output()\n";
-
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
 ///////////////////////////////////////////////////////////////////////////////
@@ -144,13 +130,19 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	m_encoder = EncoderFactory::createEncoder(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName, m_outputFileName);
 
 	//Create input handler object
-	switch(getInputType(QFileInfo(m_sourceFileName).suffix()))
+	switch(MediaInfo::analyze(m_sourceFileName))
 	{
-	case INPUT_AVISYN:
-		m_pipedSource = new AvisynthSource   (m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+	case MediaInfo::FILETYPE_AVISYNTH:
+		if(m_sysinfo->hasAVSSupport())
+		{
+			m_pipedSource = new AvisynthSource   (m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+		}
 		break;
-	case INPUT_VAPOUR:
-		m_pipedSource = new VapoursynthSource(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+	case MediaInfo::FILETYPE_VAPOURSYNTH:
+		if(m_sysinfo->hasVPSSupport())
+		{
+			m_pipedSource = new VapoursynthSource(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+		}
 		break;
 	}
 
@@ -203,6 +195,11 @@ void EncodeThread::checkedRun(void)
 		{
 			ExecutionStateHandler executionStateHandler;
 			encode();
+		}
+		catch(const std::exception &e)
+		{
+			log(tr("EXCEPTION ERROR IN THREAD: ").append(QString::fromLatin1(e.what())));
+			setStatus(JobStatus_Failed);
 		}
 		catch(char *msg)
 		{
@@ -402,18 +399,6 @@ void EncodeThread::setDetails(const QString &text)
 		emit detailsChanged(m_jobId, text);
 		m_details = text;
 	}
-}
-
-int EncodeThread::getInputType(const QString &fileExt)
-{
-	int type = INPUT_NATIVE;
-
-	if(fileExt.compare("avs",  Qt::CaseInsensitive) == 0) type = INPUT_AVISYN;
-	if(fileExt.compare("avsi", Qt::CaseInsensitive) == 0) type = INPUT_AVISYN;
-	if(fileExt.compare("vpy",  Qt::CaseInsensitive) == 0) type = INPUT_VAPOUR;
-	if(fileExt.compare("py",   Qt::CaseInsensitive) == 0) type = INPUT_VAPOUR;
-
-	return type;
 }
 
 QString EncodeThread::getPasslogFile(const QString &outputFile)

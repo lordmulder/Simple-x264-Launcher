@@ -25,6 +25,7 @@
 #include "model_options.h"
 #include "model_status.h"
 #include "binaries.h"
+#include "mediainfo.h"
 
 #include <QStringList>
 #include <QDir>
@@ -124,15 +125,6 @@ public:
 		return profiles;
 	}
 
-	virtual QStringList supportedInputFormats(void) const
-	{
-		QStringList extLst;
-		extLst << "avi" << "mp4" << "mkv" << "flv";
-		extLst << "mpg" << "m2v" << "m2ts" << "ts";
-		extLst << "wmv" << "ogm" << "vob" << "y4m";
-		return extLst;
-	}
-
 	virtual QStringList supportedOutputFormats(void) const
 	{
 		QStringList extLst;
@@ -148,6 +140,19 @@ public:
 		case OptionsModel::RCMode_CQ:
 		case OptionsModel::RCMode_2Pass:
 		case OptionsModel::RCMode_ABR:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	virtual bool isInputTypeSupported(const int format) const
+	{
+		switch(format)
+		{
+		case MediaInfo::FILETYPE_AVISYNTH:
+		case MediaInfo::FILETYPE_YUV4MPEG2:
+		case MediaInfo::FILETYPE_UNKNOWN:
 			return true;
 		default:
 			return false;

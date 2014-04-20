@@ -25,6 +25,7 @@
 #include "model_options.h"
 #include "model_status.h"
 #include "binaries.h"
+#include "mediainfo.h"
 
 #include <QStringList>
 #include <QDir>
@@ -109,13 +110,6 @@ public:
 		return QStringList();
 	}
 
-	virtual QStringList supportedInputFormats(void) const
-	{
-		QStringList extLst;
-		extLst << "y4m";
-		return extLst;
-	}
-
 	virtual QStringList supportedOutputFormats(void) const
 	{
 		QStringList extLst;
@@ -136,6 +130,16 @@ public:
 		}
 	}
 
+	virtual bool isInputTypeSupported(const int format) const
+	{
+		switch(format)
+		{
+		case MediaInfo::FILETYPE_YUV4MPEG2:
+			return true;
+		default:
+			return false;
+		}
+	}
 };
 
 static const X265EncoderInfo s_x265EncoderInfo;

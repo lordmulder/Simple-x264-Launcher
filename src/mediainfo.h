@@ -19,15 +19,25 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+class QString;
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 3
-#define VER_X264_PATCH 7
-#define VER_X264_BUILD 838
+class MediaInfo
+{
+public:
+	typedef enum
+	{
+		FILETYPE_UNKNOWN      = 0,
+		FILETYPE_YUV4MPEG2    = 1,
+		FILETYPE_AVISYNTH     = 2,
+		FILETYPE_VAPOURSYNTH  = 3
+	}
+	fileType_t;
 
-#define VER_X264_PORTABLE_EDITION (0)
+	static int analyze(const QString &fileName);
 
-#define VER_X264_PRE_RELEASE (0)
+private:
+	MediaInfo(void)  {/*NOP*/}
+	~MediaInfo(void) {/*NOP*/}
+
+	static bool isYuv4Mpeg(const QString &fileName);
+};

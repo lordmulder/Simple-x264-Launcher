@@ -28,6 +28,7 @@
 #include "model_sysinfo.h"
 #include "model_recently.h"
 #include "encoder_factory.h"
+#include "mediainfo.h"
 #include "win_help.h"
 #include "win_editor.h"
 
@@ -532,8 +533,9 @@ void AddJobDialog::accept(void)
 		return;
 	}
 
-	//Is the type of the source file supported? (as far as we can tell)
-	if(sourceFile.suffix().compare("AVS", Qt::CaseInsensitive) == 0)
+	//Is the type of the source file supported?
+	const int sourceType = MediaInfo::analyze(sourceFile.canonicalFilePath());
+	if(sourceType == MediaInfo::FILETYPE_AVISYNTH)
 	{
 		if(!m_sysinfo->hasAVSSupport())
 		{
@@ -543,7 +545,7 @@ void AddJobDialog::accept(void)
 			}
 		}
 	}
-	else if((sourceFile.suffix().compare("VPY", Qt::CaseInsensitive) == 0) || (sourceFile.suffix().compare("PY", Qt::CaseInsensitive) == 0))
+	else if(sourceType == MediaInfo::FILETYPE_VAPOURSYNTH)
 	{
 		if(!m_sysinfo->hasVPSSupport())
 		{
@@ -553,15 +555,11 @@ void AddJobDialog::accept(void)
 			}
 		}
 	}
-	else
+	else if(!encoderInfo.isInputTypeSupported(sourceType))
 	{
-		const QStringList inputFormats = encoderInfo.supportedInputFormats();
-		if(!inputFormats.contains(sourceFile.suffix(), Qt::CaseInsensitive))
+		if(QMessageBox::warning(this, tr("Unsupported input format"), tr("<nobr>The selected encoder does <b>not</b> support the selected input format!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
 		{
-			if(QMessageBox::warning(this, tr("Unsupported input format"), tr("<nobr>The selected encoder does <b>not</b> support the selected input format!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
-			{
-				return;
-			}
+			return;
 		}
 	}
 	

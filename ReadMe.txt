@@ -92,21 +92,31 @@ http://www.gnu.org/licenses/gpl-2.0.txt
 5. Third-Party Software
 -----------------------
 
+The following third-party software is used by this program:
+
+The Qt GUI Toolkit is Copyright (C) 2012 Digia Plc.
+http://qt.digia.com/
+Qt is a free software, released under the terms of GNU GPL, version 3.
+
+The x264 encoder software is Copyright (C) 2003-2014 x264 project.
+http://www.videolan.org/developers/x264.html
+x264 is a free software and is released under the terms of the GNU GPL.
+
+The x265 encoder software is Copyright (C) 2013-2014 x265 project.
+http://www.videolan.org/developers/x265.html
+x265 is a free software and is released under the terms of the GNU GPL.
+
+AviSynth is Copyright (C) 2002-2006 Ben Rudiak-Gould et al.
+http://avisynth.nl/index.php/Main_Page
+AviSynth is a free software, released under the terms of the GNU GPL.
+
+VapourSynth is Copyright (c) 2012-2014 Fredrik Mellbin.
+http://www.vapoursynth.com/
+VapourSynth is free software, released under the terms of the GNU LGPL.
+
 All third-party binaries included in this distribution package are
 redistributed in full accordance with the GNU General Public License,
 version 2. For further information see the respective web sites!
-
-The x264 encoder software is Copyright (C) 2003-2014 x264 project
-http://www.videolan.org/developers/x264.html
-
-The x265 encoder software is Copyright (C) 2013-2014 x265 project
-http://www.videolan.org/developers/x265.html
-
-Avisynth is Copyright (C) 2000 Ben Rudiak-Gould & subsequent developers
-http://avisynth.nl/index.php/Main_Page
-
-VapourSynth is Copyright (C) 2012-2014 Fredrik Mellbin
-http://www.vapoursynth.com/
 
 
 6. Portable Mode
@@ -246,30 +256,30 @@ in older versions of the Simple x264 Launcher is *NOT* needed anymore!!
 13. Command-line Syntax
 -----------------------
 
-PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher, they
-can **not** be passed to x264 (or avs2yuv) itself as "custom" parameters !!!
+PLEASE NOTE: These are parameters you can pass to Simple x264 Launcher,
+they can **not** be passed to x264 or x265 as "custom" parameters !!!
 
 The following command-line switches are available:
 
-  --add-file <file> ............... Create a new job via "Add Job" dialog
-  --add-job <src> <dest> <tpl> .... Create a new job in a non-interactive way
-  --[no-]force-start .............. Next job will [not] be started immediately
-  --[no-]force-enqueue ............ Next job will [not] be appended to queue
-  --skip-avisynth-check ........... Skip Avisynth check, disable .AVS input
-  --skip-vapoursynth-check ........ Skip VapourSynth check, disables .VPY input
+  --add-file <file> ............... Create a new job via GUI dialog
+  --add-job <src> <dest> <tpl> .... Create a new job directly from CLI
+  --[no-]force-start .............. Start the next job immediately
+  --[no-]force-enqueue ............ Append the next job to the queue
+  --skip-avisynth-check ........... Skip Avisynth detection
+  --skip-vapoursynth-check ........ Skip VapourSynth detection
   --force-cpu-no-64bit ............ Forcefully disable 64-Bit support
-  --no-deadlock-detection ......... Don't abort processes on timeout/deadlock
-  --[no-]console .................. Do [not] show the "debug" console window
-  --no-style ...................... Don't use the Qt "Plastique" UI-style
+  --no-deadlock-detection ......... Don't abort a processes on deadlock
+  --[no-]console .................. Do [not] show the Debug console
+  --no-style ...................... Don't use the Qt "Plastique" style
 
 Some details on the "--add-job" command-line switch:
 
-  <src> .... Specifies the source media file or Avisynth/VapourSynth script
-  <dest> ... Specifies the output H.264/MKV/MP4 file to be written
-  <tpl> .... Specifies the template name to be used, can be "-" to use defaults
+  <src> .... Specifies the source media file or AVS/VPY script file
+  <dest> ... Specifies the output H.264/HEVC/MKV/MP4 file to be written
+  <tpl> .... Specifies the template to be used ("-" uses defaults)
 
-  Use "--[no-]force-start" or "--[no-]force-enqueue" to tweak startup behavior.
-  If neither of those switches is used, the default startup behavior applies.
+  Use "--[no-]force-start" or "--[no-]force-enqueue" to tweak startup
+  behavior. If neither is used, the default startup behavior applies.
 
 
 14. Help & Support
@@ -290,9 +300,10 @@ Simple x264/x265 Launcher is written in C++ and currently developed
 with Microsoft Visual Studio 2013. It is based on the Qt toolkit.
 
 The source codes can be obtained from the official Git repository:
-* https://github.com/lordmulder/Simple-x264-Launcher
-* https://gitorious.org/simple-x264-launcher/simple-x264-launcher
-* https://bitbucket.org/lord_mulder/simple-x264-launcher
+
+ https://github.com/lordmulder/Simple-x264-Launcher
+ https://gitorious.org/simple-x264-launcher/simple-x264-launcher
+ https://bitbucket.org/lord_mulder/simple-x264-launcher
 
 Download Visual Studio Express 2013 for Windows *Desktop* here:
 http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs

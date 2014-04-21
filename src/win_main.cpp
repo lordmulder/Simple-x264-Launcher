@@ -1335,7 +1335,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 {
 	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
 	{
-		qWarning("Cannot accept drooped files at this time -> discarding!");
+		qWarning("Cannot accept dropped files at this time -> discarding!");
 		return;
 	}
 

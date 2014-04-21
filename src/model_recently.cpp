@@ -43,6 +43,33 @@ static void READ_INT(QSettings &settings, const QString &key, int default, int *
 	*value = (ok) ? temp : default;
 }
 
+static QString moviesLocation(void)
+{
+	static const QDesktopServices::StandardLocation locations[3] =
+	{
+		QDesktopServices::MoviesLocation, QDesktopServices::DesktopLocation, QDesktopServices::HomeLocation
+	};
+
+	for(size_t i = 0; i < 3; i++)
+	{
+		const QString path = QDir::fromNativeSeparators(QDesktopServices::storageLocation(locations[i]));
+		if(!path.isEmpty())
+		{
+			QDir directory(path);
+			if(!directory.exists())
+			{
+				if(!directory.mkpath("."))
+				{
+					continue;
+				}
+			}
+			return directory.absolutePath();
+		}
+	}
+
+	return QDir::rootPath();
+}
+
 RecentlyUsed::RecentlyUsed(void)
 {
 	initRecentlyUsed(this);
@@ -55,8 +82,8 @@ RecentlyUsed::~RecentlyUsed(void)
 
 void RecentlyUsed::initRecentlyUsed(RecentlyUsed *recentlyUsed)
 {
-	recentlyUsed->m_sourceDirectory = QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation));
-	recentlyUsed->m_outputDirectory = QDir::fromNativeSeparators(QDesktopServices::storageLocation(QDesktopServices::MoviesLocation));
+	recentlyUsed->m_sourceDirectory = moviesLocation();
+	recentlyUsed->m_outputDirectory = moviesLocation();
 	recentlyUsed->m_filterIndex = 0;
 	recentlyUsed->m_lastUpdateCheck = QDate(1969, 8, 15).toJulianDay();
 }

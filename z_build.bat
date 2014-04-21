@@ -129,7 +129,7 @@ attrib +R "%PACK_PATH%\*.txt"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Setup install parameters
 REM ///////////////////////////////////////////////////////////////////////////
-set "OUT_PATH=%~dp0bin\x264_x64.%ISO_DATE%"
+set "OUT_PATH=%~dp0bin\x264_launcher.%ISO_DATE%"
 :GenerateOutfileName
 if exist "%OUT_PATH%.exe" (
 	set "OUT_PATH=%OUT_PATH%.new"

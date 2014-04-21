@@ -68,7 +68,7 @@
 RequestExecutionLevel admin
 ShowInstDetails show
 ShowUninstDetails show
-Name "Simple x264 Launcher [Build #${X264_BUILD}]"
+Name "Simple x264/x265 Launcher [Build #${X264_BUILD}]"
 OutFile "${X264_OUTPUT_FILE}"
 BrandingText "Date created: ${X264_DATE} [Build #${X264_BUILD}]"
 InstallDir "$PROGRAMFILES\MuldeR\Simple x264 Launcher v2"

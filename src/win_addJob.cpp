@@ -479,14 +479,6 @@ void AddJobDialog::modeIndexChanged(int index)
 
 void AddJobDialog::accept(void)
 {
-	//Check x265 support
-	if((ui->cbxEncoderType->currentIndex() == OptionsModel::EncType_X265) && (!m_sysinfo->has256Support()))
-	{
-		QMessageBox::warning(this, tr("x265 unsupported"), tr("<nobr>Sorry, the x265 encoder is <b>not</b> currently available on this computer!<br>Please see the Readme file on how to obtain and install x265...</nobr>"));
-		ui->cbxEncoderType->setCurrentIndex(OptionsModel::EncType_X264);
-		return;
-	}
-
 	//Check 64-Bit support
 	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->hasX64Support()))
 	{

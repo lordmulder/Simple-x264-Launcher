@@ -40,7 +40,16 @@ public:
 	UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const char *const updateUrl);
 	~UpdaterDialog(void);
 
+	typedef struct
+	{
+		const char* name;
+		const char* hash;
+		const bool  exec;
+	}
+	binary_t;
+
 	static const int READY_TO_INSTALL_UPDATE = 42;
+	static const binary_t BINARIES[];
 
 	inline bool getSuccess(void) { return m_success; }
 

@@ -40,14 +40,17 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
+{
+	{ "wget.exe", "7b522345239bcb95b5b0f7f50a883ba5957894a1feb769763e38ed789a8a0f63fead0155f54b9ffd0f1cdc5dfd855d207a6e7a8e4fd192589a8838ce646c504e", 1 },
+	{ "gpgv.exe", "b42b7ef5650cd78d92773f03d4eefc90d9ba6ffe6af19d389851e32b5ab1c58c91c3dfceb2cbe0d0d13774ee2cf100c20f0add7f33463229999da5aaa861f064", 1 },
+	{ "gpgv.gpg", "58e0f0e462bbd0b5aa4f638801c1097da7da4b3eb38c8c88ad1db23705c0f11e174b083fa55fe76bd3ba196341c967833a6f3427d6f63ad8565900745535d8fa", 0 },
+	{ "wupd.exe", "e8ee5fb11e4964c0091311a41b46e2ea49cf675755ee830c38a26027c81aecc78842c25facc0ac6b797586e4c4b22ac116dd1735b0b11b67c13e4a17fb1e5f5e", 1 },
+	{ NULL, NULL, 0 }
+};
+
 #define UPDATE_TEXT(N, TEXT) ui->label_phase##N->setText((TEXT))
 #define UPDATE_ICON(N, ICON) ui->icon_phase##N->setPixmap(QIcon(":/buttons/" ICON ".png").pixmap(16, 16))
-
-/*
-ui->labelLoadingLeft->setVisible((FLAG)); \
-ui->labelLoadingCenter->setVisible((FLAG)); \
-ui->labelLoadingRight->setVisible((FLAG)); \
-*/
 
 #define SHOW_ANIMATION(FLAG) do  \
 { \
@@ -453,21 +456,6 @@ void UpdaterDialog::installUpdate(void)
 bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 {
 	qDebug("[File Verification]");
-
-	static struct
-	{
-		const char* name;
-		const char* hash;
-	}
-	FILE_INFO[] =
-	{
-		{ "wget.exe", "7b522345239bcb95b5b0f7f50a883ba5957894a1feb769763e38ed789a8a0f63fead0155f54b9ffd0f1cdc5dfd855d207a6e7a8e4fd192589a8838ce646c504e" },
-		{ "gpgv.exe", "b42b7ef5650cd78d92773f03d4eefc90d9ba6ffe6af19d389851e32b5ab1c58c91c3dfceb2cbe0d0d13774ee2cf100c20f0add7f33463229999da5aaa861f064" },
-		{ "gpgv.gpg", "58e0f0e462bbd0b5aa4f638801c1097da7da4b3eb38c8c88ad1db23705c0f11e174b083fa55fe76bd3ba196341c967833a6f3427d6f63ad8565900745535d8fa" },
-		{ "wupd.exe", "e8ee5fb11e4964c0091311a41b46e2ea49cf675755ee830c38a26027c81aecc78842c25facc0ac6b797586e4c4b22ac116dd1735b0b11b67c13e4a17fb1e5f5e" },
-		{ NULL, NULL }
-	};
-
 	QMap<QString, QString> binaries;
 
 	m_keysFile.clear();
@@ -477,12 +465,12 @@ bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 
 	bool okay = true;
 
-	for(size_t i = 0; FILE_INFO[i].name; i++)
+	for(size_t i = 0; BINARIES[i].name; i++)
 	{
-		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(FILE_INFO[i].name));
-		if(okay = okay && checkFileHash(binPath, FILE_INFO[i].hash))
+		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(BINARIES[i].name));
+		if(okay = okay && checkFileHash(binPath, BINARIES[i].hash))
 		{
-			binaries.insert(FILE_INFO[i].name, binPath);
+			binaries.insert(BINARIES[i].name, binPath);
 		}
 		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	}

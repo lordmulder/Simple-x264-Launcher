@@ -766,11 +766,21 @@ void MainWindow::init(void)
 	QStringList binFiles;
 	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x32; arch <= OptionsModel::EncArch_x64; NEXT(arch))
 	{
-		for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
+		for(OptionsModel::EncType encdr = OptionsModel::EncType_X264; encdr <= OptionsModel::EncType_X265; NEXT(encdr))
 		{
-			binFiles << ENC_BINARY(m_sysinfo, OptionsModel::EncType_X264, arch, varnt);
+			for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
+			{
+				binFiles << ENC_BINARY(m_sysinfo, encdr, arch, varnt);
+			}
 		}
 		binFiles << AVS_BINARY(m_sysinfo, arch == OptionsModel::EncArch_x64);
+	}
+	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
+	{
+		if(UpdaterDialog::BINARIES[i].exec)
+		{
+			binFiles << QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(UpdaterDialog::BINARIES[i].name));
+		}
 	}
 		
 	qDebug("[Validating binaries]");
@@ -797,46 +807,6 @@ void MainWindow::init(void)
 			X264_DELETE(file);
 			INIT_ERROR_EXIT();
 		}
-	}
-	qDebug(" ");
-
-	//---------------------------------------
-	// Check x265 binaries
-	//---------------------------------------
-
-	binFiles.clear();
-	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x32; arch <= OptionsModel::EncArch_x64; NEXT(arch))
-	{
-		for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
-		{
-			binFiles << ENC_BINARY(m_sysinfo, OptionsModel::EncType_X265, arch, varnt);
-		}
-	}
-
-	qDebug("[Checking for x265 support]");
-	bool bHaveX265 = true;
-	for(QStringList::ConstIterator iter = binFiles.constBegin(); iter != binFiles.constEnd(); iter++)
-	{
-		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-		QFile *file = new QFile(*iter);
-		qDebug("%s", file->fileName().toLatin1().constData());
-		if(file->open(QIODevice::ReadOnly))
-		{
-			if(x264_is_executable(file->fileName()))
-			{
-				m_toolsList << file;
-				continue;
-			}
-			X264_DELETE(file);
-		}
-		bHaveX265 = false;
-		qWarning("x265 binaries not found or incomplete -> disable x265 support!");
-		break;
-	}
-	if(bHaveX265)
-	{
-		qDebug("x265 support is officially enabled now!");
-		m_sysinfo->set256Support(true);
 	}
 	qDebug(" ");
 	

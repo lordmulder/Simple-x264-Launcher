@@ -215,7 +215,7 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 		if(!(bTimeout || bAborted))
 		{
 			const int exitCode = processEncode.exitCode();
-			if((exitCode < 0) || (exitCode >= 32))
+			if((exitCode < -1) || (exitCode >= 32))
 			{
 				log(tr("\nFATAL ERROR: The encoder process has *crashed* -> your encode probably is *incomplete* !!!"));
 				log(tr("Note that this indicates a bug in the current encoder, *not* in Simple x264/x265 Launcher."));

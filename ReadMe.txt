@@ -1,6 +1,8 @@
 Simple x264/x265 Launcher - graphical front-end for x264 and x265
 Copyright (C) 2004-2014 LoRd_MuldeR <MuldeR2@GMX.de>
 
+Please check http://muldersoft.com/ for news and updates !!!
+
 
 1. Introduction
 ---------------
@@ -282,7 +284,19 @@ Some details on the "--add-job" command-line switch:
   behavior. If neither is used, the default startup behavior applies.
 
 
-14. Help & Support
+14. Downloads & Updates
+-----------------------
+
+Please download the latest version of Simple x264/x265 Launcher from
+one of the official download mirrors:
+
+* https://github.com/lordmulder/Simple-x264-Launcher/releases/latest
+* https://bitbucket.org/lord_mulder/simple-x264-launcher/downloads
+* https://www.assembla.com/spaces/simple-x264-x265-launcher/documents
+* http://sourceforge.net/projects/muldersoft/files/
+
+
+15. Help & Support
 ------------------
 
 For help and support, please join the discussion at:
@@ -293,7 +307,7 @@ Please *avoid* sending me e-mail with support requests. Thank you!
 (I get a lot of mail every day and cannot answer everything)
 
 
-15. Source Codes
+16. Source Codes
 ----------------
 
 Simple x264/x265 Launcher is written in C++ and currently developed
@@ -301,9 +315,10 @@ with Microsoft Visual Studio 2013. It is based on the Qt toolkit.
 
 The source codes can be obtained from the official Git repository:
 
- https://github.com/lordmulder/Simple-x264-Launcher
- https://gitorious.org/simple-x264-launcher/simple-x264-launcher
- https://bitbucket.org/lord_mulder/simple-x264-launcher
+* https://github.com/lordmulder/Simple-x264-Launcher
+* https://gitorious.org/simple-x264-launcher/simple-x264-launcher
+* https://bitbucket.org/lord_mulder/simple-x264-launcher
+* https://git.assembla.com/simple-x264-x265-launcher.git
 
 Download Visual Studio Express 2013 for Windows *Desktop* here:
 http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs

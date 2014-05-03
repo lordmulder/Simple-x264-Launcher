@@ -72,12 +72,13 @@ private:
 	Ui::MainWindow *const ui;
 
 	x264_status_t m_status;
-
 	QLabel *m_label;
+
 	IPC *const m_ipc;
 
 	InputEventFilter *m_inputFilter_jobList;
 	InputEventFilter *m_inputFilter_version;
+	InputEventFilter *m_inputFilter_checkUp;
 
 	JobListModel *m_jobList;
 	OptionsModel *m_options;

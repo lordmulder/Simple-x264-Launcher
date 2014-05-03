@@ -226,6 +226,18 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	m_label->addActions(ui->jobsView->actions());
 	connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
 	updateLabelPos();
+
+	//Create corner widget
+	QLabel *checkUp = new QLabel(ui->menubar);
+	checkUp->setText(QString("<nobr><img src=\":/buttons/exclamation_small.png\">&nbsp;<b style=\"color:darkred\">%1</b>&nbsp;&nbsp;&nbsp;</nobr>").arg(tr("Check for Updates")));
+	checkUp->setFixedHeight(ui->menubar->height());
+	checkUp->setCursor(QCursor(Qt::PointingHandCursor));
+	m_inputFilter_checkUp = new InputEventFilter(checkUp);
+	m_inputFilter_checkUp->addMouseFilter(Qt::LeftButton,  0);
+	m_inputFilter_checkUp->addMouseFilter(Qt::RightButton, 0);
+	connect(m_inputFilter_checkUp, SIGNAL(mouseClicked(int)), this, SLOT(checkUpdates()));
+	checkUp->hide();
+	ui->menubar->setCornerWidget(checkUp);
 }
 
 /*
@@ -242,6 +254,7 @@ MainWindow::~MainWindow(void)
 	X264_DELETE(m_label);
 	X264_DELETE(m_inputFilter_jobList);
 	X264_DELETE(m_inputFilter_version);
+	X264_DELETE(m_inputFilter_checkUp);
 
 	while(!m_toolsList.isEmpty())
 	{
@@ -958,11 +971,25 @@ void MainWindow::init(void)
 	}
 
 	//---------------------------------------
+	// Finish initialization
+	//---------------------------------------
+
+	//Set Window title
+	setWindowTitle(QString("%1 (%2)").arg(windowTitle(), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
+
+	//Enable drag&drop support for this window, required for Qt v4.8.4+
+	setAcceptDrops(true);
+
+	//Update app staus
+	m_status = STATUS_IDLE;
+
+	//---------------------------------------
 	// Check for Expiration
 	//---------------------------------------
 
 	if(x264_version_date().addMonths(6) < x264_current_date_safe())
 	{
+		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->show();
 		QString text;
 		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 6 months old!").replace('-', "&minus;"));
 		text += QString("<nobr><tt>%1<br><a href=\"%2\">%3</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace('-', "&minus;"), QString::fromLatin1(update_url), QString::fromLatin1(update_url).replace("-", "&minus;"));
@@ -981,27 +1008,11 @@ void MainWindow::init(void)
 		QTimer::singleShot(7500, btn3, SLOT(show()));
 		if(msgBox.exec() == 0)
 		{
-			m_status = STATUS_IDLE;
 			QTimer::singleShot(0, this, SLOT(checkUpdates()));
 			return;
 		}
 	}
-
-	//---------------------------------------
-	// Finish initialization
-	//---------------------------------------
-
-	//Set Window title
-	setWindowTitle(QString("%1 (%2)").arg(windowTitle(), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
-
-	//Enable drag&drop support for this window, required for Qt v4.8.4+
-	setAcceptDrops(true);
-
-	//Update app staus
-	m_status = STATUS_IDLE;
-
-	//Try adding files from command-line
-	if(!parseCommandLineArgs())
+	else if(!parseCommandLineArgs())
 	{
 		//Update reminder
 		if(CLIParser::checkFlag(CLI_PARAM_FIRST_RUN, arguments))
@@ -1010,12 +1021,16 @@ void MainWindow::init(void)
 			m_recentlyUsed->setLastUpdateCheck(0);
 			RecentlyUsed::saveRecentlyUsed(m_recentlyUsed);
 		}
-		else if((!m_preferences->getNoUpdateReminder()) && (m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay()))
+		else if(m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay())
 		{
-			if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
+			if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->show();
+			if(!m_preferences->getNoUpdateReminder())
 			{
-				QTimer::singleShot(0, this, SLOT(checkUpdates()));
-				return;
+				if(QMessageBox::warning(this, tr("Update Notification"), QString("<nobr>%1</nobr>").arg(tr("Your last update check was more than 14 days ago. Check for updates now?")), tr("Check for Updates"), tr("Discard")) == 0)
+				{
+					QTimer::singleShot(0, this, SLOT(checkUpdates()));
+					return;
+				}
 			}
 		}
 	}
@@ -1169,6 +1184,7 @@ void MainWindow::checkUpdates(void)
 	{
 		m_recentlyUsed->setLastUpdateCheck(x264_current_date_safe().toJulianDay());
 		RecentlyUsed::saveRecentlyUsed(m_recentlyUsed);
+		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->hide();
 	}
 
 	if(ret == UpdaterDialog::READY_TO_INSTALL_UPDATE)

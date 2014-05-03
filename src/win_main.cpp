@@ -60,13 +60,18 @@
 
 #include <ctime>
 
-static const char *home_url = "http://muldersoft.com/";
+//Constants
+static const char *home_url   = "http://muldersoft.com/";
 static const char *update_url = "https://github.com/lordmulder/Simple-x264-Launcher/releases/latest";
-static const char *tpl_last = "<LAST_USED>";
+static const char *avs_dl_url = "http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/";
+static const char *vsynth_url = "http://www.vapoursynth.com/";
+static const char *python_url = "https://www.python.org/downloads/";
+static const char *tpl_last   = "<LAST_USED>";
 
+//Macros
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
-#define LINK(URL) "<a href=\"" URL "\">" URL "</a>"
+#define LINK(URL) (QString("<a href=\"%1\">%1</a>").arg((URL)))
 #define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
 #define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
@@ -898,7 +903,7 @@ void MainWindow::init(void)
 			if(!m_preferences->getDisableWarnings())
 			{
 				QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install Avisynth:").append("<br>").append(LINK("http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/"));
+				text += tr("Please download and install Avisynth:").append("<br>").append(LINK(avs_dl_url));
 				int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
 				if(val == 1)
 				{
@@ -939,8 +944,8 @@ void MainWindow::init(void)
 			if(!m_preferences->getDisableWarnings())
 			{
 				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install VapourSynth for Windows (R19 or later):").append("<br>").append(LINK("http://www.vapoursynth.com/")).append("<br><br>");
-				text += tr("Note that Python 3.3 (x86) is a prerequisite for installing VapourSynth:").append("<br>").append(LINK("http://www.python.org/getit/")).append("<br>");
+				text += tr("Please download and install VapourSynth for Windows (R19 or later):").append("<br>").append(LINK(vsynth_url)).append("<br><br>");
+				text += tr("Note that Python v3.x is a prerequisite for installing VapourSynth:").append("<br>").append(LINK(python_url)).append("<br>");
 				const int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
 				if(val == 1)
 				{

@@ -262,7 +262,7 @@ void EncodeThread::encode(void)
 	log(tr("Preset  : %1").arg(m_options->preset()));
 	log(tr("Tuning  : %1").arg(m_options->tune()));
 	log(tr("Profile : %1").arg(m_options->profile()));
-	log(tr("Custom  : %1").arg(m_options->customEncParams().isEmpty() ? tr("(None)") : m_options->customEncParams()));
+	log(tr("Custom  : %1").arg(m_options->customEncParams().isEmpty() ? tr("<None>") : m_options->customEncParams()));
 	
 	bool ok = false;
 	unsigned int frames = 0;

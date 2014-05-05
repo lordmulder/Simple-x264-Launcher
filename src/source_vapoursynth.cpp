@@ -74,7 +74,7 @@ void VapoursynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList
 	patterns << new QRegExp("\\bAPI\\s+r(\\d+)\\b", Qt::CaseInsensitive);
 }
 
-void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
+void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
@@ -82,13 +82,13 @@ void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegEx
 	{
 		bool ok = false;
 		unsigned int temp = patterns[1]->cap(1).toUInt(&ok);
-		if(ok) revision = temp;
+		if(ok) build = temp;
 	}
 	else if((offset = patterns[2]->lastIndexIn(line)) >= 0)
 	{
 		bool ok = false;
 		unsigned int temp = patterns[2]->cap(1).toUInt(&ok);
-		if(ok) coreVers = temp;
+		if(ok) core = temp;
 	}
 
 	if(!line.isEmpty())
@@ -99,12 +99,18 @@ void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegEx
 
 QString VapoursynthSource::printVersion(const unsigned int &revision, const bool &modified)
 {
-	return tr("\nVapourSynth version: r%1 (API r%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT));
+	unsigned int core, build;
+	splitRevision(revision, core, build);
+
+	return tr("\nVapourSynth version: r%1 (API r%2)").arg(QString::number(build), QString::number(core));
 }
 
 bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	if((revision % REV_MULT) < VER_X264_VSPIPE_VER)
+	unsigned int core, build;
+	splitRevision(revision, core, build);
+
+	if(build < VER_X264_VSPIPE_VER)
 	{
 		log(tr("\nERROR: Your version of VapourSynth is unsupported (requires version r%1 or newer").arg(QString::number(VER_X264_VSPIPE_VER)));
 		log(tr("You can find the latest VapourSynth version at: http://www.vapoursynth.com/"));

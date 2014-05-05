@@ -65,5 +65,5 @@ private:
 	static bool detectVapourSynthPath3(QString &path);
 
 	//Internal functions
-	static bool checkVapourSynthVersion(const QString vspipePath);
+	static bool checkVapourSynth(const QString vspipePath);
 };

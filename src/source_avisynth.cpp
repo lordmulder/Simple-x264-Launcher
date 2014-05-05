@@ -76,7 +76,7 @@ void AvisynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &c
 	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
 }
 
-void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
+void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
@@ -87,8 +87,8 @@ void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*>
 		unsigned int temp2 = patterns[0]->cap(2).toUInt(&ok2);
 		if(ok1 && ok2)
 		{
-			coreVers = temp1;
-			revision = temp2;
+			core  = temp1;
+			build = temp2;
 		}
 		log(line);
 	}
@@ -100,8 +100,8 @@ void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*>
 		unsigned int temp3 = patterns[1]->cap(3).toUInt(&ok3);
 		if(ok1 && ok2 && ok3)
 		{
-			coreVers = temp1;
-			revision = (temp2 * 10) + (temp3 % 10);
+			core  = temp1;
+			build = (temp2 * 10) + (temp3 % 10);
 		}
 		modified = true;
 		log(line);
@@ -115,12 +115,18 @@ bool AvisynthSource::checkVersion_succeeded(const int &exitCode)
 
 QString AvisynthSource::printVersion(const unsigned int &revision, const bool &modified)
 {
-	return tr("Avs2YUV version: %1.%2.%3").arg(QString::number(revision / REV_MULT), QString::number((revision % REV_MULT) / 10),QString::number((revision % REV_MULT) % 10));
+	unsigned int core, build;
+	splitRevision(revision, core, build);
+
+	return tr("Avs2YUV version: %1.%2.%3").arg(QString::number(core), QString::number(build / 10),QString::number(build % 10));
 }
 
 bool AvisynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	if((revision != UINT_MAX) && ((revision % REV_MULT) < VER_X264_AVS2YUV_VER))
+	unsigned int core, build;
+	splitRevision(revision, core, build);
+
+	if((revision != UINT_MAX) && (build < VER_X264_AVS2YUV_VER))
 	{
 		log(tr("\nERROR: Your version of avs2yuv is unsupported (required version: v0.24 BugMaster's mod 2)"));
 		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));

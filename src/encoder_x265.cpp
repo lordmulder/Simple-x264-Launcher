@@ -185,7 +185,7 @@ void X265Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdL
 	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\+(\\d+)-[a-f0-9]+\\b", Qt::CaseInsensitive);
 }
 
-void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
+void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
@@ -198,9 +198,9 @@ void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 		temp[2] = patterns[0]->cap(3).toUInt(&ok[2]);
 		if(ok[0] && ok[1])
 		{
-			coreVers = (10 * temp[0]) + temp[1];
+			core = (10 * temp[0]) + temp[1];
 		}
-		if(ok[2]) revision = temp[2];
+		if(ok[2]) build = temp[2];
 	}
 
 	if(!line.isEmpty())
@@ -211,26 +211,26 @@ void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 
 QString X265Encoder::printVersion(const unsigned int &revision, const bool &modified)
 {
-	const unsigned int core = revision / REV_MULT;
-	const unsigned int plus = revision % REV_MULT;
+	unsigned int core, build;
+	splitRevision(revision, core, build);
 
-	return tr("x265 version: %1.%2+%3").arg(QString::number(core / 10), QString::number(core % 10), QString::number(plus));
+	return tr("x265 version: %1.%2+%3").arg(QString::number(core / 10), QString::number(core % 10), QString::number(build));
 }
 
 bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	const unsigned int ver = (revision / REV_MULT);
-	const unsigned int rev = (revision % REV_MULT);
+	unsigned int core, build;
+	splitRevision(revision, core, build);
 
-	if((ver < VERSION_X265_MINIMUM_VER) || ((ver == VERSION_X265_MINIMUM_VER) && (rev < VERSION_X265_MINIMUM_REV)))
+	if((core < VERSION_X265_MINIMUM_VER) || ((core == VERSION_X265_MINIMUM_VER) && (build < VERSION_X265_MINIMUM_REV)))
 	{
 		log(tr("\nERROR: Your version of x265 is too old! (Minimum required revision is 0.%1+%2)").arg(QString::number(VERSION_X265_MINIMUM_VER), QString::number(VERSION_X265_MINIMUM_REV)));
 		return false;
 	}
-	else if(ver > VERSION_X265_MINIMUM_VER)
+	else if(core > VERSION_X265_MINIMUM_VER)
 	{
 		log(tr("\nWARNING: Your version of x265 is newer than the latest tested version, take care!"));
-		log(tr("This application works best with x265 version %1. Newer versions may work or not.").arg(QString::number(VERSION_X265_MINIMUM_VER)));
+		log(tr("This application works best with x265 version %1.%2. Newer versions may work or not.").arg(QString::number(VERSION_X265_MINIMUM_VER / 10), QString::number(VERSION_X265_MINIMUM_VER % 10)));
 	}
 	
 	return true;

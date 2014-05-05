@@ -204,7 +204,7 @@ void X264Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdL
 	patterns << new QRegExp("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)", Qt::CaseInsensitive);
 }
 
-void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified)
+void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
@@ -215,8 +215,8 @@ void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 		unsigned int temp2 = patterns[0]->cap(3).toUInt(&ok2);
 		if(ok1 && ok2)
 		{
-			coreVers = temp1;
-			revision = temp2;
+			core  = temp1;
+			build = temp2;
 		}
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
@@ -226,8 +226,8 @@ void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 		unsigned int temp2 = patterns[1]->cap(3).toUInt(&ok2);
 		if(ok1 && ok2)
 		{
-			coreVers = temp1;
-			revision = temp2;
+			core  = temp1;
+			build = temp2;
 		}
 		modified = true;
 	}
@@ -240,21 +240,30 @@ void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 
 QString X264Encoder::printVersion(const unsigned int &revision, const bool &modified)
 {
-	return tr("x264 revision: %1 (core #%2)").arg(QString::number(revision % REV_MULT), QString::number(revision / REV_MULT)).append(modified ? tr(" - with custom patches!") : QString());
+	unsigned int core, build;
+	splitRevision(revision, core, build);
+
+	QString versionStr = tr("x264 revision: %1 (core #%2)").arg(QString::number(build), QString::number(core));
+	if(modified)
+	{
+		versionStr.append(tr(" - with custom patches!"));
+	}
+
+	return versionStr;
 }
 
 bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &modified)
 {
-	const unsigned int ver = (revision / REV_MULT);
-	const unsigned int rev = (revision % REV_MULT);
+	unsigned int core, build;
+	splitRevision(revision, core, build);
 
-	if((rev % REV_MULT) < VERSION_X264_MINIMUM_REV)
+	if(build < VERSION_X264_MINIMUM_REV)
 	{
 		log(tr("\nERROR: Your revision of x264 is too old! Minimum required revision is %1.").arg(QString::number(VERSION_X264_MINIMUM_REV)));
 		return false;
 	}
 	
-	if(ver != VERSION_X264_CURRENT_API)
+	if(core != VERSION_X264_CURRENT_API)
 	{
 		log(tr("\nWARNING: Your x264 binary uses an untested core (API) version, take care!"));
 		log(tr("This application works best with x264 core (API) version %1. Newer versions may work or not.").arg(QString::number(VERSION_X264_CURRENT_API)));

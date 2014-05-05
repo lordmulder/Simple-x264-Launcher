@@ -31,8 +31,6 @@
 
 #include "global.h"
 
-static const unsigned int VAPOURSYNTH_VERSION_MIN = 20;
-
 QMutex VapourSynthCheckThread::m_vpsLock;
 QFile *VapourSynthCheckThread::m_vpsExePath = NULL;
 QFile *VapourSynthCheckThread::m_vpsDllPath = NULL;
@@ -264,7 +262,7 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	if(vapoursynthComplete && m_vpsExePath)
 	{
 		qDebug("VapourSynth detection is running, please stand by...");
-		success = checkVapourSynthVersion(m_vpsExePath->fileName());
+		success = checkVapourSynth(m_vpsExePath->fileName());
 	}
 
 	//Return VapourSynth path
@@ -276,7 +274,7 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	return success;
 }
 
-bool VapourSynthCheckThread::checkVapourSynthVersion(const QString vspipePath)
+bool VapourSynthCheckThread::checkVapourSynth(const QString vspipePath)
 {
 	QProcess process;
 	QStringList output;
@@ -335,36 +333,23 @@ bool VapourSynthCheckThread::checkVapourSynthVersion(const QString vspipePath)
 	}
 
 	//Init regular expressions
-	unsigned int vapursynthVersion = 0;
-	bool vapoursynthLogo = false;
 	QRegExp vpsLogo("VapourSynth\\s+Video\\s+Processing\\s+Library");
-	QRegExp vpsCore("Core\\s+r(\\d+)");
 
 	//Check for version info
+	bool vapoursynthLogo = false;
 	for(QStringList::ConstIterator iter = output.constBegin(); iter != output.constEnd(); iter++)
 	{
 		if(vpsLogo.lastIndexIn(*iter) >= 0)
 		{
 			vapoursynthLogo = true;
-			continue;
-		}
-		if(vapoursynthLogo && (vpsCore.lastIndexIn(*iter) >= 0))
-		{
-			bool ok = false;
-			const unsigned int temp = vpsCore.cap(1).toUInt(&ok);
-			if(ok) vapursynthVersion = temp;
+			break;
 		}
 	}
 
 	//Minimum required version found?
-	if(vapoursynthLogo && (vapursynthVersion > 0))
+	if(vapoursynthLogo)
 	{
-		qDebug("VapourSynth version \"Core r%u\" detected.", vapursynthVersion);
-		if(vapursynthVersion < VAPOURSYNTH_VERSION_MIN)
-		{
-			qWarning("VapourSynth version is too old -> disable Vapousynth support!");
-			return false;
-		}
+		qDebug("VapourSynth was detected successfully.");
 		return true;
 	}
 

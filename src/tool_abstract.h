@@ -51,7 +51,7 @@ public:
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
 	virtual QString printVersion(const unsigned int &revision, const bool &modified) = 0;
 
-	static const unsigned int REV_MULT = 10000;
+	//static const unsigned int REV_MULT = 10000;
 
 signals:
 	void statusChanged(const JobStatus &newStatus);
@@ -67,7 +67,7 @@ protected:
 	virtual const QString &getBinaryPath(void) = 0;
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified) = 0;
+	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified) = 0;
 	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	void log(const QString &text) { emit messageLogged(text); }
@@ -88,7 +88,9 @@ protected:
 
 	static QString commandline2string(const QString &program, const QStringList &arguments);
 	static QString stringToHash(const QString &string);
-	
+	static unsigned int makeRevision(const unsigned int &core, const unsigned int &build);
+	static void splitRevision(const unsigned int &revision, unsigned int &core, unsigned int &build);
+
 	static QMutex s_mutexStartProcess;
 };
 

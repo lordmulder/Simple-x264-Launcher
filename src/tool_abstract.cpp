@@ -62,7 +62,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 	if(m_preferences->getSkipVersionTest())
 	{
 		log("Warning: Skipping the version check this time!");
-		return (999 * REV_MULT) + (REV_MULT-1);
+		return makeRevision(9999, 9999);
 	}
 
 	QProcess process;
@@ -140,7 +140,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 		return UINT_MAX;
 	}
 	
-	return (coreVers * REV_MULT) + (revision % REV_MULT);
+	return makeRevision(coreVers, revision);
 }
 
 bool AbstractTool::checkVersion_succeeded(const int &exitCode)
@@ -222,4 +222,15 @@ QString AbstractTool::stringToHash(const QString &string)
 	}
 
 	return QString::fromLatin1(result.toHex().constData());
+}
+
+unsigned int AbstractTool::makeRevision(const unsigned int &core, const unsigned int &build)
+{
+	return ((core & 0x0000FFFF) << 16) | (build & 0x0000FFFF);
+}
+
+void AbstractTool::splitRevision(const unsigned int &revision, unsigned int &core, unsigned int &build)
+{
+	core  = (revision & 0xFFFF0000) >> 16;
+	build = (revision & 0x0000FFFF);
 }

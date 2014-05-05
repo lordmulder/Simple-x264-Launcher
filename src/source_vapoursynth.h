@@ -39,7 +39,7 @@ public:
 
 protected:
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified);
+	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
 
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen);

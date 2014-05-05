@@ -41,7 +41,7 @@ protected:
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile);
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &coreVers, unsigned int &revision, bool &modified);
+	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
 	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass);

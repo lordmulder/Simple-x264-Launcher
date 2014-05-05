@@ -51,9 +51,9 @@ private:
 	volatile bool m_success;
 	QString m_vpsPath;
 
-	static QMutex m_vpsLock;
-	static QFile *m_vpsExePath;
-	static QFile *m_vpsDllPath;
+	static QMutex   m_vpsLock;
+	static QFile    *m_vpsExePath;
+	static QFile    *m_vpsDllPath;
 	static QLibrary *m_vpsLib;
 	
 	//Entry point
@@ -63,4 +63,7 @@ private:
 	static bool detectVapourSynthPath1(QString &path, volatile bool *exception);
 	static bool detectVapourSynthPath2(QString &path, volatile bool *exception);
 	static bool detectVapourSynthPath3(QString &path);
+
+	//Internal functions
+	static bool checkVapourSynthVersion(const QString vspipePath);
 };

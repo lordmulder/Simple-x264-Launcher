@@ -27,8 +27,11 @@
 #include <QMutexLocker>
 #include <QApplication>
 #include <QDir>
+#include <QProcess>
 
 #include "global.h"
+
+static const unsigned int VAPOURSYNTH_VERSION_MIN = 20;
 
 QMutex VapourSynthCheckThread::m_vpsLock;
 QFile *VapourSynthCheckThread::m_vpsExePath = NULL;
@@ -219,7 +222,7 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	//Make sure VapourSynth does exist
 	if(!VALID_DIR(vapoursynthPath))
 	{
-		qWarning("VapourSynth install path not found -> disable Vapousynth support!");
+		qWarning("VapourSynth install path not found -> disable VapouSynth support!");
 		vapoursynthPath.clear();
 	}
 
@@ -227,9 +230,9 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	bool vapoursynthComplete = false;
 	if(!vapoursynthPath.isEmpty())
 	{
-		static const char *CORE_PATH[2] = { "core32", "core" };
+		static const char *CORE_PATH[3] = { "core32", "core64", "core" };
 		qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
-		for(int i = 0; (i < 2) && (!vapoursynthComplete); i++)
+		for(int i = 0; (i < 3) && (!vapoursynthComplete); i++)
 		{
 			QFileInfo vpsExeInfo(QString("%1/%2/vspipe.exe"     ).arg(vapoursynthPath, CORE_PATH[i]));
 			QFileInfo vpsDllInfo(QString("%1/%2/vapoursynth.dll").arg(vapoursynthPath, CORE_PATH[i]));
@@ -253,30 +256,15 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 		}
 		if(!vapoursynthComplete)
 		{
-			qWarning("VapourSynth installation incomplete -> disable Vapousynth support!");
+			qWarning("VapourSynth installation incomplete -> disable VapouSynth support!");
 		}
 	}
 
 	//Make sure 'vsscript.dll' can be loaded successfully
-	if(vapoursynthComplete)
+	if(vapoursynthComplete && m_vpsExePath)
 	{
-		if(!m_vpsLib)
-		{
-			m_vpsLib = new QLibrary("vsscript.dll");
-		}
-		if(m_vpsLib->isLoaded() || m_vpsLib->load())
-		{
-			static const char *VSSCRIPT_ENTRY = "_vsscript_init@0";
-			qDebug("VapourSynth scripting library loaded.");
-			if(!(success = (m_vpsLib->resolve(VSSCRIPT_ENTRY) != NULL)))
-			{
-				qWarning("Entrypoint '%s' not found in VSSCRIPT.DLL !!!", VSSCRIPT_ENTRY);
-			}
-		}
-		else
-		{
-			qWarning("Failed to load VSSCRIPT.DLL !!!");
-		}
+		qDebug("VapourSynth detection is running, please stand by...");
+		success = checkVapourSynthVersion(m_vpsExePath->fileName());
 	}
 
 	//Return VapourSynth path
@@ -286,4 +274,102 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	}
 
 	return success;
+}
+
+bool VapourSynthCheckThread::checkVapourSynthVersion(const QString vspipePath)
+{
+	QProcess process;
+	QStringList output;
+
+	//Setup process object
+	process.setWorkingDirectory(QDir::tempPath());
+	process.setProcessChannelMode(QProcess::MergedChannels);
+	process.setReadChannel(QProcess::StandardOutput);
+
+	//Try to start VSPIPE.EXE
+	process.start(vspipePath, QStringList() << "-version");
+	if(!process.waitForStarted())
+	{
+		qWarning("Failed to launch VSPIPE.EXE -> %s", process.errorString().toUtf8().constData());
+		return false;
+	}
+
+	//Wait for process to finish
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(process.waitForReadyRead(12000))
+		{
+			while(process.canReadLine())
+			{
+				output << QString::fromUtf8(process.readLine()).simplified();
+			}
+			continue;
+		}
+		if(process.state() != QProcess::NotRunning)
+		{
+			qWarning("VSPIPE.EXE process encountered a deadlock -> aborting now!");
+			break;
+		}
+	}
+
+	//Make sure VSPIPE.EXE has terminated!
+	process.waitForFinished(2500);
+	if(process.state() != QProcess::NotRunning)
+	{
+		qWarning("VSPIPE.EXE process still running, going to kill it!");
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	//Read pending lines
+	while(process.canReadLine())
+	{
+		output << QString::fromUtf8(process.readLine()).simplified();
+	}
+
+	//Check exit code
+	if(process.exitCode() != 0)
+	{
+		qWarning("VSPIPE.EXE failed with code 0x%08X -> disable Vapousynth support!", process.exitCode());
+		return false;
+	}
+
+	//Init regular expressions
+	unsigned int vapursynthVersion = 0;
+	bool vapoursynthLogo = false;
+	QRegExp vpsLogo("VapourSynth\\s+Video\\s+Processing\\s+Library");
+	QRegExp vpsCore("Core\\s+r(\\d+)");
+
+	//Check for version info
+	for(QStringList::ConstIterator iter = output.constBegin(); iter != output.constEnd(); iter++)
+	{
+		if(vpsLogo.lastIndexIn(*iter) >= 0)
+		{
+			vapoursynthLogo = true;
+			continue;
+		}
+		if(vapoursynthLogo && (vpsCore.lastIndexIn(*iter) >= 0))
+		{
+			bool ok = false;
+			const unsigned int temp = vpsCore.cap(1).toUInt(&ok);
+			if(ok) vapursynthVersion = temp;
+		}
+	}
+
+	//Minimum required version found?
+	if(vapoursynthLogo && (vapursynthVersion > 0))
+	{
+		qDebug("VapourSynth version \"Core r%u\" detected.", vapursynthVersion);
+		if(vapursynthVersion < VAPOURSYNTH_VERSION_MIN)
+		{
+			qWarning("VapourSynth version is too old -> disable Vapousynth support!");
+			return false;
+		}
+		return true;
+	}
+
+	//Failed to determine version
+	qWarning("Failed to determine VapourSynth version -> disable Vapousynth support!");
+	qWarning("VapourSynth version is unsupported or VapourSynth installation is corrupted.");
+	return false;
 }

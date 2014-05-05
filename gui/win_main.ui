@@ -382,7 +382,8 @@
     <addaction name="menuDownloadAvisynth"/>
     <addaction name="actionWebVapourSynth"/>
     <addaction name="separator"/>
-    <addaction name="actionWebWiki"/>
+    <addaction name="actionOnlineDocX264"/>
+    <addaction name="actionOnlineDocX265"/>
     <addaction name="actionWebBluRay"/>
     <addaction name="actionWebAvsWiki"/>
     <addaction name="actionWebVapourSynthDocs"/>
@@ -465,13 +466,13 @@
     <string>VideoLAN Builds</string>
    </property>
   </action>
-  <action name="actionWebWiki">
+  <action name="actionOnlineDocX264">
    <property name="icon">
     <iconset resource="../res/resources.qrc">
      <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
    </property>
    <property name="text">
-    <string>MeWiki - x264 Settings</string>
+    <string>x264 Online Documentation</string>
    </property>
   </action>
   <action name="actionWebBluRay">
@@ -480,7 +481,7 @@
      <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
    </property>
    <property name="text">
-    <string>x264 BluRay Authoring</string>
+    <string>BluRay Authoring Guide</string>
    </property>
   </action>
   <action name="actionJob_New">
@@ -766,6 +767,15 @@
    </property>
    <property name="text">
     <string>Move Down</string>
+   </property>
+  </action>
+  <action name="actionOnlineDocX265">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/book_open.png</normaloff>:/buttons/book_open.png</iconset>
+   </property>
+   <property name="text">
+    <string>x265 Online Documentation</string>
    </property>
   </action>
  </widget>

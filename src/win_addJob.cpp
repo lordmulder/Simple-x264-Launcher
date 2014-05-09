@@ -531,7 +531,7 @@ void AddJobDialog::accept(void)
 	{
 		if(!m_sysinfo->hasAVSSupport())
 		{
-			if(QMessageBox::warning(this, tr("Avisynth unsupported!"), tr("<nobr>An Avisynth script was selected as input, although Avisynth is <b>not</b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+			if(QMessageBox::warning(this, tr("Avisynth unsupported!"), tr("<nobr>An Avisynth script was selected as input, although Avisynth is <b>not</b> available!</nobr>"), tr("Abort"), tr("Ignore (at your own risk!)")) != 1)
 			{
 				return;
 			}
@@ -541,7 +541,7 @@ void AddJobDialog::accept(void)
 	{
 		if(!m_sysinfo->hasVPSSupport())
 		{
-			if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+			if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ignore (at your own risk!)")) != 1)
 			{
 				return;
 			}
@@ -549,7 +549,7 @@ void AddJobDialog::accept(void)
 	}
 	else if(!encoderInfo.isInputTypeSupported(sourceType))
 	{
-		if(QMessageBox::warning(this, tr("Unsupported input format"), tr("<nobr>The selected encoder does <b>not</b> support the selected input format!</nobr>"), tr("Abort"), tr("Ingnore (at your own risk!)")) != 1)
+		if(QMessageBox::warning(this, tr("Unsupported input format"), tr("<nobr>The selected encoder does <b>not</b> support the selected input format!</nobr>"), tr("Abort"), tr("Ignore (at your own risk!)")) != 1)
 		{
 			return;
 		}

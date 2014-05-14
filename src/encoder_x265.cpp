@@ -39,17 +39,23 @@ static const unsigned int VERSION_X265_MINIMUM_REV = 38;
 // Helper Macros
 // ------------------------------------------------------------
 
-#define X264_UPDATE_PROGRESS(X) do \
+#define X265_UPDATE_PROGRESS(X) do \
 { \
-	bool ok = false; qint64 size_estimate = 0; \
-	unsigned int progress = (X)->cap(1).toUInt(&ok); \
+	bool ok[2] = { false, false }; \
+	unsigned int progressInt = (X)->cap(1).toUInt(&ok[0]); \
+	unsigned int progressFrc = (X)->cap(2).toUInt(&ok[1]); \
 	setStatus((pass == 2) ? JobStatus_Running_Pass2 : ((pass == 1) ? JobStatus_Running_Pass1 : JobStatus_Running)); \
-	if(ok) \
+	if(ok[0] && ok[1]) \
 	{ \
-		setProgress(progress); \
-		size_estimate = estimateSize(m_outputFile, progress); \
+		const double progress = (double(progressInt) / 100.0) + (double(progressFrc) / 1000.0); \
+		if(!qFuzzyCompare(progress, last_progress)) \
+		{ \
+			setProgress(floor(progress * 100.0)); \
+			size_estimate = qFuzzyIsNull(size_estimate) ? estimateSize(m_outputFile, progress) : ((0.667 * size_estimate) + (0.333 * estimateSize(m_outputFile, progress))); \
+			last_progress = progress; \
+		} \
 	} \
-	setDetails(tr("%1, est. file size %2").arg(line.mid(offset).trimmed(), sizeToString(size_estimate))); \
+	setDetails(tr("%1, est. file size %2").arg(line.mid(offset).trimmed(), sizeToString(qRound64(size_estimate)))); \
 } \
 while(0)
 
@@ -325,12 +331,12 @@ void X265Encoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 	patterns << new QRegExp("\\[\\s*(\\d+)\\.(\\d+)%\\]\\s+(\\d+)/(\\d+)\\s(\\d+).(\\d+)\\s(\\d+).(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+):(\\d+):(\\d+)"); //regExpModified
 }
 
-void X265Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass)
+void X265Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass, double &last_progress, double &size_estimate)
 {
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
-		X264_UPDATE_PROGRESS(patterns[0]);
+		X265_UPDATE_PROGRESS(patterns[0]);
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
@@ -350,7 +356,7 @@ void X265Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*>
 	}
 	else if((offset = patterns[3]->lastIndexIn(line)) >= 0)
 	{
-		X264_UPDATE_PROGRESS(patterns[3]);
+		X265_UPDATE_PROGRESS(patterns[3]);
 	}
 	else if(!line.isEmpty())
 	{

@@ -96,12 +96,11 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	QList<QRegExp*> patterns;
 	runEncodingPass_init(patterns);
 	
+	double last_progress = 0.0;
+	double size_estimate = 0.0;
+	
 	bool bTimeout = false;
 	bool bAborted = false;
-
-	unsigned int last_progress = UINT_MAX;
-	unsigned int last_indexing = UINT_MAX;
-	qint64 size_estimate = 0I64;
 
 	//Main processing loop
 	while(processEncode.state() != QProcess::NotRunning)
@@ -173,12 +172,12 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 		}
 
 		//Process all output
-		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass);
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass, last_progress, size_estimate);
 	}
 	
 	if(!(bTimeout || bAborted))
 	{
-		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass);
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass, last_progress, size_estimate);
 	}
 
 	processEncode.waitForFinished(5000);
@@ -231,7 +230,6 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 
 	QFileInfo completedFileInfo(m_outputFile);
 	const qint64 finalSize = (completedFileInfo.exists() && completedFileInfo.isFile()) ? completedFileInfo.size() : 0;
-	QLocale locale(QLocale::English);
 	log(tr("Final file size is %1 bytes.").arg(sizeToString(finalSize)));
 
 	switch(pass)
@@ -292,16 +290,19 @@ QStringList AbstractEncoder::splitParams(const QString &params, const QString &s
 	return list;
 }
 
-qint64 AbstractEncoder::estimateSize(const QString &fileName, const int &progress)
+double AbstractEncoder::estimateSize(const QString &fileName, const double &progress)
 {
-	QFileInfo fileInfo(fileName);
-	if((progress >= 3) && fileInfo.exists() && fileInfo.isFile())
+	double estimatedSize = 0.0;
+	if(progress >= 0.03)
 	{
-		qint64 currentSize = QFileInfo(fileName).size();
-		qint64 estimatedSize = (currentSize * 100I64) / static_cast<qint64>(progress);
-		return estimatedSize;
+		QFileInfo fileInfo(fileName);
+		if(fileInfo.exists() && fileInfo.isFile())
+		{
+			const qint64 currentSize = QFileInfo(fileName).size();
+			estimatedSize = static_cast<double>(currentSize) * (1.0 / qBound(0.0, progress, 1.0));
+		}
 	}
-	return 0I64;
+	return estimatedSize;
 }
 
 QString AbstractEncoder::sizeToString(qint64 size)

@@ -57,6 +57,7 @@
 #include <QTextStream>
 #include <QSettings>
 #include <QFileDialog>
+#include <QSystemTrayIcon>
 
 #include <ctime>
 
@@ -94,6 +95,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
 	m_status(STATUS_PRE_INIT),
+	m_sysTray(new QSystemTrayIcon(this)),
 	ui(new Ui::MainWindow())
 {
 	//Init the dialog, from the .ui file
@@ -228,6 +230,11 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
 	updateLabelPos();
 
+	//Init system tray icon
+	m_sysTray->setToolTip(this->windowTitle());
+	m_sysTray->setIcon(this->windowIcon());
+	connect(m_sysTray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActived()));
+
 	//Create corner widget
 	QLabel *checkUp = new QLabel(ui->menubar);
 	checkUp->setText(QString("<nobr><img src=\":/buttons/exclamation_small.png\">&nbsp;<b style=\"color:darkred\">%1</b>&nbsp;&nbsp;&nbsp;</nobr>").arg(tr("Check for Updates")));
@@ -275,6 +282,7 @@ MainWindow::~MainWindow(void)
 	VapourSynthCheckThread::unload();
 	AvisynthCheckThread::unload();
 
+	delete m_sysTray;
 	delete ui;
 }
 
@@ -424,7 +432,12 @@ void MainWindow::moveButtonPressed(void)
  */
 void MainWindow::pauseButtonPressed(bool checked)
 {
-	ENSURE_APP_IS_IDLE();
+	if(m_status != STATUS_IDLE)
+	{
+		x264_beep(x264_beep_warning);
+		qWarning("Cannot perfrom this action at this time!");
+		ui->buttonPauseJob->setChecked(!checked);
+	}
 
 	if(checked)
 	{
@@ -1097,6 +1110,11 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 		return;
 	}
 	
+	if((!isVisible()) || m_sysTray->isVisible())
+	{
+		sysTrayActived();
+	}
+
 	x264_bring_to_front(this);
 	
 #ifdef IPC_LOGGING
@@ -1231,6 +1249,16 @@ void MainWindow::jobListKeyPressed(const int &tag)
 	}
 }
 
+/*
+ * System tray was activated
+ */
+void MainWindow::sysTrayActived(void)
+{
+	m_sysTray->hide();
+	showNormal();
+	x264_bring_to_front(this);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Event functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -1266,9 +1294,18 @@ void MainWindow::closeEvent(QCloseEvent *e)
 		if(countRunningJobs() > 0)
 		{
 			e->ignore();
-			m_status = STATUS_BLOCKED;
-			QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not exit while there still are running jobs!"));
-			m_status = STATUS_IDLE;
+			if(!m_preferences->getNoSystrayWarning())
+			{
+				m_status = STATUS_BLOCKED;
+				if(QMessageBox::warning(this, tr("Jobs Are Running"), tr("<nobr>You still have running jobs, application will be minimized to notification area!<nobr>"), tr("OK"), tr("Don't Show Again")) == 1)
+				{
+					m_preferences->setNoSystrayWarning(true);
+					PreferencesModel::savePreferences(m_preferences);
+				}
+				m_status = STATUS_IDLE;
+			}
+			hide();
+			m_sysTray->show();
 			return;
 		}
 

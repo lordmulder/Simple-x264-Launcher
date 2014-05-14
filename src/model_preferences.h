@@ -65,6 +65,7 @@ public:
 	PREFERENCES_MAKE_B(NoUpdateReminder)
 	PREFERENCES_MAKE_B(AbortOnTimeout)
 	PREFERENCES_MAKE_B(SkipVersionTest)
+	PREFERENCES_MAKE_B(NoSystrayWarning)
 
 public:
 	static void initPreferences(PreferencesModel *preferences);

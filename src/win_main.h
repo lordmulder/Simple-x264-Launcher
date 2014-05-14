@@ -35,6 +35,7 @@ class RecentlyUsed;
 class InputEventFilter;
 class QModelIndex;
 class QLabel;
+class QSystemTrayIcon;
 enum JobStatus;
 
 namespace Ui
@@ -75,6 +76,7 @@ private:
 	QLabel *m_label;
 
 	IPC *const m_ipc;
+	QSystemTrayIcon *const m_sysTray;
 
 	InputEventFilter *m_inputFilter_jobList;
 	InputEventFilter *m_inputFilter_version;
@@ -125,6 +127,7 @@ private slots:
 	void showWebLink(void);
 	void shutdownComputer(void);
 	void startButtonPressed(void);
+	void sysTrayActived(void);
 	void updateLabelPos(void);
 	void versionLabelMouseClicked(const int &tag);
 };

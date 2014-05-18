@@ -73,10 +73,11 @@ static const char *tpl_last   = "<LAST_USED>";
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
 #define LINK(URL) (QString("<a href=\"%1\">%1</a>").arg((URL)))
-#define INIT_ERROR_EXIT() do { m_status = STATUS_EXITTING; close(); qApp->exit(-1); return; } while(0)
-#define ENSURE_APP_IS_IDLE() do { if(m_status != STATUS_IDLE) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
+#define INIT_ERROR_EXIT() do { close(); qApp->exit(-1); return; } while(0)
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 #define SETUP_WEBLINK(OBJ, URL) do { (OBJ)->setData(QVariant(QUrl(URL))); connect((OBJ), SIGNAL(triggered()), this, SLOT(showWebLink())); } while(0)
+#define APP_IS_READY (m_initialized && (!m_fileTimer->isActive()) && (QApplication::activeModalWidget() == NULL))
+#define ENSURE_APP_IS_READY() do { if(!APP_IS_READY) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -94,7 +95,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	m_pendingFiles(new QStringList()),
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
-	m_status(STATUS_PRE_INIT),
+	m_initialized(false),
 	m_sysTray(new QSystemTrayIcon(this)),
 	ui(new Ui::MainWindow())
 {
@@ -246,6 +247,10 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	connect(m_inputFilter_checkUp, SIGNAL(mouseClicked(int)), this, SLOT(checkUpdates()));
 	checkUp->hide();
 	ui->menubar->setCornerWidget(checkUp);
+
+	//Create timer
+	m_fileTimer = new QTimer(this);
+	connect(m_fileTimer, SIGNAL(timeout()), this, SLOT(handlePendingFiles()));
 }
 
 /*
@@ -253,7 +258,6 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
  */
 MainWindow::~MainWindow(void)
 {
-	m_status = STATUS_EXITTING;
 	OptionsModel::saveTemplate(m_options, QString::fromLatin1(tpl_last));
 	
 	X264_DELETE(m_jobList);
@@ -278,6 +282,7 @@ MainWindow::~MainWindow(void)
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
 	X264_DELETE(m_sysinfo);
+	X264_DELETE(m_fileTimer);
 
 	VapourSynthCheckThread::unload();
 	AvisynthCheckThread::unload();
@@ -295,8 +300,7 @@ MainWindow::~MainWindow(void)
  */
 void MainWindow::addButtonPressed()
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 
 	qDebug("MainWindow::addButtonPressed");
 	bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
@@ -306,8 +310,6 @@ void MainWindow::addButtonPressed()
 	{
 		appendJob(sourceFileName, outputFileName, m_options, runImmediately);
 	}
-
-	m_status = STATUS_IDLE;
 }
 
 /*
@@ -315,8 +317,7 @@ void MainWindow::addButtonPressed()
  */
 void MainWindow::openActionTriggered()
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 
 	QStringList fileList = QFileDialog::getOpenFileNames(this, tr("Open Source File(s)"), m_recentlyUsed->sourceDirectory(), AddJobDialog::getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 	if(!fileList.empty())
@@ -336,8 +337,6 @@ void MainWindow::openActionTriggered()
 			}
 		}
 	}
-
-	m_status = STATUS_IDLE;
 }
 
 /*
@@ -345,7 +344,7 @@ void MainWindow::openActionTriggered()
  */
 void MainWindow::startButtonPressed(void)
 {
-	ENSURE_APP_IS_IDLE();
+	ENSURE_APP_IS_READY();
 	m_jobList->startJob(ui->jobsView->currentIndex());
 }
 
@@ -354,15 +353,12 @@ void MainWindow::startButtonPressed(void)
  */
 void MainWindow::abortButtonPressed(void)
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 
 	if(QMessageBox::question(this, tr("Abort Job?"), tr("<nobr>Do you really want to <b>abort</b> the selected job now?</nobr>"), tr("Back"), tr("Abort Job")) == 1)
 	{
 		m_jobList->abortJob(ui->jobsView->currentIndex());
 	}
-
-	m_status = STATUS_IDLE;
 }
 
 /*
@@ -370,7 +366,8 @@ void MainWindow::abortButtonPressed(void)
  */
 void MainWindow::deleteButtonPressed(void)
 {
-	ENSURE_APP_IS_IDLE();
+	ENSURE_APP_IS_READY();
+
 	m_jobList->deleteJob(ui->jobsView->currentIndex());
 	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 }
@@ -380,8 +377,7 @@ void MainWindow::deleteButtonPressed(void)
  */
 void MainWindow::browseButtonPressed(void)
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 
 	QString outputFile = m_jobList->getJobOutputFile(ui->jobsView->currentIndex());
 	if((!outputFile.isEmpty()) && QFileInfo(outputFile).exists() && QFileInfo(outputFile).isFile())
@@ -392,8 +388,6 @@ void MainWindow::browseButtonPressed(void)
 	{
 		QMessageBox::warning(this, tr("Not Found"), tr("Sorry, the output file could not be found!"));
 	}
-
-	m_status = STATUS_IDLE;
 }
 
 /*
@@ -401,7 +395,7 @@ void MainWindow::browseButtonPressed(void)
  */
 void MainWindow::moveButtonPressed(void)
 {
-	ENSURE_APP_IS_IDLE();
+	ENSURE_APP_IS_READY();
 
 	if(sender() == ui->actionJob_MoveUp)
 	{
@@ -432,7 +426,7 @@ void MainWindow::moveButtonPressed(void)
  */
 void MainWindow::pauseButtonPressed(bool checked)
 {
-	if(m_status != STATUS_IDLE)
+	if(!APP_IS_READY)
 	{
 		x264_beep(x264_beep_warning);
 		qWarning("Cannot perfrom this action at this time!");
@@ -454,7 +448,7 @@ void MainWindow::pauseButtonPressed(bool checked)
  */
 void MainWindow::restartButtonPressed(void)
 {
-	ENSURE_APP_IS_IDLE();
+	ENSURE_APP_IS_READY();
 
 	const QModelIndex index = ui->jobsView->currentIndex();
 	const OptionsModel *options = m_jobList->getJobOptions(index);
@@ -573,16 +567,13 @@ void MainWindow::jobLogExtended(const QModelIndex & parent, int start, int end)
  */
 void MainWindow::showAbout(void)
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 	
 	if(AboutDialog *aboutDialog = new AboutDialog(this))
 	{
 		aboutDialog->exec();
 		X264_DELETE(aboutDialog);
 	}
-	
-	m_status = STATUS_IDLE;
 }
 
 /*
@@ -590,7 +581,7 @@ void MainWindow::showAbout(void)
  */
 void MainWindow::showWebLink(void)
 {
-	ENSURE_APP_IS_IDLE();
+	ENSURE_APP_IS_READY();
 	
 	if(QObject *obj = QObject::sender())
 	{
@@ -609,14 +600,12 @@ void MainWindow::showWebLink(void)
  */
 void MainWindow::showPreferences(void)
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 
 	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences, m_sysinfo);
 	preferences->exec();
 
 	X264_DELETE(preferences);
-	m_status = STATUS_IDLE;
 }
 
 /*
@@ -693,22 +682,13 @@ void MainWindow::saveLogFile(const QModelIndex &index)
  */
 void MainWindow::shutdownComputer(void)
 {
-	qDebug("shutdownComputer(void)");
-	
-	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
-	{
-		qWarning("Cannot shutdown computer at this time!");
-		return;
-	}
+	ENSURE_APP_IS_READY();
 
 	if(countPendingJobs() > 0)
 	{
 		qDebug("Still have pending jobs, won't shutdown yet!");
 		return;
 	}
-	
-	const x264_status_t previousStatus = m_status;
-	m_status = STATUS_BLOCKED;
 
 	const int iTimeout = 30;
 	const Qt::WindowFlags flags = Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowSystemMenuHint;
@@ -746,7 +726,6 @@ void MainWindow::shutdownComputer(void)
 		if(progressDialog.wasCanceled())
 		{
 			progressDialog.close();
-			m_status = previousStatus;
 			return;
 		}
 		progressDialog.setValue(i+1);
@@ -757,7 +736,6 @@ void MainWindow::shutdownComputer(void)
 	}
 	
 	qWarning("Shutting down !!!");
-	m_status = previousStatus;
 
 	if(x264_shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true))
 	{
@@ -771,7 +749,7 @@ void MainWindow::shutdownComputer(void)
  */
 void MainWindow::init(void)
 {
-	if(m_status != STATUS_PRE_INIT)
+	if(m_initialized)
 	{
 		qWarning("Already initialized -> skipping!");
 		return;
@@ -994,8 +972,8 @@ void MainWindow::init(void)
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);
 
-	//Update app staus
-	m_status = STATUS_IDLE;
+	//Update flag
+	m_initialized = true;
 
 	//---------------------------------------
 	// Check for Expiration
@@ -1085,18 +1063,16 @@ void MainWindow::copyLogToClipboard(bool checked)
  */
 void MainWindow::handlePendingFiles(void)
 {
-	if((m_status == STATUS_IDLE) || (m_status == STATUS_AWAITING))
+	qDebug("MainWindow::handlePendingFiles");
+
+	if(!m_pendingFiles->isEmpty())
 	{
-		qDebug("MainWindow::handlePendingFiles");
-		if(!m_pendingFiles->isEmpty())
-		{
-			QStringList pendingFiles(*m_pendingFiles);
-			m_pendingFiles->clear();
-			createJobMultiple(pendingFiles);
-		}
-		qDebug("Leave from MainWindow::handlePendingFiles!");
-		m_status = STATUS_IDLE;
+		QStringList pendingFiles(*m_pendingFiles);
+		m_pendingFiles->clear();
+		createJobMultiple(pendingFiles);
 	}
+
+	qDebug("Leave from MainWindow::handlePendingFiles!");
 }
 
 /*
@@ -1104,7 +1080,7 @@ void MainWindow::handlePendingFiles(void)
  */
 void MainWindow::handleCommand(const int &command, const QStringList &args, const quint32 &flags)
 {
-	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
+	if(!(m_initialized && (QApplication::activeModalWidget() == NULL)))
 	{
 		qWarning("Cannot accapt commands at this time -> discarding!");
 		return;
@@ -1140,10 +1116,10 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
 			{
 				*m_pendingFiles << QFileInfo(args[0]).canonicalFilePath();
-				if(m_status != STATUS_AWAITING)
+				if(!m_fileTimer->isActive())
 				{
-					m_status = STATUS_AWAITING;
-					QTimer::singleShot(5000, this, SLOT(handlePendingFiles()));
+					m_fileTimer->setSingleShot(true);
+					m_fileTimer->start(5000);
 				}
 			}
 			else
@@ -1186,13 +1162,11 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
  */
 void MainWindow::checkUpdates(void)
 {
-	ENSURE_APP_IS_IDLE();
-	m_status = STATUS_BLOCKED;
+	ENSURE_APP_IS_READY();
 
 	if(countRunningJobs() > 0)
 	{
 		QMessageBox::warning(this, tr("Jobs Are Running"), tr("Sorry, can not update while there still are running jobs!"));
-		m_status = STATUS_IDLE;
 		return;
 	}
 
@@ -1208,18 +1182,12 @@ void MainWindow::checkUpdates(void)
 
 	if(ret == UpdaterDialog::READY_TO_INSTALL_UPDATE)
 	{
-		m_status = STATUS_EXITTING;
 		qWarning("Exitting program to install update...");
 		close();
 		QApplication::quit();
 	}
 
 	X264_DELETE(updater);
-
-	if(m_status != STATUS_EXITTING)
-	{
-		m_status = STATUS_IDLE;
-	}
 }
 
 /*
@@ -1270,7 +1238,7 @@ void MainWindow::showEvent(QShowEvent *e)
 {
 	QMainWindow::showEvent(e);
 
-	if(m_status == STATUS_PRE_INIT)
+	if(!m_initialized)
 	{
 		QTimer::singleShot(0, this, SLOT(init()));
 	}
@@ -1281,7 +1249,7 @@ void MainWindow::showEvent(QShowEvent *e)
  */
 void MainWindow::closeEvent(QCloseEvent *e)
 {
-	if((m_status != STATUS_IDLE) && (m_status != STATUS_EXITTING))
+	if(!APP_IS_READY)
 	{
 		e->ignore();
 		qWarning("Cannot close window at this time!");
@@ -1289,43 +1257,36 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	}
 
 	//Make sure we have no running jobs left!
-	if(m_status != STATUS_EXITTING)
+	if(countRunningJobs() > 0)
 	{
-		if(countRunningJobs() > 0)
+		e->ignore();
+		if(!m_preferences->getNoSystrayWarning())
 		{
-			e->ignore();
-			if(!m_preferences->getNoSystrayWarning())
+			if(QMessageBox::warning(this, tr("Jobs Are Running"), tr("<nobr>You still have running jobs, application will be minimized to notification area!<nobr>"), tr("OK"), tr("Don't Show Again")) == 1)
 			{
-				m_status = STATUS_BLOCKED;
-				if(QMessageBox::warning(this, tr("Jobs Are Running"), tr("<nobr>You still have running jobs, application will be minimized to notification area!<nobr>"), tr("OK"), tr("Don't Show Again")) == 1)
-				{
-					m_preferences->setNoSystrayWarning(true);
-					PreferencesModel::savePreferences(m_preferences);
-				}
-				m_status = STATUS_IDLE;
+				m_preferences->setNoSystrayWarning(true);
+				PreferencesModel::savePreferences(m_preferences);
 			}
-			hide();
-			m_sysTray->show();
-			return;
 		}
+		hide();
+		m_sysTray->show();
+		return;
+	}
 
-		//Save pending jobs for next time, if desired by user
-		if(countPendingJobs() > 0)
+	//Save pending jobs for next time, if desired by user
+	if(countPendingJobs() > 0)
+	{
+		int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("You still have pending jobs. How do you want to proceed?"), tr("Save Pending Jobs"), tr("Discard"));
+		if(ret == 0)
 		{
-			m_status = STATUS_BLOCKED;
-			int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("You still have pending jobs. How do you want to proceed?"), tr("Save Pending Jobs"), tr("Discard"));
-			if(ret == 0)
+			m_jobList->saveQueuedJobs();
+		}
+		else
+		{
+			if(QMessageBox::warning(this, tr("Jobs Are Pending"), tr("Do you really want to discard all pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes)
 			{
-				m_jobList->saveQueuedJobs();
-			}
-			else
-			{
-				if(QMessageBox::warning(this, tr("Jobs Are Pending"), tr("Do you really want to discard all pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes)
-				{
-					e->ignore();
-					m_status = STATUS_IDLE;
-					return;
-				}
+				e->ignore();
+				return;
 			}
 		}
 	}
@@ -1340,13 +1301,10 @@ void MainWindow::closeEvent(QCloseEvent *e)
 		if(!m_jobList->deleteJob(m_jobList->index(0, 0, QModelIndex())))
 		{
 			e->ignore();
-			m_status = STATUS_BLOCKED;
 			QMessageBox::warning(this, tr("Failed To Exit"), tr("Warning: At least one job could not be deleted!"));
-			m_status = STATUS_IDLE;
 		}
 	}
 	
-	m_status = STATUS_EXITTING;
 	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 	QMainWindow::closeEvent(e);
 }
@@ -1392,7 +1350,7 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
  */
 void MainWindow::dropEvent(QDropEvent *event)
 {
-	if((m_status != STATUS_IDLE) && (m_status != STATUS_AWAITING))
+	if(!(m_initialized && (QApplication::activeModalWidget() == NULL)))
 	{
 		qWarning("Cannot accept dropped files at this time -> discarding!");
 		return;
@@ -1416,10 +1374,10 @@ void MainWindow::dropEvent(QDropEvent *event)
 	{
 		m_pendingFiles->append(droppedFiles);
 		m_pendingFiles->sort();
-		if(m_status != STATUS_AWAITING)
+		if(!m_fileTimer->isActive())
 		{
-			m_status = STATUS_AWAITING;
-			QTimer::singleShot(0, this, SLOT(handlePendingFiles()));
+			m_fileTimer->setSingleShot(true);
+			m_fileTimer->start(5000);
 		}
 	}
 }

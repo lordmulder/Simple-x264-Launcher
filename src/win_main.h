@@ -59,21 +59,12 @@ protected:
 	virtual void dropEvent(QDropEvent *event);
 	virtual bool winEvent(MSG *message, long *result);
 
-	typedef enum
-	{
-		STATUS_PRE_INIT = 0,
-		STATUS_IDLE     = 1,
-		STATUS_AWAITING = 2,
-		STATUS_BLOCKED  = 3,
-		STATUS_EXITTING = 4
-	}
-	x264_status_t;
-
 private:
 	Ui::MainWindow *const ui;
 
-	x264_status_t m_status;
+	bool m_initialized;
 	QLabel *m_label;
+	QTimer *m_fileTimer;
 
 	IPC *const m_ipc;
 	QSystemTrayIcon *const m_sysTray;

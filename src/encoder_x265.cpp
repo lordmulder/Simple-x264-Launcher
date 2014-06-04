@@ -32,8 +32,8 @@
 #include <QRegExp>
 
 //x265 version info
-static const unsigned int VERSION_X265_MINIMUM_VER = 10;
-static const unsigned int VERSION_X265_MINIMUM_REV = 38;
+static const unsigned int VERSION_X265_MINIMUM_VER = 11;
+static const unsigned int VERSION_X265_MINIMUM_REV =  0;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -188,7 +188,8 @@ const QString &X265Encoder::getName(void)
 void X265Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\+(\\d+)-[a-f0-9]+\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\+(\\d+)\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\b", Qt::CaseInsensitive);
 }
 
 void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
@@ -207,6 +208,18 @@ void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 			core = (10 * temp[0]) + temp[1];
 		}
 		if(ok[2]) build = temp[2];
+	}
+	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
+	{
+		bool ok[2] = { false, false };
+		unsigned int temp[2];
+		temp[0] = patterns[1]->cap(1).toUInt(&ok[0]);
+		temp[1] = patterns[1]->cap(2).toUInt(&ok[1]);
+		if(ok[0] && ok[1])
+		{
+			core = (10 * temp[0]) + temp[1];
+		}
+		build = 0;
 	}
 
 	if(!line.isEmpty())

@@ -4,7 +4,12 @@
 /ipch/
 /res/toolset/
 /src/*.h.bak
-/*.sdf
-/*.suo
-/*.user
-/*.opensdf
+/etc/_old_
+/etc/sources/*.tar
+/gui/_old_
+*.sdf
+*.suo
+*.user
+*.opensdf
+*.old
+*.db

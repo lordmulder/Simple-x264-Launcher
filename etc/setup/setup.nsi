@@ -409,6 +409,7 @@ Section "!Install Files"
 	Delete `$INSTDIR\*.exe`
 	Delete `$INSTDIR\*.dll`
 	Delete `$INSTDIR\*.txt`
+	Delete `$INSTDIR\*.html`
 	Delete `$INSTDIR\toolset\*.exe`
 	Delete `$INSTDIR\toolset\*.dll`
 	Delete `$INSTDIR\toolset\x86\*.exe`
@@ -418,6 +419,7 @@ Section "!Install Files"
 	Delete `$INSTDIR\toolset\common\*.exe`
 	Delete `$INSTDIR\toolset\common\*.dll`
 	Delete `$INSTDIR\toolset\common\*.gpg`
+	Delete `$INSTDIR\imageformats\*.exe`
 	Delete `$INSTDIR\imageformats\*.dll`
 
 	!insertmacro GetExecutableName $R0

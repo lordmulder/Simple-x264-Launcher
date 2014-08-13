@@ -949,8 +949,8 @@ void MainWindow::init(void)
 			if(!m_preferences->getDisableWarnings())
 			{
 				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install VapourSynth for Windows (R20 or later):").append("<br>").append(LINK(vsynth_url)).append("<br><br>");
-				text += tr("Note that Python v3.x is a prerequisite for installing VapourSynth:").append("<br>").append(LINK(python_url)).append("<br>");
+				text += tr("Please download and install VapourSynth for Windows (R24 or later):").append("<br>").append(LINK(vsynth_url)).append("<br><br>");
+				text += tr("Note that Python v3.4 is a prerequisite for installing VapourSynth:").append("<br>").append(LINK(python_url)).append("<br>");
 				const int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
 				if(val == 1)
 				{

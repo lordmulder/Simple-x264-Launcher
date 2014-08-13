@@ -285,7 +285,7 @@ bool VapourSynthCheckThread::checkVapourSynth(const QString vspipePath)
 	process.setReadChannel(QProcess::StandardOutput);
 
 	//Try to start VSPIPE.EXE
-	process.start(vspipePath, QStringList() << "-version");
+	process.start(vspipePath, QStringList() << "--version");
 	if(!process.waitForStarted())
 	{
 		qWarning("Failed to launch VSPIPE.EXE -> %s", process.errorString().toUtf8().constData());

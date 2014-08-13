@@ -31,7 +31,8 @@
 #include <QDir>
 #include <QProcess>
 
-static const unsigned int VER_X264_VSPIPE_VER = 22;
+static const unsigned int VER_X264_VSPIPE_API =  3;
+static const unsigned int VER_X264_VSPIPE_VER = 24;
 
 VapoursynthSource::VapoursynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
@@ -68,7 +69,7 @@ bool VapoursynthSource::isSourceAvailable()
 
 void VapoursynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
-	cmdLine << "-version";
+	cmdLine << "--version";
 	patterns << new QRegExp("\\bVapourSynth\\b", Qt::CaseInsensitive);
 	patterns << new QRegExp("\\bCore\\s+r(\\d+)\\b", Qt::CaseInsensitive);
 	patterns << new QRegExp("\\bAPI\\s+r(\\d+)\\b", Qt::CaseInsensitive);
@@ -110,12 +111,26 @@ bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const b
 	unsigned int core, build;
 	splitRevision(revision, core, build);
 
-	if(build < VER_X264_VSPIPE_VER)
+	if((build < VER_X264_VSPIPE_VER) || (core < VER_X264_VSPIPE_API))
 	{
-		log(tr("\nERROR: Your version of VapourSynth is unsupported (requires version r%1 or newer").arg(QString::number(VER_X264_VSPIPE_VER)));
+		
+		if(core < VER_X264_VSPIPE_API)
+		{
+			log(tr("\nERROR: Your version of VapourSynth is unsupported! (requires API r%1 or newer)").arg(QString::number(VER_X264_VSPIPE_API)));
+		}
+		if(build < VER_X264_VSPIPE_VER)
+		{
+			log(tr("\nERROR: Your version of VapourSynth is unsupported! (requires version r%1 or newer)").arg(QString::number(VER_X264_VSPIPE_VER)));
+		}
 		log(tr("You can find the latest VapourSynth version at: http://www.vapoursynth.com/"));
 		return false;
 	}
+
+	if(core != VER_X264_VSPIPE_API)
+	{
+		log(tr("\nWARNING: Running with an unknown VapourSynth API version, problem may appear! (this application works best with API r%1)").arg(QString::number(VER_X264_VSPIPE_API)));
+	}
+
 	return true;
 }
 
@@ -125,8 +140,9 @@ bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const b
 
 void VapoursynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
+	cmdLine << "--info";
 	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFile, true));
-	cmdLine << "-" << "-info";
+	cmdLine << "-";
 
 	patterns << new QRegExp("\\bFrames:\\s+(\\d+)\\b");
 	patterns << new QRegExp("\\bWidth:\\s+(\\d+)\\b");
@@ -187,8 +203,9 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QLi
 
 void VapoursynthSource::buildCommandLine(QStringList &cmdLine)
 {
+	cmdLine << "--y4m";
 	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFile, true));
-	cmdLine << "-" << "-y4m";
+	cmdLine << "-";
 }
 
 void VapoursynthSource::flushProcess(QProcess &processInput)

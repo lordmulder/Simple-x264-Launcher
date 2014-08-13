@@ -62,12 +62,13 @@
 #include <ctime>
 
 //Constants
+static const char *tpl_last   = "<LAST_USED>";
 static const char *home_url   = "http://muldersoft.com/";
 static const char *update_url = "https://github.com/lordmulder/Simple-x264-Launcher/releases/latest";
 static const char *avs_dl_url = "http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/";
-static const char *vsynth_url = "http://www.vapoursynth.com/";
 static const char *python_url = "https://www.python.org/downloads/";
-static const char *tpl_last   = "<LAST_USED>";
+static const char *vsynth_url = "http://www.vapoursynth.com/";
+static const int   vsynth_rev = 24;
 
 //Macros
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)
@@ -949,7 +950,7 @@ void MainWindow::init(void)
 			if(!m_preferences->getDisableWarnings())
 			{
 				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install VapourSynth for Windows (R24 or later):").append("<br>").append(LINK(vsynth_url)).append("<br><br>");
+				text += tr("Please download and install VapourSynth (<b>r%1</b> or later) for Windows:").arg(QString::number(vsynth_rev)).append("<br>").append(LINK(vsynth_url)).append("<br><br>");
 				text += tr("Note that Python v3.4 is a prerequisite for installing VapourSynth:").append("<br>").append(LINK(python_url)).append("<br>");
 				const int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
 				if(val == 1)

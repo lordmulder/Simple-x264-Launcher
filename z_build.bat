@@ -38,6 +38,10 @@ if not exist "%QTDIR%\bin\moc.exe" (
 	echo Qt meta compiler not found. Please check your QTVC_PATH var!
 	goto BuildError
 )
+if not exist "%PDOC_PATH%\pandoc.exe" (
+	echo Pandoc binary could not be found. Please check your PDOC_PATH var!
+	goto BuildError
+)
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Get current date and time (in ISO format)
@@ -95,7 +99,8 @@ copy "%~dp0\bin\Release\toolset\x64\*.dll" "%PACK_PATH%\toolset\x64"
 copy "%~dp0\bin\Release\toolset\common\*.exe" "%PACK_PATH%\toolset\common"
 copy "%~dp0\bin\Release\toolset\common\*.gpg" "%PACK_PATH%\toolset\common"
 copy "%~dp0\etc\sources\*.tar" "%PACK_PATH%\sources"
-copy "%~dp0\*.txt" "%PACK_PATH%"
+copy "%~dp0\*.txt"  "%PACK_PATH%"
+copy "%~dp0\*.html" "%PACK_PATH%"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
@@ -114,6 +119,11 @@ copy "%QTVC_PATH%\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
 del "%PACK_PATH%\imageformats\*d4.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
+REM // Generate Docs
+REM ///////////////////////////////////////////////////////////////////////////
+"%PDOC_PATH%\pandoc.exe" --from markdown_github+header_attributes --to html5 --standalone -H "%~dp0\etc\css\style.inc" "%~dp0\README.md" --output "%PACK_PATH%\README.html"
+
+REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress
 REM ///////////////////////////////////////////////////////////////////////////
 "%UPX3_PATH%\upx.exe" --brute "%PACK_PATH%\*.exe"
@@ -125,6 +135,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 attrib +R "%PACK_PATH%\*.exe"
 attrib +R "%PACK_PATH%\*.dll"
 attrib +R "%PACK_PATH%\*.txt"
+attrib +R "%PACK_PATH%\*.html"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Setup install parameters

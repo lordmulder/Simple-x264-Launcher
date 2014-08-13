@@ -115,4 +115,7 @@ protected:
 	QString m_profile;
 	QString m_custom_encoder;
 	QString m_custom_avs2yuv;
+
+private:
+	static void fixTemplate(QSettings &settingsFile);
 };

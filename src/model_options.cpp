@@ -155,11 +155,11 @@ bool OptionsModel::loadTemplate(OptionsModel *model, const QString &name)
 	}
 	
 	QSettings settings(QString("%1/templates.ini").arg(appDir), QSettings::IniFormat);
+	
 	settings.beginGroup(name);
-
 	const bool okay = loadOptions(model, settings);
-
 	settings.endGroup();
+
 	return okay;
 }
 
@@ -229,27 +229,9 @@ bool OptionsModel::saveOptions(const OptionsModel *model, QSettings &settingsFil
 
 bool OptionsModel::loadOptions(OptionsModel *model, QSettings &settingsFile)
 {
-	//For backward-compatibility
-	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };
-	for(int i = 0; legacyKey[i]; i++)
-	{
-		if(settingsFile.contains(legacyKey[i]))
-		{
-			settingsFile.setValue(KEY_CUSTOM_ENCODER, settingsFile.value(legacyKey[i]));
-			settingsFile.remove(legacyKey[i]);
-		}
-	}
-	if(settingsFile.value(KEY_PROFILE_NAME).toString().compare("auto", Qt::CaseInsensitive) == 0)
-	{
-		settingsFile.setValue(KEY_PROFILE_NAME, QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
-	}
-	if(settingsFile.value(KEY_TUNING_NAME).toString().compare("none", Qt::CaseInsensitive) == 0)
-	{
-		settingsFile.setValue(KEY_TUNING_NAME, QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
-	}
-
+	fixTemplate(settingsFile); /*for backward compatibility*/
+	
 	bool complete = true;
-
 	if(!settingsFile.contains(KEY_ENCODER_TYPE))    complete = false;
 	if(!settingsFile.contains(KEY_ENCODER_ARCH))    complete = false;
 	if(!settingsFile.contains(KEY_ENCODER_VARIANT)) complete = false;
@@ -278,4 +260,33 @@ bool OptionsModel::loadOptions(OptionsModel *model, QSettings &settingsFile)
 	}
 	
 	return complete;
+}
+
+void OptionsModel::fixTemplate(QSettings &settingsFile)
+{
+	if(!(settingsFile.contains(KEY_ENCODER_TYPE) || settingsFile.contains(KEY_ENCODER_ARCH) || settingsFile.contains(KEY_ENCODER_VARIANT)))
+	{
+		settingsFile.setValue(KEY_ENCODER_TYPE,    OptionsModel::EncType_X264);
+		settingsFile.setValue(KEY_ENCODER_ARCH,    OptionsModel::EncArch_x32);
+		settingsFile.setValue(KEY_ENCODER_VARIANT, OptionsModel::EncVariant_LoBit);
+	}
+
+	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };
+	for(int i = 0; legacyKey[i]; i++)
+	{
+		if(settingsFile.contains(legacyKey[i]))
+		{
+			settingsFile.setValue(KEY_CUSTOM_ENCODER, settingsFile.value(legacyKey[i]));
+			settingsFile.remove(legacyKey[i]);
+		}
+	}
+
+	if(settingsFile.value(KEY_PROFILE_NAME).toString().compare("auto", Qt::CaseInsensitive) == 0)
+	{
+		settingsFile.setValue(KEY_PROFILE_NAME, QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
+	}
+	if(settingsFile.value(KEY_TUNING_NAME).toString().compare("none", Qt::CaseInsensitive) == 0)
+	{
+		settingsFile.setValue(KEY_TUNING_NAME, QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+	}
 }

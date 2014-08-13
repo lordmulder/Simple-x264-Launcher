@@ -129,6 +129,7 @@ public:
 		{
 		case OptionsModel::RCMode_CRF:
 		case OptionsModel::RCMode_CQ:
+		case OptionsModel::RCMode_2Pass:
 		case OptionsModel::RCMode_ABR:
 			return true;
 		default:

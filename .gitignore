@@ -1,6 +1,7 @@
 /tmp/
 /obj/
 /bin/
+/out/
 /ipch/
 /res/toolset/
 /src/*.h.bak

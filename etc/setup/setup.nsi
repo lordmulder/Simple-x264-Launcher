@@ -406,6 +406,7 @@ SectionEnd
 Section "!Install Files"
 	!insertmacro PrintProgress "$(X264_LANG_STATUS_INSTFILES)"
 
+	; Clean up an existing installation
 	Delete `$INSTDIR\*.exe`
 	Delete `$INSTDIR\*.dll`
 	Delete `$INSTDIR\*.txt`
@@ -432,9 +433,14 @@ Section "!Install Files"
 		MessageBox MB_TOPMOST|MB_ICONSTOP|MB_RETRYCANCEL 'Could not delete old "$R0" file. Is program still running?' IDRETRY DeleteOldBinary
 		Abort "Could not delete old binary!"
 	${EndIf}
-	
+
 	SetOutPath "$INSTDIR"
 	File /a `/oname=$R0` `${X264_SOURCE_PATH}\x264_launcher.exe`
+
+	SetOutPath "$INSTDIR"
+	File /a `${X264_SOURCE_PATH}\*.dll`
+	File /a `${X264_SOURCE_PATH}\*.txt`
+	File /a `${X264_SOURCE_PATH}\*.html`
 
 	SetOutPath "$INSTDIR\imageformats"
 	File /a `${X264_SOURCE_PATH}\imageformats\*.dll`
@@ -444,10 +450,6 @@ Section "!Install Files"
 
 	SetOutPath "$INSTDIR\sources"
 	File /a `${X264_SOURCE_PATH}\sources\*.tar`
-
-	SetOutPath "$INSTDIR"
-	File /a `${X264_SOURCE_PATH}\*.dll`
-	File /a `${X264_SOURCE_PATH}\*.txt`
 SectionEnd
 
 Section "-Write Uinstaller"
@@ -475,9 +477,9 @@ Section "-Create Shortcuts"
 		!insertmacro GetExecutableName $R0
 		
 		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk" "$INSTDIR\$R0" "" "$INSTDIR\$R0" 0
-		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_LICENSE).lnk" "$INSTDIR\License.txt"
-		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_CHANGELOG).lnk" "$INSTDIR\History.txt"
-		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_MANUAL).lnk" "$INSTDIR\ReadMe.txt"
+		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_LICENSE).lnk" "$INSTDIR\LICENSE.txt"
+		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_CHANGELOG).lnk" "$INSTDIR\HISTORY.txt"
+		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_MANUAL).lnk" "$INSTDIR\README.html"
 		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_UNINSTALL).lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
 		
 		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\MuldeR's Homepage.url" "${MyWebSite}"
@@ -665,5 +667,5 @@ FunctionEnd
 
 Function ShowReadmeFunction
 	!insertmacro DisableNextButton $R0
-	${StdUtils.ExecShellAsUser} $R1 "$INSTDIR\ReadMe.txt" "open" ""
+	${StdUtils.ExecShellAsUser} $R1 "$INSTDIR\README.html" "open" ""
 FunctionEnd

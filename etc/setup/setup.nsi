@@ -406,22 +406,14 @@ SectionEnd
 Section "!Install Files"
 	!insertmacro PrintProgress "$(X264_LANG_STATUS_INSTFILES)"
 
-	; Clean up an existing installation
+	; Clean up leftover from an existing installation
 	Delete `$INSTDIR\*.exe`
 	Delete `$INSTDIR\*.dll`
 	Delete `$INSTDIR\*.txt`
 	Delete `$INSTDIR\*.html`
-	Delete `$INSTDIR\toolset\*.exe`
-	Delete `$INSTDIR\toolset\*.dll`
-	Delete `$INSTDIR\toolset\x86\*.exe`
-	Delete `$INSTDIR\toolset\x86\*.dll`
-	Delete `$INSTDIR\toolset\x64\*.exe`
-	Delete `$INSTDIR\toolset\x64\*.dll`
-	Delete `$INSTDIR\toolset\common\*.exe`
-	Delete `$INSTDIR\toolset\common\*.dll`
-	Delete `$INSTDIR\toolset\common\*.gpg`
-	Delete `$INSTDIR\imageformats\*.exe`
-	Delete `$INSTDIR\imageformats\*.dll`
+	RMDir /r `$INSTDIR\toolset`
+	RMDir /r `$INSTDIR\imageformats`
+	RMDir /r `$INSTDIR\sources`
 
 	!insertmacro GetExecutableName $R0
 
@@ -443,13 +435,13 @@ Section "!Install Files"
 	File /a `${X264_SOURCE_PATH}\*.html`
 
 	SetOutPath "$INSTDIR\imageformats"
-	File /a `${X264_SOURCE_PATH}\imageformats\*.dll`
+	File /a /r `${X264_SOURCE_PATH}\imageformats\*.*`
 
 	SetOutPath "$INSTDIR\toolset"
 	File /a /r `${X264_SOURCE_PATH}\toolset\*.*`
 
 	SetOutPath "$INSTDIR\sources"
-	File /a `${X264_SOURCE_PATH}\sources\*.tar`
+	File /a /r `${X264_SOURCE_PATH}\sources\*.*`
 SectionEnd
 
 Section "-Write Uinstaller"
@@ -476,17 +468,18 @@ Section "-Create Shortcuts"
 
 		!insertmacro GetExecutableName $R0
 		
-		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk" "$INSTDIR\$R0" "" "$INSTDIR\$R0" 0
-		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_LICENSE).lnk" "$INSTDIR\LICENSE.txt"
+		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk"        "$INSTDIR\$R0" "" "$INSTDIR\$R0" 0
+		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_LICENSE).lnk"   "$INSTDIR\LICENSE.html"
+		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_MANUAL).lnk"    "$INSTDIR\README.html"
 		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_CHANGELOG).lnk" "$INSTDIR\HISTORY.txt"
-		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_MANUAL).lnk" "$INSTDIR\README.html"
 		CreateShortCut "$SMPROGRAMS\$StartMenuFolder\$(X264_LANG_LINK_UNINSTALL).lnk" "$INSTDIR\Uninstall.exe" "" "$INSTDIR\Uninstall.exe" 0
 		
 		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\MuldeR's Homepage.url" "${MyWebSite}"
-		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\Doom9's Forum.url" "http://forum.doom9.org/"
-		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\x264.com.url" "http://www.x264.com/"
-		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\Avisynth Wiki.url" "http://avisynth.nl/"
-		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\VapourSynth.com.url" "http://www.vapoursynth.com/"
+		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\Doom9's Forum.url"     "http://forum.doom9.org/"
+		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\x264.com.url"          "http://x264.com/"
+		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\x265.com.url"          "http://x265.org/"
+		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\Avisynth Wiki.url"     "http://avisynth.nl/"
+		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\VapourSynth.com.url"   "http://www.vapoursynth.com/"
 
 		${If} ${FileExists} "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk"
 			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ISV_PinToTaskbar}
@@ -571,6 +564,8 @@ Section "Uninstall"
 	Delete /REBOOTOK `$INSTDIR\*.exe`
 	Delete /REBOOTOK `$INSTDIR\*.dll`
 	Delete /REBOOTOK `$INSTDIR\*.txt`
+	Delete /REBOOTOK `$INSTDIR\*.html`
+	
 	Delete /REBOOTOK `$INSTDIR\toolset\*.exe`
 	Delete /REBOOTOK `$INSTDIR\toolset\*.dll`
 	Delete /REBOOTOK `$INSTDIR\toolset\x86\*.exe`
@@ -580,7 +575,9 @@ Section "Uninstall"
 	Delete /REBOOTOK `$INSTDIR\toolset\common\*.exe`
 	Delete /REBOOTOK `$INSTDIR\toolset\common\*.dll`
 	Delete /REBOOTOK `$INSTDIR\toolset\common\*.gpg`
+	
 	Delete /REBOOTOK `$INSTDIR\imageformats\*.dll`
+	Delete /REBOOTOK `$INSTDIR\sources\*.*`
 
 	RMDir /r /REBOOTOK "$INSTDIR"
 

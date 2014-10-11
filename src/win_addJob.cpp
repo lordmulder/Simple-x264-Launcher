@@ -664,6 +664,7 @@ void AddJobDialog::templateSelected(void)
 	if(options)
 	{
 		qDebug("Loading options!");
+		m_lastTemplateName = ui->cbxTemplate->itemText(ui->cbxTemplate->currentIndex());
 		REMOVE_USAFED_ITEM;
 		restoreOptions(options);
 	}
@@ -672,12 +673,16 @@ void AddJobDialog::templateSelected(void)
 void AddJobDialog::saveTemplateButtonClicked(void)
 {
 	qDebug("Saving template");
-	QString name = tr("New Template");
-	int n = 2;
 
-	while(OptionsModel::templateExists(name))
+	QString name = m_lastTemplateName;
+	if(name.isEmpty() || name.contains('<') || name.contains('>'))
 	{
-		name = tr("New Template (%1)").arg(QString::number(n++));
+		name = tr("New Template");
+		int n = 1;
+		while(OptionsModel::templateExists(name))
+		{
+			name = tr("New Template (%1)").arg(QString::number(++n));
+		}
 	}
 
 	OptionsModel *options = new OptionsModel(m_sysinfo);
@@ -791,6 +796,7 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 	}
 	ui->cbxTemplate->blockSignals(false);
 
+	m_lastTemplateName = name;
 	REMOVE_USAFED_ITEM;
 }
 

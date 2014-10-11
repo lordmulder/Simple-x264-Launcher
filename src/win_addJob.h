@@ -92,6 +92,7 @@ private slots:
 private:
 	Ui::AddJobDialog *const ui;
 	bool m_monitorConfigChanges;
+	QString m_lastTemplateName;
 
 	void loadTemplateList(void);
 	void restoreOptions(const OptionsModel *options);

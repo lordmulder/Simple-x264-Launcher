@@ -184,6 +184,7 @@ const x264_os_version_t x264_winver_vista = {6,0};
 const x264_os_version_t x264_winver_win70 = {6,1};
 const x264_os_version_t x264_winver_win80 = {6,2};
 const x264_os_version_t x264_winver_win81 = {6,3};
+const x264_os_version_t x264_winver_wn100 = {6,4};
 
 //GURU MEDITATION
 static const char *GURU_MEDITATION = "\n\nGURU MEDITATION !!!\n\n";
@@ -1463,6 +1464,10 @@ bool x264_init_qt(int &argc, char **argv)
 	else if(osVersionNo == x264_winver_win81)
 	{
 		qDebug("Running on Windows 8.1 or Windows Server 2012 R2.\n");								//x264_check_compatibility_mode(NULL, executableName);
+	}
+	else if(osVersionNo == x264_winver_wn100)
+	{
+		qDebug("Running on Windows 10 or Windows Server 2014.\n");									//x264_check_compatibility_mode(NULL, executableName);
 	}
 	else
 	{

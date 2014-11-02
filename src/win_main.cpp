@@ -204,7 +204,7 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	SETUP_WEBLINK(ui->actionWebVideoLAN,        "http://download.videolan.org/pub/x264/binaries/");
 	SETUP_WEBLINK(ui->actionWebJEEB,            "http://x264.fushizen.eu/");
 	SETUP_WEBLINK(ui->actionWebFreeCodecs,      "http://www.free-codecs.com/x264_video_codec_download.htm");
-	SETUP_WEBLINK(ui->actionWebX265BinRU,       "http://goo.gl/xRS6AW");
+	SETUP_WEBLINK(ui->actionWebX265BinRU,       "http://x265.ru/en/builds/");
 	SETUP_WEBLINK(ui->actionWebX265BinEU,       "http://builds.x265.eu/");
 	SETUP_WEBLINK(ui->actionWebX265BinORG,      "http://chromashift.org/x265_builds/");
 	SETUP_WEBLINK(ui->actionWebX265BinFF,       "http://ffmpeg.zeranoe.com/builds/");

@@ -47,6 +47,8 @@
 #include <QClipboard>
 #include <QToolTip>
 
+#include <memory>
+
 #define ARRAY_SIZE(ARRAY) (sizeof((ARRAY))/sizeof((ARRAY[0])))
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
 
@@ -348,15 +350,14 @@ bool AddJobDialog::eventFilter(QObject *o, QEvent *e)
 	if((o == ui->labelHelpScreenX264) && (e->type() == QEvent::MouseButtonPress))
 	{
 		OptionsModel options(m_sysinfo); saveOptions(&options);
-		HelpDialog *helpScreen = new HelpDialog(this, false, m_sysinfo, &options, m_preferences);
+		QScopedPointer<HelpDialog> helpScreen(new HelpDialog(this, false, m_sysinfo, &options, m_preferences));
 		helpScreen->exec();
-		X264_DELETE(helpScreen);
 	}
 	else if((o == ui->labelHelpScreenAvs2YUV) && (e->type() == QEvent::MouseButtonPress))
 	{
-		HelpDialog *helpScreen = new HelpDialog(this, false, m_sysinfo, m_defaults, m_preferences);
+		OptionsModel options(m_sysinfo); saveOptions(&options);
+		QScopedPointer<HelpDialog> helpScreen(new HelpDialog(this, true, m_sysinfo, &options, m_preferences));
 		helpScreen->exec();
-		X264_DELETE(helpScreen);
 	}
 	else if((o == ui->editCustomX264Params) && (e->type() == QEvent::FocusOut))
 	{
@@ -685,8 +686,8 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		}
 	}
 
-	OptionsModel *options = new OptionsModel(m_sysinfo);
-	saveOptions(options);
+	QScopedPointer<OptionsModel> options(new OptionsModel(m_sysinfo));
+	saveOptions(options.data());
 
 	if(options->equals(m_defaults))
 	{
@@ -695,7 +696,6 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		ui->cbxTemplate->setCurrentIndex(0);
 		ui->cbxTemplate->blockSignals(false);
 		REMOVE_USAFED_ITEM;
-		X264_DELETE(options);
 		return;
 	}
 
@@ -716,7 +716,6 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 				ui->cbxTemplate->setCurrentIndex(i);
 				ui->cbxTemplate->blockSignals(false);
 				REMOVE_USAFED_ITEM;
-				X264_DELETE(options);
 				return;
 			}
 		}
@@ -740,7 +739,6 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		name = QInputDialog::getItem(this, tr("Save Template"), tr("Please enter the name of the template:").leftJustified(144, ' '), items, 0, true, &ok).simplified();
 		if(!ok)
 		{
-			X264_DELETE(options);
 			return;
 		}
 		if(name.isEmpty())
@@ -769,29 +767,26 @@ void AddJobDialog::saveTemplateButtonClicked(void)
 		break;
 	}
 	
-	if(!OptionsModel::saveTemplate(options, name))
+	if(!OptionsModel::saveTemplate(options.data(), name))
 	{
 		QMessageBox::critical(this, tr("Save Failed"), tr("Sorry, the template could not be saved!"));
-		X264_DELETE(options);
 		return;
 	}
 	
-	int index = ui->cbxTemplate->model()->rowCount();
 	ui->cbxTemplate->blockSignals(true);
 	for(int i = 0; i < ui->cbxTemplate->count(); i++)
 	{
 		if(ui->cbxTemplate->itemText(i).compare(name, Qt::CaseInsensitive) == 0)
 		{
-			index = -1; //Do not append new template
-			const OptionsModel *oldItem = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>());
-			ui->cbxTemplate->setItemData(i, QVariant::fromValue<const void*>(options));
+			QScopedPointer<const OptionsModel> oldItem(reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>()));
+			ui->cbxTemplate->setItemData(i, QVariant::fromValue<const void*>(options.take()));
 			ui->cbxTemplate->setCurrentIndex(i);
-			X264_DELETE(oldItem);
 		}
 	}
-	if(index >= 0)
+	if(!options.isNull())
 	{
-		ui->cbxTemplate->insertItem(index, name, QVariant::fromValue<const void*>(options));
+		const int index = ui->cbxTemplate->model()->rowCount();
+		ui->cbxTemplate->insertItem(index, name, QVariant::fromValue<const void*>(options.take()));
 		ui->cbxTemplate->setCurrentIndex(index);
 	}
 	ui->cbxTemplate->blockSignals(false);

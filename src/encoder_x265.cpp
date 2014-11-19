@@ -107,7 +107,7 @@ public:
 	virtual QStringList getTunings(void) const
 	{
 		QStringList tunings;
-		tunings << "SSIM" << "FastDecode" << "ZeroLatency";
+		tunings << "Grain" << "PSNR" << "SSIM" << "FastDecode" << "ZeroLatency";
 		return tunings;
 	}
 

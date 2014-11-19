@@ -106,13 +106,15 @@ typedef enum
 x264_network_t;
 
 //Known Windows versions
-extern const x264_os_version_t x264_winver_win2k;
-extern const x264_os_version_t x264_winver_winxp;
-extern const x264_os_version_t x264_winver_xpx64;
-extern const x264_os_version_t x264_winver_vista;
-extern const x264_os_version_t x264_winver_win70;
-extern const x264_os_version_t x264_winver_win80;
-extern const x264_os_version_t x264_winver_win81;
+extern const x264_os_version_t x264_winver_error;	//N/A
+extern const x264_os_version_t x264_winver_win2k;	//2000
+extern const x264_os_version_t x264_winver_winxp;	//XP
+extern const x264_os_version_t x264_winver_xpx64;	//XP_x64
+extern const x264_os_version_t x264_winver_vista;	//Vista
+extern const x264_os_version_t x264_winver_win70;	//7
+extern const x264_os_version_t x264_winver_win80;	//8
+extern const x264_os_version_t x264_winver_win81;	//8.1
+extern const x264_os_version_t x264_winver_wn100;	//10
 
 //Exception class
 class X264Exception : public std::runtime_error

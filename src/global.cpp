@@ -92,6 +92,14 @@
 typedef HRESULT (WINAPI *SHGetKnownFolderPath_t)(const GUID &rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath);
 typedef HRESULT (WINAPI *SHGetFolderPath_t)(HWND hwndOwner, int nFolder, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath);
 
+//OS version info
+typedef struct _x264_os_info_t
+{
+	const x264_os_version_t version;
+	const char friendlyName[128];
+}
+x264_os_info_t;
+
 //Global vars
 static bool g_x264_console_attached = false;
 static QMutex g_x264_message_mutex;
@@ -176,15 +184,30 @@ static struct
 }
 g_x264_portable;
 
-//Known Windows versions - maps marketing names to the actual Windows NT versions
-const x264_os_version_t x264_winver_win2k = {5,0};
-const x264_os_version_t x264_winver_winxp = {5,1};
-const x264_os_version_t x264_winver_xpx64 = {5,2};
-const x264_os_version_t x264_winver_vista = {6,0};
-const x264_os_version_t x264_winver_win70 = {6,1};
-const x264_os_version_t x264_winver_win80 = {6,2};
-const x264_os_version_t x264_winver_win81 = {6,3};
-const x264_os_version_t x264_winver_wn100 = {6,4};
+//Known Windows NT versions
+const x264_os_version_t x264_winver_error = {0,0};	//N/A
+const x264_os_version_t x264_winver_win2k = {5,0};	//2000
+const x264_os_version_t x264_winver_winxp = {5,1};	//XP
+const x264_os_version_t x264_winver_xpx64 = {5,2};	//XP_x64
+const x264_os_version_t x264_winver_vista = {6,0};	//Vista
+const x264_os_version_t x264_winver_win70 = {6,1};	//7
+const x264_os_version_t x264_winver_win80 = {6,2};	//8
+const x264_os_version_t x264_winver_win81 = {6,3};	//8.1
+const x264_os_version_t x264_winver_wn100 = {6,4};	//10
+
+//Maps marketing names to the actual Windows NT versions
+static const x264_os_info_t x264_winver_lut[] =
+{
+	{ x264_winver_win2k, "Windows 2000"                                  },	//2000
+	{ x264_winver_winxp, "Windows XP or Windows XP Media Center Edition" },	//XP
+	{ x264_winver_xpx64, "Windows Server 2003 or Windows XP x64"         },	//XP_x64
+	{ x264_winver_vista, "Windows Vista or Windows Server 2008"          },	//Vista
+	{ x264_winver_win70, "Windows 7 or Windows Server 2008 R2"           },	//7
+	{ x264_winver_win80, "Windows 8 or Windows Server 2012"              },	//8
+	{ x264_winver_win81, "Windows 8.1 or Windows Server 2012 R2"         },	//8.1
+	{ x264_winver_wn100, "Windows 10 or Windows Server 2014 (Preview)"   },	//10
+	{ x264_winver_error, "" }
+};
 
 //GURU MEDITATION
 static const char *GURU_MEDITATION = "\n\nGURU MEDITATION !!!\n\n";
@@ -239,9 +262,9 @@ static inline bool _CHECK_FLAG(const int argc, char **argv, const char *flag)
 //Compiler detection
 #if defined(__INTEL_COMPILER)
 	#if (__INTEL_COMPILER >= 1300)
-		static const char *g_x264_version_compiler = "ICL 13." X264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
+		static const char *g_x264_version_compiler = "ICL 13." x264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
 	#elif (__INTEL_COMPILER >= 1200)
-		static const char *g_x264_version_compiler = "ICL 12." X264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
+		static const char *g_x264_version_compiler = "ICL 12." x264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
 	#elif (__INTEL_COMPILER >= 1100)
 		static const char *g_x264_version_compiler = "ICL 11.x";
 	#elif (__INTEL_COMPILER >= 1000)
@@ -257,6 +280,8 @@ static inline bool _CHECK_FLAG(const int argc, char **argv, const char *flag)
 			static const char *g_x264_version_compiler = "MSVC 2013.2";
 		#elif (_MSC_FULL_VER == 180030723)
 			static const char *g_x264_version_compiler = "MSVC 2013.3";
+		#elif (_MSC_FULL_VER == 180031101)
+			static const char *g_x264_version_compiler = "MSVC 2013.4";
 		#else
 			#error Compiler version is not supported yet!
 		#endif
@@ -293,9 +318,9 @@ static inline bool _CHECK_FLAG(const int argc, char **argv, const char *flag)
 	// Note: /arch:SSE and /arch:SSE2 are only available for the x86 platform
 	#if !defined(_M_X64) && defined(_M_IX86_FP)
 		#if (_M_IX86_FP == 1)
-			X264_COMPILER_WARNING("SSE instruction set is enabled!")
+			x264_COMPILER_WARNING("SSE instruction set is enabled!")
 		#elif (_M_IX86_FP == 2)
-			X264_COMPILER_WARNING("SSE2 (or higher) instruction set is enabled!")
+			x264_COMPILER_WARNING("SSE2 (or higher) instruction set is enabled!")
 		#endif
 	#endif
 #else
@@ -1440,44 +1465,26 @@ bool x264_init_qt(int &argc, char **argv)
 		qFatal("%s", QApplication::tr("Executable '%1' requires Windows XP or later.").arg(executableName).toLatin1().constData());
 	}
 
-	//Supported Windows version?
-	if(osVersionNo == x264_winver_winxp)
+	//Check whether we are running on a supported Windows version
+	bool runningOnSupportedOSVersion = false;
+	for(size_t i = 0; x264_winver_lut[i].version != x264_winver_error; i++)
 	{
-		qDebug("Running on Windows XP or Windows XP Media Center Edition.\n");						//x264_check_compatibility_mode("GetLargePageMinimum", executableName);
+		if(osVersionNo == x264_winver_lut[i].version)
+		{	
+			runningOnSupportedOSVersion = true;
+			qDebug("Running on %s (NT v%u.%u).\n", x264_winver_lut[i].friendlyName, osVersionNo.versionMajor, osVersionNo.versionMinor);
+			break;
+		}
 	}
-	else if(osVersionNo == x264_winver_xpx64)
-	{
-		qDebug("Running on Windows Server 2003, Windows Server 2003 R2 or Windows XP x64.\n");		//x264_check_compatibility_mode("GetLocaleInfoEx", executableName);
-	}
-	else if(osVersionNo == x264_winver_vista)
-	{
-		qDebug("Running on Windows Vista or Windows Server 2008.\n");								//x264_check_compatibility_mode("CreateRemoteThreadEx", executableName*/);
-	}
-	else if(osVersionNo == x264_winver_win70)
-	{
-		qDebug("Running on Windows 7 or Windows Server 2008 R2.\n");								//x264_check_compatibility_mode("CreateFile2", executableName);
-	}
-	else if(osVersionNo == x264_winver_win80)
-	{
-		qDebug("Running on Windows 8 or Windows Server 2012.\n");									//x264_check_compatibility_mode("FindPackagesByPackageFamily", executableName);
-	}
-	else if(osVersionNo == x264_winver_win81)
-	{
-		qDebug("Running on Windows 8.1 or Windows Server 2012 R2.\n");								//x264_check_compatibility_mode(NULL, executableName);
-	}
-	else if(osVersionNo == x264_winver_wn100)
-	{
-		qDebug("Running on Windows 10 or Windows Server 2014.\n");									//x264_check_compatibility_mode(NULL, executableName);
-	}
-	else
+	if(!runningOnSupportedOSVersion)
 	{
 		const QString message = QString().sprintf("Running on an unknown WindowsNT-based system (v%u.%u).", osVersionNo.versionMajor, osVersionNo.versionMinor);
 		qWarning("%s\n", QUTF8(message));
-		MessageBoxW(NULL, QWCHAR(message), L"Simple x264 Launcher", MB_OK | MB_TOPMOST | MB_ICONWARNING);
+		MessageBoxW(NULL, QWCHAR(message), L"LameXP", MB_OK | MB_TOPMOST | MB_ICONWARNING);
 	}
 
 	//Check for compat mode
-	if(osVersionNo.overrideFlag && (osVersionNo <= x264_winver_win81))
+	if(osVersionNo.overrideFlag && (osVersionNo <= x264_winver_wn100))
 	{
 		qWarning("Windows compatibility mode detected!");
 		if(!arguments.contains("--ignore-compat-mode", Qt::CaseInsensitive))
@@ -2297,7 +2304,7 @@ void x264_dbg_output_string(const char* format, ...)
 	va_end(args);
 #else
 	THROW("Cannot call this function in a non-debug build!");
-#endif //LAMEXP_DEBUG
+#endif //X264_DEBUG
 }
 
 /*

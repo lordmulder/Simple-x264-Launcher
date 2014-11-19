@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// LameXP - Audio Encoder Front-End
+// Simple x264 Launcher
 // Copyright (C) 2004-2014 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify

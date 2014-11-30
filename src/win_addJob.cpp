@@ -138,6 +138,25 @@ protected:
 		return flag;
 	}
 
+	bool checkPrefix(const QString &input) const
+	{
+		static const char *const c[3] = { "--", "-", NULL };
+		for(size_t i = 0; c[i]; i++)
+		{
+			const QString prefix = QString::fromLatin1(c[i]);
+			if(input.startsWith(QString("%1 ").arg(prefix)) || input.contains(QString(" %1 ").arg(prefix)) || input.endsWith(prefix))
+			{
+				qDebug("A");
+				if(m_notifier)
+				{
+					m_notifier->setText(tr("Invalid parameter: %1").arg(prefix));
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
 	const bool &setStatus(const bool &flag, const QString &toolName) const
 	{
 		if(flag)
@@ -175,7 +194,7 @@ public:
 		static const char* p[] = {"B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
 			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help","quiet", NULL};
 
-		bool invalid = false;
+		bool invalid = checkPrefix(input);
 
 		for(size_t i = 0; p[i] && (!invalid); i++)
 		{
@@ -195,7 +214,7 @@ public:
 	{
 		static const char* p[] = {"o", "frames", "seek", "raw", "hfyu", "slave", NULL};
 
-		bool invalid = false;
+		bool invalid = checkPrefix(input);
 
 		for(size_t i = 0; p[i] && (!invalid); i++)
 		{

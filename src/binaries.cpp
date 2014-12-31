@@ -96,7 +96,7 @@ QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferen
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
 {
-	return QString("%1/vspipe.exe").arg(sysinfo->getVPSPath());
+	return QString("%1/../%2/vspipe.exe").arg(sysinfo->getVPSPath(), (x64 ? "core64" : "core32"));
 }
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)

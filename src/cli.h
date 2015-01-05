@@ -27,19 +27,19 @@
 // CLI parameter identifiers
 ///////////////////////////////////////////////////////////////////////////////
 
-static const int CLI_PARAM_ADD_FILE         =  0;
-static const int CLI_PARAM_ADD_JOB          =  1;
-static const int CLI_PARAM_FORCE_START      =  2;
-static const int CLI_PARAM_NO_FORCE_START   =  3;
-static const int CLI_PARAM_FORCE_ENQUEUE    =  4;
-static const int CLI_PARAM_NO_FORCE_ENQUEUE =  5;
-static const int CLI_PARAM_SKIP_AVS_CHECK   =  6;
-static const int CLI_PARAM_SKIP_VPS_CHECK   =  7;
-static const int CLI_PARAM_SKIP_X264_CHECK  =  8;
-static const int CLI_PARAM_NO_DEADLOCK      =  9;
-static const int CLI_PARAM_NO_GUI_STYLE     = 10;
-static const int CLI_PARAM_FIRST_RUN        = 11;
-static const int CLI_PARAM_OTHER            = 42;
+static const int CLI_PARAM_ADD_FILE           =  0;
+static const int CLI_PARAM_ADD_JOB            =  1;
+static const int CLI_PARAM_FORCE_START        =  2;
+static const int CLI_PARAM_NO_FORCE_START     =  3;
+static const int CLI_PARAM_FORCE_ENQUEUE      =  4;
+static const int CLI_PARAM_NO_FORCE_ENQUEUE   =  5;
+static const int CLI_PARAM_SKIP_AVS_CHECK     =  6;
+static const int CLI_PARAM_SKIP_VPS_CHECK     =  7;
+static const int CLI_PARAM_SKIP_VERSION_CHECK =  8;
+static const int CLI_PARAM_NO_DEADLOCK        =  9;
+static const int CLI_PARAM_NO_GUI_STYLE       = 10;
+static const int CLI_PARAM_FIRST_RUN          = 11;
+static const int CLI_PARAM_OTHER              = 42;
 
 ///////////////////////////////////////////////////////////////////////////////
 // CLI Parser

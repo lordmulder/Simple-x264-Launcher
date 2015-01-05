@@ -62,7 +62,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 	if(m_preferences->getSkipVersionTest())
 	{
 		log("Warning: Skipping the version check this time!");
-		return makeRevision(9999, 9999);
+		return makeRevision(0xFFF0, 0xFFF0);
 	}
 
 	QProcess process;

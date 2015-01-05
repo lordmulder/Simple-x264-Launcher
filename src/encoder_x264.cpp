@@ -206,8 +206,8 @@ const QString &X264Encoder::getName(void)
 void X264Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bx264\\s(\\d)\\.(\\d+)\\.(\\d+)\\s([a-f0-9]{7})", Qt::CaseInsensitive);
-	patterns << new QRegExp("\\bx264 (\\d)\\.(\\d+)\\.(\\d+)", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bx264\\s+(\\d)\\.(\\d+)\\.(\\d+)\\s+([a-f0-9]{7})", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bx264\\s+(\\d)\\.(\\d+)\\.(\\d+)", Qt::CaseInsensitive);
 }
 
 void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
@@ -219,7 +219,7 @@ void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 		bool ok1 = false, ok2 = false;
 		unsigned int temp1 = patterns[0]->cap(2).toUInt(&ok1);
 		unsigned int temp2 = patterns[0]->cap(3).toUInt(&ok2);
-		if(ok1 && ok2)
+		if(ok1 && ok2 && (temp1 > 0) && (temp2 > 0))
 		{
 			core  = temp1;
 			build = temp2;
@@ -230,7 +230,7 @@ void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 		bool ok1 = false, ok2 = false;
 		unsigned int temp1 = patterns[1]->cap(2).toUInt(&ok1);
 		unsigned int temp2 = patterns[1]->cap(3).toUInt(&ok2);
-		if(ok1 && ok2)
+		if(ok1 && ok2 && (temp1 > 0) && (temp2 > 0))
 		{
 			core  = temp1;
 			build = temp2;

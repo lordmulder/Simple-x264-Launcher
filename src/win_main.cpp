@@ -869,9 +869,9 @@ void MainWindow::init(void)
 	}
 
 	//Skip version check (not recommended!)
-	if(CLIParser::checkFlag(CLI_PARAM_SKIP_X264_CHECK, arguments))
+	if(CLIParser::checkFlag(CLI_PARAM_SKIP_VERSION_CHECK, arguments))
 	{
-		qWarning("x264 version check disabled, you have been warned!\n");
+		qWarning("Version checks are disabled now, you have been warned!\n");
 		m_preferences->setSkipVersionTest(true);
 	}
 	

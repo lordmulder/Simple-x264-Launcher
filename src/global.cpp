@@ -185,15 +185,15 @@ static struct
 g_x264_portable;
 
 //Known Windows NT versions
-const x264_os_version_t x264_winver_error = {0,0};	//N/A
-const x264_os_version_t x264_winver_win2k = {5,0};	//2000
-const x264_os_version_t x264_winver_winxp = {5,1};	//XP
-const x264_os_version_t x264_winver_xpx64 = {5,2};	//XP_x64
-const x264_os_version_t x264_winver_vista = {6,0};	//Vista
-const x264_os_version_t x264_winver_win70 = {6,1};	//7
-const x264_os_version_t x264_winver_win80 = {6,2};	//8
-const x264_os_version_t x264_winver_win81 = {6,3};	//8.1
-const x264_os_version_t x264_winver_wn100 = {6,4};	//10
+const x264_os_version_t x264_winver_error = { 0,0};	//N/A
+const x264_os_version_t x264_winver_win2k = { 5,0};	//2000
+const x264_os_version_t x264_winver_winxp = { 5,1};	//XP
+const x264_os_version_t x264_winver_xpx64 = { 5,2};	//XP_x64
+const x264_os_version_t x264_winver_vista = { 6,0};	//Vista
+const x264_os_version_t x264_winver_win70 = { 6,1};	//7
+const x264_os_version_t x264_winver_win80 = { 6,2};	//8
+const x264_os_version_t x264_winver_win81 = { 6,3};	//8.1
+const x264_os_version_t x264_winver_wn100 = {10,0};	//10
 
 //Maps marketing names to the actual Windows NT versions
 static const x264_os_info_t x264_winver_lut[] =

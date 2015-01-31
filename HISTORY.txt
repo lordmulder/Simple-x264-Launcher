@@ -1,0 +1,22 @@
+----------------------------------------- 
+Simple x264/x265 Launcher version history 
+----------------------------------------- 
+ 
+Version 2.46 [2015-01-31]
+* Updated x265 to version 1.4+424
+* Updated x264 to revision 2525
+* Updated Avs2YUV to version 0.24 (BugMaster's mod 3)
+
+Version 2.44 [2014-11-02]
+* Updated x265 to version 1.4
+* Updated x264 to revision 2479
+* Some improvements to template handling
+
+Version 2.42 [2014-08-16]
+* Various installer fixes and improvements
+
+Version 2.41 [2014-08-15]
+* Updated x264 and x265 encoders to the latest versions
+* Enabled 2-Pass encoding support for x265 encoder
+* Added support for VapourSynth r24 (minimum required version is r24 now!)
+* Better support for templates saved in program "old" versions

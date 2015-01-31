@@ -1,6 +1,6 @@
 ; ///////////////////////////////////////////////////////////////////////////////
 ; // Simple x264 Launcher
-; // Copyright (C) 2004-2013 LoRd_MuldeR <MuldeR2@GMX.de>
+; // Copyright (C) 2004-2015 LoRd_MuldeR <MuldeR2@GMX.de>
 ; //
 ; // This program is free software; you can redistribute it and/or modify
 ; // it under the terms of the GNU General Public License as published by
@@ -120,7 +120,7 @@ VIAddVersionKey "Comments" "This program is free software; you can redistribute 
 VIAddVersionKey "CompanyName" "Free Software Foundation"
 VIAddVersionKey "FileDescription" "Simple x264 Launcher [Build #${X264_BUILD}]"
 VIAddVersionKey "FileVersion" "${PRODUCT_VERSION_DATE}.${X264_BUILD}"
-VIAddVersionKey "LegalCopyright" "Copyright 2004-2013 LoRd_MuldeR"
+VIAddVersionKey "LegalCopyright" "Copyright 2004-2015 LoRd_MuldeR"
 VIAddVersionKey "LegalTrademarks" "GNU"
 VIAddVersionKey "OriginalFilename" "x264_x64.${X264_DATE}.exe"
 VIAddVersionKey "ProductName" "Simple x264 Launcher"

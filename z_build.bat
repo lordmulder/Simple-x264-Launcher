@@ -160,7 +160,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Create Tag
 REM ///////////////////////////////////////////////////////////////////////////
 echo Simple x264/x265 Launcher - graphical front-end for x264 and x265 > "%PACK_PATH%\BUILD_TAG.txt"
-echo Copyright (C) 2004-2014 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
+echo Copyright (C) 2004-2015 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo Build #%BUILD_NO%, created on %ISO_DATE% at %ISO_TIME% >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"

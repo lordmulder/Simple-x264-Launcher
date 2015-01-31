@@ -32,8 +32,8 @@
 #include <QRegExp>
 
 //x264 version info
-static const unsigned int VERSION_X264_MINIMUM_REV = 2455;
-static const unsigned int VERSION_X264_CURRENT_API = 142;
+static const unsigned int VERSION_X264_MINIMUM_REV = 2495;
+static const unsigned int VERSION_X264_CURRENT_API = 144;
 
 // ------------------------------------------------------------
 // Helper Macros

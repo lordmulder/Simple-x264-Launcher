@@ -31,7 +31,7 @@
 #include <QDir>
 #include <QProcess>
 
-static const unsigned int VER_X264_AVS2YUV_VER = 242;
+static const unsigned int VER_X264_AVS2YUV_VER = 243;
 
 // ------------------------------------------------------------
 // Constructor & Destructor

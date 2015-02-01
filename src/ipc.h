@@ -21,22 +21,12 @@
 
 #pragma once
 
-#include <QThread>
-#include <QMutex>
-
-class QSharedMemory;
-class QStringList;
-class QSystemSemaphore;
-
-class IPCCore;
-class IPCReceiveThread;
-class IPCSendThread;
-
 //IPC Commands
-static const quint32 IPC_OPCODE_PING     = 0;
-static const quint32 IPC_OPCODE_ADD_FILE = 1;
-static const quint32 IPC_OPCODE_ADD_JOB  = 2;
-static const quint32 IPC_OPCODE_MAX      = 3;
+static const quint32 IPC_OPCODE_NOOP     = 0;
+static const quint32 IPC_OPCODE_PING     = 1;
+static const quint32 IPC_OPCODE_ADD_FILE = 2;
+static const quint32 IPC_OPCODE_ADD_JOB  = 3;
+static const quint32 IPC_OPCODE_MAX      = 4;
 
 //IPC Flags
 static const quint32 IPC_FLAG_FORCE_START   = 0x00000001;

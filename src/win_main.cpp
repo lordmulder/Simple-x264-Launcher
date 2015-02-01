@@ -35,6 +35,7 @@
 #include "thread_avisynth.h"
 #include "thread_vapoursynth.h"
 #include "thread_encode.h"
+#include "thread_ipc_recv.h"
 #include "taskbar7.h"
 #include "input_filter.h"
 #include "win_addJob.h"
@@ -47,6 +48,7 @@
 //MUtils
 #include <MUtils/OSSupport.h>
 #include <MUtils/CPUFeatures.h>
+#include <MUtils/IPCChannel.h>
 
 //Qt
 #include <QDate>
@@ -93,9 +95,9 @@ static const int   vsynth_rev = 24;
 /*
  * Constructor
  */
-MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
+MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtils::IPCChannel *const ipcChannel)
 :
-	m_ipc(NULL),
+	m_ipcChannel(ipcChannel),
 	m_sysinfo(NULL),
 	m_options(NULL),
 	m_jobList(NULL),
@@ -103,7 +105,6 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
 	m_initialized(false),
-	m_sysTray(new QSystemTrayIcon(this)),
 	ui(new Ui::MainWindow())
 {
 	//Init the dialog, from the .ui file
@@ -116,23 +117,23 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 	qRegisterMetaType<JobStatus>("JobStatus");
 
 	//Create and initialize the sysinfo object
-	m_sysinfo = new SysinfoModel();
+	m_sysinfo.reset(new SysinfoModel());
 	m_sysinfo->setAppPath(QApplication::applicationDirPath());
 	m_sysinfo->setMMXSupport(cpuFeatures.features && MUtils::CPUFetaures::FLAG_MMX);
 	m_sysinfo->setSSESupport(cpuFeatures.features && MUtils::CPUFetaures::FLAG_SSE); //SSE implies MMX2
 	m_sysinfo->setX64Support(cpuFeatures.x64 && (cpuFeatures.features && MUtils::CPUFetaures::FLAG_SSE2)); //X64 implies SSE2
 
 	//Load preferences
-	m_preferences = new PreferencesModel();
-	PreferencesModel::loadPreferences(m_preferences);
+	m_preferences.reset(new PreferencesModel());
+	PreferencesModel::loadPreferences(m_preferences.data());
 
 	//Load recently used
-	m_recentlyUsed = new RecentlyUsed();
-	RecentlyUsed::loadRecentlyUsed(m_recentlyUsed);
+	m_recentlyUsed.reset(new RecentlyUsed());
+	RecentlyUsed::loadRecentlyUsed(m_recentlyUsed.data());
 
 	//Create options object
-	m_options = new OptionsModel(m_sysinfo);
-	OptionsModel::loadTemplate(m_options, QString::fromLatin1(tpl_last));
+	m_options.reset(new OptionsModel(m_sysinfo.data()));
+	OptionsModel::loadTemplate(m_options.data(), QString::fromLatin1(tpl_last));
 
 	//Freeze minimum size
 	setMinimumSize(size());
@@ -152,9 +153,9 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 	}
 	
 	//Create model
-	m_jobList = new JobListModel(m_preferences);
-	connect(m_jobList, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
-	ui->jobsView->setModel(m_jobList);
+	m_jobList.reset(new JobListModel(m_preferences.data()));
+	connect(m_jobList.data(), SIGNAL(dataChanged(QModelIndex, QModelIndex)), this, SLOT(jobChangedData(QModelIndex, QModelIndex)));
+	ui->jobsView->setModel(m_jobList.data());
 	
 	//Setup view
 	ui->jobsView->horizontalHeader()->setSectionHidden(3, true);
@@ -167,16 +168,16 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 	connect(ui->jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
 
 	//Setup key listener
-	m_inputFilter_jobList = new InputEventFilter(ui->jobsView);
+	m_inputFilter_jobList.reset(new InputEventFilter(ui->jobsView));
 	m_inputFilter_jobList->addKeyFilter(Qt::ControlModifier | Qt::Key_Up,   1);
 	m_inputFilter_jobList->addKeyFilter(Qt::ControlModifier | Qt::Key_Down, 2);
-	connect(m_inputFilter_jobList, SIGNAL(keyPressed(int)), this, SLOT(jobListKeyPressed(int)));
+	connect(m_inputFilter_jobList.data(), SIGNAL(keyPressed(int)), this, SLOT(jobListKeyPressed(int)));
 	
 	//Setup mouse listener
-	m_inputFilter_version = new InputEventFilter(ui->labelBuildDate);
+	m_inputFilter_version.reset(new InputEventFilter(ui->labelBuildDate));
 	m_inputFilter_version->addMouseFilter(Qt::LeftButton,  0);
 	m_inputFilter_version->addMouseFilter(Qt::RightButton, 0);
-	connect(m_inputFilter_version, SIGNAL(mouseClicked(int)), this, SLOT(versionLabelMouseClicked(int)));
+	connect(m_inputFilter_version.data(), SIGNAL(mouseClicked(int)), this, SLOT(versionLabelMouseClicked(int)));
 
 	//Create context menu
 	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), ui->logView);
@@ -227,7 +228,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 	SETUP_WEBLINK(ui->actionWebSecret,          "http://www.youtube.com/watch_popup?v=AXIeHY-OYNI");
 
 	//Create floating label
-	m_label = new QLabel(ui->jobsView->viewport());
+	m_label.reset(new QLabel(ui->jobsView->viewport()));
 	m_label->setText(tr("No job created yet. Please click the 'Add New Job' button!"));
 	m_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 	SET_TEXT_COLOR(m_label, Qt::darkGray);
@@ -239,25 +240,26 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 	updateLabelPos();
 
 	//Init system tray icon
+	m_sysTray.reset(new QSystemTrayIcon(this));
 	m_sysTray->setToolTip(this->windowTitle());
 	m_sysTray->setIcon(this->windowIcon());
-	connect(m_sysTray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActived()));
+	connect(m_sysTray.data(), SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActived()));
 
 	//Create corner widget
 	QLabel *checkUp = new QLabel(ui->menubar);
 	checkUp->setText(QString("<nobr><img src=\":/buttons/exclamation_small.png\">&nbsp;<b style=\"color:darkred\">%1</b>&nbsp;&nbsp;&nbsp;</nobr>").arg(tr("Check for Updates")));
 	checkUp->setFixedHeight(ui->menubar->height());
 	checkUp->setCursor(QCursor(Qt::PointingHandCursor));
-	m_inputFilter_checkUp = new InputEventFilter(checkUp);
+	m_inputFilter_checkUp.reset(new InputEventFilter(checkUp));
 	m_inputFilter_checkUp->addMouseFilter(Qt::LeftButton,  0);
 	m_inputFilter_checkUp->addMouseFilter(Qt::RightButton, 0);
-	connect(m_inputFilter_checkUp, SIGNAL(mouseClicked(int)), this, SLOT(checkUpdates()));
+	connect(m_inputFilter_checkUp.data(), SIGNAL(mouseClicked(int)), this, SLOT(checkUpdates()));
 	checkUp->hide();
 	ui->menubar->setCornerWidget(checkUp);
 
 	//Create timer
-	m_fileTimer = new QTimer(this);
-	connect(m_fileTimer, SIGNAL(timeout()), this, SLOT(handlePendingFiles()));
+	m_fileTimer.reset(new QTimer(this));
+	connect(m_fileTimer.data(), SIGNAL(timeout()), this, SLOT(handlePendingFiles()));
 }
 
 /*
@@ -265,37 +267,27 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
  */
 MainWindow::~MainWindow(void)
 {
-	OptionsModel::saveTemplate(m_options, QString::fromLatin1(tpl_last));
+	OptionsModel::saveTemplate(m_options.data(), QString::fromLatin1(tpl_last));
 	
-	X264_DELETE(m_jobList);
-	X264_DELETE(m_options);
-	X264_DELETE(m_pendingFiles);
-	X264_DELETE(m_label);
-	X264_DELETE(m_inputFilter_jobList);
-	X264_DELETE(m_inputFilter_version);
-	X264_DELETE(m_inputFilter_checkUp);
-
-	while(!m_toolsList.isEmpty())
+	while(!m_toolsList->isEmpty())
 	{
-		QFile *temp = m_toolsList.takeFirst();
+		QFile *temp = m_toolsList->takeFirst();
 		X264_DELETE(temp);
 	}
 
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//if(m_ipc->isListening())
-	//{
-	//	m_ipc->stopListening();
-	//}
-
-	X264_DELETE(m_preferences);
-	X264_DELETE(m_recentlyUsed);
-	X264_DELETE(m_sysinfo);
-	X264_DELETE(m_fileTimer);
+	if(!m_ipcThread.isNull())
+	{
+		m_ipcThread->stop();
+		if(!m_ipcThread->wait(5000))
+		{
+			m_ipcThread->terminate();
+			m_ipcThread->wait();
+		}
+	}
 
 	VapourSynthCheckThread::unload();
 	AvisynthCheckThread::unload();
 
-	delete m_sysTray;
 	delete ui;
 }
 
@@ -314,9 +306,9 @@ void MainWindow::addButtonPressed()
 	bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 	QString sourceFileName, outputFileName;
 
-	if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
+	if(createJob(sourceFileName, outputFileName, m_options.data(), runImmediately))
 	{
-		appendJob(sourceFileName, outputFileName, m_options, runImmediately);
+		appendJob(sourceFileName, outputFileName, m_options.data(), runImmediately);
 	}
 }
 
@@ -339,9 +331,9 @@ void MainWindow::openActionTriggered()
 		{
 			bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 			QString sourceFileName(fileList.first()), outputFileName;
-			if(createJob(sourceFileName, outputFileName, m_options, runImmediately))
+			if(createJob(sourceFileName, outputFileName, m_options.data(), runImmediately))
 			{
-				appendJob(sourceFileName, outputFileName, m_options, runImmediately);
+				appendJob(sourceFileName, outputFileName, m_options.data(), runImmediately);
 			}
 		}
 	}
@@ -610,7 +602,7 @@ void MainWindow::showPreferences(void)
 {
 	ENSURE_APP_IS_READY();
 
-	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences, m_sysinfo);
+	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences.data(), m_sysinfo.data());
 	preferences->exec();
 
 	X264_DELETE(preferences);
@@ -767,17 +759,6 @@ void MainWindow::init(void)
 	const MUtils::OS::ArgumentMap &arguments = MUtils::OS::arguments();
 
 	//---------------------------------------
-	// Create the IPC listener thread
-	//---------------------------------------
-
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//if(m_ipc->isInitialized())
-	//{
-	//	connect(m_ipc, SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
-	//	m_ipc->startListening();
-	//}
-
-	//---------------------------------------
 	// Check required binaries
 	//---------------------------------------
 
@@ -788,10 +769,10 @@ void MainWindow::init(void)
 		{
 			for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
 			{
-				binFiles << ENC_BINARY(m_sysinfo, encdr, arch, varnt);
+				binFiles << ENC_BINARY(m_sysinfo.data(), encdr, arch, varnt);
 			}
 		}
-		binFiles << AVS_BINARY(m_sysinfo, arch == OptionsModel::EncArch_x64);
+		binFiles << AVS_BINARY(m_sysinfo.data(), arch == OptionsModel::EncArch_x64);
 	}
 	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
 	{
@@ -816,7 +797,11 @@ void MainWindow::init(void)
 				X264_DELETE(file);
 				INIT_ERROR_EXIT();
 			}
-			m_toolsList << file;
+			if(m_toolsList.isNull())
+			{
+				m_toolsList.reset(new QFileList());
+			}
+			m_toolsList->append(file);
 		}
 		else
 		{
@@ -921,7 +906,7 @@ void MainWindow::init(void)
 				if(val == 1)
 				{
 					m_preferences->setDisableWarnings(true);
-					PreferencesModel::savePreferences(m_preferences);
+					PreferencesModel::savePreferences(m_preferences.data());
 				}
 
 			}
@@ -963,13 +948,13 @@ void MainWindow::init(void)
 				if(val == 1)
 				{
 					m_preferences->setDisableWarnings(true);
-					PreferencesModel::savePreferences(m_preferences);
+					PreferencesModel::savePreferences(m_preferences.data());
 				}
 			}
 		}
 		qDebug(" ");
 	}
-
+	
 	//---------------------------------------
 	// Finish initialization
 	//---------------------------------------
@@ -1019,7 +1004,7 @@ void MainWindow::init(void)
 		{
 			qWarning("First run -> resetting update check now!");
 			m_recentlyUsed->setLastUpdateCheck(0);
-			RecentlyUsed::saveRecentlyUsed(m_recentlyUsed);
+			RecentlyUsed::saveRecentlyUsed(m_recentlyUsed.data());
 		}
 		else if(m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay())
 		{
@@ -1035,8 +1020,19 @@ void MainWindow::init(void)
 		}
 	}
 
+	//---------------------------------------
+	// Create the IPC listener thread
+	//---------------------------------------
+
+	if(m_ipcChannel)
+	{
+		m_ipcThread.reset(new IPCThread_Recv(m_ipcChannel));
+		connect(m_ipcThread.data(), SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
+		m_ipcThread->start();
+	}
+
 	//Load queued jobs
-	if(m_jobList->loadQueuedJobs(m_sysinfo) > 0)
+	if(m_jobList->loadQueuedJobs(m_sysinfo.data()) > 0)
 	{
 		m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 		m_jobList->clearQueuedJobs();
@@ -1141,7 +1137,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 		{
 			if(QFileInfo(args[0]).exists() && QFileInfo(args[0]).isFile())
 			{
-				OptionsModel options(m_sysinfo);
+				OptionsModel options(m_sysinfo.data());
 				bool runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 				if(!(args[2].isEmpty() || X264_STRCMP(args[2], "-")))
 				{
@@ -1178,13 +1174,13 @@ void MainWindow::checkUpdates(void)
 		return;
 	}
 
-	UpdaterDialog *updater = new UpdaterDialog(this, m_sysinfo, update_url);
+	UpdaterDialog *updater = new UpdaterDialog(this, m_sysinfo.data(), update_url);
 	const int ret = updater->exec();
 
 	if(updater->getSuccess())
 	{
 		m_recentlyUsed->setLastUpdateCheck(x264_current_date_safe().toJulianDay());
-		RecentlyUsed::saveRecentlyUsed(m_recentlyUsed);
+		RecentlyUsed::saveRecentlyUsed(m_recentlyUsed.data());
 		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->hide();
 	}
 
@@ -1273,7 +1269,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 			if(QMessageBox::warning(this, tr("Jobs Are Running"), tr("<nobr>You still have running jobs, application will be minimized to notification area!<nobr>"), tr("OK"), tr("Don't Show Again")) == 1)
 			{
 				m_preferences->setNoSystrayWarning(true);
-				PreferencesModel::savePreferences(m_preferences);
+				PreferencesModel::savePreferences(m_preferences.data());
 			}
 		}
 		hide();
@@ -1400,7 +1396,7 @@ void MainWindow::dropEvent(QDropEvent *event)
 bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart, int fileNo, int fileTotal, bool *applyToAll)
 {
 	bool okay = false;
-	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed, m_sysinfo, m_preferences);
+	AddJobDialog *addDialog = new AddJobDialog(this, options, m_recentlyUsed.data(), m_sysinfo.data(), m_preferences.data());
 
 	addDialog->setRunImmediately(runImmediately);
 	if(!sourceFileName.isEmpty()) addDialog->setSourceFile(sourceFileName);
@@ -1445,9 +1441,9 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 	{
 		runImmediately = (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 		QString sourceFileName(*iter), outputFileName;
-		if(createJob(sourceFileName, outputFileName, m_options, runImmediately, false, counter++, filePathIn.count(), &applyToAll))
+		if(createJob(sourceFileName, outputFileName, m_options.data(), runImmediately, false, counter++, filePathIn.count(), &applyToAll))
 		{
-			if(appendJob(sourceFileName, outputFileName, m_options, runImmediately))
+			if(appendJob(sourceFileName, outputFileName, m_options.data(), runImmediately))
 			{
 				continue;
 			}
@@ -1461,7 +1457,7 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 		const bool runImmediatelyTmp = runImmediately && (countRunningJobs() < (m_preferences->getAutoRunNextJob() ? m_preferences->getMaxRunningJobCount() : 1));
 		const QString sourceFileName = *iter;
 		const QString outputFileName = AddJobDialog::generateOutputFileName(sourceFileName, m_recentlyUsed->outputDirectory(), m_recentlyUsed->filterIndex(), m_preferences->getSaveToSourcePath());
-		if(!appendJob(sourceFileName, outputFileName, m_options, runImmediatelyTmp))
+		if(!appendJob(sourceFileName, outputFileName, m_options.data(), runImmediatelyTmp))
 		{
 			return false;
 		}
@@ -1477,7 +1473,7 @@ bool MainWindow::createJobMultiple(const QStringList &filePathIn)
 bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputFileName, OptionsModel *options, const bool runImmediately)
 {
 	bool okay = false;
-	EncodeThread *thrd = new EncodeThread(sourceFileName, outputFileName, options, m_sysinfo, m_preferences);
+	EncodeThread *thrd = new EncodeThread(sourceFileName, outputFileName, options, m_sysinfo.data(), m_preferences.data());
 	QModelIndex newIndex = m_jobList->insertJob(thrd);
 
 	if(newIndex.isValid())

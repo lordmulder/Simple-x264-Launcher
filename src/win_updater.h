@@ -22,14 +22,19 @@
 #pragma once
 
 #include <QDialog>
+#include <QMap>
 
 class QMovie;
-class UpdateCheckThread;
 class SysinfoModel;
 
 namespace Ui
 {
 	class UpdaterDialog;
+}
+
+namespace MUtils
+{
+	class UpdateChecker;
 }
 
 class UpdaterDialog : public QDialog
@@ -74,6 +79,7 @@ private:
 
 	bool checkBinaries(QString &wgetBin, QString &gpgvBin);
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
+	void cleanFiles(void);
 
 	const SysinfoModel *const m_sysinfo;
 	const char *const m_updateUrl;
@@ -81,11 +87,11 @@ private:
 	bool m_firstShow;
 	bool m_success;
 
-	QMovie *m_animator;
-	UpdateCheckThread *m_thread;
+	QScopedPointer<QMovie> m_animator;
+	QScopedPointer<MUtils::UpdateChecker> m_thread;
+
 	unsigned long m_updaterProcess;
 	QStringList m_logFile;
-	QString m_keysFile;
-	QString m_wupdFile;
+	QMap<QString,QString> m_binaries;
 	int m_status;
 };

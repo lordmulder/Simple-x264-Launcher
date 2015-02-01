@@ -27,7 +27,6 @@
 //Qt
 #include <QMainWindow>
 
-class IPC;
 class JobListModel;
 class OptionsModel;
 class SysinfoModel;
@@ -39,6 +38,7 @@ class InputEventFilter;
 class QModelIndex;
 class QLabel;
 class QSystemTrayIcon;
+class IPCThread_Recv;
 enum JobStatus;
 
 namespace Ui
@@ -50,9 +50,11 @@ namespace MUtils
 {
 	namespace CPUFetaures
 	{
-		struct _stuctName;
+		struct _cpu_info_t;
 		typedef struct _cpu_info_t cpu_info_t;
 	}
+
+	class IPCChannel;
 }
 
 class MainWindow: public QMainWindow
@@ -60,8 +62,10 @@ class MainWindow: public QMainWindow
 	Q_OBJECT
 
 public:
-	MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures);
+	MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtils::IPCChannel *const ipcChannel);
 	~MainWindow(void);
+
+	typedef QList<QFile*> QFileList;
 
 protected:
 	virtual void closeEvent(QCloseEvent *e);
@@ -75,24 +79,25 @@ private:
 	Ui::MainWindow *const ui;
 
 	bool m_initialized;
-	QLabel *m_label;
-	QTimer *m_fileTimer;
+	QScopedPointer<QLabel> m_label;
+	QScopedPointer<QTimer> m_fileTimer;
 
-	IPC *const m_ipc;
-	QSystemTrayIcon *const m_sysTray;
+	MUtils::IPCChannel *const m_ipcChannel;
+	QScopedPointer<IPCThread_Recv> m_ipcThread;
+	QScopedPointer<QSystemTrayIcon> m_sysTray;
 
-	InputEventFilter *m_inputFilter_jobList;
-	InputEventFilter *m_inputFilter_version;
-	InputEventFilter *m_inputFilter_checkUp;
+	QScopedPointer<InputEventFilter> m_inputFilter_jobList;
+	QScopedPointer<InputEventFilter> m_inputFilter_version;
+	QScopedPointer<InputEventFilter> m_inputFilter_checkUp;
 
-	JobListModel *m_jobList;
-	OptionsModel *m_options;
-	QStringList *m_pendingFiles;
-	QList<QFile*> m_toolsList;
+	QScopedPointer<JobListModel> m_jobList;
+	QScopedPointer<OptionsModel> m_options;
+	QScopedPointer<QStringList> m_pendingFiles;
+	QScopedPointer<QFileList> m_toolsList;
 	
-	SysinfoModel *m_sysinfo;
-	PreferencesModel *m_preferences;
-	RecentlyUsed *m_recentlyUsed;
+	QScopedPointer<SysinfoModel> m_sysinfo;
+	QScopedPointer<PreferencesModel> m_preferences;
+	QScopedPointer<RecentlyUsed> m_recentlyUsed;
 	
 	bool createJob(QString &sourceFileName, QString &outputFileName, OptionsModel *options, bool &runImmediately, const bool restart = false, int fileNo = -1, int fileTotal = 0, bool *applyToAll = NULL);
 	bool createJobMultiple(const QStringList &filePathIn);

@@ -22,10 +22,13 @@
 #include "win_updater.h"
 #include "UIC_win_updater.h"
 
+//Internal
 #include "global.h"
 #include "model_sysinfo.h"
-#include "thread_updater.h"
-#include "checksum.h"
+
+//MUtils
+#include <MUtils/UpdateChecker.h>
+#include <MUtils/Hash_Blake2.h>
 
 #include <QMovie>
 #include <QCloseEvent>
@@ -73,7 +76,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const
 	ui(new Ui::UpdaterDialog()),
 	m_sysinfo(sysinfo),
 	m_updateUrl(updateUrl),
-	m_status(UpdateCheckThread::UpdateStatus_NotStartedYet),
+	m_status(MUtils::UpdateChecker::UpdateStatus_NotStartedYet),
 	m_thread(NULL),
 	m_updaterProcess(NULL),
 	m_success(false),
@@ -95,8 +98,8 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const
 	connect(ui->labelUrl, SIGNAL(linkActivated(QString)), this, SLOT(openUrl(QString)));
 	
 	//Init animation
-	m_animator = new QMovie(":/images/loading.gif");
-	ui->labelLoadingCenter->setMovie(m_animator);
+	m_animator.reset(new QMovie(":/images/loading.gif"));
+	ui->labelLoadingCenter->setMovie(m_animator.data());
 
 	//Init buttons
 	ui->buttonCancel->setEnabled(false);
@@ -109,25 +112,16 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const
 
 UpdaterDialog::~UpdaterDialog(void)
 {
-	if(m_thread)
+	if(!m_thread.isNull())
 	{
-		if(!m_thread->wait(1000))
+		if(!m_thread->wait(5000))
 		{
 			m_thread->terminate();
 			m_thread->wait();
 		}
 	}
 
-	if((!m_keysFile.isEmpty()) && QFile::exists(m_keysFile))
-	{
-		QFile::setPermissions(m_keysFile, QFile::ReadOwner | QFile::WriteOwner);
-		QFile::remove(m_keysFile);
-		m_keysFile.clear();
-	}
-
-	X264_DELETE(m_thread);
-	X264_DELETE(m_animator);
-
+	cleanFiles();
 	delete ui;
 }
 
@@ -192,6 +186,12 @@ void UpdaterDialog::keyPressEvent(QKeyEvent *event)
 
 void UpdaterDialog::initUpdate(void)
 {
+	//Clean up files from previous attempt
+	if(!m_binaries.isEmpty())
+	{
+		cleanFiles();
+	}
+
 	//Check binary files
 	QString wgetBin, gpgvBin;
 	if(!checkBinaries(wgetBin, gpgvBin))
@@ -222,11 +222,11 @@ void UpdaterDialog::initUpdate(void)
 	//Create and setup thread
 	if(!m_thread)
 	{
-		m_thread = new UpdateCheckThread(wgetBin, gpgvBin, m_keysFile, false);
-		connect(m_thread, SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
-		connect(m_thread, SIGNAL(finished()), this, SLOT(threadFinished()));
-		connect(m_thread, SIGNAL(terminated()), this, SLOT(threadFinished()));
-		connect(m_thread, SIGNAL(messageLogged(QString)), this, SLOT(threadMessageLogged(QString)));
+		m_thread.reset(new MUtils::UpdateChecker(m_binaries.value("wget.exe"), m_binaries.value("gpgv.exe"), m_binaries.value("gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
+		connect(m_thread.data(), SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
+		connect(m_thread.data(), SIGNAL(finished()), this, SLOT(threadFinished()));
+		connect(m_thread.data(), SIGNAL(terminated()), this, SLOT(threadFinished()));
+		connect(m_thread.data(), SIGNAL(messageLogged(QString)), this, SLOT(threadMessageLogged(QString)));
 	}
 
 	//Begin updater run
@@ -254,7 +254,7 @@ void UpdaterDialog::checkForUpdates(void)
 	ui->labelUrl->hide();
 
 	//Update status
-	threadStatusChanged(UpdateCheckThread::UpdateStatus_NotStartedYet);
+	threadStatusChanged(MUtils::UpdateChecker::UpdateStatus_NotStartedYet);
 
 	//Start animation
 	SHOW_ANIMATION(true);
@@ -267,46 +267,46 @@ void UpdaterDialog::checkForUpdates(void)
 	m_logFile.clear();
 
 	//Start the updater thread
-	QTimer::singleShot(250, m_thread, SLOT(start()));
+	QTimer::singleShot(250, m_thread.data(), SLOT(start()));
 }
 
 void UpdaterDialog::threadStatusChanged(int status)
 {
 	switch(m_status = status)
 	{
-	case UpdateCheckThread::UpdateStatus_NotStartedYet:
+	case MUtils::UpdateChecker::UpdateStatus_NotStartedYet:
 		UPDATE_ICON(1, "clock");
 		UPDATE_ICON(2, "clock");
 		UPDATE_ICON(3, "clock");
 		break;
-	case UpdateCheckThread::UpdateStatus_CheckingConnection:
+	case MUtils::UpdateChecker::UpdateStatus_CheckingConnection:
 		UPDATE_ICON(1, "play");
 		break;
-	case UpdateCheckThread::UpdateStatus_FetchingUpdates:
+	case MUtils::UpdateChecker::UpdateStatus_FetchingUpdates:
 		UPDATE_ICON(1, "shield_green");
 		UPDATE_TEXT(1, tr("Internet connection is working."));
 		UPDATE_ICON(2, "play");
 		break;
-	case UpdateCheckThread::UpdateStatus_ErrorNoConnection:
+	case MUtils::UpdateChecker::UpdateStatus_ErrorNoConnection:
 		UPDATE_ICON(1, "shield_error");
 		UPDATE_TEXT(1, tr("Computer is currently offline!"));
 		UPDATE_ICON(2, "shield_grey");
 		UPDATE_ICON(3, "shield_grey");
 		break;
-	case UpdateCheckThread::UpdateStatus_ErrorConnectionTestFailed:
+	case MUtils::UpdateChecker::UpdateStatus_ErrorConnectionTestFailed:
 		UPDATE_ICON(1, "shield_error");
 		UPDATE_TEXT(1, tr("Internet connectivity test failed!"));
 		UPDATE_ICON(2, "shield_grey");
 		UPDATE_ICON(3, "shield_grey");
 		break;
-	case UpdateCheckThread::UpdateStatus_ErrorFetchUpdateInfo:
+	case MUtils::UpdateChecker::UpdateStatus_ErrorFetchUpdateInfo:
 		UPDATE_ICON(2, "shield_error");
 		UPDATE_TEXT(2, tr("Failed to download the update information!"));
 		UPDATE_ICON(3, "shield_grey");
 		break;
-	case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
-	case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
-	case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
+	case MUtils::UpdateChecker::UpdateStatus_CompletedUpdateAvailable:
+	case MUtils::UpdateChecker::UpdateStatus_CompletedNoUpdates:
+	case MUtils::UpdateChecker::UpdateStatus_CompletedNewVersionOlder:
 		UPDATE_ICON(2, "shield_green");
 		UPDATE_TEXT(2, tr("Update information received successfully."));
 		UPDATE_ICON(3, "play");
@@ -332,16 +332,16 @@ void UpdaterDialog::updateFinished(void)
 	{
 		switch(m_status)
 		{
-		case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
+		case MUtils::UpdateChecker::UpdateStatus_CompletedUpdateAvailable:
 			UPDATE_ICON(3, "shield_exclamation");
 			UPDATE_TEXT(3, tr("A newer version is available!"));
 			ui->buttonDownload->show();
 			break;
-		case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
+		case MUtils::UpdateChecker::UpdateStatus_CompletedNoUpdates:
 			UPDATE_ICON(3, "shield_green");
 			UPDATE_TEXT(3, tr("Your version is up-to-date."));
 			break;
-		case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
+		case MUtils::UpdateChecker::UpdateStatus_CompletedNewVersionOlder:
 			UPDATE_ICON(3, "shield_blue");
 			UPDATE_TEXT(3, tr("You are using a pre-release version!"));
 			break;
@@ -353,16 +353,16 @@ void UpdaterDialog::updateFinished(void)
 	//Show update info or retry button
 	switch(m_status)
 	{
-	case UpdateCheckThread::UpdateStatus_CompletedUpdateAvailable:
-	case UpdateCheckThread::UpdateStatus_CompletedNoUpdates:
-	case UpdateCheckThread::UpdateStatus_CompletedNewVersionOlder:
+	case MUtils::UpdateChecker::UpdateStatus_CompletedUpdateAvailable:
+	case MUtils::UpdateChecker::UpdateStatus_CompletedNoUpdates:
+	case MUtils::UpdateChecker::UpdateStatus_CompletedNewVersionOlder:
 		SHOW_ANIMATION(false);
-		ui->labelBuildNo->setText(tr("Installed build is #%1  |  Latest build is #%2").arg(QString::number(x264_version_build()), QString::number(m_thread->getUpdateInfo()->m_buildNo)));
-		ui->labelUrl->setText(QString("<a href=\"%1\">%1</a>").arg(m_thread->getUpdateInfo()->m_downloadSite));
+		ui->labelBuildNo->setText(tr("Installed build is #%1  |  Latest build is #%2").arg(QString::number(x264_version_build()), QString::number(m_thread->getUpdateInfo()->getBuildNo())));
+		ui->labelUrl->setText(QString("<a href=\"%1\">%1</a>").arg(m_thread->getUpdateInfo()->getDownloadSite()));
 		break;
-	case UpdateCheckThread::UpdateStatus_ErrorNoConnection:
-	case UpdateCheckThread::UpdateStatus_ErrorConnectionTestFailed:
-	case UpdateCheckThread::UpdateStatus_ErrorFetchUpdateInfo:
+	case MUtils::UpdateChecker::UpdateStatus_ErrorNoConnection:
+	case MUtils::UpdateChecker::UpdateStatus_ErrorConnectionTestFailed:
+	case MUtils::UpdateChecker::UpdateStatus_ErrorFetchUpdateInfo:
 		m_animator->stop();
 		ui->buttonRetry->show();
 		break;
@@ -399,7 +399,7 @@ void UpdaterDialog::installUpdate(void)
 	ui->buttonCancel->setEnabled(false);
 	SHOW_ANIMATION(true);
 
-	const UpdateInfo *updateInfo = m_thread->getUpdateInfo();
+	const MUtils::UpdateCheckerInfo *updateInfo = m_thread->getUpdateInfo();
 
 	QProcess process;
 	QStringList args;
@@ -410,14 +410,14 @@ void UpdaterDialog::installUpdate(void)
 	connect(&process, SIGNAL(error(QProcess::ProcessError)), &loop, SLOT(quit()));
 	connect(&process, SIGNAL(finished(int,QProcess::ExitStatus)), &loop, SLOT(quit()));
 
-	args << QString("/Location=%1").arg(updateInfo->m_downloadAddress);
-	args << QString("/Filename=%1").arg(updateInfo->m_downloadFilename);
-	args << QString("/TicketID=%1").arg(updateInfo->m_downloadFilecode);
+	args << QString("/Location=%1").arg(updateInfo->getDownloadAddress());
+	args << QString("/Filename=%1").arg(updateInfo->getDownloadFilename());
+	args << QString("/TicketID=%1").arg(updateInfo->getDownloadFilecode());
 	args << QString("/ToFolder=%1").arg(QDir::toNativeSeparators(QDir(QApplication::applicationDirPath()).canonicalPath())); 
 	args << QString("/ToExFile=%1.exe").arg(QFileInfo(QFileInfo(QApplication::applicationFilePath()).canonicalFilePath()).completeBaseName());
-	args << QString("/AppTitle=Simple x264 Launcher (Build #%1)").arg(QString::number(updateInfo->m_buildNo));
+	args << QString("/AppTitle=Simple x264 Launcher (Build #%1)").arg(QString::number(updateInfo->getBuildNo()));
 
-	process.start(m_wupdFile, args);
+	process.start(m_binaries.value("wupd.exe"), args);
 	if(!process.waitForStarted())
 	{
 		QApplication::restoreOverrideCursor();
@@ -456,47 +456,37 @@ void UpdaterDialog::installUpdate(void)
 bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
 {
 	qDebug("[File Verification]");
-	QMap<QString, QString> binaries;
+	m_binaries.clear();
 
-	m_keysFile.clear();
-	m_wupdFile.clear();
-	wgetBin.clear();
-	gpgvBin.clear();
-
-	bool okay = true;
-
+	//Validate hashes first
+	const QString tempPath = MUtils::temp_folder();
 	for(size_t i = 0; BINARIES[i].name; i++)
 	{
-		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(BINARIES[i].name));
-		if(okay = okay && checkFileHash(binPath, BINARIES[i].hash))
+		const QString orgName = QString::fromLatin1(BINARIES[i].name);
+		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), orgName);
+		const QString outPath = QString("%1/%2_%3.%4").arg(tempPath, QFileInfo(orgName).baseName(), MUtils::rand_str(), QFileInfo(orgName).suffix());
+		if(!checkFileHash(binPath, BINARIES[i].hash))
 		{
-			binaries.insert(BINARIES[i].name, binPath);
+			qWarning("Verification of '%s' has failed!", MUTILS_UTF8(orgName));
+			return false;
 		}
+		if(!QFile::copy(binPath, outPath))
+		{
+			qWarning("Copying of '%s' has failed!", MUTILS_UTF8(orgName));
+			return false;
+		}
+		QFile::setPermissions(outPath, QFile::ReadOwner);
+		m_binaries.insert(BINARIES[i].name, outPath);
 		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	}
 
-	if(okay)
-	{
-		wgetBin = binaries.value("wget.exe");
-		gpgvBin = binaries.value("gpgv.exe");
-
-		m_wupdFile = binaries.value("wupd.exe");
-		m_keysFile = QString("%1/%2.gpg").arg(x264_temp_directory(), x264_rand_str());
-
-		if(okay = QFile::copy(binaries.value("gpgv.gpg"), m_keysFile))
-		{
-			QFile::setPermissions(m_keysFile, QFile::ReadOwner);
-		}
-		qDebug("%s\n", okay ? "Completed." : "Failed to copy GPG file!");
-	}
-
-	return okay;
+	return true;
 }
 
 bool UpdaterDialog::checkFileHash(const QString &filePath, const char *expectedHash)
 {
 	qDebug("Checking file: %s", filePath.toUtf8().constData());
-	QBlake2Checksum checksum2;
+	MUtils::Hash::Blake2 checksum2;
 	QFile file(filePath);
 	if(file.open(QIODevice::ReadOnly))
 	{
@@ -514,5 +504,20 @@ bool UpdaterDialog::checkFileHash(const QString &filePath, const char *expectedH
 	{
 		qWarning("Failed to open file:\n%s\n", filePath.toUtf8().constData());
 		return false;
+	}
+}
+
+void UpdaterDialog::cleanFiles(void)
+{
+	const QStringList keys = m_binaries.keys();
+	foreach(const QString &key, keys)
+	{
+		const QString fileName = m_binaries.value(key);
+		QFile::setPermissions(fileName, QFile::ReadOwner | QFile::WriteOwner);
+		if(!QFile::remove(fileName))
+		{
+			qWarning("Failed to remove file: %s", MUTILS_UTF8(fileName));
+		}
+		m_binaries.remove(key);
 	}
 }

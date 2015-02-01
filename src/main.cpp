@@ -178,7 +178,7 @@ static int simple_x264_main(int &argc, char **argv)
 	}
 
 	//Create Main Window
-	QScopedPointer<MainWindow> mainWindow(new MainWindow(cpuFeatures));
+	QScopedPointer<MainWindow> mainWindow(new MainWindow(cpuFeatures, ipcChannel.data()));
 	mainWindow->show();
 
 	//Run application

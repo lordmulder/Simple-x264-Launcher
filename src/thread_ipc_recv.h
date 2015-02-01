@@ -5,7 +5,8 @@
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
+// (at your option) any later version, but always including the *additional*
+// restrictions defined in the "License.txt" file.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,38 +20,31 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-/*
-   BLAKE2 reference source code package - reference C implementations
-
-   Written in 2012 by Samuel Neves <sneves@dei.uc.pt>
-
-   To the extent possible under law, the author(s) have dedicated all copyright
-   and related and neighboring rights to this software to the public domain
-   worldwide. This software is distributed without any warranty.
-
-   You should have received a copy of the CC0 Public Domain Dedication along with
-   this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
-*/
-
 #pragma once
 
-#include <QByteArray>
-#include <QFile>
+#include <QThread>
 
-class QBlake2ChecksumContext;
-
-class QBlake2Checksum
+namespace MUtils
 {
+	class IPCChannel;
+}
+
+class IPCThread_Recv: public QThread
+{
+	Q_OBJECT
+
 public:
-	QBlake2Checksum(const char* key = NULL);
-	~QBlake2Checksum(void);
+	IPCThread_Recv(MUtils::IPCChannel *const ipcChannel);
+	~IPCThread_Recv(void);
 
-	void update(const QByteArray &data);
-	void update(QFile &file);
-	QByteArray finalize(const bool bAsHex = true);
+	void stop(void);
 
-private:
-	QByteArray m_hash;
-	QBlake2ChecksumContext *const m_context;
-	bool m_finalized;
+signals:
+	void receivedCommand(const int &command, const QStringList &args, const quint32 &flags);
+
+protected:
+	volatile bool m_stopFlag;
+	MUtils::IPCChannel *const m_ipcChannel;
+
+	void run();
 };

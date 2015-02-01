@@ -20,7 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_updater.h"
-#include "uic_win_updater.h"
+#include "UIC_win_updater.h"
 
 #include "global.h"
 #include "model_sysinfo.h"

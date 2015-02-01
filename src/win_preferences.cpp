@@ -20,7 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_preferences.h"
-#include "uic_win_preferences.h"
+#include "UIC_win_preferences.h"
 
 #include "global.h"
 #include "model_preferences.h"

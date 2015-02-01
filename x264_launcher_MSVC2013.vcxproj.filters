@@ -108,6 +108,30 @@
     <ClInclude Include="src\mediainfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_about.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_addJob.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_editor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_help.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_main.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_preferences.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tmp\x264_launcher\UIC_win_updater.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread_ipc_send.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -119,35 +143,17 @@
     <ClCompile Include="src\win_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_main.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\qrc\qrc_resources.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\thread_encode.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_thread_encode.cpp">
-      <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\model_jobList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_model_jobList.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\model_logFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_model_logFile.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\win_addJob.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_addJob.cpp">
-      <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\model_options.cpp">
       <Filter>Source Files</Filter>
@@ -155,14 +161,8 @@
     <ClCompile Include="src\win_help.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_help.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\win_preferences.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_preferences.cpp">
-      <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\taskbar7.cpp">
       <Filter>Source Files</Filter>
@@ -170,14 +170,8 @@
     <ClCompile Include="src\win_editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_editor.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\thread_avisynth.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_thread_avisynth.cpp">
-      <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\model_preferences.cpp">
       <Filter>Source Files</Filter>
@@ -188,20 +182,11 @@
     <ClCompile Include="src\thread_vapoursynth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_thread_vapoursynth.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\job_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\win_updater.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_updater.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\3rd_party\qtmain_win.cpp">
-      <Filter>Source Files\3rd Party</Filter>
     </ClCompile>
     <ClCompile Include="src\checksum.cpp">
       <Filter>Source Files</Filter>
@@ -210,18 +195,6 @@
       <Filter>Source Files\3rd Party</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_updater.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_thread_updater.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ipc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_ipc.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\cli.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\binaries.cpp">
@@ -248,14 +221,8 @@
     <ClCompile Include="src\source_vapoursynth.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_tool_abstract.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\win_about.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tmp\moc\moc_win_about.cpp">
-      <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\encoder_factory.cpp">
       <Filter>Source Files</Filter>
@@ -266,7 +233,61 @@
     <ClCompile Include="src\input_filter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="tmp\moc\moc_input_filter.cpp">
+    <ClCompile Include="tmp\x264_launcher\MOC_input_filter.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_model_logFile.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_avisynth.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_encode.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_updater.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_vapoursynth.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_tool_abstract.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_about.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_addJob.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_editor.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_help.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_main.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_preferences.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_win_updater.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\QRC_resources.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\zero.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_ipc_send.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_ipc_send.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_model_jobList.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -326,9 +347,6 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\thread_updater.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="src\ipc.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\tool_abstract.h">

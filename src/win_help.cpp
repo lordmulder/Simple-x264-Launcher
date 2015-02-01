@@ -20,7 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_help.h"
-#include "uic_win_help.h"
+#include "UIC_win_help.h"
 
 #include "global.h"
 #include "model_options.h"

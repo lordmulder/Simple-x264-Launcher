@@ -784,6 +784,7 @@ const char *x264_version_arch(void)
 /*
  * Get CLI arguments
  */
+/*
 const QStringList &x264_arguments(void)
 {
 	QReadLocker readLock(&g_x264_argv.lock);
@@ -814,6 +815,7 @@ const QStringList &x264_arguments(void)
 
 	return (*g_x264_argv.list);
 }
+*/
 
 /*
  * Check for portable mode
@@ -927,14 +929,17 @@ bool x264_is_prerelease(void)
 /*
  * CPUID prototype (actual function is in ASM code)
  */
+/*
 extern "C"
 {
 	void x264_cpu_cpuid(unsigned int op, unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx);
 }
+*/
 
 /*
  * Detect CPU features
  */
+/*
 x264_cpu_t x264_detect_cpu_features(const int argc, char **argv)
 {
 	typedef BOOL (WINAPI *IsWow64ProcessFun)(__in HANDLE hProcess, __out PBOOL Wow64Process);
@@ -1039,6 +1044,7 @@ x264_cpu_t x264_detect_cpu_features(const int argc, char **argv)
 
 	return features;
 }
+*/
 
 /*
  * Verify a specific Windows version
@@ -1401,176 +1407,177 @@ bool x264_user_is_admin(void)
 /*
  * Initialize Qt framework
  */
-bool x264_init_qt(int &argc, char **argv)
-{
-	static bool qt_initialized = false;
-	typedef BOOL (WINAPI *SetDllDirectoryProc)(WCHAR *lpPathName);
-	const QStringList &arguments = x264_arguments();
+//bool x264_init_qt(int &argc, char **argv)
+//{
+//	static bool qt_initialized = false;
+//	typedef BOOL (WINAPI *SetDllDirectoryProc)(WCHAR *lpPathName);
+//	const QStringList &arguments = x264_arguments();
+//
+//	//Don't initialized again, if done already
+//	if(qt_initialized)
+//	{
+//		return true;
+//	}
+//
+//	//Secure DLL loading
+//	QLibrary kernel32("kernel32.dll");
+//	if(kernel32.load())
+//	{
+//		SetDllDirectoryProc pSetDllDirectory = (SetDllDirectoryProc) kernel32.resolve("SetDllDirectoryW");
+//		if(pSetDllDirectory != NULL) pSetDllDirectory(L"");
+//	}
+//
+//	//Extract executable name from argv[] array
+//	QString executableName = QLatin1String("x264_launcher.exe");
+//	if(arguments.count() > 0)
+//	{
+//		static const char *delimiters = "\\/:?";
+//		executableName = arguments[0].trimmed();
+//		for(int i = 0; delimiters[i]; i++)
+//		{
+//			int temp = executableName.lastIndexOf(QChar(delimiters[i]));
+//			if(temp >= 0) executableName = executableName.mid(temp + 1);
+//		}
+//		executableName = executableName.trimmed();
+//		if(executableName.isEmpty())
+//		{
+//			executableName = QLatin1String("x264_launcher.exe");
+//		}
+//	}
+//
+//	//Check Qt version
+//#ifdef QT_BUILD_KEY
+//	qDebug("Using Qt v%s [%s], %s, %s", qVersion(), QLibraryInfo::buildDate().toString(Qt::ISODate).toLatin1().constData(), (qSharedBuild() ? "DLL" : "Static"), QLibraryInfo::buildKey().toLatin1().constData());
+//	qDebug("Compiled with Qt v%s [%s], %s\n", QT_VERSION_STR, QT_PACKAGEDATE_STR, QT_BUILD_KEY);
+//	if(_stricmp(qVersion(), QT_VERSION_STR))
+//	{
+//		qFatal("%s", QApplication::tr("Executable '%1' requires Qt v%2, but found Qt v%3.").arg(executableName, QString::fromLatin1(QT_VERSION_STR), QString::fromLatin1(qVersion())).toLatin1().constData());
+//		return false;
+//	}
+//	if(QLibraryInfo::buildKey().compare(QString::fromLatin1(QT_BUILD_KEY), Qt::CaseInsensitive))
+//	{
+//		qFatal("%s", QApplication::tr("Executable '%1' was built for Qt '%2', but found Qt '%3'.").arg(executableName, QString::fromLatin1(QT_BUILD_KEY), QLibraryInfo::buildKey()).toLatin1().constData());
+//		return false;
+//	}
+//#else
+//	qDebug("Using Qt v%s [%s], %s", qVersion(), QLibraryInfo::buildDate().toString(Qt::ISODate).toLatin1().constData(), (qSharedBuild() ? "DLL" : "Static"));
+//	qDebug("Compiled with Qt v%s [%s]\n", QT_VERSION_STR, QT_PACKAGEDATE_STR);
+//#endif
+//
+//	//Check the Windows version
+//	const x264_os_version_t &osVersionNo = x264_get_os_version();
+//	if(osVersionNo < x264_winver_winxp)
+//	{
+//		qFatal("%s", QApplication::tr("Executable '%1' requires Windows XP or later.").arg(executableName).toLatin1().constData());
+//	}
+//
+//	//Check whether we are running on a supported Windows version
+//	bool runningOnSupportedOSVersion = false;
+//	for(size_t i = 0; x264_winver_lut[i].version != x264_winver_error; i++)
+//	{
+//		if(osVersionNo == x264_winver_lut[i].version)
+//		{	
+//			runningOnSupportedOSVersion = true;
+//			qDebug("Running on %s (NT v%u.%u).\n", x264_winver_lut[i].friendlyName, osVersionNo.versionMajor, osVersionNo.versionMinor);
+//			break;
+//		}
+//	}
+//	if(!runningOnSupportedOSVersion)
+//	{
+//		const QString message = QString().sprintf("Running on an unknown WindowsNT-based system (v%u.%u).", osVersionNo.versionMajor, osVersionNo.versionMinor);
+//		qWarning("%s\n", QUTF8(message));
+//		MessageBoxW(NULL, QWCHAR(message), L"LameXP", MB_OK | MB_TOPMOST | MB_ICONWARNING);
+//	}
+//
+//	//Check for compat mode
+//	if(osVersionNo.overrideFlag && (osVersionNo <= x264_winver_wn100))
+//	{
+//		qWarning("Windows compatibility mode detected!");
+//		if(!arguments.contains("--ignore-compat-mode", Qt::CaseInsensitive))
+//		{
+//			qFatal("%s", QApplication::tr("Executable '%1' doesn't support Windows compatibility mode.").arg(executableName).toLatin1().constData());
+//			return false;
+//		}
+//	}
+//
+//	//Check for Wine
+//	if(x264_detect_wine())
+//	{
+//		qWarning("It appears we are running under Wine, unexpected things might happen!\n");
+//	}
+//
+//	//Set text Codec for locale
+//	QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
+//
+//	//Create Qt application instance
+//	QApplication *application = new QApplication(argc, argv);
+//
+//	//Load plugins from application directory
+//	QCoreApplication::setLibraryPaths(QStringList() << QApplication::applicationDirPath());
+//	qDebug("Library Path:\n%s\n", QUTF8(QApplication::libraryPaths().first()));
+//
+//	//Create Qt application instance and setup version info
+//	application->setApplicationName("Simple x264 Launcher");
+//	application->setApplicationVersion(QString().sprintf("%d.%02d", x264_version_major(), x264_version_minor())); 
+//	application->setOrganizationName("LoRd_MuldeR");
+//	application->setOrganizationDomain("mulder.at.gg");
+//	application->setWindowIcon(QIcon(":/icons/movie.ico"));
+//	application->setEventFilter(x264_event_filter);
+//
+//	//Check for supported image formats
+//	QList<QByteArray> supportedFormats = QImageReader::supportedImageFormats();
+//	for(int i = 0; g_x264_imageformats[i]; i++)
+//	{
+//		if(!supportedFormats.contains(g_x264_imageformats[i]))
+//		{
+//			qFatal("Qt initialization error: QImageIOHandler for '%s' missing!", g_x264_imageformats[i]);
+//			return false;
+//		}
+//	}
+//	
+//	//Add default translations
+//	/*
+//	QWriteLocker writeLockTranslations(&g_x264_translation.lock);
+//	if(!g_x264_translation.files) g_x264_translation.files = new QMap<QString, QString>();
+//	if(!g_x264_translation.names) g_x264_translation.names = new QMap<QString, QString>();
+//	g_x264_translation.files->insert(X264_DEFAULT_LANGID, "");
+//	g_x264_translation.names->insert(X264_DEFAULT_LANGID, "English");
+//	writeLockTranslations.unlock();
+//	*/
+//
+//	//Check for process elevation
+//	if(x264_process_is_elevated() && (!x264_detect_wine()))
+//	{
+//		QMessageBox messageBox(QMessageBox::Warning, "Simple x264 Launcher", "<nobr>Simple x264 Launcher was started with 'elevated' rights, altough it does not need these rights.<br>Running an applications with unnecessary rights is a potential security risk!</nobr>", QMessageBox::NoButton, NULL, Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowStaysOnTopHint);
+//		messageBox.addButton("Quit Program (Recommended)", QMessageBox::NoRole);
+//		messageBox.addButton("Ignore", QMessageBox::NoRole);
+//		if(messageBox.exec() == 0)
+//		{
+//			return false;
+//		}
+//	}
+//
+//	//Update console icon, if a console is attached
+//#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
+//	if(g_x264_console_attached && (!x264_detect_wine()))
+//	{
+//		typedef DWORD (__stdcall *SetConsoleIconFun)(HICON);
+//		QLibrary kernel32("kernel32.dll");
+//		if(kernel32.load())
+//		{
+//			SetConsoleIconFun SetConsoleIconPtr = (SetConsoleIconFun) kernel32.resolve("SetConsoleIcon");
+//			QPixmap pixmap = QIcon(":/icons/movie.ico").pixmap(16, 16);
+//			if((SetConsoleIconPtr != NULL) && (!pixmap.isNull())) SetConsoleIconPtr(pixmap.toWinHICON());
+//			kernel32.unload();
+//		}
+//	}
+//#endif
+//
+//	//Done
+//	qt_initialized = true;
+//	return true;
+//}
 
-	//Don't initialized again, if done already
-	if(qt_initialized)
-	{
-		return true;
-	}
-
-	//Secure DLL loading
-	QLibrary kernel32("kernel32.dll");
-	if(kernel32.load())
-	{
-		SetDllDirectoryProc pSetDllDirectory = (SetDllDirectoryProc) kernel32.resolve("SetDllDirectoryW");
-		if(pSetDllDirectory != NULL) pSetDllDirectory(L"");
-	}
-
-	//Extract executable name from argv[] array
-	QString executableName = QLatin1String("x264_launcher.exe");
-	if(arguments.count() > 0)
-	{
-		static const char *delimiters = "\\/:?";
-		executableName = arguments[0].trimmed();
-		for(int i = 0; delimiters[i]; i++)
-		{
-			int temp = executableName.lastIndexOf(QChar(delimiters[i]));
-			if(temp >= 0) executableName = executableName.mid(temp + 1);
-		}
-		executableName = executableName.trimmed();
-		if(executableName.isEmpty())
-		{
-			executableName = QLatin1String("x264_launcher.exe");
-		}
-	}
-
-	//Check Qt version
-#ifdef QT_BUILD_KEY
-	qDebug("Using Qt v%s [%s], %s, %s", qVersion(), QLibraryInfo::buildDate().toString(Qt::ISODate).toLatin1().constData(), (qSharedBuild() ? "DLL" : "Static"), QLibraryInfo::buildKey().toLatin1().constData());
-	qDebug("Compiled with Qt v%s [%s], %s\n", QT_VERSION_STR, QT_PACKAGEDATE_STR, QT_BUILD_KEY);
-	if(_stricmp(qVersion(), QT_VERSION_STR))
-	{
-		qFatal("%s", QApplication::tr("Executable '%1' requires Qt v%2, but found Qt v%3.").arg(executableName, QString::fromLatin1(QT_VERSION_STR), QString::fromLatin1(qVersion())).toLatin1().constData());
-		return false;
-	}
-	if(QLibraryInfo::buildKey().compare(QString::fromLatin1(QT_BUILD_KEY), Qt::CaseInsensitive))
-	{
-		qFatal("%s", QApplication::tr("Executable '%1' was built for Qt '%2', but found Qt '%3'.").arg(executableName, QString::fromLatin1(QT_BUILD_KEY), QLibraryInfo::buildKey()).toLatin1().constData());
-		return false;
-	}
-#else
-	qDebug("Using Qt v%s [%s], %s", qVersion(), QLibraryInfo::buildDate().toString(Qt::ISODate).toLatin1().constData(), (qSharedBuild() ? "DLL" : "Static"));
-	qDebug("Compiled with Qt v%s [%s]\n", QT_VERSION_STR, QT_PACKAGEDATE_STR);
-#endif
-
-	//Check the Windows version
-	const x264_os_version_t &osVersionNo = x264_get_os_version();
-	if(osVersionNo < x264_winver_winxp)
-	{
-		qFatal("%s", QApplication::tr("Executable '%1' requires Windows XP or later.").arg(executableName).toLatin1().constData());
-	}
-
-	//Check whether we are running on a supported Windows version
-	bool runningOnSupportedOSVersion = false;
-	for(size_t i = 0; x264_winver_lut[i].version != x264_winver_error; i++)
-	{
-		if(osVersionNo == x264_winver_lut[i].version)
-		{	
-			runningOnSupportedOSVersion = true;
-			qDebug("Running on %s (NT v%u.%u).\n", x264_winver_lut[i].friendlyName, osVersionNo.versionMajor, osVersionNo.versionMinor);
-			break;
-		}
-	}
-	if(!runningOnSupportedOSVersion)
-	{
-		const QString message = QString().sprintf("Running on an unknown WindowsNT-based system (v%u.%u).", osVersionNo.versionMajor, osVersionNo.versionMinor);
-		qWarning("%s\n", QUTF8(message));
-		MessageBoxW(NULL, QWCHAR(message), L"LameXP", MB_OK | MB_TOPMOST | MB_ICONWARNING);
-	}
-
-	//Check for compat mode
-	if(osVersionNo.overrideFlag && (osVersionNo <= x264_winver_wn100))
-	{
-		qWarning("Windows compatibility mode detected!");
-		if(!arguments.contains("--ignore-compat-mode", Qt::CaseInsensitive))
-		{
-			qFatal("%s", QApplication::tr("Executable '%1' doesn't support Windows compatibility mode.").arg(executableName).toLatin1().constData());
-			return false;
-		}
-	}
-
-	//Check for Wine
-	if(x264_detect_wine())
-	{
-		qWarning("It appears we are running under Wine, unexpected things might happen!\n");
-	}
-
-	//Set text Codec for locale
-	QTextCodec::setCodecForLocale(QTextCodec::codecForName("UTF-8"));
-
-	//Create Qt application instance
-	QApplication *application = new QApplication(argc, argv);
-
-	//Load plugins from application directory
-	QCoreApplication::setLibraryPaths(QStringList() << QApplication::applicationDirPath());
-	qDebug("Library Path:\n%s\n", QUTF8(QApplication::libraryPaths().first()));
-
-	//Create Qt application instance and setup version info
-	application->setApplicationName("Simple x264 Launcher");
-	application->setApplicationVersion(QString().sprintf("%d.%02d", x264_version_major(), x264_version_minor())); 
-	application->setOrganizationName("LoRd_MuldeR");
-	application->setOrganizationDomain("mulder.at.gg");
-	application->setWindowIcon(QIcon(":/icons/movie.ico"));
-	application->setEventFilter(x264_event_filter);
-
-	//Check for supported image formats
-	QList<QByteArray> supportedFormats = QImageReader::supportedImageFormats();
-	for(int i = 0; g_x264_imageformats[i]; i++)
-	{
-		if(!supportedFormats.contains(g_x264_imageformats[i]))
-		{
-			qFatal("Qt initialization error: QImageIOHandler for '%s' missing!", g_x264_imageformats[i]);
-			return false;
-		}
-	}
-	
-	//Add default translations
-	/*
-	QWriteLocker writeLockTranslations(&g_x264_translation.lock);
-	if(!g_x264_translation.files) g_x264_translation.files = new QMap<QString, QString>();
-	if(!g_x264_translation.names) g_x264_translation.names = new QMap<QString, QString>();
-	g_x264_translation.files->insert(X264_DEFAULT_LANGID, "");
-	g_x264_translation.names->insert(X264_DEFAULT_LANGID, "English");
-	writeLockTranslations.unlock();
-	*/
-
-	//Check for process elevation
-	if(x264_process_is_elevated() && (!x264_detect_wine()))
-	{
-		QMessageBox messageBox(QMessageBox::Warning, "Simple x264 Launcher", "<nobr>Simple x264 Launcher was started with 'elevated' rights, altough it does not need these rights.<br>Running an applications with unnecessary rights is a potential security risk!</nobr>", QMessageBox::NoButton, NULL, Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowStaysOnTopHint);
-		messageBox.addButton("Quit Program (Recommended)", QMessageBox::NoRole);
-		messageBox.addButton("Ignore", QMessageBox::NoRole);
-		if(messageBox.exec() == 0)
-		{
-			return false;
-		}
-	}
-
-	//Update console icon, if a console is attached
-#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
-	if(g_x264_console_attached && (!x264_detect_wine()))
-	{
-		typedef DWORD (__stdcall *SetConsoleIconFun)(HICON);
-		QLibrary kernel32("kernel32.dll");
-		if(kernel32.load())
-		{
-			SetConsoleIconFun SetConsoleIconPtr = (SetConsoleIconFun) kernel32.resolve("SetConsoleIcon");
-			QPixmap pixmap = QIcon(":/icons/movie.ico").pixmap(16, 16);
-			if((SetConsoleIconPtr != NULL) && (!pixmap.isNull())) SetConsoleIconPtr(pixmap.toWinHICON());
-			kernel32.unload();
-		}
-	}
-#endif
-
-	//Done
-	qt_initialized = true;
-	return true;
-}
 
 /*
  * Suspend or resume process
@@ -2308,55 +2315,6 @@ void x264_dbg_output_string(const char* format, ...)
 }
 
 /*
- * Entry point checks
- */
-static DWORD x264_entry_check(void);
-static DWORD g_x264_entry_check_result = x264_entry_check();
-static DWORD g_x264_entry_check_flag = 0x789E09B2;
-static DWORD x264_entry_check(void)
-{
-	volatile DWORD retVal = 0xA199B5AF;
-	if(g_x264_entry_check_flag != 0x8761F64D)
-	{
-		x264_fatal_exit(L"Application initialization has failed, take care!");
-	}
-	return retVal;
-}
-
-/*
- * Application entry point (runs before static initializers)
- */
-extern "C"
-{
-	int WinMainCRTStartup(void);
-	
-	int x264_entry_point(void)
-	{
-		if((!X264_DEBUG) && x264_check_for_debugger())
-		{
-			x264_fatal_exit(L"Not a debug build. Please unload debugger and try again!");
-		}
-		if(g_x264_entry_check_flag != 0x789E09B2)
-		{
-			x264_fatal_exit(L"Application initialization has failed, take care!");
-		}
-
-		//Zero *before* constructors are called
-		X264_ZERO_MEMORY(g_x264_argv);
-		X264_ZERO_MEMORY(g_x264_os_version);
-		X264_ZERO_MEMORY(g_x264_portable);
-		X264_ZERO_MEMORY(g_x264_known_folder);
-		X264_ZERO_MEMORY(g_x264_temp_folder);
-
-		//Make sure we will pass the check
-		g_x264_entry_check_flag = ~g_x264_entry_check_flag;
-
-		//Now initialize the C Runtime library!
-		return WinMainCRTStartup();
-	}
-}
-
-/*
  * Initialize debug thread
  */
 static const HANDLE g_debug_thread = X264_DEBUG ? NULL : x264_debug_thread_init();
@@ -2374,6 +2332,19 @@ size_t x264_dbg_private_bytes(void)
 #else
 	THROW("Cannot call this function in a non-debug build!");
 #endif //X264_DEBUG
+}
+
+/*
+ * Initialization function
+ */
+void x264_initialization(void)
+{
+	//Zero *before* constructors are called
+	X264_ZERO_MEMORY(g_x264_argv);
+	X264_ZERO_MEMORY(g_x264_os_version);
+	X264_ZERO_MEMORY(g_x264_portable);
+	X264_ZERO_MEMORY(g_x264_known_folder);
+	X264_ZERO_MEMORY(g_x264_temp_folder);
 }
 
 /*

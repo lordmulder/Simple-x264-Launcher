@@ -20,7 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_addJob.h"
-#include "uic_win_addJob.h"
+#include "UIC_win_addJob.h"
 
 #include "global.h"
 #include "model_options.h"

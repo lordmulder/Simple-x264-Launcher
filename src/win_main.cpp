@@ -20,8 +20,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_main.h"
-#include "uic_win_main.h"
+#include "UIC_win_main.h"
 
+//Internal
 #include "global.h"
 #include "cli.h"
 #include "ipc.h"
@@ -43,6 +44,11 @@
 #include "binaries.h"
 #include "resource.h"
 
+//MUtils
+#include <MUtils/OSSupport.h>
+#include <MUtils/CPUFeatures.h>
+
+//Qt
 #include <QDate>
 #include <QTimer>
 #include <QCloseEvent>
@@ -87,9 +93,9 @@ static const int   vsynth_rev = 24;
 /*
  * Constructor
  */
-MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
+MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures)
 :
-	m_ipc(ipc),
+	m_ipc(NULL),
 	m_sysinfo(NULL),
 	m_options(NULL),
 	m_jobList(NULL),
@@ -112,9 +118,9 @@ MainWindow::MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc)
 	//Create and initialize the sysinfo object
 	m_sysinfo = new SysinfoModel();
 	m_sysinfo->setAppPath(QApplication::applicationDirPath());
-	m_sysinfo->setMMXSupport(cpuFeatures->mmx && cpuFeatures->mmx2);
-	m_sysinfo->setSSESupport(cpuFeatures->sse && cpuFeatures->mmx2); //SSE implies MMX2
-	m_sysinfo->setX64Support(cpuFeatures->x64 && cpuFeatures->sse2); //X64 implies SSE2
+	m_sysinfo->setMMXSupport(cpuFeatures.features && MUtils::CPUFetaures::FLAG_MMX);
+	m_sysinfo->setSSESupport(cpuFeatures.features && MUtils::CPUFetaures::FLAG_SSE); //SSE implies MMX2
+	m_sysinfo->setX64Support(cpuFeatures.x64 && (cpuFeatures.features && MUtils::CPUFetaures::FLAG_SSE2)); //X64 implies SSE2
 
 	//Load preferences
 	m_preferences = new PreferencesModel();
@@ -275,10 +281,11 @@ MainWindow::~MainWindow(void)
 		X264_DELETE(temp);
 	}
 
-	if(m_ipc->isListening())
-	{
-		m_ipc->stopListening();
-	}
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//if(m_ipc->isListening())
+	//{
+	//	m_ipc->stopListening();
+	//}
 
 	X264_DELETE(m_preferences);
 	X264_DELETE(m_recentlyUsed);
@@ -757,18 +764,18 @@ void MainWindow::init(void)
 	}
 
 	updateLabelPos();
-
-	const QStringList arguments = x264_arguments();
+	const MUtils::OS::ArgumentMap &arguments = MUtils::OS::arguments();
 
 	//---------------------------------------
 	// Create the IPC listener thread
 	//---------------------------------------
 
-	if(m_ipc->isInitialized())
-	{
-		connect(m_ipc, SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
-		m_ipc->startListening();
-	}
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//if(m_ipc->isInitialized())
+	//{
+	//	connect(m_ipc, SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
+	//	m_ipc->startListening();
+	//}
 
 	//---------------------------------------
 	// Check required binaries
@@ -869,14 +876,14 @@ void MainWindow::init(void)
 	}
 
 	//Skip version check (not recommended!)
-	if(CLIParser::checkFlag(CLI_PARAM_SKIP_VERSION_CHECK, arguments))
+	if(arguments.contains(CLI_PARAM_SKIP_VERSION_CHECK))
 	{
 		qWarning("Version checks are disabled now, you have been warned!\n");
 		m_preferences->setSkipVersionTest(true);
 	}
 	
 	//Don't abort encoding process on timeout (not recommended!)
-	if(CLIParser::checkFlag(CLI_PARAM_NO_DEADLOCK, arguments))
+	if(arguments.contains(CLI_PARAM_NO_DEADLOCK))
 	{
 		qWarning("Deadlock detection disabled, you have been warned!\n");
 		m_preferences->setAbortOnTimeout(false);
@@ -886,7 +893,7 @@ void MainWindow::init(void)
 	// Check Avisynth support
 	//---------------------------------------
 
-	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_AVS_CHECK, arguments))
+	if(!arguments.contains(CLI_PARAM_SKIP_AVS_CHECK))
 	{
 		qDebug("[Check for Avisynth support]");
 		volatile double avisynthVersion = 0.0;
@@ -926,7 +933,7 @@ void MainWindow::init(void)
 	// Check VapurSynth support
 	//---------------------------------------
 
-	if(!CLIParser::checkFlag(CLI_PARAM_SKIP_VPS_CHECK, arguments))
+	if(!arguments.contains(CLI_PARAM_SKIP_VPS_CHECK))
 	{
 		qDebug("[Check for VapourSynth support]");
 		QString vapoursynthPath;
@@ -1008,7 +1015,7 @@ void MainWindow::init(void)
 	else if(!parseCommandLineArgs())
 	{
 		//Update reminder
-		if(CLIParser::checkFlag(CLI_PARAM_FIRST_RUN, arguments))
+		if(arguments.contains(CLI_PARAM_FIRST_RUN))
 		{
 			qWarning("First run -> resetting update check now!");
 			m_recentlyUsed->setLastUpdateCheck(0);
@@ -1605,41 +1612,46 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
  */
 bool MainWindow::parseCommandLineArgs(void)
 {
-	bool bCommandAccepted = false;
-	unsigned int flags = 0;
+	const MUtils::OS::ArgumentMap &args = MUtils::OS::arguments();
 
-	//Initialize command-line parser
-	CLIParser parser(x264_arguments());
-	int identifier;
-	QStringList options;
+	quint32 flags = 0;
+	bool commandSent = false;
 
-	//Process all command-line arguments
-	while(parser.nextOption(identifier, &options))
+	//Handle flags
+	if(args.contains(CLI_PARAM_FORCE_START))
 	{
-		switch(identifier)
-		{
-		case CLI_PARAM_ADD_FILE:
-			handleCommand(IPC_OPCODE_ADD_FILE, options, flags);
-			bCommandAccepted = true;
-			break;
-		case CLI_PARAM_ADD_JOB:
-			handleCommand(IPC_OPCODE_ADD_JOB, options, flags);
-			bCommandAccepted = true;
-			break;
-		case CLI_PARAM_FORCE_START:
-			flags = ((flags | IPC_FLAG_FORCE_START) & (~IPC_FLAG_FORCE_ENQUEUE));
-			break;
-		case CLI_PARAM_NO_FORCE_START:
-			flags = (flags & (~IPC_FLAG_FORCE_START));
-			break;
-		case CLI_PARAM_FORCE_ENQUEUE:
-			flags = ((flags | IPC_FLAG_FORCE_ENQUEUE) & (~IPC_FLAG_FORCE_START));
-			break;
-		case CLI_PARAM_NO_FORCE_ENQUEUE:
-			flags = (flags & (~IPC_FLAG_FORCE_ENQUEUE));
-			break;
-		}
+		flags = ((flags | IPC_FLAG_FORCE_START) & (~IPC_FLAG_FORCE_ENQUEUE));
+	}
+	if(args.contains(CLI_PARAM_FORCE_ENQUEUE))
+	{
+		flags = ((flags | IPC_FLAG_FORCE_ENQUEUE) & (~IPC_FLAG_FORCE_START));
 	}
 
-	return bCommandAccepted;
+	//Process all command-line arguments
+	if(args.contains(CLI_PARAM_ADD_FILE))
+	{
+		foreach(const QString &fileName, args.values(CLI_PARAM_ADD_FILE))
+		{
+			handleCommand(IPC_OPCODE_ADD_FILE, QStringList() << fileName, flags);
+		}
+		commandSent = true;
+	}
+	if(args.contains(CLI_PARAM_ADD_JOB))
+	{
+		foreach(const QString &options, args.values(CLI_PARAM_ADD_JOB))
+		{
+			const QStringList optionValues = options.split('|', QString::SkipEmptyParts);
+			if(optionValues.count() == 3)
+			{
+				handleCommand(IPC_OPCODE_ADD_JOB, optionValues, flags);
+			}
+			else
+			{
+				qWarning("Invalid number of arguments for parameter \"--%s\" detected!", CLI_PARAM_ADD_JOB);
+			}
+		}
+		commandSent = true;
+	}
+
+	return commandSent;
 }

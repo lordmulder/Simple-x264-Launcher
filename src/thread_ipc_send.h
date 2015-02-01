@@ -5,7 +5,8 @@
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
+// (at your option) any later version, but always including the *additional*
+// restrictions defined in the "License.txt" file.
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,22 +23,22 @@
 #pragma once
 
 #include <QThread>
-#include <QMutex>
 
-class QSharedMemory;
-class QStringList;
-class QSystemSemaphore;
+namespace MUtils
+{
+	class IPCChannel;
+}
 
-class IPCCore;
-class IPCReceiveThread;
-class IPCSendThread;
+class IPCThread_Send: public QThread
+{
+	Q_OBJECT
 
-//IPC Commands
-static const quint32 IPC_OPCODE_PING     = 0;
-static const quint32 IPC_OPCODE_ADD_FILE = 1;
-static const quint32 IPC_OPCODE_ADD_JOB  = 2;
-static const quint32 IPC_OPCODE_MAX      = 3;
+public:
+	IPCThread_Send(MUtils::IPCChannel *const ipcChannel);
+	~IPCThread_Send(void);
 
-//IPC Flags
-static const quint32 IPC_FLAG_FORCE_START   = 0x00000001;
-static const quint32 IPC_FLAG_FORCE_ENQUEUE = 0x00000002;
+	void run();
+
+protected:
+	MUtils::IPCChannel *const m_ipcChannel;
+};

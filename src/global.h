@@ -41,6 +41,7 @@ enum QtMsgType;
 ///////////////////////////////////////////////////////////////////////////////
 
 //Types definitions
+/*
 typedef struct
 {
 	int family;
@@ -59,6 +60,7 @@ typedef struct
 	bool intel;
 }
 x264_cpu_t;
+*/
 
 //OS version number
 typedef struct _x264_os_version_t
@@ -131,7 +133,7 @@ private:
 // GLOBAL FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
-const QStringList &x264_arguments(void);
+//const QStringList &x264_arguments(void);
 bool x264_beep(int beepType);
 void x264_blink_window(QWidget *poWindow, unsigned int count, unsigned int delay);
 bool x264_bring_process_to_front(const unsigned long pid);
@@ -143,13 +145,13 @@ QDate x264_current_date_safe(void);
 const QString &x264_data_path(void);
 void x264_dbg_output_string(const char* format, ...);
 size_t x264_dbg_private_bytes(void);
-x264_cpu_t x264_detect_cpu_features(const int argc, char **argv);
+//x264_cpu_t x264_detect_cpu_features(const int argc, char **argv);
 bool x264_enable_close_button(const QWidget *win, const bool bEnable);
 void x264_fatal_exit(const wchar_t* exitMessage, const char* errorBoxMessage = NULL);
 void x264_finalization(void);
 void x264_init_console(const int argc, char **argv);
 void x264_init_process(QProcess &process, const QString &wokringDir, const bool bReplaceTempDir = true);
-bool x264_init_qt(int &argc, char **argv);
+//bool x264_init_qt(int &argc, char **argv);
 bool x264_is_executable(const QString &path);
 bool x264_is_prerelease(void);
 const QString &x264_known_folder(x264_known_folder_t folder_id);

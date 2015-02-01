@@ -27,36 +27,18 @@
 // CLI parameter identifiers
 ///////////////////////////////////////////////////////////////////////////////
 
-static const int CLI_PARAM_ADD_FILE           =  0;
-static const int CLI_PARAM_ADD_JOB            =  1;
-static const int CLI_PARAM_FORCE_START        =  2;
-static const int CLI_PARAM_NO_FORCE_START     =  3;
-static const int CLI_PARAM_FORCE_ENQUEUE      =  4;
-static const int CLI_PARAM_NO_FORCE_ENQUEUE   =  5;
-static const int CLI_PARAM_SKIP_AVS_CHECK     =  6;
-static const int CLI_PARAM_SKIP_VPS_CHECK     =  7;
-static const int CLI_PARAM_SKIP_VERSION_CHECK =  8;
-static const int CLI_PARAM_NO_DEADLOCK        =  9;
-static const int CLI_PARAM_NO_GUI_STYLE       = 10;
-static const int CLI_PARAM_FIRST_RUN          = 11;
-static const int CLI_PARAM_OTHER              = 42;
-
-///////////////////////////////////////////////////////////////////////////////
-// CLI Parser
-///////////////////////////////////////////////////////////////////////////////
-
-class CLIParser
-{
-public:
-	CLIParser(const QStringList &args);
-	~CLIParser(void);
-
-	bool nextOption(int &identifier, QStringList *options = NULL);
-
-	static bool checkFlag(const int &identifier, const QStringList &args);
-	static const char *identifier2string(const int &identifier);
-
-protected:
-	const QStringList &m_args;
-	QStringList::ConstIterator m_iter;
-};
+static const char *const CLI_PARAM_ADD_FILE           = "add-file";
+static const char *const CLI_PARAM_ADD_JOB            = "add-job";
+static const char *const CLI_PARAM_FORCE_START        = "force-start";
+static const char *const CLI_PARAM_FORCE_ENQUEUE      = "force-enqueue";
+static const char *const CLI_PARAM_SKIP_AVS_CHECK     = "skip-avisynth-check";
+static const char *const CLI_PARAM_SKIP_VPS_CHECK     = "skip-vapoursynth-check";
+static const char *const CLI_PARAM_SKIP_VERSION_CHECK = "skip-version-checks";
+static const char *const CLI_PARAM_NO_DEADLOCK        = "no-deadlock-detection";
+static const char *const CLI_PARAM_NO_GUI_STYLE       = "no-style";
+static const char *const CLI_PARAM_FIRST_RUN          = "first-run";
+static const char *const CLI_PARAM_CONSOLE_SHOW       = "console";
+static const char *const CLI_PARAM_CONSOLE_HIDE       = "no-console";
+static const char *const CLI_PARAM_CPU_NO_64BIT       = "force-cpu-no-64bit";
+static const char *const CLI_PARAM_CPU_NO_SSE         = "force-cpu-no-sse";
+static const char *const CLI_PARAM_CPU_NO_INTEL       = "force-cpu-no-intel";

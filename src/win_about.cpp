@@ -20,7 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_about.h"
-#include "uic_win_about.h"
+#include "UIC_win_about.h"
 
 #include "global.h"
 

@@ -21,7 +21,10 @@
 
 #pragma once
 
+//Internal
 #include "global.h"
+
+//Qt
 #include <QMainWindow>
 
 class IPC;
@@ -43,12 +46,21 @@ namespace Ui
 	class MainWindow;
 }
 
+namespace MUtils
+{
+	namespace CPUFetaures
+	{
+		struct _stuctName;
+		typedef struct _cpu_info_t cpu_info_t;
+	}
+}
+
 class MainWindow: public QMainWindow
 {
 	Q_OBJECT
 
 public:
-	MainWindow(const x264_cpu_t *const cpuFeatures, IPC *ipc);
+	MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures);
 	~MainWindow(void);
 
 protected:

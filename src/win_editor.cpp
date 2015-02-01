@@ -20,7 +20,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "win_editor.h"
-#include "uic_win_editor.h"
+#include "UIC_win_editor.h"
 
 #include "global.h"
 

@@ -61,5 +61,11 @@
     <file>images/update_wizard.png</file>
     <file>images/x264.png</file>
     <file>images/x265.png</file>
+    <file>sounds/shutdown.wav</file>
+    <file>sounds/beep.wav</file>
+    <file>sounds/beep2.wav</file>
+    <file>sounds/tada.wav</file>
+    <file>sounds/shattering.wav</file>
+    <file>sounds/failure.wav</file>
   </qresource>
 </RCC>

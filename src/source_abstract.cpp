@@ -21,11 +21,16 @@
 
 #include "source_abstract.h"
 
+//Internal
 #include "global.h"
 #include "model_sysinfo.h"
 #include "model_options.h"
 #include "model_preferences.h"
 
+//MUtils
+#include <MUtils/Global.h>
+
+//Qt
 #include <QProcess>
 #include <QTextCodec>
 #include <QDir>
@@ -131,7 +136,7 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 	while(!patterns.isEmpty())
 	{
 		QRegExp *pattern = patterns.takeFirst();
-		X264_DELETE(pattern);
+		MUTILS_DELETE(pattern);
 	}
 
 	if(bTimeout || bAborted || process.exitCode() != EXIT_SUCCESS)

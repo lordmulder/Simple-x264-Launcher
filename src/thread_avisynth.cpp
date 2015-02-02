@@ -27,8 +27,12 @@
 #include <QMutexLocker>
 #include <QApplication>
 
+//Internal
 #include "global.h"
 #include "3rd_party/avisynth_c.h"
+
+//MUtils
+#include <MUtils/Global.h>
 
 QMutex AvisynthCheckThread::m_avsLock;
 QLibrary *AvisynthCheckThread::m_avsLib = NULL;
@@ -96,7 +100,7 @@ void AvisynthCheckThread::unload(void)
 		}
 	}
 
-	X264_DELETE(m_avsLib);
+	MUTILS_DELETE(m_avsLib);
 }
 
 //-------------------------------------

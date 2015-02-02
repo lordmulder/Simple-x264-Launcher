@@ -64,7 +64,7 @@ static void x264_print_logo(void)
 	qDebug("This application is powerd by MUtils library v%u.%02u (%s, %s).\n", MUtils::Version::lib_version_major(), MUtils::Version::lib_version_minor(), MUTILS_UTF8(MUtils::Version::lib_build_date().toString(Qt::ISODate)), MUTILS_UTF8(MUtils::Version::lib_build_time().toString(Qt::ISODate)));
 
 	//Print warning, if this is a "debug" build
-	if(X264_DEBUG)
+	if(MUTILS_DEBUG)
 	{
 		qWarning("---------------------------------------------------------");
 		qWarning("DEBUG BUILD: DO NOT RELEASE THIS BINARY TO THE PUBLIC !!!");

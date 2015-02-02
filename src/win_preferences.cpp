@@ -22,10 +22,15 @@
 #include "win_preferences.h"
 #include "UIC_win_preferences.h"
 
+//Internal
 #include "global.h"
 #include "model_preferences.h"
 #include "model_sysinfo.h"
 
+//MUtils
+#include <MUtils/GUI.h>
+
+//Qt
 #include <QSettings>
 #include <QDesktopServices>
 #include <QMouseEvent>
@@ -62,7 +67,7 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 	setFixedSize(minimumSize());
-	x264_enable_close_button(this, false);
+	MUtils::GUI::enable_close_button(this, false);
 	
 	ui->comboBoxPriority->setItemData(0, QVariant::fromValue( 1)); //Above Normal
 	ui->comboBoxPriority->setItemData(1, QVariant::fromValue( 0)); //Normal

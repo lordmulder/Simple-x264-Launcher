@@ -21,8 +21,13 @@
 
 #include "input_filter.h"
 
+//Internal
 #include "global.h"
 
+//MUTils
+#include <MUtils/Global.h>
+
+//Qt
 #include <QWidget>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -40,8 +45,8 @@ InputEventFilter::InputEventFilter(QWidget *target)
 InputEventFilter::~InputEventFilter(void)
 {
 	m_target->removeEventFilter(this);
-	X264_DELETE(m_keyMapping);
-	X264_DELETE(m_mouseMapping);
+	MUTILS_DELETE(m_keyMapping);
+	MUTILS_DELETE(m_mouseMapping);
 }
 
 void InputEventFilter::addKeyFilter(const int &keyCode, const int &tag)

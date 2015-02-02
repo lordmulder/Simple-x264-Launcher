@@ -19,6 +19,7 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
+//Internal
 #include "global.h"
 #include "model_jobList.h"
 #include "thread_encode.h"
@@ -26,6 +27,10 @@
 #include "model_preferences.h"
 #include "resource.h"
 
+//MUtils
+#include <MUtils/Sound.h>
+
+//Qt
 #include <QIcon>
 #include <QFileInfo>
 #include <QSettings>
@@ -51,8 +56,8 @@ JobListModel::~JobListModel(void)
 		QUuid id = m_jobs.takeFirst();
 		EncodeThread *thread = m_threads.value(id, NULL);
 		LogFileModel *logFile = m_logFile.value(id, NULL);
-		X264_DELETE(thread);
-		X264_DELETE(logFile);
+		MUTILS_DELETE(thread);
+		MUTILS_DELETE(logFile);
 	}
 }
 
@@ -404,8 +409,8 @@ bool JobListModel::deleteJob(const QModelIndex &index)
 				m_logFile.remove(id);
 				m_details.remove(id);
 				endRemoveRows();
-				X264_DELETE(thread);
-				X264_DELETE(logFile);
+				MUTILS_DELETE(thread);
+				MUTILS_DELETE(logFile);
 				return true;
 			}
 		}
@@ -534,13 +539,13 @@ void JobListModel::updateStatus(const QUuid &jobId, JobStatus newStatus)
 			switch(newStatus)
 			{
 			case JobStatus_Completed:
-				x264_play_sound(IDR_WAVE4, true);
+				MUtils::Sound::play_sound("tada", true);
 				break;
 			case JobStatus_Aborted:
-				x264_play_sound(IDR_WAVE5, true);
+				MUtils::Sound::play_sound("shattering", true);
 				break;
 			case JobStatus_Failed:
-				x264_play_sound(IDR_WAVE6, true);
+				MUtils::Sound::play_sound("failure", true);
 				break;
 			}
 		}

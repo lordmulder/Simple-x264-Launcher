@@ -37,6 +37,9 @@
 #include "source_avisynth.h"
 #include "source_vapoursynth.h"
 
+//MUtils
+#include <MUtils/OSSupport.h>
+
 //Qt Framework
 #include <QDate>
 #include <QTime>
@@ -153,10 +156,10 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 
 EncodeThread::~EncodeThread(void)
 {
-	X264_DELETE(m_encoder);
-	X264_DELETE(m_jobObject);
-	X264_DELETE(m_options);
-	X264_DELETE(m_pipedSource);
+	MUTILS_DELETE(m_encoder);
+	MUTILS_DELETE(m_jobObject);
+	MUTILS_DELETE(m_options);
+	MUTILS_DELETE(m_pipedSource);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -181,7 +184,7 @@ void EncodeThread::run(void)
 	if(m_jobObject)
 	{
 		m_jobObject->terminateJob(42);
-		X264_DELETE(m_jobObject);
+		MUTILS_DELETE(m_jobObject);
 	}
 }
 
@@ -215,7 +218,7 @@ void EncodeThread::checkedRun(void)
 	}
 	catch(...)
 	{
-		x264_fatal_exit(L"Unhandeled exception error in encode thread!");
+		MUtils::OS::fatal_exit(L"Unhandeled exception error in encode thread!");
 	}
 }
 

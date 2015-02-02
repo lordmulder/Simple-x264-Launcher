@@ -21,6 +21,7 @@
 
 #include "tool_abstract.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "model_preferences.h"
@@ -28,6 +29,10 @@
 #include "binaries.h"
 #include "job_object.h"
 
+//MUtils
+#include <MUtils/OSSupport.h>
+
+//Qt
 #include <QProcess>
 #include <QMutexLocker>
 #include <QDir>
@@ -122,7 +127,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 	while(!patterns.isEmpty())
 	{
 		QRegExp *pattern = patterns.takeFirst();
-		X264_DELETE(pattern);
+		MUTILS_DELETE(pattern);
 	}
 
 	if(bTimeout || bAborted || (!checkVersion_succeeded(process.exitCode())))
@@ -175,7 +180,7 @@ bool AbstractTool::startProcess(QProcess &process, const QString &program, const
 	if(process.waitForStarted())
 	{
 		m_jobObject->addProcessToJob(&process);
-		x264_change_process_priority(&process, m_preferences->getProcessPriority());
+		MUtils::OS::change_process_priority(&process, m_preferences->getProcessPriority());
 		lock.unlock();
 		return true;
 	}

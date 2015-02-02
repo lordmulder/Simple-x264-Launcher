@@ -21,6 +21,10 @@
 
 #include "thread_vapoursynth.h"
 
+//Mutils
+#include <MUtils/OSSupport.h>
+
+//Qt
 #include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
@@ -130,9 +134,9 @@ void VapourSynthCheckThread::unload(void)
 		}
 	}
 
-	X264_DELETE(m_vpsExePath);
-	X264_DELETE(m_vpsDllPath);
-	X264_DELETE(m_vpsLib);
+	MUTILS_DELETE(m_vpsExePath);
+	MUTILS_DELETE(m_vpsDllPath);
+	MUTILS_DELETE(m_vpsLib);
 }
 
 //-------------------------------------
@@ -187,8 +191,8 @@ bool VapourSynthCheckThread::detectVapourSynthPath2(QString &path, volatile bool
 bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 {
 	bool success = false;
-	X264_DELETE(m_vpsExePath);
-	X264_DELETE(m_vpsDllPath);
+	MUTILS_DELETE(m_vpsExePath);
+	MUTILS_DELETE(m_vpsDllPath);
 	path.clear();
 
 	static const char *VPS_REG_KEYS[] = 
@@ -242,14 +246,14 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 				m_vpsDllPath = new QFile(vpsDllInfo.canonicalFilePath());
 				if(m_vpsExePath->open(QIODevice::ReadOnly) && m_vpsDllPath->open(QIODevice::ReadOnly))
 				{
-					if(vapoursynthComplete = x264_is_executable(m_vpsExePath->fileName()))
+					if(vapoursynthComplete = MUtils::OS::is_executable_file(m_vpsExePath->fileName()))
 					{
 						vapoursynthPath.append("/").append(CORE_PATH[i]);
 					}
 					break;
 				}
-				X264_DELETE(m_vpsExePath);
-				X264_DELETE(m_vpsDllPath);
+				MUTILS_DELETE(m_vpsExePath);
+				MUTILS_DELETE(m_vpsDllPath);
 			}
 		}
 		if(!vapoursynthComplete)

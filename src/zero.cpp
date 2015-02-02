@@ -49,7 +49,6 @@ static size_t x264_entry_check(void)
 /*
  * Function declarations
  */
-void x264_initialization(void);
 extern "C" int mainCRTStartup(void);
 
 /*
@@ -64,9 +63,6 @@ extern "C" int x264_entry_point(void)
 
 	//Make sure we will pass the check
 	g_x264_entry_check_flag = ~g_x264_entry_check_flag;
-
-	//Call global initialization function
-	x264_initialization();
 
 	//Now initialize the C Runtime library!
 	return mainCRTStartup();

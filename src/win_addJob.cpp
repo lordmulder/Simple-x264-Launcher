@@ -22,6 +22,7 @@
 #include "win_addJob.h"
 #include "UIC_win_addJob.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "model_preferences.h"
@@ -32,6 +33,10 @@
 #include "win_help.h"
 #include "win_editor.h"
 
+//MUtils
+#include <MUtils/Global.h>
+
+//Qt
 #include <QDate>
 #include <QTimer>
 #include <QCloseEvent>
@@ -320,22 +325,22 @@ AddJobDialog::~AddJobDialog(void)
 		}
 		const OptionsModel *item = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(i).value<const void*>());
 		ui->cbxTemplate->setItemData(i, QVariant::fromValue<const void*>(NULL));
-		X264_DELETE(item);
+		MUTILS_DELETE(item);
 	}
 
 	//Free validators
 	if(const QValidator *tmp = ui->editCustomX264Params->validator())
 	{
 		ui->editCustomX264Params->setValidator(NULL);
-		X264_DELETE(tmp);
+		MUTILS_DELETE(tmp);
 	}
 	if(const QValidator *tmp = ui->editCustomAvs2YUVParams->validator())
 	{
 		ui->editCustomAvs2YUVParams->setValidator(NULL);
-		X264_DELETE(tmp);
+		MUTILS_DELETE(tmp);
 	}
 
-	X264_DELETE(m_defaults);
+	MUTILS_DELETE(m_defaults);
 	delete ui;
 }
 
@@ -834,7 +839,7 @@ void AddJobDialog::deleteTemplateButtonClicked(void)
 	OptionsModel::deleteTemplate(name);
 	const OptionsModel *item = reinterpret_cast<const OptionsModel*>(ui->cbxTemplate->itemData(index).value<const void*>());
 	ui->cbxTemplate->removeItem(index);
-	X264_DELETE(item);
+	MUTILS_DELETE(item);
 }
 
 void AddJobDialog::editorActionTriggered(void)
@@ -852,7 +857,7 @@ void AddJobDialog::editorActionTriggered(void)
 			lineEdit->setText(editor->getEditText());
 		}
 
-		X264_DELETE(editor);
+		MUTILS_DELETE(editor);
 	}
 }
 

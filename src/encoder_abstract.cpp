@@ -21,6 +21,7 @@
 
 #include "encoder_abstract.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "model_preferences.h"
@@ -29,6 +30,11 @@
 #include "source_abstract.h"
 #include "binaries.h"
 
+//MUtils
+#include <MUtils/Global.h>
+#include <MUtils/Exception.h>
+
+//Qt
 #include <QProcess>
 #include <QDir>
 #include <QTextCodec>
@@ -206,7 +212,7 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	while(!patterns.isEmpty())
 	{
 		QRegExp *pattern = patterns.takeFirst();
-		X264_DELETE(pattern);
+		MUTILS_DELETE(pattern);
 	}
 
 	if(bTimeout || bAborted || processEncode.exitCode() != EXIT_SUCCESS)
@@ -335,5 +341,5 @@ QString AbstractEncoder::sizeToString(qint64 size)
 
 const AbstractEncoderInfo& AbstractEncoder::getEncoderInfo(void)
 {
-	THROW("[getEncoderInfo] This function must be overwritten in sub-classes!");
+	MUTILS_THROW("[getEncoderInfo] This function must be overwritten in sub-classes!");
 }

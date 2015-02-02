@@ -21,16 +21,23 @@
 
 #include "taskbar7.h"
 
+//Mutils
+#include <MUtils/Exception.h>
+
+//Qt
 #include <QWidget>
 #include <QIcon>
+
+//Win32
 #include <ShObjIdl.h>
+
 
 static UINT s_winMsg = 0;
 static ITaskbarList3 *s_ptbl = NULL;
 
 WinSevenTaskbar::WinSevenTaskbar(void)
 {
-	THROW("Cannot create instance of this class!");
+	MUTILS_THROW("Cannot create instance of this class!");
 }
 
 WinSevenTaskbar::~WinSevenTaskbar(void)

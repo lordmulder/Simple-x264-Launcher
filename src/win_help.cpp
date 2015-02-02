@@ -22,10 +22,15 @@
 #include "win_help.h"
 #include "UIC_win_help.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "binaries.h"
 
+//MUtils
+#include <MUtils/Sound.h>
+
+//Qt
 #include <QProcess>
 #include <QScrollBar>
 #include <QTimer>
@@ -99,7 +104,7 @@ void HelpDialog::closeEvent(QCloseEvent *e)
 	if(m_process->state() != QProcess::NotRunning)
 	{
 		e->ignore();
-		x264_beep(x264_beep_warning);
+		MUtils::Sound::beep(MUtils::Sound::BEEP_WRN);
 		return;
 	}
 

@@ -21,10 +21,14 @@
 
 #include "binaries.h"
 
+//Internal
 #include "global.h"
 #include "model_sysinfo.h"
 #include "model_preferences.h"
 #include "model_options.h"
+
+//MUtils
+#include <MUtils/Exception.h>
 
 /* --- Encooders --- */
 
@@ -68,7 +72,7 @@ QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel::EncType &enc
 	//Sanity check
 	if(baseName.isEmpty() || arch.isEmpty() || variant.isEmpty())
 	{
-		THROW("Failed to determine the encoder binarty path!");
+		MUTILS_THROW("Failed to determine the encoder binarty path!");
 	}
 
 	//Return path

@@ -21,12 +21,17 @@
 
 #include "encoder_x264.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "model_status.h"
 #include "binaries.h"
 #include "mediainfo.h"
 
+//MUtils
+#include <MUtils/Exception.h>
+
+//Qt
 #include <QStringList>
 #include <QDir>
 #include <QRegExp>
@@ -185,7 +190,7 @@ X264Encoder::X264Encoder(JobObject *jobObject, const OptionsModel *options, cons
 {
 	if(options->encType() != OptionsModel::EncType_X264)
 	{
-		THROW("Invalid encoder type!");
+		MUTILS_THROW("Invalid encoder type!");
 	}
 }
 
@@ -300,7 +305,7 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 		cmdLine << "--bitrate" << QString::number(m_options->bitrate());
 		break;
 	default:
-		THROW("Bad rate-control mode !!!");
+		MUTILS_THROW("Bad rate-control mode !!!");
 	}
 	
 	if((pass == 1) || (pass == 2))
@@ -348,7 +353,7 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 	
 	if(usePipe)
 	{
-		if(frames < 1) THROW("Frames not set!");
+		if(frames < 1) MUTILS_THROW("Frames not set!");
 		cmdLine << "--frames" << QString::number(frames);
 		cmdLine << "--demuxer" << "y4m";
 		cmdLine << "--stdin" << "y4m" << "-";

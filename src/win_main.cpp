@@ -49,6 +49,9 @@
 #include <MUtils/OSSupport.h>
 #include <MUtils/CPUFeatures.h>
 #include <MUtils/IPCChannel.h>
+#include <MUtils/GUI.h>
+#include <MUtils/Sound.h>
+#include <MUtils/Exception.h>
 
 //Qt
 #include <QDate>
@@ -86,7 +89,8 @@ static const int   vsynth_rev = 24;
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 #define SETUP_WEBLINK(OBJ, URL) do { (OBJ)->setData(QVariant(QUrl(URL))); connect((OBJ), SIGNAL(triggered()), this, SLOT(showWebLink())); } while(0)
 #define APP_IS_READY (m_initialized && (!m_fileTimer->isActive()) && (QApplication::activeModalWidget() == NULL))
-#define ENSURE_APP_IS_READY() do { if(!APP_IS_READY) { x264_beep(x264_beep_warning); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
+#define ENSURE_APP_IS_READY() do { if(!APP_IS_READY) { 		MUtils::Sound::beep(MUtils::Sound::BEEP_WRN); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
+#define X264_STRCMP(X,Y) ((X).compare((Y), Qt::CaseInsensitive) == 0)
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -142,7 +146,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	//Update title
 	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
 	
-	if(X264_DEBUG)
+	if(MUTILS_DEBUG)
 	{
 		setWindowTitle(QString("%1 | !!! DEBUG VERSION !!!").arg(windowTitle()));
 		setStyleSheet("QMenuBar, QMainWindow { background-color: yellow }");
@@ -272,7 +276,7 @@ MainWindow::~MainWindow(void)
 	while(!m_toolsList->isEmpty())
 	{
 		QFile *temp = m_toolsList->takeFirst();
-		X264_DELETE(temp);
+		MUTILS_DELETE(temp);
 	}
 
 	if(!m_ipcThread.isNull())
@@ -402,7 +406,7 @@ void MainWindow::moveButtonPressed(void)
 		qDebug("Move job %d (direction: UP)", ui->jobsView->currentIndex().row());
 		if(!m_jobList->moveJob(ui->jobsView->currentIndex(), JobListModel::MOVE_UP))
 		{
-			x264_beep(x264_beep_error);
+			MUtils::Sound::beep(MUtils::Sound::BEEP_ERR);
 		}
 		ui->jobsView->scrollTo(ui->jobsView->currentIndex(), QAbstractItemView::PositionAtCenter);
 	}
@@ -411,7 +415,7 @@ void MainWindow::moveButtonPressed(void)
 		qDebug("Move job %d (direction: DOWN)", ui->jobsView->currentIndex().row());
 		if(!m_jobList->moveJob(ui->jobsView->currentIndex(), JobListModel::MOVE_DOWN))
 		{
-			x264_beep(x264_beep_error);
+			MUtils::Sound::beep(MUtils::Sound::BEEP_ERR);
 		}
 		ui->jobsView->scrollTo(ui->jobsView->currentIndex(), QAbstractItemView::PositionAtCenter);
 	}
@@ -428,7 +432,7 @@ void MainWindow::pauseButtonPressed(bool checked)
 {
 	if(!APP_IS_READY)
 	{
-		x264_beep(x264_beep_warning);
+		MUtils::Sound::beep(MUtils::Sound::BEEP_WRN);
 		qWarning("Cannot perfrom this action at this time!");
 		ui->buttonPauseJob->setChecked(!checked);
 	}
@@ -463,7 +467,7 @@ void MainWindow::restartButtonPressed(void)
 		{
 			appendJob(sourceFileName, outputFileName, tempOptions, runImmediately);
 		}
-		X264_DELETE(tempOptions);
+		MUTILS_DELETE(tempOptions);
 	}
 }
 
@@ -572,7 +576,7 @@ void MainWindow::showAbout(void)
 	if(AboutDialog *aboutDialog = new AboutDialog(this))
 	{
 		aboutDialog->exec();
-		X264_DELETE(aboutDialog);
+		MUTILS_DELETE(aboutDialog);
 	}
 }
 
@@ -605,7 +609,7 @@ void MainWindow::showPreferences(void)
 	PreferencesDialog *preferences = new PreferencesDialog(this, m_preferences.data(), m_sysinfo.data());
 	preferences->exec();
 
-	X264_DELETE(preferences);
+	MUTILS_DELETE(preferences);
 }
 
 /*
@@ -709,7 +713,7 @@ void MainWindow::shutdownComputer(void)
 	
 	QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	QApplication::setOverrideCursor(Qt::WaitCursor);
-	x264_play_sound(IDR_WAVE1, false);
+	MUtils::Sound::play_sound("shutdown", false);
 	QApplication::restoreOverrideCursor();
 	
 	QTimer timer;
@@ -732,12 +736,12 @@ void MainWindow::shutdownComputer(void)
 		progressDialog.setLabelText(text.arg(iTimeout-i));
 		if(iTimeout-i == 3) progressDialog.setCancelButton(NULL);
 		QApplication::processEvents();
-		x264_play_sound(((i < iTimeout) ? IDR_WAVE2 : IDR_WAVE3), false);
+		MUtils::Sound::play_sound(((i < iTimeout) ? "beep" : "beep2"), false);
 	}
 	
 	qWarning("Shutting down !!!");
 
-	if(x264_shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true))
+	if(MUtils::OS::shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true, false))
 	{
 		qApp->closeAllWindows();
 	}
@@ -790,11 +794,11 @@ void MainWindow::init(void)
 		qDebug("%s", file->fileName().toLatin1().constData());
 		if(file->open(QIODevice::ReadOnly))
 		{
-			if(!x264_is_executable(file->fileName()))
+			if(!MUtils::OS::is_executable_file(file->fileName()))
 			{
 				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(file->fileName())).replace("-", "&minus;"));
 				qFatal(QString("Binary is invalid: %1").arg(file->fileName()).toLatin1().constData());
-				X264_DELETE(file);
+				MUTILS_DELETE(file);
 				INIT_ERROR_EXIT();
 			}
 			if(m_toolsList.isNull())
@@ -807,7 +811,7 @@ void MainWindow::init(void)
 		{
 			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(file->fileName())).replace("-", "&minus;"));
 			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_sysinfo->getAppPath(), file->fileName()).toLatin1().constData());
-			X264_DELETE(file);
+			MUTILS_DELETE(file);
 			INIT_ERROR_EXIT();
 		}
 	}
@@ -972,7 +976,7 @@ void MainWindow::init(void)
 	// Check for Expiration
 	//---------------------------------------
 
-	if(x264_version_date().addMonths(6) < x264_current_date_safe())
+	if(x264_version_date().addMonths(6) < MUtils::OS::current_date())
 	{
 		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->show();
 		QString text;
@@ -1006,7 +1010,7 @@ void MainWindow::init(void)
 			m_recentlyUsed->setLastUpdateCheck(0);
 			RecentlyUsed::saveRecentlyUsed(m_recentlyUsed.data());
 		}
-		else if(m_recentlyUsed->lastUpdateCheck() + 14 < x264_current_date_safe().toJulianDay())
+		else if(m_recentlyUsed->lastUpdateCheck() + 14 < MUtils::OS::current_date().toJulianDay())
 		{
 			if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->show();
 			if(!m_preferences->getNoUpdateReminder())
@@ -1058,7 +1062,7 @@ void MainWindow::copyLogToClipboard(bool checked)
 	if(LogFileModel *log = dynamic_cast<LogFileModel*>(ui->logView->model()))
 	{
 		log->copyToClipboard();
-		x264_beep(x264_beep_info);
+		MUtils::Sound::beep(MUtils::Sound::BEEP_NFO);
 	}
 }
 
@@ -1095,7 +1099,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 		sysTrayActived();
 	}
 
-	x264_bring_to_front(this);
+	MUtils::GUI::bring_to_front(this);
 	
 #ifdef IPC_LOGGING
 	qDebug("\n---------- IPC ----------");
@@ -1112,7 +1116,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 	{
 	case IPC_OPCODE_PING:
 		qDebug("Received a PING request from another instance!");
-		x264_blink_window(this, 5, 125);
+		MUtils::GUI::blink_window(this, 5, 125);
 		break;
 	case IPC_OPCODE_ADD_FILE:
 		if(!args.isEmpty())
@@ -1157,7 +1161,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 		}
 		break;
 	default:
-		THROW("Unknown command received!");
+		MUTILS_THROW("Unknown command received!");
 	}
 }
 
@@ -1179,7 +1183,7 @@ void MainWindow::checkUpdates(void)
 
 	if(updater->getSuccess())
 	{
-		m_recentlyUsed->setLastUpdateCheck(x264_current_date_safe().toJulianDay());
+		m_recentlyUsed->setLastUpdateCheck(MUtils::OS::current_date().toJulianDay());
 		RecentlyUsed::saveRecentlyUsed(m_recentlyUsed.data());
 		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->hide();
 	}
@@ -1191,7 +1195,7 @@ void MainWindow::checkUpdates(void)
 		QApplication::quit();
 	}
 
-	X264_DELETE(updater);
+	MUTILS_DELETE(updater);
 }
 
 /*
@@ -1228,7 +1232,7 @@ void MainWindow::sysTrayActived(void)
 {
 	m_sysTray->hide();
 	showNormal();
-	x264_bring_to_front(this);
+	MUtils::GUI::bring_to_front(this);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1423,7 +1427,7 @@ bool MainWindow::createJob(QString &sourceFileName, QString &outputFileName, Opt
 		okay = true;
 	}
 
-	X264_DELETE(addDialog);
+	MUTILS_DELETE(addDialog);
 	return okay;
 }
 

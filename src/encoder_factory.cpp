@@ -21,10 +21,14 @@
 
 #include "encoder_factory.h"
 
+//Internal
 #include "global.h"
 #include "model_options.h"
 #include "encoder_x264.h"
 #include "encoder_x265.h"
+
+//MUtils
+#include <MUtils/Exception.h>
 
 AbstractEncoder *EncoderFactory::createEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 {
@@ -39,7 +43,7 @@ AbstractEncoder *EncoderFactory::createEncoder(JobObject *jobObject, const Optio
 		encoder = new X265Encoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile);
 		break;
 	default:
-		THROW("Unknown encoder type encountered!");
+		MUTILS_THROW("Unknown encoder type encountered!");
 	}
 
 	return encoder;
@@ -54,7 +58,7 @@ const AbstractEncoderInfo& EncoderFactory::getEncoderInfo(const int &encoderType
 	case OptionsModel::EncType_X265:
 		return X265Encoder::getEncoderInfo();
 	default:
-		THROW("Unknown encoder type encountered!");
+		MUTILS_THROW("Unknown encoder type encountered!");
 	}
 
 	return *((AbstractEncoderInfo*)NULL);

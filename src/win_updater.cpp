@@ -29,7 +29,11 @@
 //MUtils
 #include <MUtils/UpdateChecker.h>
 #include <MUtils/Hash_Blake2.h>
+#include <MUtils/GUI.h>
+#include <MUtils/OSSupport.h>
+#include <MUtils/Exception.h>
 
+//Qt
 #include <QMovie>
 #include <QCloseEvent>
 #include <QTimer>
@@ -139,7 +143,7 @@ bool UpdaterDialog::event(QEvent *e)
 {
 	if((e->type() == QEvent::ActivationChange) && (m_updaterProcess != NULL))
 	{
-		x264_bring_process_to_front(m_updaterProcess);
+		MUtils::GUI::bring_to_front(m_updaterProcess);
 	}
 	return QDialog::event(e);
 }
@@ -165,7 +169,7 @@ void UpdaterDialog::keyPressEvent(QKeyEvent *event)
 {
 	if(event->key() == Qt::Key_F11)
 	{
-		QFile logFile(QString("%1/%2.log").arg(x264_temp_directory(), x264_rand_str()));
+		QFile logFile(QString("%1/%2.log").arg(MUtils::temp_folder(), MUtils::rand_str()));
 		if(logFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
 		{
 			logFile.write("\xEF\xBB\xBF");
@@ -206,7 +210,7 @@ void UpdaterDialog::initUpdate(void)
 	}
 
 	//Make sure user does have admin access
-	if(!x264_user_is_admin())
+	if(!MUtils::OS::user_is_admin())
 	{
 		qWarning("User is not in the \"admin\" group, cannot update!");
 		QString message;
@@ -312,7 +316,7 @@ void UpdaterDialog::threadStatusChanged(int status)
 		UPDATE_ICON(3, "play");
 		break;
 	default:
-		THROW("Unknown status code!");
+		MUTILS_THROW("Unknown status code!");
 	}
 }
 
@@ -405,7 +409,7 @@ void UpdaterDialog::installUpdate(void)
 	QStringList args;
 	QEventLoop loop;
 
-	x264_init_process(process, x264_temp_directory(), false);
+	MUtils::init_process(process, MUtils::temp_folder(), false);
 
 	connect(&process, SIGNAL(error(QProcess::ProcessError)), &loop, SLOT(quit()));
 	connect(&process, SIGNAL(finished(int,QProcess::ExitStatus)), &loop, SLOT(quit()));
@@ -428,7 +432,7 @@ void UpdaterDialog::installUpdate(void)
 		return;
 	}
 
-	m_updaterProcess = x264_process_id(process);
+	m_updaterProcess = MUtils::OS::process_id(&process);
 	loop.exec(QEventLoop::ExcludeUserInputEvents);
 	
 	if(!process.waitForFinished())

@@ -21,9 +21,14 @@
 
 #include "model_options.h"
 
+//Internal
 #include "global.h"
 #include "model_sysinfo.h"
 
+//Mutils
+#include <MUtils/Global.h>
+
+//Qt
 #include <QDesktopServices>
 #include <QSettings>
 #include <QStringList>
@@ -181,7 +186,7 @@ QMap<QString, OptionsModel*> OptionsModel::loadAllTemplates(const SysinfoModel *
 				list.insert(name, options);
 				continue;
 			}
-			X264_DELETE(options);
+			MUTILS_DELETE(options);
 		}
 	}
 

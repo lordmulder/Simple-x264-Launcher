@@ -100,7 +100,7 @@ copy "%~dp0\bin\Win32\Release\toolset\x64\*.exe"    "%PACK_PATH%\toolset\x64"
 copy "%~dp0\bin\Win32\Release\toolset\x64\*.dll"    "%PACK_PATH%\toolset\x64"
 copy "%~dp0\bin\Win32\Release\toolset\common\*.exe" "%PACK_PATH%\toolset\common"
 copy "%~dp0\bin\Win32\Release\toolset\common\*.gpg" "%PACK_PATH%\toolset\common"
-copy "%~dp0\etc\sources\*.tar"                      "%PACK_PATH%\sources"
+copy "%~dp0\etc\sources\*.xz"                       "%PACK_PATH%\sources"
 copy "%~dp0\LICENSE.html"                           "%PACK_PATH%"
 copy "%~dp0\*.txt"                                  "%PACK_PATH%"
 

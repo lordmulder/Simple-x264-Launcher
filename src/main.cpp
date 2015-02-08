@@ -190,5 +190,5 @@ static int simple_x264_main(int &argc, char **argv)
 
 int main(int argc, char* argv[])
 {
-	return MUtils::Startup::startup(argc, argv, simple_x264_main, "Simple x264 Launcher", true /*lamexp_version_demo()*/);
+	return MUtils::Startup::startup(argc, argv, simple_x264_main, "Simple x264 Launcher", x264_is_prerelease());
 }

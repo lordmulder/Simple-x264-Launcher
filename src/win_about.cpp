@@ -22,8 +22,13 @@
 #include "win_about.h"
 #include "UIC_win_about.h"
 
+//Internal
 #include "global.h"
 
+//MUtils
+#include <MUtils/Version.h>
+
+//Qt
 #include <QProcess>
 #include <QScrollBar>
 #include <QDate>
@@ -49,11 +54,11 @@ AboutDialog::AboutDialog(QWidget *parent)
 			QString().sprintf("%u.%02u.%u", x264_version_major(),
 			x264_version_minor(),
 			x264_version_build()),
-			QString::number(qMax(x264_version_date().year(),QDate::currentDate().year())),
-			x264_version_date().toString(Qt::ISODate).toLatin1().constData(),
-			x264_version_time(),
-			x264_version_compiler(),
-			x264_version_arch(),
+			QString::number(qMax(MUtils::Version::app_build_date().year(),QDate::currentDate().year())),
+			MUtils::Version::app_build_date().toString(Qt::ISODate),
+			MUtils::Version::app_build_time().toString(Qt::ISODate),
+			MUtils::Version::compiler_version(),
+			MUtils::Version::compiler_arch(),
 			QString::fromLatin1(QT_VERSION_STR)
 		)
 	);

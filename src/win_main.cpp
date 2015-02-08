@@ -36,7 +36,6 @@
 #include "thread_vapoursynth.h"
 #include "thread_encode.h"
 #include "thread_ipc_recv.h"
-#include "taskbar7.h"
 #include "input_filter.h"
 #include "win_addJob.h"
 #include "win_about.h"
@@ -52,6 +51,8 @@
 #include <MUtils/GUI.h>
 #include <MUtils/Sound.h>
 #include <MUtils/Exception.h>
+#include <MUtils/Taskbar7.h>
+#include <MUtils/Version.h>
 
 //Qt
 #include <QDate>
@@ -144,7 +145,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	ui->splitter->setSizes(QList<int>() << 16 << 196);
 
 	//Update title
-	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(x264_version_date().toString(Qt::ISODate), QString::fromLatin1(x264_version_time())));
+	ui->labelBuildDate->setText(tr("Built on %1 at %2").arg(MUtils::Version::app_build_date().toString(Qt::ISODate), MUtils::Version::app_build_time().toString(Qt::ISODate)));
 	
 	if(MUTILS_DEBUG)
 	{
@@ -248,6 +249,9 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	m_sysTray->setToolTip(this->windowTitle());
 	m_sysTray->setIcon(this->windowIcon());
 	connect(m_sysTray.data(), SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(sysTrayActived()));
+
+	//Init taskbar progress
+	m_taskbar.reset(new MUtils::Taskbar7(this));
 
 	//Create corner widget
 	QLabel *checkUp = new QLabel(ui->menubar);
@@ -540,7 +544,10 @@ void MainWindow::jobChangedData(const QModelIndex &topLeft, const  QModelIndex &
 			if(i == selected)
 			{
 				ui->progressBar->setValue(m_jobList->getJobProgress(m_jobList->index(i, 0, QModelIndex())));
-				WinSevenTaskbar::setTaskbarProgress(this, ui->progressBar->value(), ui->progressBar->maximum());
+				if(!m_taskbar.isNull())
+				{
+					m_taskbar->setTaskbarProgress(ui->progressBar->value(), ui->progressBar->maximum());
+				}
 				break;
 			}
 		}
@@ -821,7 +828,7 @@ void MainWindow::init(void)
 	// Check for portable mode
 	//---------------------------------------
 
-	if(x264_portable())
+	if(x264_is_portable())
 	{
 		bool ok = false;
 		static const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
@@ -976,7 +983,7 @@ void MainWindow::init(void)
 	// Check for Expiration
 	//---------------------------------------
 
-	if(x264_version_date().addMonths(6) < MUtils::OS::current_date())
+	if(MUtils::Version::app_build_date().addMonths(6) < MUtils::OS::current_date())
 	{
 		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->show();
 		QString text;
@@ -1327,14 +1334,6 @@ void MainWindow::resizeEvent(QResizeEvent *e)
 }
 
 /*
- * Win32 message filter
- */
-bool MainWindow::winEvent(MSG *message, long *result)
-{
-	return WinSevenTaskbar::handleWinEvent(message, result);
-}
-
-/*
  * File dragged over window
  */
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -1569,26 +1568,31 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 {
 	qDebug("MainWindow::updateTaskbar(void)");
 
+	if(m_taskbar.isNull())
+	{
+		return; /*taskbar object not created yet*/
+	}
+
 	switch(status)
 	{
 	case JobStatus_Undefined:
-		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarNoState);
+		m_taskbar->setTaskbarState(MUtils::Taskbar7::TASKBAR_STATE_NONE);
 		break;
 	case JobStatus_Aborting:
 	case JobStatus_Starting:
 	case JobStatus_Pausing:
 	case JobStatus_Resuming:
-		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarIndeterminateState);
+		m_taskbar->setTaskbarState(MUtils::Taskbar7::TASKBAR_STATE_INTERMEDIATE);
 		break;
 	case JobStatus_Aborted:
 	case JobStatus_Failed:
-		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarErrorState);
+		m_taskbar->setTaskbarState(MUtils::Taskbar7::TASKBAR_STATE_ERROR);
 		break;
 	case JobStatus_Paused:
-		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarPausedState);
+		m_taskbar->setTaskbarState(MUtils::Taskbar7::TASKBAR_STATE_PAUSED);
 		break;
 	default:
-		WinSevenTaskbar::setTaskbarState(this, WinSevenTaskbar::WinSevenTaskbarNormalState);
+		m_taskbar->setTaskbarState(MUtils::Taskbar7::TASKBAR_STATE_NORMAL);
 		break;
 	}
 
@@ -1600,11 +1604,11 @@ void MainWindow::updateTaskbar(JobStatus status, const QIcon &icon)
 	case JobStatus_Resuming:
 		break;
 	default:
-		WinSevenTaskbar::setTaskbarProgress(this, ui->progressBar->value(), ui->progressBar->maximum());
+		m_taskbar->setTaskbarProgress(ui->progressBar->value(), ui->progressBar->maximum());
 		break;
 	}
 
-	WinSevenTaskbar::setOverlayIcon(this, icon.isNull() ? NULL : &icon);
+	m_taskbar->setOverlayIcon(icon.isNull() ? NULL : &icon);
 }
 
 /*

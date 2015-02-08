@@ -39,20 +39,18 @@ class QProcess;
 // GLOBAL FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
+//Utility functions
 const QString &x264_data_path(void);
-bool x264_is_prerelease(void);
 QString x264_path2ansi(const QString &longPath, bool makeLowercase = false);
-bool x264_portable(void);
 QString x264_query_reg_string(const bool bUser, const QString &path, const QString &name);
 bool x264_set_thread_execution_state(const bool systemRequired);
-bool x264_suspendProcess(const QProcess *proc, const bool suspend);
-const char *x264_version_arch(void);
-unsigned int x264_version_build(void);
-const char *x264_version_compiler(void);
-const QDate &x264_version_date(void);
+
+//Version getters
 unsigned int x264_version_major(void);
 unsigned int x264_version_minor(void);
-const char *x264_version_time(void);
+unsigned int x264_version_build(void);
+bool         x264_is_prerelease(void);
+bool         x264_is_portable  (void);
 
 ///////////////////////////////////////////////////////////////////////////////
 // HELPER MACROS

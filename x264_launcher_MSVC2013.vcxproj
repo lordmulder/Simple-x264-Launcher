@@ -381,7 +381,6 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClInclude Include="src\source_avisynth.h" />
     <ClInclude Include="src\source_vapoursynth.h" />
     <ClInclude Include="src\targetver.h" />
-    <ClInclude Include="src\taskbar7.h" />
     <CustomBuild Include="src\thread_avisynth.h">
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
@@ -433,7 +432,6 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\source_abstract.cpp" />
     <ClCompile Include="src\source_avisynth.cpp" />
     <ClCompile Include="src\source_vapoursynth.cpp" />
-    <ClCompile Include="src\taskbar7.cpp" />
     <ClCompile Include="src\thread_avisynth.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
     <ClCompile Include="src\global.cpp" />

@@ -95,13 +95,6 @@
 typedef HRESULT (WINAPI *SHGetKnownFolderPath_t)(const GUID &rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath);
 typedef HRESULT (WINAPI *SHGetFolderPath_t)(HWND hwndOwner, int nFolder, HANDLE hToken, DWORD dwFlags, LPWSTR pszPath);
 
-//Global vars
-static bool g_x264_console_attached = false;
-static QMutex g_x264_message_mutex;
-static const DWORD g_main_thread_id = GetCurrentThreadId();
-static FILE *g_x264_log_file = NULL;
-static QDate g_x264_version_date;
-
 //Const
 static const char *g_x264_months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 static const char *g_x264_imageformats[] = {"png", "jpg", "gif", "ico", "svg", NULL};
@@ -113,8 +106,6 @@ static const struct
 	unsigned int ver_minor;
 	unsigned int ver_patch;
 	unsigned int ver_build;
-	const char* ver_date;
-	const char* ver_time;
 }
 g_x264_version =
 {
@@ -122,21 +113,16 @@ g_x264_version =
 	(VER_X264_MINOR),
 	(VER_X264_PATCH),
 	(VER_X264_BUILD),
-	__DATE__,
-	__TIME__,
 };
 
-//Portable Mode
-static struct
-{
-	bool bInitialized;
-	bool bPortableModeEnabled;
-	QReadWriteLock lock;
-}
-g_x264_portable;
+//Portable mode
+static QReadWriteLock g_portableModeLock;
+static bool           g_portableModeData = false;
+static bool           g_portableModeInit = false;
 
-//GURU MEDITATION
-static const char *GURU_MEDITATION = "\n\nGURU MEDITATION !!!\n\n";
+//Data path
+static QString        g_dataPathData;
+static QReadWriteLock g_dataPathLock;
 
 ///////////////////////////////////////////////////////////////////////////////
 // MACROS
@@ -178,91 +164,6 @@ static inline bool _CHECK_FLAG(const int argc, char **argv, const char *flag)
 #define X264_ZERO_MEMORY(X) SecureZeroMemory(&X, sizeof(X))
 
 ///////////////////////////////////////////////////////////////////////////////
-// COMPILER INFO
-///////////////////////////////////////////////////////////////////////////////
-
-/*
- * Disclaimer: Parts of the following code were borrowed from MPC-HC project: http://mpc-hc.sf.net/
- */
-
-//Compiler detection
-#if defined(__INTEL_COMPILER)
-	#if (__INTEL_COMPILER >= 1300)
-		static const char *g_x264_version_compiler = "ICL 13." x264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
-	#elif (__INTEL_COMPILER >= 1200)
-		static const char *g_x264_version_compiler = "ICL 12." x264_MAKE_STR(__INTEL_COMPILER_BUILD_DATE);
-	#elif (__INTEL_COMPILER >= 1100)
-		static const char *g_x264_version_compiler = "ICL 11.x";
-	#elif (__INTEL_COMPILER >= 1000)
-		static const char *g_x264_version_compiler = "ICL 10.x";
-	#else
-		#error Compiler is not supported!
-	#endif
-#elif defined(_MSC_VER)
-	#if (_MSC_VER == 1800)
-		#if (_MSC_FULL_VER == 180021005)
-			static const char *g_x264_version_compiler = "MSVC 2013";
-		#elif (_MSC_FULL_VER == 180030501)
-			static const char *g_x264_version_compiler = "MSVC 2013.2";
-		#elif (_MSC_FULL_VER == 180030723)
-			static const char *g_x264_version_compiler = "MSVC 2013.3";
-		#elif (_MSC_FULL_VER == 180031101)
-			static const char *g_x264_version_compiler = "MSVC 2013.4";
-		#else
-			#error Compiler version is not supported yet!
-		#endif
-	#elif (_MSC_VER == 1700)
-		#if (_MSC_FULL_VER == 170050727)
-			static const char *g_x264_version_compiler = "MSVC 2012";
-		#elif (_MSC_FULL_VER == 170051106)
-			static const char *g_x264_version_compiler = "MSVC 2012.1";
-		#elif (_MSC_FULL_VER == 170060315)
-			static const char *g_x264_version_compiler = "MSVC 2012.2";
-		#elif (_MSC_FULL_VER == 170060610)
-			static const char *g_x264_version_compiler = "MSVC 2012.3";
-		#elif (_MSC_FULL_VER == 170061030)
-			static const char *g_x264_version_compiler = "MSVC 2012.4";
-		#else
-			#error Compiler version is not supported yet!
-		#endif
-	#elif (_MSC_VER == 1600)
-		#if (_MSC_FULL_VER >= 160040219)
-			static const char *g_x264_version_compiler = "MSVC 2010-SP1";
-		#else
-			static const char *g_x264_version_compiler = "MSVC 2010";
-		#endif
-	#elif (_MSC_VER == 1500)
-		#if (_MSC_FULL_VER >= 150030729)
-			static const char *g_x264_version_compiler = "MSVC 2008-SP1";
-		#else
-			static const char *g_x264_version_compiler = "MSVC 2008";
-		#endif
-	#else
-		#error Compiler is not supported!
-	#endif
-
-	// Note: /arch:SSE and /arch:SSE2 are only available for the x86 platform
-	#if !defined(_M_X64) && defined(_M_IX86_FP)
-		#if (_M_IX86_FP == 1)
-			x264_COMPILER_WARNING("SSE instruction set is enabled!")
-		#elif (_M_IX86_FP == 2)
-			x264_COMPILER_WARNING("SSE2 (or higher) instruction set is enabled!")
-		#endif
-	#endif
-#else
-	#error Compiler is not supported!
-#endif
-
-//Architecture detection
-#if defined(_M_X64)
-	static const char *g_x264_version_arch = "x64";
-#elif defined(_M_IX86)
-	static const char *g_x264_version_arch = "x86";
-#else
-	#error Architecture is not supported!
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
 // GLOBAL FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -284,49 +185,39 @@ unsigned int x264_version_build(void)
 	return g_x264_version.ver_build;
 }
 
-const char *x264_version_compiler(void)
-{
-	return g_x264_version_compiler;
-}
-
-const char *x264_version_arch(void)
-{
-	return g_x264_version_arch;
-}
-
 /*
  * Check for portable mode
  */
-bool x264_portable(void)
+bool x264_is_portable(void)
 {
-	QReadLocker readLock(&g_x264_portable.lock);
+	QReadLocker readLock(&g_portableModeLock);
 
-	if(g_x264_portable.bInitialized)
+	if(g_portableModeInit)
 	{
-		return g_x264_portable.bPortableModeEnabled;
+		return g_portableModeData;
 	}
 	
 	readLock.unlock();
-	QWriteLocker writeLock(&g_x264_portable.lock);
+	QWriteLocker writeLock(&g_portableModeLock);
 
-	if(!g_x264_portable.bInitialized)
+	if(!g_portableModeInit)
 	{
 		if(VER_X264_PORTABLE_EDITION)
 		{
 			qWarning("Simple x264 Launcher portable edition!\n");
-			g_x264_portable.bPortableModeEnabled = true;
+			g_portableModeData = true;
 		}
 		else
 		{
 			QString baseName = QFileInfo(QApplication::applicationFilePath()).completeBaseName();
 			int idx1 = baseName.indexOf("x264", 0, Qt::CaseInsensitive);
 			int idx2 = baseName.lastIndexOf("portable", -1, Qt::CaseInsensitive);
-			g_x264_portable.bPortableModeEnabled = (idx1 >= 0) && (idx2 >= 0) && (idx1 < idx2);
+			g_portableModeData = (idx1 >= 0) && (idx2 >= 0) && (idx1 < idx2);
 		}
-		g_x264_portable.bInitialized = true;
+		g_portableModeInit = true;
 	}
 	
-	return g_x264_portable.bPortableModeEnabled;
+	return g_portableModeData;
 }
 
 /*
@@ -334,95 +225,39 @@ bool x264_portable(void)
  */
 const QString &x264_data_path(void)
 {
-	static QString pathCache;
-	
-	if(pathCache.isNull())
+	QReadLocker readLock(&g_dataPathLock);
+
+	if(!g_dataPathData.isEmpty())
 	{
-		if(!x264_portable())
+		return g_dataPathData;
+	}
+	
+	readLock.unlock();
+	QWriteLocker writeLock(&g_dataPathLock);
+	
+	if(g_dataPathData.isEmpty())
+	{
+		g_dataPathData = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+		if(g_dataPathData.isEmpty() || x264_is_portable())
 		{
-			pathCache = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+			g_dataPathData = QApplication::applicationDirPath();
 		}
-		if(pathCache.isEmpty() || x264_portable())
+		if(!QDir(g_dataPathData).mkpath("."))
 		{
-			pathCache = QApplication::applicationDirPath();
-		}
-		if(!QDir(pathCache).mkpath("."))
-		{
-			qWarning("Data directory could not be created:\n%s\n", pathCache.toUtf8().constData());
-			pathCache = QDir::currentPath();
+			qWarning("Data directory could not be created:\n%s\n", g_dataPathData.toUtf8().constData());
+			g_dataPathData = QDir::currentPath();
 		}
 	}
 	
-	return pathCache;
+	return g_dataPathData;
 }
 
 /*
- * Get build date date
+ * Is pre-release version?
  */
-const QDate &x264_version_date(void)
-{
-	if(!g_x264_version_date.isValid())
-	{
-		int date[3] = {0, 0, 0}; char temp[12] = {'\0'};
-		strncpy_s(temp, 12, g_x264_version.ver_date, _TRUNCATE);
-
-		if(strlen(temp) == 11)
-		{
-			temp[3] = temp[6] = '\0';
-			date[2] = atoi(&temp[4]);
-			date[0] = atoi(&temp[7]);
-			
-			for(int j = 0; j < 12; j++)
-			{
-				if(!_strcmpi(&temp[0], g_x264_months[j]))
-				{
-					date[1] = j+1;
-					break;
-				}
-			}
-
-			g_x264_version_date = QDate(date[0], date[1], date[2]);
-		}
-
-		if(!g_x264_version_date.isValid())
-		{
-			qFatal("Internal error: Date format could not be recognized!");
-		}
-	}
-
-	return g_x264_version_date;
-}
-
-const char *x264_version_time(void)
-{
-	return g_x264_version.ver_time;
-}
-
 bool x264_is_prerelease(void)
 {
 	return (VER_X264_PRE_RELEASE);
-}
-
-/*
- * Suspend or resume process
- */
-bool x264_suspendProcess(const QProcess *proc, const bool suspend)
-{
-	if(Q_PID pid = proc->pid())
-	{
-		if(suspend)
-		{
-			return (SuspendThread(pid->hThread) != ((DWORD) -1));
-		}
-		else
-		{
-			return (ResumeThread(pid->hThread) != ((DWORD) -1));
-		}
-	}
-	else
-	{
-		return false;
-	}
 }
 
 /*

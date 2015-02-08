@@ -55,6 +55,7 @@ namespace MUtils
 	}
 
 	class IPCChannel;
+	class Taskbar7;
 }
 
 class MainWindow: public QMainWindow
@@ -73,18 +74,18 @@ protected:
 	virtual void resizeEvent(QResizeEvent *e);
 	virtual void dragEnterEvent(QDragEnterEvent *event);
 	virtual void dropEvent(QDropEvent *event);
-	virtual bool winEvent(MSG *message, long *result);
 
 private:
 	Ui::MainWindow *const ui;
+	MUtils::IPCChannel *const m_ipcChannel;
 
 	bool m_initialized;
 	QScopedPointer<QLabel> m_label;
 	QScopedPointer<QTimer> m_fileTimer;
 
-	MUtils::IPCChannel *const m_ipcChannel;
-	QScopedPointer<IPCThread_Recv> m_ipcThread;
-	QScopedPointer<QSystemTrayIcon> m_sysTray;
+	QScopedPointer<IPCThread_Recv>   m_ipcThread;
+	QScopedPointer<MUtils::Taskbar7> m_taskbar;
+	QScopedPointer<QSystemTrayIcon>  m_sysTray;
 
 	QScopedPointer<InputEventFilter> m_inputFilter_jobList;
 	QScopedPointer<InputEventFilter> m_inputFilter_version;

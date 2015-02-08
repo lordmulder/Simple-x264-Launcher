@@ -33,6 +33,7 @@
 //MUtils
 #include <MUtils/Global.h>
 #include <MUtils/Exception.h>
+#include <MUtils/OSSupport.h>
 
 //Qt
 #include <QProcess>
@@ -130,12 +131,12 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 				log(tr("Job paused by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 				bool ok[2] = {false, false};
 				QProcess *proc[2] = { &processEncode, &processInput };
-				ok[0] = x264_suspendProcess(proc[0], true);
-				ok[1] = x264_suspendProcess(proc[1], true);
+				ok[0] = MUtils::OS::suspend_process(proc[0], true);
+				ok[1] = MUtils::OS::suspend_process(proc[1], true);
 				while(*m_pause) m_semaphorePause->tryAcquire(1, 5000);
 				while(m_semaphorePause->tryAcquire(1, 0));
-				ok[0] = x264_suspendProcess(proc[0], false);
-				ok[1] = x264_suspendProcess(proc[1], false);
+				ok[0] = MUtils::OS::suspend_process(proc[0], false);
+				ok[1] = MUtils::OS::suspend_process(proc[1], false);
 				if(!(*m_abort)) setStatus(previousStatus);
 				log(tr("Job resumed by user at %1, %2.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString( Qt::ISODate)));
 				waitCounter = 0;

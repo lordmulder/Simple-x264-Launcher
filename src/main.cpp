@@ -24,7 +24,6 @@
 #include "win_main.h"
 #include "cli.h"
 #include "ipc.h"
-#include "taskbar7.h"
 #include "thread_ipc_send.h"
 
 //MUtils
@@ -163,13 +162,10 @@ static int simple_x264_main(int &argc, char **argv)
 	}
 
 	//Running in portable mode?
-	if(x264_portable())
+	if(x264_is_portable())
 	{
 		qDebug("Application is running in portable mode!\n");
 	}
-
-	//Taskbar init
-	WinSevenTaskbar::init();
 
 	//Set style
 	if(!arguments.contains(CLI_PARAM_NO_GUI_STYLE))
@@ -183,9 +179,6 @@ static int simple_x264_main(int &argc, char **argv)
 
 	//Run application
 	int ret = qApp->exec();
-
-	//Taskbar uninit
-	WinSevenTaskbar::init();
 	
 	//Exit program
 	return ret;

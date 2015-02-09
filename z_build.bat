@@ -123,7 +123,7 @@ del "%PACK_PATH%\imageformats\*d4.dll"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Generate Docs
 REM ///////////////////////////////////////////////////////////////////////////
-"%PDOC_PATH%\pandoc.exe" --from markdown_github+header_attributes --to html5 --standalone -H "%~dp0\etc\css\style.inc" "%~dp0\README.md" --output "%PACK_PATH%\README.html"
+"%PDOC_PATH%\pandoc.exe" --from markdown_github+pandoc_title_block+header_attributes+implicit_figures --to html5 --toc -N --standalone -H "%~dp0\etc\css\style.inc" --output "%PACK_PATH%\README.html" "%~dp0\README.md"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress

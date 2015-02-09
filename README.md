@@ -1,4 +1,4 @@
-﻿% Simple x264/x265 Launcher
+% Simple x264/x265 Launcher
 % Created by LoRd_MuldeR &lt;<mulder2@gmx>&gt; &ndash; check <http://muldersoft.com/> for news and updates!
 
 
@@ -173,8 +173,9 @@ Please download the latest version of Simple x264/x265 Launcher from one of the 
 
 * https://github.com/lordmulder/Simple-x264-Launcher/releases/latest
 * https://bitbucket.org/lord_mulder/simple-x264-launcher/downloads
+* https://x264launcher.codeplex.com/releases/
+* http://sourceforge.net/projects/muldersoft/files/Simple%20x264%20Launcher/
 * https://www.assembla.com/spaces/simple-x264-x265-launcher/documents
-* http://sourceforge.net/projects/muldersoft/files/
 
 
 # Help & Support #
@@ -193,8 +194,9 @@ The source codes can be obtained from the official Git repository:
 
 * https://github.com/lordmulder/Simple-x264-Launcher
 * https://gitorious.org/simple-x264-launcher/simple-x264-launcher
-* https://bitbucket.org/lord_mulder/simple-x264-launcher
-* https://git.assembla.com/simple-x264-x265-launcher.git
+* https://bitbucket.org/lord_mulder/simple-x264-launcher/src
+* https://www.assembla.com/code/simple-x264-x265-launcher/git/nodes
+* https://x264launcher.codeplex.com/SourceControl/latest
 
 Download Visual Studio Express 2013 for Windows *Desktop* here:
 * http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs

@@ -32,14 +32,17 @@ class VapourSynthCheckThread : public QThread
 	Q_OBJECT
 
 public:
-	static int detect(QString &path);
-	static void unload(void);
+	static int detect(QString &path, int &vapourSynthType);
+
+	static const int VAPOURSYNTH_OFF = 0;
+	static const int VAPOURSYNTH_X86 = 1;
+	static const int VAPOURSYNTH_X64 = 2;
 
 protected:
 	VapourSynthCheckThread(void);
 	~VapourSynthCheckThread(void);
 
-	bool getSuccess(void) { return m_success; }
+	int getSuccess(void) { return m_success; }
 	bool getException(void) { return m_exception; }
 	QString getPath(void) { return m_vpsPath; }
 
@@ -47,23 +50,23 @@ private slots:
 	void start(Priority priority = InheritPriority) { QThread::start(priority); }
 
 private:
+	int m_success;
 	volatile bool m_exception;
-	volatile bool m_success;
 	QString m_vpsPath;
 
-	static QMutex   m_vpsLock;
-	static QFile    *m_vpsExePath;
-	static QFile    *m_vpsDllPath;
-	static QLibrary *m_vpsLib;
+	static QMutex m_vpsLock;
+	static QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
+	static QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 	
 	//Entry point
 	virtual void run(void);
 
 	//Functions
-	static bool detectVapourSynthPath1(QString &path, volatile bool *exception);
-	static bool detectVapourSynthPath2(QString &path, volatile bool *exception);
-	static bool detectVapourSynthPath3(QString &path);
+	static int detectVapourSynthPath1(QString &path, volatile bool *exception);
+	static int detectVapourSynthPath2(QString &path, volatile bool *exception);
+	static int detectVapourSynthPath3(QString &path);
 
 	//Internal functions
-	static bool checkVapourSynth(const QString vspipePath);
+	static bool isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile);
+	static bool checkVapourSynth(const QString &vspipePath);
 };

@@ -32,7 +32,6 @@ class AvisynthCheckThread : public QThread
 
 public:
 	static int detect(volatile double *version);
-	static void unload(void);
 
 protected:
 	AvisynthCheckThread(void);
@@ -51,7 +50,7 @@ private:
 	volatile double m_version;
 
 	static QMutex m_avsLock;
-	static QLibrary *m_avsLib;
+	static QScopedPointer<QLibrary> m_avsLib;
 	
 	//Entry point
 	virtual void run(void);

@@ -293,9 +293,6 @@ MainWindow::~MainWindow(void)
 		}
 	}
 
-	VapourSynthCheckThread::unload();
-	AvisynthCheckThread::unload();
-
 	delete ui;
 }
 
@@ -933,7 +930,8 @@ void MainWindow::init(void)
 	{
 		qDebug("[Check for VapourSynth support]");
 		QString vapoursynthPath;
-		const int result = VapourSynthCheckThread::detect(vapoursynthPath);
+		int vapoursynthType;
+		const int result = VapourSynthCheckThread::detect(vapoursynthPath, vapoursynthType);
 		if(result < 0)
 		{
 			QString text = tr("A critical error was encountered while checking your VapourSynth installation.").append("<br>");
@@ -942,10 +940,11 @@ void MainWindow::init(void)
 			const int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
-		if(result && (!vapoursynthPath.isEmpty()))
+		if(result && vapoursynthType && (!vapoursynthPath.isEmpty()))
 		{
 			qDebug("VapourSynth support is officially enabled now!");
-			m_sysinfo->setVPSSupport(true);
+			m_sysinfo->setVPS32Support(vapoursynthType & VapourSynthCheckThread::VAPOURSYNTH_X86);
+			m_sysinfo->setVPS64Support(vapoursynthType & VapourSynthCheckThread::VAPOURSYNTH_X64);
 			m_sysinfo->setVPSPath(vapoursynthPath);
 		}
 		else

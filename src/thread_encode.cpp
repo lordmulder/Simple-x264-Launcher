@@ -143,7 +143,7 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 		}
 		break;
 	case MediaInfo::FILETYPE_VAPOURSYNTH:
-		if(m_sysinfo->hasVPSSupport())
+		if(m_sysinfo->hasVPS32Support() || m_sysinfo->hasVPS64Support())
 		{
 			m_pipedSource = new VapoursynthSource(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
 		}
@@ -256,7 +256,7 @@ void EncodeThread::encode(void)
 	log(tr("\n--- SYSTEMINFO ---\n"));
 	log(tr("Binary Path : %1").arg(QDir::toNativeSeparators(m_sysinfo->getAppPath())));
 	log(tr("Avisynth    : %1").arg(m_sysinfo->hasAVSSupport() ? tr("Yes") : tr("No")));
-	log(tr("VapourSynth : %1").arg(m_sysinfo->hasVPSSupport() ? QDir::toNativeSeparators(m_sysinfo->getVPSPath()) : tr("N/A")));
+	log(tr("VapourSynth : %1").arg((m_sysinfo->hasVPS32Support() || m_sysinfo->hasVPS64Support()) ? tr("Yes") : tr("No")));
 
 	//Print encoder settings
 	log(tr("\n--- SETTINGS ---\n"));

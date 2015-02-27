@@ -59,7 +59,8 @@ const QString &VapoursynthSource::getName(void)
 
 bool VapoursynthSource::isSourceAvailable()
 {
-	if(!(m_sysinfo->hasVPSSupport() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(VPS_BINARY(m_sysinfo, m_preferences)).isFile()))
+	bool vpsSupport = m_sysinfo->hasVPS32Support() || m_sysinfo->hasVPS32Support();
+	if(!(vpsSupport && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(VPS_BINARY(m_sysinfo, m_preferences)).isFile()))
 	{
 		log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
 		return false;

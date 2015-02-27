@@ -33,12 +33,15 @@
 #include <QDir>
 #include <QProcess>
 
+//Internal
 #include "global.h"
 
+//CRT
+#include <cassert>
+
 QMutex VapourSynthCheckThread::m_vpsLock;
-QFile *VapourSynthCheckThread::m_vpsExePath = NULL;
-QFile *VapourSynthCheckThread::m_vpsDllPath = NULL;
-QLibrary *VapourSynthCheckThread::m_vpsLib = NULL;
+QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
+QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 
 #define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
 
@@ -59,9 +62,10 @@ static inline QString &cleanDir(QString &path)
 // External API
 //-------------------------------------
 
-int VapourSynthCheckThread::detect(QString &path)
+int VapourSynthCheckThread::detect(QString &path, int &vapourSynthType)
 {
 	path.clear();
+	vapourSynthType = VAPOURSYNTH_OFF;
 	QMutexLocker lock(&m_vpsLock);
 
 	QEventLoop loop;
@@ -95,8 +99,9 @@ int VapourSynthCheckThread::detect(QString &path)
 		return -1;
 	}
 	
-	if(thread.getSuccess())
+	if(thread.getSuccess() & (VAPOURSYNTH_X86 | VAPOURSYNTH_X64))
 	{
+		vapourSynthType = thread.getSuccess();
 		path = thread.getPath();
 		qDebug("VapourSynth check completed successfully.");
 		return 1;
@@ -106,46 +111,13 @@ int VapourSynthCheckThread::detect(QString &path)
 	return 0;
 }
 
-void VapourSynthCheckThread::unload(void)
-{
-	QMutexLocker lock(&m_vpsLock);
-
-	if(m_vpsLib)
-	{
-		if(m_vpsLib->isLoaded())
-		{
-			m_vpsLib->unload();
-		}
-	}
-
-	if(m_vpsExePath)
-	{
-		if (m_vpsExePath->isOpen())
-		{
-			m_vpsExePath->close();
-		}
-	}
-
-	if(m_vpsDllPath)
-	{
-		if(m_vpsDllPath->isOpen())
-		{
-			m_vpsDllPath->close();
-		}
-	}
-
-	MUTILS_DELETE(m_vpsExePath);
-	MUTILS_DELETE(m_vpsDllPath);
-	MUTILS_DELETE(m_vpsLib);
-}
-
 //-------------------------------------
 // Thread class
 //-------------------------------------
 
 VapourSynthCheckThread::VapourSynthCheckThread(void)
 {
-	m_success = false;
+	m_success = VAPOURSYNTH_OFF;
 	m_exception = false;
 	m_vpsPath.clear();
 }
@@ -156,11 +128,13 @@ VapourSynthCheckThread::~VapourSynthCheckThread(void)
 
 void VapourSynthCheckThread::run(void)
 {
-	m_exception = m_success = false;
+	m_success = VAPOURSYNTH_OFF;
+	m_exception = false;
+
 	m_success = detectVapourSynthPath1(m_vpsPath, &m_exception);
 }
 
-bool VapourSynthCheckThread::detectVapourSynthPath1(QString &path, volatile bool *exception)
+int VapourSynthCheckThread::detectVapourSynthPath1(QString &path, volatile bool *exception)
 {
 	__try
 	{
@@ -174,7 +148,7 @@ bool VapourSynthCheckThread::detectVapourSynthPath1(QString &path, volatile bool
 	}
 }
 
-bool VapourSynthCheckThread::detectVapourSynthPath2(QString &path, volatile bool *exception)
+int VapourSynthCheckThread::detectVapourSynthPath2(QString &path, volatile bool *exception)
 {
 	try
 	{
@@ -188,11 +162,9 @@ bool VapourSynthCheckThread::detectVapourSynthPath2(QString &path, volatile bool
 	}
 }
 
-bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
+int VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 {
-	bool success = false;
-	MUTILS_DELETE(m_vpsExePath);
-	MUTILS_DELETE(m_vpsDllPath);
+	int success = VAPOURSYNTH_OFF;
 	path.clear();
 
 	static const char *VPS_REG_KEYS[] = 
@@ -225,48 +197,51 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	if(!VALID_DIR(vapoursynthPath))
 	{
 		qWarning("VapourSynth install path not found -> disable VapouSynth support!");
-		vapoursynthPath.clear();
+		return VAPOURSYNTH_OFF;
 	}
 
-	//Make sure that 'vapoursynth.dll' and 'vspipe.exe' are available
-	bool vapoursynthComplete = false;
-	if(!vapoursynthPath.isEmpty())
+	qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
+
+	//Look for 32-Bit edition of VapourSynth first
+	QFile *vpsExeFile32, *vpsDllFile32;
+	if(isVapourSynthComplete(QString("%1/core32").arg(vapoursynthPath), vpsExeFile32, vpsDllFile32))
 	{
-		static const char *CORE_PATH[3] = { "core32", "core64", "core" };
-		qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
-		for(int i = 0; (i < 3) && (!vapoursynthComplete); i++)
+		if(vpsExeFile32 && checkVapourSynth(vpsExeFile32->fileName()))
 		{
-			QFileInfo vpsExeInfo(QString("%1/%2/vspipe.exe"     ).arg(vapoursynthPath, CORE_PATH[i]));
-			QFileInfo vpsDllInfo(QString("%1/%2/vapoursynth.dll").arg(vapoursynthPath, CORE_PATH[i]));
-			qDebug("VapourSynth EXE: %s", vpsExeInfo.absoluteFilePath().toUtf8().constData());
-			qDebug("VapourSynth DLL: %s", vpsDllInfo.absoluteFilePath().toUtf8().constData());
-			if(vpsExeInfo.exists() && vpsDllInfo.exists())
-			{
-				m_vpsExePath = new QFile(vpsExeInfo.canonicalFilePath());
-				m_vpsDllPath = new QFile(vpsDllInfo.canonicalFilePath());
-				if(m_vpsExePath->open(QIODevice::ReadOnly) && m_vpsDllPath->open(QIODevice::ReadOnly))
-				{
-					if(vapoursynthComplete = MUtils::OS::is_executable_file(m_vpsExePath->fileName()))
-					{
-						vapoursynthPath.append("/").append(CORE_PATH[i]);
-					}
-					break;
-				}
-				MUTILS_DELETE(m_vpsExePath);
-				MUTILS_DELETE(m_vpsDllPath);
-			}
+			success |= VAPOURSYNTH_X86;
+			qDebug("VapourSynth 32-Bit edition found!");
+			m_vpsExePath[0].reset(vpsExeFile32);
+			m_vpsDllPath[0].reset(vpsDllFile32);
 		}
-		if(!vapoursynthComplete)
+		else
 		{
-			qWarning("VapourSynth installation incomplete -> disable VapouSynth support!");
+			qWarning("VapourSynth 32-Bit edition was found, but version check has failed!");
 		}
 	}
-
-	//Make sure 'vsscript.dll' can be loaded successfully
-	if(vapoursynthComplete && m_vpsExePath)
+	else
 	{
-		qDebug("VapourSynth detection is running, please stand by...");
-		success = checkVapourSynth(m_vpsExePath->fileName());
+		qDebug("VapourSynth 32-Bit edition *not* found!");
+	}
+
+	//Look for 64-Bit edition of VapourSynth next
+	QFile *vpsExeFile64, *vpsDllFile64;
+	if(isVapourSynthComplete(QString("%1/core64").arg(vapoursynthPath), vpsExeFile64, vpsDllFile64))
+	{
+		if(vpsExeFile64 && checkVapourSynth(vpsExeFile64->fileName()))
+		{
+			success |= VAPOURSYNTH_X64;
+			qDebug("VapourSynth 64-Bit edition found!");
+			m_vpsExePath[1].reset(vpsExeFile64);
+			m_vpsDllPath[1].reset(vpsDllFile64);
+		}
+		else
+		{
+			qWarning("VapourSynth 64-Bit edition was found, but version check has failed!");
+		}
+	}
+	else
+	{
+		qDebug("VapourSynth 64-Bit edition *not* found!");
 	}
 
 	//Return VapourSynth path
@@ -278,7 +253,37 @@ bool VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	return success;
 }
 
-bool VapourSynthCheckThread::checkVapourSynth(const QString vspipePath)
+bool VapourSynthCheckThread::isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile)
+{
+	bool complete = false;
+	vpsExeFile = vpsDllFile = NULL;
+
+	QFileInfo vpsExeInfo(QString("%1/vspipe.exe"     ).arg(vsCorePath));
+	QFileInfo vpsDllInfo(QString("%1/vapoursynth.dll").arg(vsCorePath));
+	
+	qDebug("VapourSynth EXE: %s", vpsExeInfo.absoluteFilePath().toUtf8().constData());
+	qDebug("VapourSynth DLL: %s", vpsDllInfo.absoluteFilePath().toUtf8().constData());
+
+	if(vpsExeInfo.exists() && vpsDllInfo.exists())
+	{
+		vpsExeFile = new QFile(vpsExeInfo.canonicalFilePath());
+		vpsDllFile = new QFile(vpsDllInfo.canonicalFilePath());
+		if(vpsExeFile->open(QIODevice::ReadOnly) && vpsDllFile->open(QIODevice::ReadOnly))
+		{
+			complete = MUtils::OS::is_executable_file(vpsExeFile->fileName());
+		}
+	}
+
+	if(!complete)
+	{
+		MUTILS_DELETE(vpsExeFile);
+		MUTILS_DELETE(vpsDllFile);
+	}
+
+	return complete;
+}
+
+bool VapourSynthCheckThread::checkVapourSynth(const QString &vspipePath)
 {
 	QProcess process;
 	QStringList output;
@@ -353,12 +358,11 @@ bool VapourSynthCheckThread::checkVapourSynth(const QString vspipePath)
 	//Minimum required version found?
 	if(vapoursynthLogo)
 	{
-		qDebug("VapourSynth was detected successfully.");
+		qDebug("VapourSynth version was detected successfully.");
 		return true;
 	}
 
 	//Failed to determine version
-	qWarning("Failed to determine VapourSynth version -> disable Vapousynth support!");
-	qWarning("VapourSynth version is unsupported or VapourSynth installation is corrupted.");
+	qWarning("Failed to determine VapourSynth version!");
 	return false;
 }

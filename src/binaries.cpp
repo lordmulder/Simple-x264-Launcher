@@ -100,10 +100,17 @@ QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferen
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
 {
-	return QString("%1/vspipe.exe").arg(sysinfo->getVPSPath());
+	return QString("%1/core%2/vspipe.exe").arg(sysinfo->getVPSPath(), (x64 ? "64" : "32"));
 }
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	return VPS_BINARY(sysinfo, sysinfo->hasX64Support());
+	if(sysinfo->hasVPS32Support() && sysinfo->hasVPS64Support() && sysinfo->hasX64Support())
+	{
+		return VPS_BINARY(sysinfo, preferences->getUseAvisyth64Bit());
+	}
+	else
+	{
+		return VPS_BINARY(sysinfo, (sysinfo->hasVPS64Support() && sysinfo->hasX64Support()));
+	}
 }

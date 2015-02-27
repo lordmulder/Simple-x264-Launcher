@@ -35,7 +35,7 @@
 #include <MUtils/Global.h>
 
 QMutex AvisynthCheckThread::m_avsLock;
-QLibrary *AvisynthCheckThread::m_avsLib = NULL;
+QScopedPointer<QLibrary> AvisynthCheckThread::m_avsLib;
 
 //-------------------------------------
 // External API
@@ -86,21 +86,6 @@ int AvisynthCheckThread::detect(volatile double *version)
 
 	qWarning("Avisynth thread failed to determine the version!");
 	return 0;
-}
-
-void AvisynthCheckThread::unload(void)
-{
-	QMutexLocker lock(&m_avsLock);
-
-	if(m_avsLib)
-	{
-		if(m_avsLib->isLoaded())
-		{
-			m_avsLib->unload();
-		}
-	}
-
-	MUTILS_DELETE(m_avsLib);
 }
 
 //-------------------------------------
@@ -157,11 +142,7 @@ bool AvisynthCheckThread::detectAvisynthVersion3(volatile double *version_number
 	bool success = false;
 	*version_number = 0.0;
 
-	if(!m_avsLib)
-	{
-		m_avsLib = new QLibrary("avisynth.dll");
-	}
-
+	m_avsLib.reset(new QLibrary("avisynth.dll"));
 	if(m_avsLib->isLoaded() || m_avsLib->load())
 	{
 		avs_create_script_environment_func avs_create_script_environment_ptr = (avs_create_script_environment_func) m_avsLib->resolve("avs_create_script_environment");

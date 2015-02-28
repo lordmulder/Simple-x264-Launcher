@@ -62,10 +62,10 @@ static inline QString &cleanDir(QString &path)
 // External API
 //-------------------------------------
 
-int VapourSynthCheckThread::detect(QString &path, int &vapourSynthType)
+int VapourSynthCheckThread::detect(QString &path, VapourSynthType &type)
 {
 	path.clear();
-	vapourSynthType = VAPOURSYNTH_OFF;
+	type &= 0;
 	QMutexLocker lock(&m_vpsLock);
 
 	QEventLoop loop;
@@ -99,9 +99,9 @@ int VapourSynthCheckThread::detect(QString &path, int &vapourSynthType)
 		return -1;
 	}
 	
-	if(thread.getSuccess() & (VAPOURSYNTH_X86 | VAPOURSYNTH_X64))
+	if(!!thread.getSuccess())
 	{
-		vapourSynthType = thread.getSuccess();
+		type |= thread.getSuccess();
 		path = thread.getPath();
 		qDebug("VapourSynth check completed successfully.");
 		return 1;
@@ -117,7 +117,7 @@ int VapourSynthCheckThread::detect(QString &path, int &vapourSynthType)
 
 VapourSynthCheckThread::VapourSynthCheckThread(void)
 {
-	m_success = VAPOURSYNTH_OFF;
+	m_success &= 0;
 	m_exception = false;
 	m_vpsPath.clear();
 }
@@ -128,43 +128,42 @@ VapourSynthCheckThread::~VapourSynthCheckThread(void)
 
 void VapourSynthCheckThread::run(void)
 {
-	m_success = VAPOURSYNTH_OFF;
+	m_success &= 0;
 	m_exception = false;
+	m_vpsPath.clear();
 
-	m_success = detectVapourSynthPath1(m_vpsPath, &m_exception);
+	detectVapourSynthPath1(m_success, m_vpsPath, &m_exception);
 }
 
-int VapourSynthCheckThread::detectVapourSynthPath1(QString &path, volatile bool *exception)
+void VapourSynthCheckThread::detectVapourSynthPath1(VapourSynthType &success, QString &path, volatile bool *exception)
 {
 	__try
 	{
-		return detectVapourSynthPath2(path, exception);
+		return detectVapourSynthPath2(success, path, exception);
 	}
 	__except(1)
 	{
 		*exception = true;
 		qWarning("Unhandled exception error in VapourSynth thread !!!");
-		return false;
 	}
 }
 
-int VapourSynthCheckThread::detectVapourSynthPath2(QString &path, volatile bool *exception)
+void VapourSynthCheckThread::detectVapourSynthPath2(VapourSynthType &success, QString &path, volatile bool *exception)
 {
 	try
 	{
-		return detectVapourSynthPath3(path);
+		return detectVapourSynthPath3(success, path);
 	}
 	catch(...)
 	{
 		*exception = true;
 		qWarning("VapourSynth initializdation raised an C++ exception!");
-		return false;
 	}
 }
 
-int VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
+void VapourSynthCheckThread::detectVapourSynthPath3(VapourSynthType &success, QString &path)
 {
-	int success = VAPOURSYNTH_OFF;
+	success &= 0;
 	path.clear();
 
 	static const char *VPS_REG_KEYS[] = 
@@ -197,7 +196,7 @@ int VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	if(!VALID_DIR(vapoursynthPath))
 	{
 		qWarning("VapourSynth install path not found -> disable VapouSynth support!");
-		return VAPOURSYNTH_OFF;
+		return;
 	}
 
 	qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
@@ -249,8 +248,6 @@ int VapourSynthCheckThread::detectVapourSynthPath3(QString &path)
 	{
 		path = vapoursynthPath;
 	}
-
-	return success;
 }
 
 bool VapourSynthCheckThread::isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile)

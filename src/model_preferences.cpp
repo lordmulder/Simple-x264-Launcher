@@ -72,7 +72,7 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 	INIT_VALUE(AutoRunNextJob,     true );
 	INIT_VALUE(MaxRunningJobCount, 1    );
 	INIT_VALUE(ShutdownComputer,   false);
-	INIT_VALUE(UseAvisyth64Bit,    false);
+	INIT_VALUE(Prefer64BitSource,  false);
 	INIT_VALUE(SaveLogFiles,       false);
 	INIT_VALUE(SaveToSourcePath,   false);
 	INIT_VALUE(ProcessPriority,    -1   );
@@ -94,7 +94,7 @@ void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 	LOAD_VALUE_B(AutoRunNextJob    );
 	LOAD_VALUE_U(MaxRunningJobCount);
 	LOAD_VALUE_B(ShutdownComputer  );
-	LOAD_VALUE_B(UseAvisyth64Bit   );
+	LOAD_VALUE_B(Prefer64BitSource );
 	LOAD_VALUE_B(SaveLogFiles      );
 	LOAD_VALUE_B(SaveToSourcePath  );
 	LOAD_VALUE_I(ProcessPriority   );
@@ -117,7 +117,7 @@ void PreferencesModel::savePreferences(PreferencesModel *preferences)
 	STORE_VALUE(AutoRunNextJob    );
 	STORE_VALUE(MaxRunningJobCount);
 	STORE_VALUE(ShutdownComputer  );
-	STORE_VALUE(UseAvisyth64Bit   );
+	STORE_VALUE(Prefer64BitSource );
 	STORE_VALUE(SaveLogFiles      );
 	STORE_VALUE(SaveToSourcePath  );
 	STORE_VALUE(ProcessPriority   );

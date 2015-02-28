@@ -103,7 +103,7 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	
 	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->getAutoRunNextJob());
 	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->getShutdownComputer());
-	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->getUseAvisyth64Bit() && m_sysinfo->hasX64Support());
+	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->getPrefer64BitSource() && m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64));
 	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->getSaveLogFiles());
 	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->getSaveToSourcePath());
 	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->getEnableSounds());
@@ -114,8 +114,9 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	
 	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->getProcessPriority(), 1), 0);
 	
-	ui->checkUse64BitAvs2YUV->setEnabled(m_sysinfo->hasX64Support());
-	ui->labelUse64BitAvs2YUV->setEnabled(m_sysinfo->hasX64Support());
+	const bool hasX64 = m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64);
+	ui->checkUse64BitAvs2YUV->setEnabled(hasX64);
+	ui->labelUse64BitAvs2YUV->setEnabled(hasX64);
 }
 
 bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
@@ -160,7 +161,7 @@ void PreferencesDialog::done(int n)
 {
 	m_preferences->setAutoRunNextJob(ui->checkRunNextJob->isChecked());
 	m_preferences->setShutdownComputer(ui->checkShutdownComputer->isChecked());
-	m_preferences->setUseAvisyth64Bit(ui->checkUse64BitAvs2YUV->isChecked());
+	m_preferences->setPrefer64BitSource(ui->checkUse64BitAvs2YUV->isChecked());
 	m_preferences->setSaveLogFiles(ui->checkSaveLogFiles->isChecked());
 	m_preferences->setSaveToSourcePath(ui->checkSaveToSourceFolder->isChecked());
 	m_preferences->setMaxRunningJobCount(ui->spinBoxJobCount->value());

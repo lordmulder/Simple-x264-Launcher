@@ -1,6 +1,10 @@
 ----------------------------------------- 
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
+
+Version 2.50 [2015-MM-DD]
+* Improved VapourSynth detection code
+* Added option to prefer 64-Bit VapourSynth, if available
  
 Version 2.46 [2015-01-31]
 * Updated x265 to version 1.4+424

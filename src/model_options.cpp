@@ -57,7 +57,7 @@ const char *const OptionsModel::PROFILE_UNRESTRICTED = "<Unrestricted>";
 OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 {
 	m_encoderType = EncType_X264;
-	m_encoderArch = sysinfo->hasX64Support() ? EncArch_x64 : EncArch_x32;
+	m_encoderArch = sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) ? EncArch_x64 : EncArch_x32;
 	m_encoderVariant = EncVariant_LoBit;
 	m_rcMode = RCMode_CRF;
 	m_bitrate = 1200;

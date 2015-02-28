@@ -124,9 +124,9 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	//Create and initialize the sysinfo object
 	m_sysinfo.reset(new SysinfoModel());
 	m_sysinfo->setAppPath(QApplication::applicationDirPath());
-	m_sysinfo->setMMXSupport(cpuFeatures.features && MUtils::CPUFetaures::FLAG_MMX);
-	m_sysinfo->setSSESupport(cpuFeatures.features && MUtils::CPUFetaures::FLAG_SSE); //SSE implies MMX2
-	m_sysinfo->setX64Support(cpuFeatures.x64 && (cpuFeatures.features && MUtils::CPUFetaures::FLAG_SSE2)); //X64 implies SSE2
+	m_sysinfo->setCPUFeatures(SysinfoModel::CPUFeatures_MMX, cpuFeatures.features & MUtils::CPUFetaures::FLAG_MMX);
+	m_sysinfo->setCPUFeatures(SysinfoModel::CPUFeatures_SSE, cpuFeatures.features & MUtils::CPUFetaures::FLAG_SSE);
+	m_sysinfo->setCPUFeatures(SysinfoModel::CPUFeatures_X64, cpuFeatures.x64 && (cpuFeatures.features & MUtils::CPUFetaures::FLAG_SSE2)); //X64 implies SSE2
 
 	//Load preferences
 	m_preferences.reset(new PreferencesModel());
@@ -855,16 +855,16 @@ void MainWindow::init(void)
 	//---------------------------------------
 
 	//Make sure this CPU can run x264 (requires MMX + MMXEXT/iSSE to run x264 with ASM enabled, additionally requires SSE1 for most x264 builds)
-	if(!m_sysinfo->hasMMXSupport())
+	if(!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_MMX))
 	{
 		QMessageBox::critical(this, tr("Unsupported CPU"), tr("<nobr>Sorry, but this machine is <b>not</b> physically capable of running x264 (with assembly).<br>Please get a CPU that supports at least the MMX and MMXEXT instruction sets!</nobr>"), tr("Quit"));
 		qFatal("System does not support MMX and MMXEXT, x264 will not work !!!");
 		INIT_ERROR_EXIT();
 	}
-	else if(!m_sysinfo->hasSSESupport())
+	else if(!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_SSE))
 	{
-		qWarning("WARNING: System does not support SSE1, most x264 builds will not work !!!\n");
-		int val = QMessageBox::warning(this, tr("Unsupported CPU"), tr("<nobr>It appears that this machine does <b>not</b> support the SSE1 instruction set.<br>Thus most builds of x264 will <b>not</b> run on this computer at all.<br><br>Please get a CPU that supports the MMX and SSE1 instruction sets!</nobr>"), tr("Quit"), tr("Ignore"));
+		qWarning("WARNING: System does not support SSE (v1), x264/x265 probably will *not* work !!!\n");
+		int val = QMessageBox::warning(this, tr("Unsupported CPU"), tr("<nobr>It appears that this machine does <b>not</b> support the SSE1 instruction set.<br>Thus most builds of x264/x265 will <b>not</b> run on this computer at all.<br><br>Please get a CPU that supports the MMX and SSE1 instruction sets!</nobr>"), tr("Quit"), tr("Ignore"));
 		if(val != 1) INIT_ERROR_EXIT();
 	}
 
@@ -902,7 +902,8 @@ void MainWindow::init(void)
 		if(result && (avisynthVersion >= 2.5))
 		{
 			qDebug("Avisynth support is officially enabled now!");
-			m_sysinfo->setAVSSupport(true);
+			m_sysinfo->setAvisynth(SysinfoModel::Avisynth_X86, true);
+			m_sysinfo->setAvisynth(SysinfoModel::Avisynth_X64, true);
 		}
 		else
 		{
@@ -929,8 +930,8 @@ void MainWindow::init(void)
 	if(!arguments.contains(CLI_PARAM_SKIP_VPS_CHECK))
 	{
 		qDebug("[Check for VapourSynth support]");
+		VapourSynthCheckThread::VapourSynthType vapoursynthType;
 		QString vapoursynthPath;
-		int vapoursynthType;
 		const int result = VapourSynthCheckThread::detect(vapoursynthPath, vapoursynthType);
 		if(result < 0)
 		{
@@ -940,11 +941,11 @@ void MainWindow::init(void)
 			const int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
-		if(result && vapoursynthType && (!vapoursynthPath.isEmpty()))
+		if(result && (!!vapoursynthType) && (!vapoursynthPath.isEmpty()))
 		{
 			qDebug("VapourSynth support is officially enabled now!");
-			m_sysinfo->setVPS32Support(vapoursynthType & VapourSynthCheckThread::VAPOURSYNTH_X86);
-			m_sysinfo->setVPS64Support(vapoursynthType & VapourSynthCheckThread::VAPOURSYNTH_X64);
+			m_sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X86, (vapoursynthType.testFlag(VapourSynthCheckThread::VAPOURSYNTH_X86)));
+			m_sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X64, (vapoursynthType.testFlag(VapourSynthCheckThread::VAPOURSYNTH_X64)));
 			m_sysinfo->setVPSPath(vapoursynthPath);
 		}
 		else
@@ -970,7 +971,7 @@ void MainWindow::init(void)
 	//---------------------------------------
 
 	//Set Window title
-	setWindowTitle(QString("%1 (%2)").arg(windowTitle(), m_sysinfo->hasX64Support() ? "64-Bit" : "32-Bit"));
+	setWindowTitle(QString("%1 (%2)").arg(windowTitle(), m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) ? "64-Bit" : "32-Bit"));
 
 	//Enable drag&drop support for this window, required for Qt v4.8.4+
 	setAcceptDrops(true);

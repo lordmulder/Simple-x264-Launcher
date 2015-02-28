@@ -62,7 +62,7 @@ const QString &AvisynthSource::getName(void)
 
 bool AvisynthSource::isSourceAvailable()
 {
-	if(!(m_sysinfo->hasAVSSupport()))
+	if(!(m_sysinfo->hasAvisynth()))
 	{
 		log(tr("\nAVS INPUT REQUIRES AVISYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
 		return false;
@@ -188,7 +188,7 @@ void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<
 
 	if(line.contains("failed to load avisynth.dll", Qt::CaseInsensitive))
 	{
-		log(tr("\nWarning: It seems that %1-Bit Avisynth is not currently installed !!!").arg(m_preferences->getUseAvisyth64Bit() ? "64" : "32"));
+		log(tr("\nWarning: It seems that Avisynth is not currently installed/available !!!"));
 	}
 	if(line.contains(QRegExp("couldn't convert input clip to (YV16|YV24)", Qt::CaseInsensitive)))
 	{

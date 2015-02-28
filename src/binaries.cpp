@@ -93,7 +93,7 @@ QString AVS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
 
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	return AVS_BINARY(sysinfo, preferences->getUseAvisyth64Bit() && sysinfo->hasX64Support());
+	return AVS_BINARY(sysinfo, preferences->getPrefer64BitSource() && sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64));
 }
 
 /* --- VapurSynth --- */
@@ -105,12 +105,7 @@ QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	if(sysinfo->hasVPS32Support() && sysinfo->hasVPS64Support() && sysinfo->hasX64Support())
-	{
-		return VPS_BINARY(sysinfo, preferences->getUseAvisyth64Bit());
-	}
-	else
-	{
-		return VPS_BINARY(sysinfo, (sysinfo->hasVPS64Support() && sysinfo->hasX64Support()));
-	}
+	const bool vps32 = sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86);
+	const bool vps64 = sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64) && sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64);
+	return VPS_BINARY(sysinfo, (vps32 && vps64) ? preferences->getPrefer64BitSource() : vps64);
 }

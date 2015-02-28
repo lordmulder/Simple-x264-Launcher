@@ -141,7 +141,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
 Please be aware that this option does NOT have any effect on 32-Bit systems.</string>
             </property>
             <property name="text">
-             <string>Use 64-Bit Avisynth/Avs2YUV, if running on a 64-Bit machine</string>
+             <string>Prefer 64-Bit source (Avisynth/VapourSynth) on 64-Bit systems</string>
             </property>
            </widget>
           </item>

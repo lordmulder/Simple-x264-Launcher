@@ -505,7 +505,7 @@ void AddJobDialog::modeIndexChanged(int index)
 void AddJobDialog::accept(void)
 {
 	//Check 64-Bit support
-	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->hasX64Support()))
+	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64)))
 	{
 		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("<nobr>Sorry, this computer does <b>not</b> support 64-Bit encoders!</nobr>"));
 		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x32);
@@ -554,7 +554,7 @@ void AddJobDialog::accept(void)
 	const int sourceType = MediaInfo::analyze(sourceFile.canonicalFilePath());
 	if(sourceType == MediaInfo::FILETYPE_AVISYNTH)
 	{
-		if(!m_sysinfo->hasAVSSupport())
+		if(!m_sysinfo->hasAvisynth())
 		{
 			if(QMessageBox::warning(this, tr("Avisynth unsupported!"), tr("<nobr>An Avisynth script was selected as input, although Avisynth is <b>not</b> available!</nobr>"), tr("Abort"), tr("Ignore (at your own risk!)")) != 1)
 			{
@@ -564,7 +564,7 @@ void AddJobDialog::accept(void)
 	}
 	else if(sourceType == MediaInfo::FILETYPE_VAPOURSYNTH)
 	{
-		if(!(m_sysinfo->hasVPS32Support() || m_sysinfo->hasVPS64Support()))
+		if(!m_sysinfo->hasAvisynth())
 		{
 			if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ignore (at your own risk!)")) != 1)
 			{

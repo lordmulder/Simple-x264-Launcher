@@ -24,23 +24,28 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QString>
+#include <QFlags>
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#define SYSINFO_MAKE_FLAG(NAME, VALUE) \
+#define SYSINFO_MAKE_FLAG(NAME) \
 	protected: \
-		static const unsigned int FLAG_HAS_##NAME = VALUE; \
+		QFlags<NAME##_t> m_flag##NAME; \
 	public: \
-		inline void set##NAME##Support(const bool &enable) \
+		inline void set##NAME(const NAME##_t &flag, const bool &enable) \
 		{ \
 			QMutexLocker lock(&m_mutex); \
-			if(enable) setFlag(FLAG_HAS_##NAME); else clrFlag(FLAG_HAS_##NAME); \
+			if(enable) m_flag##NAME |= flag; else m_flag##NAME &= (~flag); \
 		} \
-		inline bool has##NAME##Support(void) const \
+		inline bool get##NAME(const NAME##_t &flag) const \
 		{ \
 			QMutexLocker lock(&m_mutex); \
-			const bool enabeld = ((m_flags & (FLAG_HAS_##NAME)) == FLAG_HAS_##NAME); \
-			return enabeld; \
+			return m_flag##NAME.testFlag(flag); \
+		} \
+		inline bool has##NAME(void) const \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			return !!m_flag##NAME; \
 		}
 
 #define SYSINFO_MAKE_PATH(NAME) \
@@ -64,23 +69,38 @@
 class SysinfoModel
 {
 public:
-	SysinfoModel(void) { m_flags = 0; }
-
-	SYSINFO_MAKE_FLAG(X64,   0x00000001)
-	SYSINFO_MAKE_FLAG(MMX,   0x00000002)
-	SYSINFO_MAKE_FLAG(SSE,   0x00000004)
-	SYSINFO_MAKE_FLAG(AVS,   0x00000008)
-	SYSINFO_MAKE_FLAG(VPS32, 0x00000010)
-	SYSINFO_MAKE_FLAG(VPS64, 0x00000020)
+	SysinfoModel(void) {}
 	
+	typedef enum _CPUFeatures_t
+	{
+		CPUFeatures_MMX = 0x1,
+		CPUFeatures_SSE = 0x2,
+		CPUFeatures_X64 = 0x4,
+	}
+	CPUFeatures_t;
+
+	typedef enum _Avisynth_t
+	{
+		Avisynth_X86 = 0x1,
+		Avisynth_X64 = 0x2,
+	}
+	Avisynth_t;
+
+	typedef enum _VapourSynth_t
+	{
+		VapourSynth_X86 = 0x1,
+		VapourSynth_X64 = 0x2,
+	}
+	VapourSynth_t;
+
+	SYSINFO_MAKE_FLAG(CPUFeatures)
+	SYSINFO_MAKE_FLAG(Avisynth)
+	SYSINFO_MAKE_FLAG(VapourSynth)
+
 	SYSINFO_MAKE_PATH(VPS)
 	SYSINFO_MAKE_PATH(App)
 
 protected:
-	inline void setFlag(const unsigned int &flag) { m_flags = (m_flags | flag);    }
-	inline void clrFlag(const unsigned int &flag) { m_flags = (m_flags & (~flag)); }
-
-	unsigned int m_flags;
 	mutable QMutex m_mutex;
 };
 

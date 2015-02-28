@@ -137,13 +137,13 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	switch(MediaInfo::analyze(m_sourceFileName))
 	{
 	case MediaInfo::FILETYPE_AVISYNTH:
-		if(m_sysinfo->hasAVSSupport())
+		if(m_sysinfo->hasAvisynth())
 		{
 			m_pipedSource = new AvisynthSource   (m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
 		}
 		break;
 	case MediaInfo::FILETYPE_VAPOURSYNTH:
-		if(m_sysinfo->hasVPS32Support() || m_sysinfo->hasVPS64Support())
+		if(m_sysinfo->hasVapourSynth())
 		{
 			m_pipedSource = new VapoursynthSource(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
 		}
@@ -255,8 +255,8 @@ void EncodeThread::encode(void)
 	//Print system info
 	log(tr("\n--- SYSTEMINFO ---\n"));
 	log(tr("Binary Path : %1").arg(QDir::toNativeSeparators(m_sysinfo->getAppPath())));
-	log(tr("Avisynth    : %1").arg(m_sysinfo->hasAVSSupport() ? tr("Yes") : tr("No")));
-	log(tr("VapourSynth : %1").arg((m_sysinfo->hasVPS32Support() || m_sysinfo->hasVPS64Support()) ? tr("Yes") : tr("No")));
+	log(tr("Avisynth    : %1").arg(m_sysinfo->hasAvisynth() ? tr("Yes") : tr("No")));
+	log(tr("VapourSynth : %1").arg(m_sysinfo->hasVapourSynth() ? tr("Yes") : tr("No")));
 
 	//Print encoder settings
 	log(tr("\n--- SETTINGS ---\n"));

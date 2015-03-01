@@ -32,3 +32,5 @@ QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferen
 
 QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64);
 QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);
+
+QString CHK_BINARY(const SysinfoModel *sysinfo, const bool &x64);

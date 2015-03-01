@@ -46,6 +46,11 @@
 		{ \
 			QMutexLocker lock(&m_mutex); \
 			return !!m_flag##NAME; \
+		} \
+		inline void clear##NAME(void) \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			m_flag##NAME &= 0; \
 		}
 
 #define SYSINFO_MAKE_PATH(NAME) \
@@ -62,6 +67,11 @@
 			QMutexLocker lock(&m_mutex); \
 			const QString path = m_path##NAME; \
 			return path; \
+		} \
+		inline void clear##NAME##Path(void) \
+		{ \
+			QMutexLocker lock(&m_mutex); \
+			m_path##NAME.clear(); \
 		}
 
 ///////////////////////////////////////////////////////////////////////////////

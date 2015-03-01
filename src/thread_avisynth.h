@@ -25,38 +25,49 @@
 #include <QMutex>
 
 class QLibrary;
+class SysinfoModel;
+class QFile;
 
 class AvisynthCheckThread : public QThread
 {
 	Q_OBJECT
 
 public:
-	static int detect(volatile double *version);
+	static bool detect(SysinfoModel *sysinfo);
 
 protected:
-	AvisynthCheckThread(void);
+	AvisynthCheckThread(const SysinfoModel *const sysinfo);
 	~AvisynthCheckThread(void);
 
-	bool getSuccess(void) { return m_success; }
+	int getSuccess(void) { return m_success; }
 	bool getException(void) { return m_exception; }
-	double getVersion(void) { return m_version; }
+
+	typedef enum _AvisynthFlags
+	{
+		AVISYNTH_X86 = 0x1,
+		AVISYNTH_X64 = 0x2
+	}
+	AvisynthFlags;
 
 private slots:
 	void start(Priority priority = InheritPriority) { QThread::start(priority); }
 
 private:
 	volatile bool m_exception;
-	volatile bool m_success;
-	volatile double m_version;
+	int m_success;
+	const SysinfoModel *const m_sysinfo;
 
 	static QMutex m_avsLock;
-	static QScopedPointer<QLibrary> m_avsLib;
-	
+	static QScopedPointer<QFile> m_avsDllPath[2];
+
 	//Entry point
 	virtual void run(void);
 
 	//Functions
-	static bool detectAvisynthVersion1(volatile double *version_number, volatile bool *exception);
-	static bool detectAvisynthVersion2(volatile double *version_number, volatile bool *exception);
-	static bool detectAvisynthVersion3(volatile double *version_number);
+	static void detectAvisynthVersion1(int &success, const SysinfoModel *const sysinfo, volatile bool *exception);
+	static void detectAvisynthVersion2(int &success, const SysinfoModel *const sysinfo, volatile bool *exception);
+	static void detectAvisynthVersion3(int &success, const SysinfoModel *const sysinfo);
+
+	//Internal functions
+	static bool checkAvisynth(const SysinfoModel *const sysinfo, QFile *&path, const bool &x64);
 };

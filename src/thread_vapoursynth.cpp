@@ -35,15 +35,18 @@
 
 //Internal
 #include "global.h"
+#include "model_sysinfo.h"
 
 //CRT
 #include <cassert>
 
+//Static
 QMutex VapourSynthCheckThread::m_vpsLock;
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 
 #define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
+#define BOOLIFY(X) ((X) ? '1' : '0')
 
 static inline QString &cleanDir(QString &path)
 {
@@ -62,10 +65,11 @@ static inline QString &cleanDir(QString &path)
 // External API
 //-------------------------------------
 
-int VapourSynthCheckThread::detect(QString &path, VapourSynthType &type)
+bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
 {
-	path.clear();
-	type &= 0;
+	sysinfo->clearVapourSynth();
+	sysinfo->clearVPSPath();
+	
 	QMutexLocker lock(&m_vpsLock);
 
 	QEventLoop loop;
@@ -90,25 +94,28 @@ int VapourSynthCheckThread::detect(QString &path, VapourSynthType &type)
 		qWarning("VapourSynth thread encountered timeout -> probably deadlock!");
 		thread.terminate();
 		thread.wait();
-		return -1;
+		return false;
 	}
 
 	if(thread.getException())
 	{
 		qWarning("VapourSynth thread encountered an exception !!!");
-		return -1;
-	}
-	
-	if(!!thread.getSuccess())
-	{
-		type |= thread.getSuccess();
-		path = thread.getPath();
-		qDebug("VapourSynth check completed successfully.");
-		return 1;
+		return false;
 	}
 
-	qWarning("VapourSynth thread failed to detect installation!");
-	return 0;
+	if(thread.getSuccess())
+	{
+		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X86, thread.getSuccess() & VAPOURSYNTH_X86);
+		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X64, thread.getSuccess() & VAPOURSYNTH_X64);
+		sysinfo->setVPSPath(thread.getPath());
+		qDebug("VapourSynth support is officially enabled now! [x86=%c, x64=%c]", BOOLIFY(sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86)), BOOLIFY(sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64)));
+	}
+	else
+	{
+		qWarning("VapourSynth could not be found -> VapourSynth support disabled!");
+	}
+
+	return true;
 }
 
 //-------------------------------------
@@ -135,7 +142,7 @@ void VapourSynthCheckThread::run(void)
 	detectVapourSynthPath1(m_success, m_vpsPath, &m_exception);
 }
 
-void VapourSynthCheckThread::detectVapourSynthPath1(VapourSynthType &success, QString &path, volatile bool *exception)
+void VapourSynthCheckThread::detectVapourSynthPath1(int &success, QString &path, volatile bool *exception)
 {
 	__try
 	{
@@ -148,7 +155,7 @@ void VapourSynthCheckThread::detectVapourSynthPath1(VapourSynthType &success, QS
 	}
 }
 
-void VapourSynthCheckThread::detectVapourSynthPath2(VapourSynthType &success, QString &path, volatile bool *exception)
+void VapourSynthCheckThread::detectVapourSynthPath2(int &success, QString &path, volatile bool *exception)
 {
 	try
 	{
@@ -161,7 +168,7 @@ void VapourSynthCheckThread::detectVapourSynthPath2(VapourSynthType &success, QS
 	}
 }
 
-void VapourSynthCheckThread::detectVapourSynthPath3(VapourSynthType &success, QString &path)
+void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 {
 	success &= 0;
 	path.clear();

@@ -781,6 +781,7 @@ void MainWindow::init(void)
 			}
 		}
 		binFiles << AVS_BINARY(m_sysinfo.data(), arch == OptionsModel::EncArch_x64);
+		binFiles << CHK_BINARY(m_sysinfo.data(), arch == OptionsModel::EncArch_x64);
 	}
 	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
 	{
@@ -889,9 +890,7 @@ void MainWindow::init(void)
 	if(!arguments.contains(CLI_PARAM_SKIP_AVS_CHECK))
 	{
 		qDebug("[Check for Avisynth support]");
-		volatile double avisynthVersion = 0.0;
-		const int result = AvisynthCheckThread::detect(&avisynthVersion);
-		if(result < 0)
+		if(!AvisynthCheckThread::detect(m_sysinfo.data()))
 		{
 			QString text = tr("A critical error was encountered while checking your Avisynth version.").append("<br>");
 			text += tr("This is most likely caused by an erroneous Avisynth Plugin, please try to clean your Plugins folder!").append("<br>");
@@ -899,25 +898,15 @@ void MainWindow::init(void)
 			int val = QMessageBox::critical(this, tr("Avisynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
-		if(result && (avisynthVersion >= 2.5))
+		else if((!m_sysinfo->hasAvisynth()) && (!m_preferences->getDisableWarnings()))
 		{
-			qDebug("Avisynth support is officially enabled now!");
-			m_sysinfo->setAvisynth(SysinfoModel::Avisynth_X86, true);
-			m_sysinfo->setAvisynth(SysinfoModel::Avisynth_X64, true);
-		}
-		else
-		{
-			if(!m_preferences->getDisableWarnings())
+			QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
+			text += tr("Please download and install Avisynth:").append("<br>").append(LINK(avs_dl_url));
+			int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
+			if(val == 1)
 			{
-				QString text = tr("It appears that Avisynth is <b>not</b> currently installed on your computer.<br>Therefore Avisynth (.avs) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install Avisynth:").append("<br>").append(LINK(avs_dl_url));
-				int val = QMessageBox::warning(this, tr("Avisynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
-				if(val == 1)
-				{
-					m_preferences->setDisableWarnings(true);
-					PreferencesModel::savePreferences(m_preferences.data());
-				}
-
+				m_preferences->setDisableWarnings(true);
+				PreferencesModel::savePreferences(m_preferences.data());
 			}
 		}
 		qDebug(" ");
@@ -930,10 +919,7 @@ void MainWindow::init(void)
 	if(!arguments.contains(CLI_PARAM_SKIP_VPS_CHECK))
 	{
 		qDebug("[Check for VapourSynth support]");
-		VapourSynthCheckThread::VapourSynthType vapoursynthType;
-		QString vapoursynthPath;
-		const int result = VapourSynthCheckThread::detect(vapoursynthPath, vapoursynthType);
-		if(result < 0)
+		if(!VapourSynthCheckThread::detect(m_sysinfo.data()))
 		{
 			QString text = tr("A critical error was encountered while checking your VapourSynth installation.").append("<br>");
 			text += tr("This is most likely caused by an erroneous VapourSynth Plugin, please try to clean your Filters folder!").append("<br>");
@@ -941,26 +927,16 @@ void MainWindow::init(void)
 			const int val = QMessageBox::critical(this, tr("VapourSynth Error"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Quit"), tr("Ignore"));
 			if(val != 1) INIT_ERROR_EXIT();
 		}
-		if(result && (!!vapoursynthType) && (!vapoursynthPath.isEmpty()))
+		else if((!m_sysinfo->hasVapourSynth()) && (!m_preferences->getDisableWarnings()))
 		{
-			qDebug("VapourSynth support is officially enabled now!");
-			m_sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X86, (vapoursynthType.testFlag(VapourSynthCheckThread::VAPOURSYNTH_X86)));
-			m_sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X64, (vapoursynthType.testFlag(VapourSynthCheckThread::VAPOURSYNTH_X64)));
-			m_sysinfo->setVPSPath(vapoursynthPath);
-		}
-		else
-		{
-			if(!m_preferences->getDisableWarnings())
+			QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
+			text += tr("Please download and install VapourSynth (<b>r%1</b> or later) for Windows:").arg(QString::number(vsynth_rev)).append("<br>").append(LINK(vsynth_url)).append("<br><br>");
+			text += tr("Note that Python v3.4 is a prerequisite for installing VapourSynth:").append("<br>").append(LINK(python_url)).append("<br>");
+			const int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
+			if(val == 1)
 			{
-				QString text = tr("It appears that VapourSynth is <b>not</b> currently installed on your computer.<br>Therefore VapourSynth (.vpy) input will <b>not</b> be working at all!").append("<br><br>");
-				text += tr("Please download and install VapourSynth (<b>r%1</b> or later) for Windows:").arg(QString::number(vsynth_rev)).append("<br>").append(LINK(vsynth_url)).append("<br><br>");
-				text += tr("Note that Python v3.4 is a prerequisite for installing VapourSynth:").append("<br>").append(LINK(python_url)).append("<br>");
-				const int val = QMessageBox::warning(this, tr("VapourSynth Missing"), QString("<nobr>%1</nobr>").arg(text).replace("-", "&minus;"), tr("Close"), tr("Disable this Warning"));
-				if(val == 1)
-				{
-					m_preferences->setDisableWarnings(true);
-					PreferencesModel::savePreferences(m_preferences.data());
-				}
+				m_preferences->setDisableWarnings(true);
+				PreferencesModel::savePreferences(m_preferences.data());
 			}
 		}
 		qDebug(" ");

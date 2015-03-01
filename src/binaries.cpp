@@ -93,7 +93,9 @@ QString AVS_BINARY(const SysinfoModel *sysinfo, const bool& x64)
 
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences)
 {
-	return AVS_BINARY(sysinfo, preferences->getPrefer64BitSource() && sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64));
+	const bool avs32 = sysinfo->getAvisynth(SysinfoModel::Avisynth_X86);
+	const bool avs64 = sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64);
+	return AVS_BINARY(sysinfo, (avs32 && avs64) ? preferences->getPrefer64BitSource() : avs64);
 }
 
 /* --- VapurSynth --- */
@@ -108,4 +110,11 @@ QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferen
 	const bool vps32 = sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86);
 	const bool vps64 = sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64) && sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64);
 	return VPS_BINARY(sysinfo, (vps32 && vps64) ? preferences->getPrefer64BitSource() : vps64);
+}
+
+/* --- AVS Checker--- */
+
+QString CHK_BINARY(const SysinfoModel *sysinfo, const bool& x64)
+{
+	return QString("%1/toolset/%2/avs_check_%2.exe").arg(sysinfo->getAppPath(), (x64 ? "x64": "x86"));
 }

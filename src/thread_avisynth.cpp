@@ -26,28 +26,59 @@
 #include <QTimer>
 #include <QMutexLocker>
 #include <QApplication>
+#include <QProcess>
+#include <QDir>
 
 //Internal
 #include "global.h"
-#include "3rd_party/avisynth_c.h"
+#include "model_sysinfo.h"
+#include "binaries.h"
 
 //MUtils
 #include <MUtils/Global.h>
+#include <MUtils/OSSupport.h>
 
+//Static
 QMutex AvisynthCheckThread::m_avsLock;
-QScopedPointer<QLibrary> AvisynthCheckThread::m_avsLib;
+QScopedPointer<QFile> AvisynthCheckThread::m_avsDllPath[2];
+
+#define BOOLIFY(X) ((X) ? '1' : '0')
+
+class Wow64RedirectionDisabler
+{
+public:
+	Wow64RedirectionDisabler(void)
+	{
+		m_oldValue = NULL;
+		m_disabled = MUtils::OS::wow64fsredir_disable(m_oldValue);
+	}
+	~Wow64RedirectionDisabler(void)
+	{
+		if(m_disabled)
+		{
+			if(!MUtils::OS::wow64fsredir_revert(m_oldValue))
+			{
+				qWarning("Failed to renable WOW64 filesystem redirection!");
+			}
+		}
+	}
+private:
+	bool  m_disabled;
+	void* m_oldValue;
+};
 
 //-------------------------------------
 // External API
 //-------------------------------------
 
-int AvisynthCheckThread::detect(volatile double *version)
+bool AvisynthCheckThread::detect(SysinfoModel *sysinfo)
 {
-	*version = 0.0;
+	sysinfo->clearAvisynth();
+	double version = 0.0;
 	QMutexLocker lock(&m_avsLock);
 
 	QEventLoop loop;
-	AvisynthCheckThread thread;
+	AvisynthCheckThread thread(sysinfo);
 
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
@@ -68,35 +99,39 @@ int AvisynthCheckThread::detect(volatile double *version)
 		qWarning("Avisynth thread encountered timeout -> probably deadlock!");
 		thread.terminate();
 		thread.wait();
-		return -1;
+		return false;
 	}
 
 	if(thread.getException())
 	{
 		qWarning("Avisynth thread encountered an exception !!!");
-		return -1;
+		return false;
 	}
 	
 	if(thread.getSuccess())
 	{
-		*version = thread.getVersion();
-		qDebug("Version check completed: %.2f", *version);
-		return 1;
+		sysinfo->setAvisynth(SysinfoModel::Avisynth_X86, thread.getSuccess() & AVISYNTH_X86);
+		sysinfo->setAvisynth(SysinfoModel::Avisynth_X64, thread.getSuccess() & AVISYNTH_X64);
+		qDebug("Avisynth support is officially enabled now! [x86=%c, x64=%c]", BOOLIFY(sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)), BOOLIFY(sysinfo->getAvisynth(SysinfoModel::Avisynth_X64)));
+	}
+	else
+	{
+		qWarning("Avisynth could not be found -> Avisynth support disabled!");
 	}
 
-	qWarning("Avisynth thread failed to determine the version!");
-	return 0;
+	return true;
 }
 
 //-------------------------------------
 // Thread class
 //-------------------------------------
 
-AvisynthCheckThread::AvisynthCheckThread(void)
+AvisynthCheckThread::AvisynthCheckThread(const SysinfoModel *const sysinfo)
+:
+	m_sysinfo(sysinfo)
 {
 	m_success = false;
 	m_exception = false;
-	m_version = 0.0;
 }
 
 AvisynthCheckThread::~AvisynthCheckThread(void)
@@ -105,106 +140,179 @@ AvisynthCheckThread::~AvisynthCheckThread(void)
 
 void AvisynthCheckThread::run(void)
 {
-	m_exception = m_success = false;
-	m_success = detectAvisynthVersion1(&m_version, &m_exception);
+	m_exception = false;
+	m_success &= 0;
+
+	detectAvisynthVersion1(m_success, m_sysinfo, &m_exception);
 }
 
-bool AvisynthCheckThread::detectAvisynthVersion1(volatile double *version_number, volatile bool *exception)
+void AvisynthCheckThread::detectAvisynthVersion1(int &success, const SysinfoModel *const sysinfo, volatile bool *exception)
 {
 	__try
 	{
-		return detectAvisynthVersion2(version_number, exception);
+		detectAvisynthVersion2(success, sysinfo, exception);
 	}
 	__except(1)
 	{
 		*exception = true;
 		qWarning("Unhandled exception error in Avisynth thread !!!");
-		return false;
 	}
 }
 
-bool AvisynthCheckThread::detectAvisynthVersion2(volatile double *version_number, volatile bool *exception)
+void AvisynthCheckThread::detectAvisynthVersion2(int &success, const SysinfoModel *const sysinfo, volatile bool *exception)
 {
 	try
 	{
-		return detectAvisynthVersion3(version_number);
+		return detectAvisynthVersion3(success, sysinfo);
 	}
 	catch(...)
 	{
 		*exception = true;
 		qWarning("Avisynth initializdation raised an C++ exception!");
-		return false;
 	}
 }
 
-bool AvisynthCheckThread::detectAvisynthVersion3(volatile double *version_number)
+void AvisynthCheckThread::detectAvisynthVersion3(int &success, const SysinfoModel *const sysinfo)
 {
-	bool success = false;
-	*version_number = 0.0;
+	success &= 0;
 
-	m_avsLib.reset(new QLibrary("avisynth.dll"));
-	if(m_avsLib->isLoaded() || m_avsLib->load())
+	QFile *avsPath32;
+	if(checkAvisynth(sysinfo, avsPath32, false))
 	{
-		avs_create_script_environment_func avs_create_script_environment_ptr = (avs_create_script_environment_func) m_avsLib->resolve("avs_create_script_environment");
-		avs_invoke_func avs_invoke_ptr = (avs_invoke_func) m_avsLib->resolve("avs_invoke");
-		avs_function_exists_func avs_function_exists_ptr = (avs_function_exists_func) m_avsLib->resolve("avs_function_exists");
-		avs_delete_script_environment_func avs_delete_script_environment_ptr = (avs_delete_script_environment_func) m_avsLib->resolve("avs_delete_script_environment");
-		avs_release_value_func avs_release_value_ptr = (avs_release_value_func) m_avsLib->resolve("avs_release_value");
-	
-		if((avs_create_script_environment_ptr != NULL) && (avs_invoke_ptr != NULL) && (avs_function_exists_ptr != NULL))
+		m_avsDllPath[0].reset(avsPath32);
+		success |= AVISYNTH_X86;
+		qDebug("Avisynth 32-Bit edition found!");
+	}
+	else
+	{
+		qDebug("Avisynth 32-Bit edition *not* found!");
+	}
+
+	QFile *avsPath64;
+	if(checkAvisynth(sysinfo, avsPath64, true))
+	{
+		m_avsDllPath[1].reset(avsPath64);
+		success |= AVISYNTH_X64;
+		qDebug("Avisynth 64-Bit edition found!");
+	}
+	else
+	{
+		qDebug("Avisynth 64-Bit edition *not* found!");
+	}
+}
+
+bool AvisynthCheckThread::checkAvisynth(const SysinfoModel *const sysinfo, QFile *&path, const bool &x64)
+{
+	qDebug("Avisynth %s-Bit support is being tested.", x64 ? "64" : "32");
+
+	QProcess process;
+	QStringList output;
+
+	//Setup process object
+	process.setWorkingDirectory(QDir::tempPath());
+	process.setProcessChannelMode(QProcess::MergedChannels);
+	process.setReadChannel(QProcess::StandardOutput);
+
+	//Try to start VSPIPE.EXE
+	process.start(CHK_BINARY(sysinfo, x64), QStringList());
+	if(!process.waitForStarted())
+	{
+		qWarning("Failed to launch AVS_CHECK.EXE -> %s", process.errorString().toUtf8().constData());
+		return false;
+	}
+
+	//Wait for process to finish
+	while(process.state() != QProcess::NotRunning)
+	{
+		if(process.waitForReadyRead(12000))
 		{
-			qDebug("avs_create_script_environment_ptr(AVS_INTERFACE_25)");
-			AVS_ScriptEnvironment* avs_env = avs_create_script_environment_ptr(AVS_INTERFACE_25);
-			if(avs_env != NULL)
+			while(process.canReadLine())
 			{
-				qDebug("avs_function_exists_ptr(avs_env, \"VersionNumber\")");
-				if(avs_function_exists_ptr(avs_env, "VersionNumber"))
-				{
-					qDebug("avs_invoke_ptr(avs_env, \"VersionNumber\", avs_new_value_array(NULL, 0), NULL)");
-					AVS_Value avs_version = avs_invoke_ptr(avs_env, "VersionNumber", avs_new_value_array(NULL, 0), NULL);
-					if(!avs_is_error(avs_version))
-					{
-						if(avs_is_float(avs_version))
-						{
-							qDebug("Avisynth version: v%.2f", avs_as_float(avs_version));
-							*version_number = avs_as_float(avs_version);
-							if(avs_release_value_ptr) avs_release_value_ptr(avs_version);
-							success = true;
-						}
-						else
-						{
-							qWarning("Failed to determine version number, Avisynth didn't return a float!");
-						}
-					}
-					else
-					{
-						qWarning("Failed to determine version number, Avisynth returned an error!");
-					}
-				}
-				else
-				{
-					qWarning("The 'VersionNumber' function does not exist in your Avisynth DLL, can't determine version!");
-				}
-				if(avs_delete_script_environment_ptr != NULL)
-				{
-					avs_delete_script_environment_ptr(avs_env);
-					avs_env = NULL;
-				}
+				output << QString::fromUtf8(process.readLine()).simplified();
 			}
-			else
+			continue;
+		}
+		if(process.state() != QProcess::NotRunning)
+		{
+			qWarning("AVS_CHECK.EXE process encountered a deadlock -> aborting now!");
+			break;
+		}
+	}
+
+	//Make sure VSPIPE.EXE has terminated!
+	process.waitForFinished(2500);
+	if(process.state() != QProcess::NotRunning)
+	{
+		qWarning("AVS_CHECK.EXE process still running, going to kill it!");
+		process.kill();
+		process.waitForFinished(-1);
+	}
+
+	//Read pending lines
+	while(process.canReadLine())
+	{
+		output << QString::fromUtf8(process.readLine()).simplified();
+	}
+
+	//Check exit code
+	if(process.exitCode() != 0)
+	{
+		qWarning("AVS_CHECK.EXE failed with code 0x%08X -> disable Avisynth support!", process.exitCode());
+		return false;
+	}
+
+	//Init regular expressions
+	QRegExp avsLogo("Avisynth\\s+Checker\\s+(x86|x64)");
+	QRegExp avsPath("Avisynth_DLLPath=(.+)");
+	QRegExp avsVers("Avisynth_Version=(\\d+)\\.(\\d+)");
+	
+	//Check for version info
+	bool avisynthLogo = false;
+	quint32 avisynthVersion[2] = { 0, 0 };
+	QString avisynthPath;
+	for(QStringList::ConstIterator iter = output.constBegin(); iter != output.constEnd(); iter++)
+	{
+		if(avisynthLogo)
+		{
+			if(avsPath.indexIn(*iter) >= 0)
 			{
-				qWarning("The Avisynth DLL failed to create the script environment!");
+				avisynthPath =  avsPath.cap(1).trimmed();
+			}
+			else if(avsVers.indexIn(*iter) >= 0)
+			{
+				quint32 temp[2];
+				if(MUtils::regexp_parse_uint32(avsVers, temp, 2))
+				{
+					avisynthVersion[0] = temp[0];
+					avisynthVersion[1] = temp[1];
+				}
 			}
 		}
 		else
 		{
-			qWarning("It seems the Avisynth DLL is missing required API functions!");
+			if(avsLogo.lastIndexIn(*iter) >= 0)
+			{
+				avisynthLogo = true;
+			}
 		}
 	}
-	else
+	
+	//Minimum required version found?
+	if((avisynthVersion[0] >= 2) && (avisynthVersion[1] >= 50) && (!avisynthPath.isEmpty()))
 	{
-		qWarning("Failed to load Avisynth.dll library!");
-	}
+		Wow64RedirectionDisabler disableWow64Redir;
+		path = new QFile(avisynthPath);
+		if(!path->open(QIODevice::ReadOnly))
+		{
+			MUTILS_DELETE(path);
+		}
 
-	return success;
+		qDebug("Avisynth was detected successfully (current version: %u.%02u).", avisynthVersion[0], avisynthVersion[1]);
+		qDebug("Avisynth DLL path: %s", MUTILS_UTF8(avisynthPath));
+		return true;
+	}
+	
+	//Failed to determine version
+	qWarning("Failed to determine Avisynth version!");
+	return false;
 }

@@ -338,7 +338,6 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="src\3rd_party\avisynth_c.h" />
     <ClInclude Include="src\binaries.h" />
     <ClInclude Include="src\cli.h" />
     <ClInclude Include="src\encoder_abstract.h" />

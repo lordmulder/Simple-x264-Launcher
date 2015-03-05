@@ -22,9 +22,6 @@
     <Filter Include="Assembly">
       <UniqueIdentifier>{2c9c8836-2259-4412-894e-7cc32bef99de}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\3rd Party">
-      <UniqueIdentifier>{96b6acbb-5482-407a-8c18-381ec99d13e5}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -59,9 +56,6 @@
     </ClInclude>
     <ClInclude Include="src\job_object.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\3rd_party\avisynth_c.h">
-      <Filter>Header Files\3rd Party</Filter>
     </ClInclude>
     <ClInclude Include="src\cli.h">
       <Filter>Header Files</Filter>

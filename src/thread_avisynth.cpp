@@ -188,16 +188,23 @@ void AvisynthCheckThread::detectAvisynthVersion3(int &success, const SysinfoMode
 		qDebug("Avisynth 32-Bit edition *not* found!");
 	}
 
-	QFile *avsPath64;
-	if(checkAvisynth(sysinfo, avsPath64, true))
+	if(sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64))
 	{
-		m_avsDllPath[1].reset(avsPath64);
-		success |= AVISYNTH_X64;
-		qDebug("Avisynth 64-Bit edition found!");
+		QFile *avsPath64;
+		if(checkAvisynth(sysinfo, avsPath64, true))
+		{
+			m_avsDllPath[1].reset(avsPath64);
+			success |= AVISYNTH_X64;
+			qDebug("Avisynth 64-Bit edition found!");
+		}
+		else
+		{
+			qDebug("Avisynth 64-Bit edition *not* found!");
+		}
 	}
 	else
 	{
-		qDebug("Avisynth 64-Bit edition *not* found!");
+		qWarning("Skipping 64-Bit Avisynth check on non-x64 system!");
 	}
 }
 

@@ -66,8 +66,6 @@ public:
 	MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtils::IPCChannel *const ipcChannel);
 	~MainWindow(void);
 
-	typedef QList<QFile*> QFileList;
-
 protected:
 	virtual void closeEvent(QCloseEvent *e);
 	virtual void showEvent(QShowEvent *e);
@@ -80,7 +78,8 @@ private:
 	MUtils::IPCChannel *const m_ipcChannel;
 
 	bool m_initialized;
-	QScopedPointer<QLabel> m_label;
+	QScopedPointer<QLabel> m_label[2];
+	QScopedPointer<QMovie> m_animation;
 	QScopedPointer<QTimer> m_fileTimer;
 
 	QScopedPointer<IPCThread_Recv>   m_ipcThread;
@@ -94,7 +93,6 @@ private:
 	QScopedPointer<JobListModel> m_jobList;
 	QScopedPointer<OptionsModel> m_options;
 	QScopedPointer<QStringList> m_pendingFiles;
-	QScopedPointer<QFileList> m_toolsList;
 	
 	QScopedPointer<SysinfoModel> m_sysinfo;
 	QScopedPointer<PreferencesModel> m_preferences;

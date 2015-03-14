@@ -274,6 +274,14 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <CustomBuild Include="src\thread_binaries.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <ClInclude Include="tmp\x264_launcher\UIC_win_about.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_addJob.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_editor.h" />
@@ -432,6 +440,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="src\source_avisynth.cpp" />
     <ClCompile Include="src\source_vapoursynth.cpp" />
     <ClCompile Include="src\thread_avisynth.cpp" />
+    <ClCompile Include="src\thread_binaries.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
     <ClCompile Include="src\global.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -451,6 +460,7 @@ copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
     <ClCompile Include="tmp\x264_launcher\MOC_model_jobList.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_model_logFile.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_avisynth.cpp" />
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_binaries.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_encode.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_ipc_recv.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_ipc_send.cpp" />

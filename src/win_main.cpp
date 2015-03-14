@@ -33,6 +33,7 @@
 #include "model_preferences.h"
 #include "model_recently.h"
 #include "thread_avisynth.h"
+#include "thread_binaries.h"
 #include "thread_vapoursynth.h"
 #include "thread_encode.h"
 #include "thread_ipc_recv.h"
@@ -70,6 +71,7 @@
 #include <QSettings>
 #include <QFileDialog>
 #include <QSystemTrayIcon>
+#include <QMovie>
 
 #include <ctime>
 
@@ -87,7 +89,6 @@ static const int   vsynth_rev = 24;
 #define SET_TEXT_COLOR(WIDGET,COLOR) do { QPalette _palette = WIDGET->palette(); _palette.setColor(QPalette::WindowText, (COLOR)); _palette.setColor(QPalette::Text, (COLOR)); WIDGET->setPalette(_palette); } while(0)
 #define LINK(URL) (QString("<a href=\"%1\">%1</a>").arg((URL)))
 #define INIT_ERROR_EXIT() do { close(); qApp->exit(-1); return; } while(0)
-#define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 #define SETUP_WEBLINK(OBJ, URL) do { (OBJ)->setData(QVariant(QUrl(URL))); connect((OBJ), SIGNAL(triggered()), this, SLOT(showWebLink())); } while(0)
 #define APP_IS_READY (m_initialized && (!m_fileTimer->isActive()) && (QApplication::activeModalWidget() == NULL))
 #define ENSURE_APP_IS_READY() do { if(!APP_IS_READY) { 		MUtils::Sound::beep(MUtils::Sound::BEEP_WRN); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
@@ -225,7 +226,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	SETUP_WEBLINK(ui->actionWebAvisynthPlus,    "http://www.avs-plus.net/");
 	SETUP_WEBLINK(ui->actionWebVapourSynth,     "http://www.vapoursynth.com/");
 	SETUP_WEBLINK(ui->actionWebVapourSynthDocs, "http://www.vapoursynth.com/doc/");
-	SETUP_WEBLINK(ui->actionOnlineDocX264,      "http://mewiki.project357.com/wiki/X264_Settings");
+	SETUP_WEBLINK(ui->actionOnlineDocX264,      "http://en.wikibooks.org/wiki/MeGUI/x264_Settings");			//http://mewiki.project357.com/wiki/X264_Settings
 	SETUP_WEBLINK(ui->actionOnlineDocX265,      "http://x265.readthedocs.org/en/default/");
 	SETUP_WEBLINK(ui->actionWebBluRay,          "http://www.x264bluray.com/");
 	SETUP_WEBLINK(ui->actionWebAvsWiki,         "http://avisynth.nl/index.php/Main_Page#Usage");
@@ -233,14 +234,28 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	SETUP_WEBLINK(ui->actionWebSecret,          "http://www.youtube.com/watch_popup?v=AXIeHY-OYNI");
 
 	//Create floating label
-	m_label.reset(new QLabel(ui->jobsView->viewport()));
-	m_label->setText(tr("No job created yet. Please click the 'Add New Job' button!"));
-	m_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-	SET_TEXT_COLOR(m_label, Qt::darkGray);
-	SET_FONT_BOLD(m_label, true);
-	m_label->setVisible(true);
-	m_label->setContextMenuPolicy(Qt::ActionsContextMenu);
-	m_label->addActions(ui->jobsView->actions());
+	m_label[0].reset(new QLabel(ui->jobsView->viewport()));
+	m_label[1].reset(new QLabel(ui->logView->viewport()));
+	if(!m_label[0].isNull())
+	{
+		m_label[0]->setText(tr("No job created yet. Please click the 'Add New Job' button!"));
+		m_label[0]->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+		SET_TEXT_COLOR(m_label[0], Qt::darkGray);
+		SET_FONT_BOLD(m_label[0], true);
+		m_label[0]->setVisible(true);
+		m_label[0]->setContextMenuPolicy(Qt::ActionsContextMenu);
+		m_label[0]->addActions(ui->jobsView->actions());
+	}
+	if(!m_label[1].isNull())
+	{
+		m_animation.reset(new QMovie(":/images/spinner.gif"));
+		m_label[1]->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+		if(!m_animation.isNull())
+		{
+			m_label[1]->setMovie(m_animation.data());
+			m_animation->start();
+		}
+	}
 	connect(ui->splitter, SIGNAL(splitterMoved(int, int)), this, SLOT(updateLabelPos()));
 	updateLabelPos();
 
@@ -277,12 +292,6 @@ MainWindow::~MainWindow(void)
 {
 	OptionsModel::saveTemplate(m_options.data(), QString::fromLatin1(tpl_last));
 	
-	while(!m_toolsList->isEmpty())
-	{
-		QFile *temp = m_toolsList->takeFirst();
-		MUTILS_DELETE(temp);
-	}
-
 	if(!m_ipcThread.isNull())
 	{
 		m_ipcThread->stop();
@@ -374,7 +383,7 @@ void MainWindow::deleteButtonPressed(void)
 	ENSURE_APP_IS_READY();
 
 	m_jobList->deleteJob(ui->jobsView->currentIndex());
-	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+	m_label[0]->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 }
 
 /*
@@ -765,60 +774,17 @@ void MainWindow::init(void)
 
 	updateLabelPos();
 	const MUtils::OS::ArgumentMap &arguments = MUtils::OS::arguments();
+	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
 	//---------------------------------------
 	// Check required binaries
 	//---------------------------------------
-
-	QStringList binFiles;
-	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x32; arch <= OptionsModel::EncArch_x64; NEXT(arch))
-	{
-		for(OptionsModel::EncType encdr = OptionsModel::EncType_X264; encdr <= OptionsModel::EncType_X265; NEXT(encdr))
-		{
-			for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
-			{
-				binFiles << ENC_BINARY(m_sysinfo.data(), encdr, arch, varnt);
-			}
-		}
-		binFiles << AVS_BINARY(m_sysinfo.data(), arch == OptionsModel::EncArch_x64);
-		binFiles << CHK_BINARY(m_sysinfo.data(), arch == OptionsModel::EncArch_x64);
-	}
-	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
-	{
-		if(UpdaterDialog::BINARIES[i].exec)
-		{
-			binFiles << QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(UpdaterDialog::BINARIES[i].name));
-		}
-	}
 		
 	qDebug("[Validating binaries]");
-	for(QStringList::ConstIterator iter = binFiles.constBegin(); iter != binFiles.constEnd(); iter++)
+	if(!BinariesCheckThread::check(m_sysinfo.data()))
 	{
-		qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-		QFile *file = new QFile(*iter);
-		qDebug("%s", file->fileName().toLatin1().constData());
-		if(file->open(QIODevice::ReadOnly))
-		{
-			if(!MUtils::OS::is_executable_file(file->fileName()))
-			{
-				QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is not a valid Win32 or Win64 binary:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(file->fileName())).replace("-", "&minus;"));
-				qFatal(QString("Binary is invalid: %1").arg(file->fileName()).toLatin1().constData());
-				MUTILS_DELETE(file);
-				INIT_ERROR_EXIT();
-			}
-			if(m_toolsList.isNull())
-			{
-				m_toolsList.reset(new QFileList());
-			}
-			m_toolsList->append(file);
-		}
-		else
-		{
-			QMessageBox::critical(this, tr("File Not Found!"), tr("<nobr>At least on required tool could not be found:<br><tt style=\"whitespace:nowrap\">%1</tt><br><br>Please re-install the program in order to fix the problem!</nobr>").arg(QDir::toNativeSeparators(file->fileName())).replace("-", "&minus;"));
-			qFatal(QString("Binary not found: %1/toolset/%2").arg(m_sysinfo->getAppPath(), file->fileName()).toLatin1().constData());
-			MUTILS_DELETE(file);
-			INIT_ERROR_EXIT();
-		}
+		QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least on required tool is missing or is not a valid Win32/Win64 binary.<br>Please re-install the program in order to fix the problem!</nobr>").replace("-", "&minus;"));
+		qFatal("At least on required tool is missing or is not a valid Win32/Win64 binary!");
 	}
 	qDebug(" ");
 	
@@ -851,6 +817,8 @@ void MainWindow::init(void)
 		if(rnd != val) INIT_ERROR_EXIT();
 	}
 
+	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+
 	//---------------------------------------
 	// Check CPU capabilities
 	//---------------------------------------
@@ -882,6 +850,8 @@ void MainWindow::init(void)
 		qWarning("Deadlock detection disabled, you have been warned!\n");
 		m_preferences->setAbortOnTimeout(false);
 	}
+
+	qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
 	//---------------------------------------
 	// Check Avisynth support
@@ -943,6 +913,17 @@ void MainWindow::init(void)
 	}
 	
 	//---------------------------------------
+	// Create the IPC listener thread
+	//---------------------------------------
+
+	if(m_ipcChannel)
+	{
+		m_ipcThread.reset(new IPCThread_Recv(m_ipcChannel));
+		connect(m_ipcThread.data(), SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
+		m_ipcThread->start();
+	}
+
+	//---------------------------------------
 	// Finish initialization
 	//---------------------------------------
 
@@ -954,6 +935,16 @@ void MainWindow::init(void)
 
 	//Update flag
 	m_initialized = true;
+
+	//Hide the spinner animation
+	if(!m_label[1].isNull())
+	{
+		if(!m_animation.isNull())
+		{
+			m_animation->stop();
+		}
+		m_label[1]->setVisible(false);
+	}
 
 	//---------------------------------------
 	// Check for Expiration
@@ -1007,21 +998,10 @@ void MainWindow::init(void)
 		}
 	}
 
-	//---------------------------------------
-	// Create the IPC listener thread
-	//---------------------------------------
-
-	if(m_ipcChannel)
-	{
-		m_ipcThread.reset(new IPCThread_Recv(m_ipcChannel));
-		connect(m_ipcThread.data(), SIGNAL(receivedCommand(int,QStringList,quint32)), this, SLOT(handleCommand(int,QStringList,quint32)), Qt::QueuedConnection);
-		m_ipcThread->start();
-	}
-
 	//Load queued jobs
 	if(m_jobList->loadQueuedJobs(m_sysinfo.data()) > 0)
 	{
-		m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+		m_label[0]->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 		m_jobList->clearQueuedJobs();
 	}
 }
@@ -1031,8 +1011,15 @@ void MainWindow::init(void)
  */
 void MainWindow::updateLabelPos(void)
 {
-	const QWidget *const viewPort = ui->jobsView->viewport();
-	m_label->setGeometry(0, 0, viewPort->width(), viewPort->height());
+	for(int i = 0; i < 2; i++)
+	{
+		//const QWidget *const viewPort = ui->jobsView->viewport();
+		const QWidget *const viewPort = dynamic_cast<QWidget*>(m_label[i]->parent());
+		if(viewPort)
+		{
+			m_label[i]->setGeometry(0, 0, viewPort->width(), viewPort->height());
+		}
+	}
 }
 
 /*
@@ -1467,7 +1454,7 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 		okay = true;
 	}
 
-	m_label->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
+	m_label[0]->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 	return okay;
 }
 

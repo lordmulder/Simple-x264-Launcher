@@ -111,6 +111,9 @@
     <ClInclude Include="tmp\x264_launcher\UIC_win_updater.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\thread_binaries.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -258,6 +261,12 @@
       <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="tmp\x264_launcher\MOC_thread_vapoursynth.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_binaries.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_binaries.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>

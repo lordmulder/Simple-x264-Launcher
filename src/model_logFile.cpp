@@ -26,6 +26,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDir>
+#include <QTextStream>
 
 LogFileModel::LogFileModel(const QString &sourceName, const QString &outputName, const QString &configName)
 {
@@ -90,6 +91,37 @@ void LogFileModel::copyToClipboard(void)
 {
 	QClipboard *clipboard = QApplication::clipboard();
 	clipboard->setText(m_lines.join("\r\n"));
+}
+
+bool  LogFileModel::saveToLocalFile(const QString &fileName)
+{
+	QFile file(fileName);
+	if(!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+	{
+		return false;
+	}
+
+	QTextStream out(&file);
+	out.setCodec("UTF-8");
+	for(QStringList::ConstIterator iter = m_lines.constBegin(); iter != m_lines.constEnd(); iter++)
+	{
+		out << (*iter) << QLatin1String("\r\n");
+		if(out.status() != QTextStream::Status::Ok)
+		{
+			file.close();
+			return false;
+		}
+	}
+
+	out.flush();
+	if(out.status() != QTextStream::Status::Ok)
+	{
+		file.close();
+		return false;
+	}
+
+	file.close();
+	return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

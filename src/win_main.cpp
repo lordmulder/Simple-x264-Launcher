@@ -187,9 +187,21 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 
 	//Create context menu
 	QAction *actionClipboard = new QAction(QIcon(":/buttons/page_paste.png"), tr("Copy to Clipboard"), ui->logView);
+	QAction *actionSaveToLog = new QAction(QIcon(":/buttons/disk.png"), tr("Save to File..."), ui->logView);
+	QAction *actionSeparator = new QAction(ui->logView);
+	QAction *actionWordwraps = new QAction(QIcon(":/buttons/text_wrapping.png"), tr("Enable Line-Wrapping"), ui->logView);
+	actionSeparator->setSeparator(true);
+	actionWordwraps->setCheckable(true);
 	actionClipboard->setEnabled(false);
+	actionSaveToLog->setEnabled(false);
+	actionWordwraps->setEnabled(false);
 	ui->logView->addAction(actionClipboard);
+	ui->logView->addAction(actionSaveToLog);
+	ui->logView->addAction(actionSeparator);
+	ui->logView->addAction(actionWordwraps);
 	connect(actionClipboard, SIGNAL(triggered(bool)), this, SLOT(copyLogToClipboard(bool)));
+	connect(actionSaveToLog, SIGNAL(triggered(bool)), this, SLOT(saveLogToLocalFile(bool)));
+	connect(actionWordwraps, SIGNAL(triggered(bool)), this, SLOT(toggleLineWrapping(bool)));
 	ui->jobsView->addActions(ui->menuJob->actions());
 
 	//Enable buttons
@@ -497,7 +509,10 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 	{
 		ui->logView->setModel(m_jobList->getLogFile(current));
 		connect(ui->logView->model(), SIGNAL(rowsInserted(QModelIndex, int, int)), this, SLOT(jobLogExtended(QModelIndex, int, int)));
-		ui->logView->actions().first()->setEnabled(true);
+		foreach(QAction *action, ui->logView->actions())
+		{
+			action->setEnabled(true);
+		}
 		QTimer::singleShot(0, ui->logView, SLOT(scrollToBottom()));
 
 		ui->progressBar->setValue(m_jobList->getJobProgress(current));
@@ -508,7 +523,10 @@ void MainWindow::jobSelected(const QModelIndex & current, const QModelIndex & pr
 	else
 	{
 		ui->logView->setModel(NULL);
-		ui->logView->actions().first()->setEnabled(false);
+		foreach(QAction *action, ui->logView->actions())
+		{
+			action->setEnabled(false);
+		}
 		ui->progressBar->setValue(0);
 		ui->editDetails->clear();
 		updateButtons(JobStatus_Undefined);
@@ -1034,6 +1052,36 @@ void MainWindow::copyLogToClipboard(bool checked)
 		log->copyToClipboard();
 		MUtils::Sound::beep(MUtils::Sound::BEEP_NFO);
 	}
+}
+
+/*
+ * Save log to local file
+ */
+void MainWindow::saveLogToLocalFile(bool checked)
+{
+	ENSURE_APP_IS_READY();
+
+	const QModelIndex index = ui->jobsView->currentIndex();
+	const QString initialName = index.isValid() ? QFileInfo(m_jobList->getJobOutputFile(index)).completeBaseName() : tr("Logfile");
+	const QString fileName = QFileDialog::getSaveFileName(this, tr("Save Log File"), initialName, tr("Log File (*.log)"));
+	if(!fileName.isEmpty())
+	{
+		if(LogFileModel *log = dynamic_cast<LogFileModel*>(ui->logView->model()))
+		{
+			if(!log->saveToLocalFile(fileName))
+			{
+				QMessageBox::warning(this, this->windowTitle(), tr("Error: Log file could not be saved!"));
+			}
+		}
+	}
+}
+
+/*
+ * Toggle line-wrapping
+ */
+void MainWindow::toggleLineWrapping(bool checked)
+{
+	ui->logView->setWordWrap(checked);
 }
 
 /*

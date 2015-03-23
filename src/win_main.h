@@ -116,6 +116,8 @@ private slots:
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);
 	void copyLogToClipboard(bool checked);
+	void saveLogToLocalFile(bool checked);
+	void toggleLineWrapping(bool checked);
 	void checkUpdates(void);
 	void handlePendingFiles(void);
 	void init(void);

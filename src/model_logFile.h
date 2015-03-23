@@ -44,6 +44,7 @@ public:
 	virtual QVariant data(const QModelIndex &index, int role) const;
 
 	void copyToClipboard(void);
+	bool saveToLocalFile(const QString &fileName);
 
 protected:
 	QStringList m_lines;

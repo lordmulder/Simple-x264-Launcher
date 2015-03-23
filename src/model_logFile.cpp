@@ -101,20 +101,22 @@ bool  LogFileModel::saveToLocalFile(const QString &fileName)
 		return false;
 	}
 
-	QTextStream out(&file);
-	out.setCodec("UTF-8");
+	QTextStream stream(&file);
+	stream.setCodec("UTF-8");
+	stream.setGenerateByteOrderMark(true);
+
 	for(QStringList::ConstIterator iter = m_lines.constBegin(); iter != m_lines.constEnd(); iter++)
 	{
-		out << (*iter) << QLatin1String("\r\n");
-		if(out.status() != QTextStream::Status::Ok)
+		stream << (*iter) << QLatin1String("\r\n");
+		if(stream.status() != QTextStream::Status::Ok)
 		{
 			file.close();
 			return false;
 		}
 	}
 
-	out.flush();
-	if(out.status() != QTextStream::Status::Ok)
+	stream.flush();
+	if(stream.status() != QTextStream::Status::Ok)
 	{
 		file.close();
 		return false;

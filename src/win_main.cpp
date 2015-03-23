@@ -690,21 +690,7 @@ void MainWindow::saveLogFile(const QModelIndex &index)
 		{
 			QDir(QString("%1/logs").arg(x264_data_path())).mkpath(".");
 			QString logFilePath = QString("%1/logs/LOG.%2.%3.txt").arg(x264_data_path(), QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate).replace(':', "-"));
-			QFile outFile(logFilePath);
-			if(outFile.open(QIODevice::WriteOnly))
-			{
-				QTextStream outStream(&outFile);
-				outStream.setCodec("UTF-8");
-				outStream.setGenerateByteOrderMark(true);
-				
-				const int rows = log->rowCount(QModelIndex());
-				for(int i = 0; i < rows; i++)
-				{
-					outStream << log->data(log->index(i, 0, QModelIndex()), Qt::DisplayRole).toString() << QLatin1String("\r\n");
-				}
-				outFile.close();
-			}
-			else
+			if(!log->saveToLocalFile(logFilePath))
 			{
 				qWarning("Failed to open log file for writing:\n%s", logFilePath.toUtf8().constData());
 			}

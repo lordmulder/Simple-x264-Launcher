@@ -111,9 +111,6 @@
     <ClInclude Include="tmp\x264_launcher\UIC_win_updater.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_binaries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -341,6 +338,9 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\thread_ipc_recv.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_binaries.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

@@ -56,7 +56,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;QT_DEBUG;QT_DLL;QT_GUI_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\MUtilities\include;$(SolutionDir)\tmp\$(ProjectName);$(SolutionDir)\etc\vld\include;$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\MUtilities\include;$(SolutionDir)\tmp\$(ProjectName);$(SolutionDir)\..\Prerequisites\VisualLeakDetector\include;$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
       <OmitFramePointers>false</OmitFramePointers>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
@@ -65,12 +65,12 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)etc\vld\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Debug\lib;$(SolutionDir)\..\Prerequisites\VisualLeakDetector\lib\$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QtCored4.lib;QtGuid4.lib;Winmm.lib;Psapi.lib;SensAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>x264_entry_point</EntryPointSymbol>
     </Link>
     <PostBuildEvent>
-      <Command>del /S /Q "$(TargetDir)\Qt*.dll"
+      <Command>del /S /Q   "$(TargetDir)\Qt*.dll"
 rmdir /S /Q "$(TargetDir)\toolset"
 rmdir /S /Q "$(TargetDir)\imageformats"
 
@@ -87,17 +87,17 @@ copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
 copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
 
 for %%i in (QtCored4, QtGuid4, QtSvgd4, QtXmld4) do (
-    copy /Y "$(QTDIR)\bin\%%i.dll" "$(TargetDir)"
-    copy /Y "$(QTDIR)\bin\%%i.pdb" "$(TargetDir)"
+    copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Debug\bin\%%i.dll" "$(TargetDir)"
+    copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Debug\bin\%%i.pdb" "$(TargetDir)"
 )
 
 for %%i in (qicod4, qsvgd4, qjpegd4, qtiffd4, qgifd4) do (
-    copy /Y "$(QTDIR)\plugins\imageformats\%%i.dll" "$(TargetDir)\imageformats"
-    copy /Y "$(QTDIR)\plugins\imageformats\%%i.pdb" "$(TargetDir)\imageformats"
+    copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Debug\plugins\imageformats\%%i.dll" "$(TargetDir)\imageformats"
+    copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Debug\plugins\imageformats\%%i.pdb" "$(TargetDir)\imageformats"
 )
 
-copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.dll" "$(TargetDir)"
-copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.manifest" "$(TargetDir)"
+copy /Y "$(SolutionDir)\..\Prerequisites\VisualLeakDetector\bin\$(Platform)\*.dll"      "$(TargetDir)"
+copy /Y "$(SolutionDir)\..\Prerequisites\VisualLeakDetector\bin\$(Platform)\*.manifest" "$(TargetDir)"
 </Command>
     </PostBuildEvent>
     <PostBuildEvent>
@@ -116,7 +116,7 @@ copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.manifest" "$(T
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;QT_NO_DEBUG;QT_DLL;QT_GUI_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\..\MUtilities\include;$(SolutionDir)\tmp\$(ProjectName);$(SolutionDir)\etc\vld\include;$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\..\MUtilities\include;$(SolutionDir)\tmp\$(ProjectName);$(SolutionDir)\..\Prerequisites\VisualLeakDetector\include;$(QTDIR)\include;$(QTDIR)\include\QtCore;$(QTDIR)\include\QtGui;$(QTDIR)\include\QtTest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -135,7 +135,7 @@ copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.manifest" "$(T
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QtCore4.lib;QtGui4.lib;Winmm.lib;dwmapi.lib;Psapi.lib;SensAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
@@ -159,23 +159,26 @@ copy /Y "$(SolutionDir)etc\vld\lib\$(Platform)\$(Configuration)\*.manifest" "$(T
       <Command>del /S /Q "$(TargetDir)\Qt*.dll"
 rmdir /S /Q "$(TargetDir)\toolset"
 rmdir /S /Q "$(TargetDir)\imageformats"
+
 mkdir "$(TargetDir)\toolset\x86"
 mkdir "$(TargetDir)\toolset\x64"
 mkdir "$(TargetDir)\toolset\common"
 mkdir "$(TargetDir)\imageformats"
+
 copy /Y "$(SolutionDir)res\toolset\x86\*.exe" "$(TargetDir)\toolset\x86\"
 copy /Y "$(SolutionDir)res\toolset\x64\*.exe" "$(TargetDir)\toolset\x64\"
 copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
 copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
-copy /Y "$(QTDIR)\bin\QtCore4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\bin\QtGui4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\bin\QtSvg4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\bin\QtXml4.dll" "$(TargetDir)"
-copy /Y "$(QTDIR)\plugins\imageformats\qico4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qsvg4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qjpeg4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qtiff4.dll" "$(TargetDir)\imageformats"
-copy /Y "$(QTDIR)\plugins\imageformats\qgif4.dll" "$(TargetDir)\imageformats"
+
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtCore4.dll" "$(TargetDir)"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtGui4.dll"  "$(TargetDir)"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtSvg4.dll"  "$(TargetDir)"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtXml4.dll"  "$(TargetDir)"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\plugins\imageformats\qico4.dll"  "$(TargetDir)\imageformats"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\plugins\imageformats\qsvg4.dll"  "$(TargetDir)\imageformats"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\plugins\imageformats\qjpeg4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\plugins\imageformats\qtiff4.dll" "$(TargetDir)\imageformats"
+copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\MSVC-2013\Shared\plugins\imageformats\qgif4.dll"  "$(TargetDir)\imageformats"
 </Command>
       <Message>Copy Toolset</Message>
     </PostBuildEvent>

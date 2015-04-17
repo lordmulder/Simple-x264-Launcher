@@ -7,6 +7,7 @@
 /src/*.h.bak
 /etc/_old_
 /etc/sources/*.tar
+/etc/sources/*.tar.xz
 /gui/_old_
 /History*.txt
 *.sdf

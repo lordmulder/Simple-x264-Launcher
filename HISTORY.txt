@@ -2,7 +2,13 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.51 [2015-04-26]
+* Fixe regression: Config files were stored in a wrong directory
+* Updated x265 to version 1.6+239
+
 Version 2.50 [2015-04-17]
+* Simple x264/x265 Launcher is based on the MUtilities library
+* Updated Qt runtime libraries to v4.8.7 snapshot-5 (2015-03-25)
 * Overhauled startup code + show spinner while initializing
 * Much improved Avisynth and VapourSynth detection code
 * Added option to prefer 64-Bit VapourSynth, when available

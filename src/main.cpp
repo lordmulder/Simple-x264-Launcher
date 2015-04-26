@@ -144,7 +144,7 @@ static int simple_x264_main(int &argc, char **argv)
 	qDebug(" Number of CPU's  :  %d\n", cpuFeatures.count);
 
 	//Initialize Qt
-	QScopedPointer<QApplication> application(MUtils::Startup::create_qt(argc, argv, QLatin1String("LameXP - Audio Encoder Front-End")));
+	QScopedPointer<QApplication> application(MUtils::Startup::create_qt(argc, argv, QLatin1String("Simple x264 Launcher")));
 	if(application.isNull())
 	{
 		return EXIT_FAILURE;

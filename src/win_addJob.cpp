@@ -92,6 +92,27 @@
 Q_DECLARE_METATYPE(const void*)
 
 ///////////////////////////////////////////////////////////////////////////////
+// Disable Monitoring RAII
+///////////////////////////////////////////////////////////////////////////////
+
+class DisableHelperRAII
+{
+public:
+	DisableHelperRAII(bool *const flag) : m_flag(flag)
+	{
+		*m_flag = false;
+	}
+
+	~DisableHelperRAII(void)
+	{
+		*m_flag = true;
+	}
+
+private:
+	bool *const m_flag;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // Validator
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -245,7 +266,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	m_preferences(preferences),
 	m_defaults(new OptionsModel(sysinfo)),
 	ui(new Ui::AddJobDialog()),
-	m_monitorConfigChanges(true)
+	m_monitorConfigChanges(false)
 {
 	//Init the dialog, from the .ui file
 	ui->setupUi(this);
@@ -328,6 +349,10 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	//Setup template selector
 	loadTemplateList();
 	connect(ui->cbxTemplate, SIGNAL(currentIndexChanged(int)), this, SLOT(templateSelected()));
+
+	//Force initial UI update
+	encoderIndexChanged(ui->cbxEncoderType->currentIndex());
+	m_monitorConfigChanges = true;
 }
 
 AddJobDialog::~AddJobDialog(void)
@@ -1035,7 +1060,7 @@ void AddJobDialog::updateComboBox(QComboBox *const cbox, const int &data)
 	{
 		for(int i = 0; i < cbox->model()->rowCount(); i++)
 		{
-			if(model->itemData(model->index(i, 0, QModelIndex())).value(Qt::UserRole).toInt() == index)
+			if(cbox->itemData(i).toInt() == data)
 			{
 				index = i;
 				break;
@@ -1047,8 +1072,7 @@ void AddJobDialog::updateComboBox(QComboBox *const cbox, const int &data)
 
 void AddJobDialog::restoreOptions(const OptionsModel *options)
 {
-	//Ignore config changes while restoring template!
-	m_monitorConfigChanges = false;
+	DisableHelperRAII disbale(&m_monitorConfigChanges);
 
 	updateComboBox(ui->cbxEncoderType,     options->encType());
 	updateComboBox(ui->cbxEncoderArch,     options->encArch());
@@ -1064,12 +1088,6 @@ void AddJobDialog::restoreOptions(const OptionsModel *options)
 
 	ui->editCustomX264Params   ->setText(options->customEncParams());
 	ui->editCustomAvs2YUVParams->setText(options->customAvs2YUV());
-
-	//Force UI update
-	encoderIndexChanged(ui->cbxEncoderType->currentIndex());
-
-	//Make sure we will monitor config changes again!
-	m_monitorConfigChanges = true;
 }
 
 void AddJobDialog::saveOptions(OptionsModel *options)

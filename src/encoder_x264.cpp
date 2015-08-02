@@ -338,21 +338,30 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 		cmdLine << "--stats" << QDir::toNativeSeparators(passLogFile);
 	}
 
-	cmdLine << "--preset" << m_options->preset().toLower();
-
-	if(!m_options->tune().simplified().isEmpty())
+	const QString preset = m_options->preset().simplified().toLower();
+	if(!preset.isEmpty())
 	{
-		if(m_options->tune().simplified().compare(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED), Qt::CaseInsensitive) != 0)
+		if(preset.compare(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED), Qt::CaseInsensitive) != 0)
 		{
-			cmdLine << "--tune" << m_options->tune().simplified().toLower();
+			cmdLine << "--preset" << preset;
 		}
 	}
 
-	if(!m_options->profile().simplified().isEmpty())
+	const QString tune = m_options->tune().simplified().toLower();
+	if(!tune.isEmpty())
 	{
-		if(m_options->profile().simplified().compare(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED), Qt::CaseInsensitive) != 0)
+		if(tune.compare(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED), Qt::CaseInsensitive) != 0)
 		{
-			cmdLine << "--profile" << m_options->profile().simplified().toLower();
+			cmdLine << "--tune" << tune;
+		}
+	}
+
+	const QString profile = m_options->profile().simplified().toLower();
+	if(!profile.isEmpty())
+	{
+		if(profile.compare(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED), Qt::CaseInsensitive) != 0)
+		{
+			cmdLine << "--profile" << profile;
 		}
 	}
 

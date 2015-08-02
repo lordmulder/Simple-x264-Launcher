@@ -294,7 +294,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	ui->cbxRateControlMode->addItem(tr("ABR"),    OptionsModel::RCMode_ABR);
 
 	//Init combobox items
-	ui->cbxTuning ->addItem(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+	ui->cbxTuning ->addItem(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED));
 	ui->cbxProfile->addItem(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
 
 	//Hide optional controls
@@ -524,7 +524,7 @@ void AddJobDialog::encoderIndexChanged(int index)
 	{
 		ui->cbxPreset->setEnabled(true);
 		ui->cbxPreset->clear();
-		ui->cbxPreset->addItem(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+		ui->cbxPreset->addItem(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED));
 		ui->cbxPreset->addItems(presets);
 	}
 
@@ -539,7 +539,7 @@ void AddJobDialog::encoderIndexChanged(int index)
 	{
 		ui->cbxTuning->setEnabled(true);
 		ui->cbxTuning->clear();
-		ui->cbxTuning->addItem(QString::fromLatin1(OptionsModel::TUNING_UNSPECIFIED));
+		ui->cbxTuning->addItem(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED));
 		ui->cbxTuning->addItems(tunings);
 	}
 

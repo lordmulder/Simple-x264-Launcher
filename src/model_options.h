@@ -74,7 +74,7 @@ public:
 		RCMode_MAX   = RCMode_ABR,
 	};
 
-	static const char *const TUNING_UNSPECIFIED;
+	static const char *const SETTING_UNSPECIFIED;
 	static const char *const PROFILE_UNRESTRICTED;
 
 	//Getter

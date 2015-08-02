@@ -29,7 +29,7 @@ public:
 	AvisynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile);
 	virtual ~AvisynthSource(void);
 	
-	virtual const QString &getName(void);
+	virtual QString getName(void) const;
 
 	virtual bool isSourceAvailable(void);
 	virtual QString printVersion(const unsigned int &revision, const bool &modified);
@@ -44,7 +44,8 @@ protected:
 
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen);
-	virtual const QString &getBinaryPath() { return m_binaryFile; }
+
+	virtual QString getBinaryPath() const { return m_binaryFile; }
 	virtual void buildCommandLine(QStringList &cmdLine);
 
 	const QString m_sourceName;

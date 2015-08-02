@@ -30,60 +30,6 @@
 //MUtils
 #include <MUtils/Exception.h>
 
-/* --- Encooders --- */
-
-QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel::EncType &encType, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant)
-{
-	QString baseName, arch, variant;
-
-	//Encoder Type
-	switch(encType)
-	{
-		case OptionsModel::EncType_X264: baseName = "x264"; break;
-		case OptionsModel::EncType_X265: baseName = "x265"; break;
-	}
-	
-	//Architecture
-	switch(encArch)
-	{
-		case OptionsModel::EncArch_x32: arch = "x86"; break;
-		case OptionsModel::EncArch_x64: arch = "x64"; break;
-	}
-
-	//Encoder Variant
-	switch(encVariant)
-	{
-	case OptionsModel::EncVariant_LoBit:
-		switch(encType)
-		{
-			case OptionsModel::EncType_X264:
-			case OptionsModel::EncType_X265: variant = "8bit"; break;
-		}
-		break;
-	case OptionsModel::EncVariant_HiBit:
-		switch(encType)
-		{
-			case OptionsModel::EncType_X264: variant = "10bit"; break;
-			case OptionsModel::EncType_X265: variant = "16bit"; break;
-		}
-		break;
-	}
-
-	//Sanity check
-	if(baseName.isEmpty() || arch.isEmpty() || variant.isEmpty())
-	{
-		MUTILS_THROW("Failed to determine the encoder binarty path!");
-	}
-
-	//Return path
-	return QString("%1/toolset/%2/%3_%4_%2.exe").arg(sysinfo->getAppPath(), arch, baseName, variant);
-}
-
-QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options)
-{
-	return ENC_BINARY(sysinfo, options->encType(), options->encArch(), options->encVariant());
-}
-
 /* --- Avisynth --- */
 
 QString AVS_BINARY(const SysinfoModel *sysinfo, const bool& x64)

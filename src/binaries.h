@@ -24,9 +24,6 @@
 class SysinfoModel;
 class PreferencesModel;
 
-QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel *options);
-QString ENC_BINARY(const SysinfoModel *sysinfo, const OptionsModel::EncType &encType, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant);
-
 QString AVS_BINARY(const SysinfoModel *sysinfo, const bool &x64);
 QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);
 

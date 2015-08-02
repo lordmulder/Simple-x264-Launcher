@@ -48,7 +48,7 @@ VapoursynthSource::~VapoursynthSource(void)
 	/*Nothing to do here*/
 }
 
-const QString &VapoursynthSource::getName(void)
+QString VapoursynthSource::getName(void) const
 {
 	return m_sourceName;
 }

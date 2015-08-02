@@ -6,6 +6,7 @@ set "MSVC_PATH=C:\Program Files\Microsoft Visual Studio 12.0\VC"
 set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
 set "UPX3_PATH=C:\Program Files\UPX"
 set "PDOC_PATH=C:\Program Files\Pandoc"
+set "TOOLS_VER=120"
 
 REM ###############################################
 REM # DO NOT MODIFY ANY LINES BELOW THIS LINE !!! #
@@ -99,17 +100,13 @@ copy "%~dp0\*.txt"                                  "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
 REM ///////////////////////////////////////////////////////////////////////////
-for %%i in (100, 110, 120) do (
-	if exist "%MSVC_PATH%\redist\x86\Microsoft.VC%%i.CRT\*.dll" (
-		copy "%MSVC_PATH%\redist\x86\Microsoft.VC%%i.CRT\msvc?%%i.dll" "%PACK_PATH%"
-	)
-)
-copy "%~dp0\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtCore4.dll" "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtGui4.dll"  "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtSvg4.dll"  "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtXml4.dll"  "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\MSVC-2013\Shared\bin\QtXml4.dll"  "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\MSVC-2013\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
+copy "%MSVC_PATH%\redist\x86\Microsoft.VC%TOOLS_VER%.CRT\*.dll"                     "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtCore4.dll"            "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtGui4.dll"             "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtSvg4.dll"             "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
 del "%PACK_PATH%\imageformats\*d4.dll" 2> NUL
 
 REM ///////////////////////////////////////////////////////////////////////////

@@ -787,8 +787,8 @@ void MainWindow::init(void)
 	qDebug("[Validating binaries]");
 	if(!BinariesCheckThread::check(m_sysinfo.data()))
 	{
-		QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least one required tool is missing or is not a valid Win32/Win64 binary.<br>Please re-install the program in order to fix the problem!</nobr>").replace("-", "&minus;"));
-		qFatal("At least one required tool is missing or is not a valid Win32/Win64 binary!");
+		QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least one tool is missing or is not a valid Win32/Win64 binary.<br>Please re-install the program in order to fix the problem!</nobr>").replace("-", "&minus;"));
+		qFatal("At least one tool is missing or is not a valid Win32/Win64 binary!");
 	}
 	qDebug(" ");
 	

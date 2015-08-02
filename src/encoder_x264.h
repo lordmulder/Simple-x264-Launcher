@@ -29,7 +29,7 @@ public:
 	X264Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
 	virtual ~X264Encoder(void);
 
-	virtual const QString &getName(void);
+	virtual QString getName(void) const;
 
 	virtual QString printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
@@ -37,7 +37,7 @@ public:
 	static const AbstractEncoderInfo& getEncoderInfo(void);
 
 protected:
-	virtual const QString &getBinaryPath() { return m_binaryFile; }
+	virtual QString getBinaryPath() const { return getEncoderInfo().getBinaryPath(m_sysinfo, m_options->encArch(), m_options->encVariant()); }
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile);
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
@@ -46,6 +46,4 @@ protected:
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
 	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass, double &last_progress, double &size_estimate);
 
-	const QString m_encoderName;
-	const QString m_binaryFile;
 };

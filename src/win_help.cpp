@@ -26,6 +26,7 @@
 #include "global.h"
 #include "model_options.h"
 #include "binaries.h"
+#include "encoder_factory.h"
 
 //MUtils
 #include <MUtils/Sound.h>
@@ -86,7 +87,7 @@ void HelpDialog::showEvent(QShowEvent *event)
 
 	if(!m_avs2yuv)
 	{
-		m_process->start(ENC_BINARY(m_sysinfo, m_options), QStringList() << "--version");
+		m_process->start(EncoderFactory::getEncoderInfo(m_options->encType()).getBinaryPath(m_sysinfo, m_options->encArch(), m_options->encVariant()), QStringList() << "--version");
 	}
 	else
 	{
@@ -135,7 +136,7 @@ void HelpDialog::finished(void)
 		m_startAgain = false;
 		if(!m_avs2yuv)
 		{
-			m_process->start(ENC_BINARY(m_sysinfo, m_options), QStringList() << "--fullhelp");
+			m_process->start(EncoderFactory::getEncoderInfo(m_options->encType()).getBinaryPath(m_sysinfo, m_options->encArch(), m_options->encVariant()), QStringList() << "--fullhelp");
 			ui->plainTextEdit->appendPlainText("\n--------\n");
 
 			if(!m_process->waitForStarted())

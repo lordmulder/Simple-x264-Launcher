@@ -51,7 +51,7 @@ AvisynthSource::~AvisynthSource(void)
 	/*Nothing to do here*/
 }
 
-const QString &AvisynthSource::getName(void)
+QString AvisynthSource::getName(void) const
 {
 	return m_sourceName;
 }

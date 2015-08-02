@@ -27,6 +27,7 @@
 #include "model_status.h"
 #include "binaries.h"
 #include "mediainfo.h"
+#include "model_sysinfo.h"
 
 //MUtils
 #include <MUtils/Exception.h>
@@ -37,8 +38,8 @@
 #include <QRegExp>
 
 //x265 version info
-static const unsigned int VERSION_X265_MINIMUM_VER =  16;
-static const unsigned int VERSION_X265_MINIMUM_REV = 239;
+static const unsigned int VERSION_X265_MINIMUM_VER =  17;
+static const unsigned int VERSION_X265_MINIMUM_REV = 382;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -82,13 +83,6 @@ while(0)
 } \
 while(0)
 
-static QString MAKE_NAME(const char *baseName, const OptionsModel *options)
-{
-	const QString arch = (options->encArch() == OptionsModel::EncArch_x64) ? "x64" : "x86";
-	const QString vari = (options->encVariant() == OptionsModel::EncVariant_HiBit ) ? "16-Bit" : "8-Bit";
-	return QString("%1, %2, %3").arg(QString::fromLatin1(baseName), arch, vari);
-}
-
 // ------------------------------------------------------------
 // Encoder Info
 // ------------------------------------------------------------
@@ -96,17 +90,13 @@ static QString MAKE_NAME(const char *baseName, const OptionsModel *options)
 class X265EncoderInfo : public AbstractEncoderInfo
 {
 public:
-	virtual QString getVariantId(const int &variant) const
+	virtual QFlags<OptionsModel::EncVariant> getVariants(void) const
 	{
-		switch(variant)
-		{
-		case OptionsModel::EncVariant_LoBit:
-			return QString::fromLatin1("8-Bit");
-		case OptionsModel::EncVariant_HiBit:
-			return QString::fromLatin1("16-Bit");
-		default:
-			return QString::fromLatin1("N/A");
-		}
+		QFlags<OptionsModel::EncVariant> variants;
+		variants |= OptionsModel::EncVariant_8Bit;
+		variants |= OptionsModel::EncVariant_10Bit;
+		variants |= OptionsModel::EncVariant_12Bit;
+		return variants;
 	}
 
 	virtual QStringList getTunings(void) const
@@ -118,7 +108,20 @@ public:
 
 	virtual QStringList getProfiles(const int &variant) const
 	{
-		return QStringList();
+		QStringList profiles;
+		switch(variant)
+		{
+		case OptionsModel::EncVariant_8Bit:
+			profiles << "main" << "main-intra" << "mainstillpicture" << "main444-8" << "main444-intra" << "main444-stillpicture";
+			break;
+		case OptionsModel::EncVariant_10Bit:
+			profiles << "main10" << "main10-intra" << "main422-10" << "main422-10-intra" << "main444-10" << "main444-10-intra";
+			break;
+		case OptionsModel::EncVariant_12Bit:
+			profiles << "main12" << "main12-intra" << "main422-12" << "main422-12-intra" << "main444-12" << "main444-12-intra";
+			break;
+		}
+		return profiles;
 	}
 
 	virtual QStringList supportedOutputFormats(void) const
@@ -152,6 +155,25 @@ public:
 			return false;
 		}
 	}
+
+	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const
+	{
+		QString arch, variant;
+		switch(encArch)
+		{
+			case OptionsModel::EncArch_x86_32: arch = "x86"; break;
+			case OptionsModel::EncArch_x86_64: arch = "x64"; break;
+			default: MUTILS_THROW("Unknown encoder arch!");
+		}
+		switch(encVariant)
+		{
+			case OptionsModel::EncVariant_8Bit:  variant = "8bit";  break;
+			case OptionsModel::EncVariant_10Bit: variant = "10bit"; break;
+			case OptionsModel::EncVariant_12Bit: variant = "12bit"; break;
+			default: MUTILS_THROW("Unknown encoder arch!");
+		}
+		return QString("%1/toolset/%2/x265_%3_%2.exe").arg(sysinfo->getAppPath(), arch, variant);
+	}
 };
 
 static const X265EncoderInfo s_x265EncoderInfo;
@@ -167,9 +189,7 @@ const AbstractEncoderInfo &X265Encoder::getEncoderInfo(void)
 
 X265Encoder::X265Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile)
 :
-	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile),
-	m_encoderName(MAKE_NAME("x265 (H.265/HEVC)", m_options)),
-	m_binaryFile(ENC_BINARY(sysinfo, options))
+	AbstractEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile)
 {
 	if(options->encType() != OptionsModel::EncType_X265)
 	{
@@ -182,9 +202,23 @@ X265Encoder::~X265Encoder(void)
 	/*Nothing to do here*/
 }
 
-const QString &X265Encoder::getName(void)
+QString X265Encoder::getName(void) const
 {
-	return m_encoderName;
+	QString arch, variant;
+	switch(m_options->encArch())
+	{
+		case OptionsModel::EncArch_x86_32: arch = "x86"; break;
+		case OptionsModel::EncArch_x86_64: arch = "x64"; break;
+		default: MUTILS_THROW("Unknown encoder arch!");
+	}
+	switch(m_options->encVariant())
+	{
+		case OptionsModel::EncVariant_8Bit:  variant = "8-Bit";  break;
+		case OptionsModel::EncVariant_10Bit: variant = "10-Bit"; break;
+		case OptionsModel::EncVariant_12Bit: variant = "12-Bit"; break;
+		default: MUTILS_THROW("Unknown encoder arch!");
+	}
+	return QString("x265 (H.265/HEVC), %1, %2").arg(arch, variant);
 }
 
 // ------------------------------------------------------------
@@ -303,11 +337,11 @@ void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 		}
 	}
 
-	if(m_options->profile().compare("auto", Qt::CaseInsensitive) != 0)
+	if(!m_options->profile().simplified().isEmpty())
 	{
-		if((m_options->encType() == OptionsModel::EncType_X264) && (m_options->encVariant() == OptionsModel::EncVariant_LoBit))
+		if(m_options->profile().simplified().compare(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED), Qt::CaseInsensitive) != 0)
 		{
-			cmdLine << "--profile" << m_options->profile().toLower();
+			cmdLine << "--profile" << m_options->profile().simplified().toLower();
 		}
 	}
 

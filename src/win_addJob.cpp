@@ -35,6 +35,7 @@
 
 //MUtils
 #include <MUtils/Global.h>
+#include <MUtils/Exception.h>
 
 //Qt
 #include <QDate>
@@ -56,6 +57,7 @@
 
 #define ARRAY_SIZE(ARRAY) (sizeof((ARRAY))/sizeof((ARRAY[0])))
 #define VALID_DIR(PATH) ((!(PATH).isEmpty()) && QFileInfo(PATH).exists() && QFileInfo(PATH).isDir())
+#define SHFL(X) ((*reinterpret_cast<int*>(&(X))) <<= 1)
 
 #define REMOVE_USAFED_ITEM \
 { \
@@ -86,6 +88,18 @@
 	_action->setSeparator(true); \
 	WIDGET->addAction(_action); \
 } 
+
+static void setIndexByData(QComboBox *const box, const int &data)
+{
+	for(int i = 0; i < box->count(); i++)
+	{
+		if(box->itemData(i).toInt() == data)
+		{
+			box->setCurrentIndex(i);
+			break;
+		}
+	}
+}
 
 Q_DECLARE_METATYPE(const void*)
 
@@ -453,8 +467,23 @@ void AddJobDialog::encoderIndexChanged(int index)
 	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(ui->cbxEncoderType->currentIndex());
 
 	//Update encoder variants
-	ui->cbxEncoderVariant->setItemText(OptionsModel::EncVariant_LoBit, encoderInfo.getVariantId(OptionsModel::EncVariant_LoBit));
-	ui->cbxEncoderVariant->setItemText(OptionsModel::EncVariant_HiBit, encoderInfo.getVariantId(OptionsModel::EncVariant_HiBit));
+	const QFlags<OptionsModel::EncVariant> variants = encoderInfo.getVariants();
+	ui->cbxEncoderVariant->clear();
+	for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_MIN; varnt <= OptionsModel::EncVariant_MAX; SHFL(varnt))
+	{
+		if(variants.testFlag(varnt))
+		{
+			QString varntText;
+			switch(varnt)
+			{
+				case OptionsModel::EncVariant_8Bit:  varntText = tr("8-Bit");  break;
+				case OptionsModel::EncVariant_10Bit: varntText = tr("10-Bit"); break;
+				case OptionsModel::EncVariant_12Bit: varntText = tr("12-Bit"); break;
+				default: MUTILS_THROW("Bad encoder variant!");
+			}
+			ui->cbxEncoderVariant->addItem(varntText, QVariant(varnt));
+		}
+	}
 
 	//Update tunings
 	QStringList tunings = encoderInfo.getTunings();
@@ -505,10 +534,10 @@ void AddJobDialog::modeIndexChanged(int index)
 void AddJobDialog::accept(void)
 {
 	//Check 64-Bit support
-	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x64) && (!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64)))
+	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x86_64) && (!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64)))
 	{
 		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("<nobr>Sorry, this computer does <b>not</b> support 64-Bit encoders!</nobr>"));
-		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x32);
+		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x86_32);
 		return;
 	}
 	
@@ -984,10 +1013,10 @@ void AddJobDialog::restoreOptions(const OptionsModel *options)
 	//Ignore config changes while restoring template!
 	m_monitorConfigChanges = false;
 
-	ui->cbxEncoderType    ->setCurrentIndex(options->encType());
-	ui->cbxEncoderArch    ->setCurrentIndex(options->encArch());
-	ui->cbxEncoderVariant ->setCurrentIndex(options->encVariant());
-	ui->cbxRateControlMode->setCurrentIndex(options->rcMode());
+	ui->cbxEncoderType     ->setCurrentIndex(options->encType());
+	ui->cbxEncoderArch     ->setCurrentIndex(options->encArch());
+	setIndexByData(ui->cbxEncoderVariant, options->encVariant());
+	ui->cbxRateControlMode -> setCurrentIndex(options->rcMode());
 
 	ui->spinQuantizer->setValue(options->quantizer());
 	ui->spinBitrate  ->setValue(options->bitrate());
@@ -1007,7 +1036,7 @@ void AddJobDialog::saveOptions(OptionsModel *options)
 {
 	options->setEncType(static_cast<OptionsModel::EncType>(ui->cbxEncoderType->currentIndex()));
 	options->setEncArch(static_cast<OptionsModel::EncArch>(ui->cbxEncoderArch->currentIndex()));
-	options->setEncVariant(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant->currentIndex()));
+	options->setEncVariant(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant->itemData(ui->cbxEncoderVariant->currentIndex()).toInt()));
 	options->setRCMode(static_cast<OptionsModel::RCMode>(ui->cbxRateControlMode->currentIndex()));
 	
 	options->setQuantizer(ui->spinQuantizer->value());
@@ -1206,3 +1235,5 @@ QString AddJobDialog::getInputFilterLst(void)
 	filters << QString("All files (*.*)");
 	return filters.join(";;");
 }
+
+

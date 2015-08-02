@@ -34,6 +34,7 @@
 #include "model_sysinfo.h"
 #include "win_updater.h"
 #include "binaries.h"
+#include "encoder_factory.h"
 
 //MUtils
 #include <MUtils/Global.h>
@@ -45,6 +46,7 @@ QScopedPointer<QFile> BinariesCheckThread::m_binPath[MAX_BINARIES];
 
 //Whatever
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
+#define SHFL(X) ((*reinterpret_cast<int*>(&(X))) <<= 1)
 
 //-------------------------------------
 // External API
@@ -141,17 +143,25 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 
 	//Create list of all required binary files
 	QStringList binFiles;
-	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x32; arch <= OptionsModel::EncArch_x64; NEXT(arch))
+	for(OptionsModel::EncType encdr = OptionsModel::EncType_X264; encdr <= OptionsModel::EncType_X265; NEXT(encdr))
 	{
-		for(OptionsModel::EncType encdr = OptionsModel::EncType_X264; encdr <= OptionsModel::EncType_X265; NEXT(encdr))
+		const AbstractEncoderInfo &encInfo = EncoderFactory::getEncoderInfo(encdr);
+		const QFlags<OptionsModel::EncVariant> variants = encInfo.getVariants();
+		for(OptionsModel::EncArch arch = OptionsModel::EncArch_x86_32; arch <= OptionsModel::EncArch_x86_64; NEXT(arch))
 		{
-			for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_LoBit; varnt <= OptionsModel::EncVariant_HiBit; NEXT(varnt))
+			for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_MIN; varnt <= OptionsModel::EncVariant_MAX; SHFL(varnt))
 			{
-				binFiles << ENC_BINARY(sysinfo, encdr, arch, varnt);
+				if(variants.testFlag(varnt))
+				{
+					binFiles << encInfo.getBinaryPath(sysinfo, arch, varnt);
+				}
 			}
 		}
-		binFiles << AVS_BINARY(sysinfo, arch == OptionsModel::EncArch_x64);
-		binFiles << CHK_BINARY(sysinfo, arch == OptionsModel::EncArch_x64);
+	}
+	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x86_32; arch <= OptionsModel::EncArch_x86_64; NEXT(arch))
+	{
+		binFiles << AVS_BINARY(sysinfo, arch == OptionsModel::EncArch_x86_64);
+		binFiles << CHK_BINARY(sysinfo, arch == OptionsModel::EncArch_x86_64);
 	}
 	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
 	{
@@ -173,7 +183,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 			if(!MUtils::OS::is_executable_file(file->fileName()))
 			{
 				success = false;
-				qWarning("Required tool does NOT seem to be a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));
+				qWarning("Required tool does NOT look like a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));
 				return;
 			}
 			if(currentFile < MAX_BINARIES)

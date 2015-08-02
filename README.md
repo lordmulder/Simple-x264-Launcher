@@ -35,7 +35,7 @@ The minimum system requirements to run Simple x264/x265 Launcher are as follows:
 * Windows XP with Service Pack 2 or any later Windows system &ndash; note that Windows XP is **not** recommended!
 * 64-Bit editions of Windows are highly recommended, though 32-Bit editions will work as well
 * The CPU must support at least the MMX and SSE instruction sets
-* Avisynth input only available with [Avisynth](http://avisynth.nl/index.php/Main_Page#Official_builds) **2.5+** installed &ndash; note that Avisynth **2.6** is recommended these days!
+* Avisynth input only available with [Avisynth](http://avisynth.nl/index.php/Main_Page#Official_builds) **2.6** installed &ndash; Avisynth **2.5.x** is *not* recommended!
 * VapourSynth input only available with [VapourSynth](http://www.vapoursynth.com/) **r24+** installed &ndash; [Python](https://www.python.org/downloads/windows/) is a prerequisite for VapourSynth!
 * YV16/YV24 color spaces require Avisynth 2.6 (see section 10)
 

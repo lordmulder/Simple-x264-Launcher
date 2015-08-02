@@ -57,8 +57,8 @@ const char *const OptionsModel::PROFILE_UNRESTRICTED = "<Unrestricted>";
 OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 {
 	m_encoderType = EncType_X264;
-	m_encoderArch = sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) ? EncArch_x64 : EncArch_x32;
-	m_encoderVariant = EncVariant_LoBit;
+	m_encoderArch = sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) ? EncArch_x86_64 : EncArch_x86_32;
+	m_encoderVariant = EncVariant_8Bit;
 	m_rcMode = RCMode_CRF;
 	m_bitrate = 1200;
 	m_quantizer = 22;
@@ -272,8 +272,8 @@ void OptionsModel::fixTemplate(QSettings &settingsFile)
 	if(!(settingsFile.contains(KEY_ENCODER_TYPE) || settingsFile.contains(KEY_ENCODER_ARCH) || settingsFile.contains(KEY_ENCODER_VARIANT)))
 	{
 		settingsFile.setValue(KEY_ENCODER_TYPE,    OptionsModel::EncType_X264);
-		settingsFile.setValue(KEY_ENCODER_ARCH,    OptionsModel::EncArch_x32);
-		settingsFile.setValue(KEY_ENCODER_VARIANT, OptionsModel::EncVariant_LoBit);
+		settingsFile.setValue(KEY_ENCODER_ARCH,    OptionsModel::EncArch_x86_32);
+		settingsFile.setValue(KEY_ENCODER_VARIANT, OptionsModel::EncVariant_8Bit);
 	}
 
 	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };

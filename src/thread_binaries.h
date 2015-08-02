@@ -50,7 +50,7 @@ private:
 	volatile bool m_success;
 	const SysinfoModel *const m_sysinfo;
 
-	static const size_t MAX_BINARIES = 16;
+	static const size_t MAX_BINARIES = 32;
 	static QMutex m_binLock;
 	static QScopedPointer<QFile> m_binPath[MAX_BINARIES];
 

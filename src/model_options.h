@@ -39,26 +39,39 @@ public:
 	{
 		EncType_X264 = 0,
 		EncType_X265 = 1,
+
+		EncType_MIN  = EncType_X264,
+		EncType_MAX  = EncType_X265,
 	};
 
 	enum EncArch
 	{
-		EncArch_x32 = 0,
-		EncArch_x64 = 1
+		EncArch_x86_32 = 0,
+		EncArch_x86_64 = 1,
+
+		EncArch_MIN    = EncArch_x86_32,
+		EncArch_MAX    = EncArch_x86_64
 	};
 
 	enum EncVariant
 	{
-		EncVariant_LoBit = 0, // 8-Bit
-		EncVariant_HiBit = 1, //10-Bit (x264) or 16-Bit (x265)
+		EncVariant_8Bit  = 1,
+		EncVariant_10Bit = 2,
+		EncVariant_12Bit = 4,
+
+		EncVariant_MIN   = EncVariant_8Bit,
+		EncVariant_MAX   = EncVariant_12Bit
 	};
 
 	enum RCMode
 	{
-		RCMode_CRF = 0,
-		RCMode_CQ = 1,
+		RCMode_CRF   = 0,
+		RCMode_CQ    = 1,
 		RCMode_2Pass = 2,
-		RCMode_ABR = 3,
+		RCMode_ABR   = 3,
+
+		RCMode_MIN   = RCMode_CRF,
+		RCMode_MAX   = RCMode_ABR,
 	};
 
 	static const char *const TUNING_UNSPECIFIED;
@@ -79,8 +92,8 @@ public:
 
 	//Setter
 	void setEncType(EncType type) { m_encoderType = qBound(EncType_X264, type, EncType_X265); }
-	void setEncArch(EncArch arch) { m_encoderArch = qBound(EncArch_x32, arch, EncArch_x64); }
-	void setEncVariant(EncVariant variant) { m_encoderVariant = qBound(EncVariant_LoBit, variant, EncVariant_HiBit); }
+	void setEncArch(EncArch arch) { m_encoderArch = qBound(EncArch_x86_32, arch, EncArch_x86_64); }
+	void setEncVariant(EncVariant variant) { m_encoderVariant = qBound(EncVariant_8Bit, variant, EncVariant_12Bit); }
 	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
 	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(10U, bitrate, 800000U); }
 	void setQuantizer(double quantizer) { m_quantizer = qBound(0.0, quantizer, 52.0); }

@@ -33,8 +33,8 @@
 #include "global.h"
 #include "model_sysinfo.h"
 #include "win_updater.h"
-#include "binaries.h"
 #include "encoder_factory.h"
+#include "source_factory.h"
 
 //MUtils
 #include <MUtils/Global.h>
@@ -47,6 +47,9 @@ QScopedPointer<QFile> BinariesCheckThread::m_binPath[MAX_BINARIES];
 //Whatever
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 #define SHFL(X) ((*reinterpret_cast<int*>(&(X))) <<= 1)
+
+//External
+QString AVS_CHECK_BINARY(const SysinfoModel *sysinfo, const bool& x64);
 
 //-------------------------------------
 // External API
@@ -158,10 +161,10 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 			}
 		}
 	}
-	for(OptionsModel::EncArch arch = OptionsModel::EncArch_x86_32; arch <= OptionsModel::EncArch_x86_64; NEXT(arch))
+	for(int i = 0; i < 2; i++)
 	{
-		binFiles << AVS_BINARY(sysinfo, arch == OptionsModel::EncArch_x86_64);
-		binFiles << CHK_BINARY(sysinfo, arch == OptionsModel::EncArch_x86_64);
+		binFiles << SourceFactory::getSourceInfo(SourceFactory::SourceType_AVS).getBinaryPath(sysinfo, bool(i));
+		binFiles << AVS_CHECK_BINARY(sysinfo, bool(i));
 	}
 	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
 	{

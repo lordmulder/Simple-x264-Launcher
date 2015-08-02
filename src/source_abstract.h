@@ -22,10 +22,17 @@
 #pragma once
 
 #include "tool_abstract.h"
+#include "model_options.h"
 
 class QRegExp;
 template<class T> class QList;
 class QProcess;
+
+class AbstractSourceInfo
+{
+public:
+	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const bool& x64) const = 0;
+};
 
 class AbstractSource : public AbstractTool
 {
@@ -37,6 +44,8 @@ public:
 	virtual bool checkSourceProperties(unsigned int &frames);
 	virtual bool createProcess(QProcess &processEncode, QProcess&processInput);
 	virtual void flushProcess(QProcess &processInput) = 0;
+
+	static const AbstractSourceInfo& getSourceInfo(void);
 
 protected:
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;

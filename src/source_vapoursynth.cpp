@@ -24,9 +24,6 @@
 #include "source_vapoursynth.h"
 
 #include "global.h"
-#include "model_sysinfo.h"
-#include "model_preferences.h"
-#include "binaries.h"
 
 #include <QDir>
 #include <QProcess>
@@ -34,11 +31,33 @@
 static const unsigned int VER_X264_VSPIPE_API =  3;
 static const unsigned int VER_X264_VSPIPE_VER = 24;
 
+// ------------------------------------------------------------
+// Encoder Info
+// ------------------------------------------------------------
+
+class VapoursyntSourceInfo : public AbstractSourceInfo
+{
+public:
+	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const bool& x64) const
+	{
+		return QString("%1/core%2/vspipe.exe").arg(sysinfo->getVPSPath(), (x64 ? "64" : "32"));
+	}
+};
+
+static const VapoursyntSourceInfo s_vapoursynthEncoderInfo;
+
+const AbstractSourceInfo &VapoursynthSource::getSourceInfo(void)
+{
+	return s_vapoursynthEncoderInfo;
+}
+
+// ------------------------------------------------------------
+// Constructor & Destructor
+// ------------------------------------------------------------
+
 VapoursynthSource::VapoursynthSource(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile)
 :
-	AbstractSource(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile),
-	m_sourceName("VapourSynth (vpy)"),
-	m_binaryFile(VPS_BINARY(m_sysinfo, m_preferences))
+	AbstractSource(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile)
 {
 	/*Nothing to do here*/
 }
@@ -50,7 +69,7 @@ VapoursynthSource::~VapoursynthSource(void)
 
 QString VapoursynthSource::getName(void) const
 {
-	return m_sourceName;
+	return tr("VapourSynth (vpy)");
 }
 
 // ------------------------------------------------------------
@@ -59,7 +78,7 @@ QString VapoursynthSource::getName(void) const
 
 bool VapoursynthSource::isSourceAvailable()
 {
-	if(!(m_sysinfo->hasVapourSynth() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(VPS_BINARY(m_sysinfo, m_preferences)).isFile()))
+	if(!(m_sysinfo->hasVapourSynth() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(getBinaryPath()).isFile()))
 	{
 		log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
 		return false;

@@ -253,16 +253,6 @@
                <property name="currentIndex">
                 <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>x264 (AVC)</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>x265 (HEVC)</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>
@@ -303,16 +293,6 @@
                <property name="currentIndex">
                 <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>32-Bit (x86)</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>64-Bit (x86_64)</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>
@@ -353,16 +333,6 @@
                <property name="currentIndex">
                 <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>8-Bit</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>10-Bit</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>
@@ -425,26 +395,6 @@
                <property name="currentIndex">
                 <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>CRF</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>CQ</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>2-Pass</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>ABR</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>
@@ -618,56 +568,6 @@
                <property name="currentIndex">
                 <number>-1</number>
                </property>
-               <item>
-                <property name="text">
-                 <string>Ultrafast</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Superfast</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Veryfast</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Faster</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Fast</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Medium</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Slow</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Slower</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Veryslow</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Placebo</string>
-                </property>
-               </item>
               </widget>
              </item>
             </layout>

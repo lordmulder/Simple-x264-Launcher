@@ -63,9 +63,6 @@
     <ClInclude Include="src\model_sysinfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\binaries.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\encoder_abstract.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -110,6 +107,9 @@
     </ClInclude>
     <ClInclude Include="tmp\x264_launcher\UIC_win_updater.h">
       <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\source_factory.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -162,9 +162,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\win_updater.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\binaries.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\encoder_abstract.cpp">
@@ -265,6 +262,9 @@
     </ClCompile>
     <ClCompile Include="tmp\x264_launcher\MOC_thread_binaries.cpp">
       <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\source_factory.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

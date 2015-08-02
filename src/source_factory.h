@@ -19,15 +19,25 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "model_options.h"
+#pragma once
 
-class SysinfoModel;
-class PreferencesModel;
+#include "source_abstract.h"
 
-QString AVS_BINARY(const SysinfoModel *sysinfo, const bool &x64);
-QString AVS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);
+class SourceFactory
+{
+public:
+	enum SourceType
+	{
+		SourceType_AVS = 0,
+		SourceType_VPS = 1,
 
-QString VPS_BINARY(const SysinfoModel *sysinfo, const bool& x64);
-QString VPS_BINARY(const SysinfoModel *sysinfo, const PreferencesModel *preferences);
+		SourceType_MIN = SourceType_AVS,
+		SourceType_MAX = SourceType_VPS
+	};
 
-QString CHK_BINARY(const SysinfoModel *sysinfo, const bool &x64);
+	static AbstractSource *createSource(const SourceType &type, JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile);
+	static const AbstractSourceInfo& getSourceInfo(const SourceType &type);
+
+private:
+	SourceFactory(void) {/*Disabled*/}
+};

@@ -27,15 +27,13 @@
 #include "model_preferences.h"
 #include "model_sysinfo.h"
 #include "job_object.h"
-#include "binaries.h"
 #include "mediainfo.h"
 
 //Encoders
 #include "encoder_factory.h"
 
 //Source
-#include "source_avisynth.h"
-#include "source_vapoursynth.h"
+#include "source_factory.h"
 
 //MUtils
 #include <MUtils/OSSupport.h>
@@ -139,13 +137,13 @@ EncodeThread::EncodeThread(const QString &sourceFileName, const QString &outputF
 	case MediaInfo::FILETYPE_AVISYNTH:
 		if(m_sysinfo->hasAvisynth())
 		{
-			m_pipedSource = new AvisynthSource   (m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+			m_pipedSource = SourceFactory::createSource(SourceFactory::SourceType_AVS, m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
 		}
 		break;
 	case MediaInfo::FILETYPE_VAPOURSYNTH:
 		if(m_sysinfo->hasVapourSynth())
 		{
-			m_pipedSource = new VapoursynthSource(m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
+			m_pipedSource = SourceFactory::createSource(SourceFactory::SourceType_VPS, m_jobObject, m_options, m_sysinfo, m_preferences, m_status, &m_abort, &m_pause, &m_semaphorePaused, m_sourceFileName);
 		}
 		break;
 	}

@@ -32,7 +32,6 @@
 //Internal
 #include "global.h"
 #include "model_sysinfo.h"
-#include "binaries.h"
 
 //MUtils
 #include <MUtils/Global.h>
@@ -42,7 +41,14 @@
 QMutex AvisynthCheckThread::m_avsLock;
 QScopedPointer<QFile> AvisynthCheckThread::m_avsDllPath[2];
 
+//Helper
 #define BOOLIFY(X) ((X) ? '1' : '0')
+
+//Utility function
+QString AVS_CHECK_BINARY(const SysinfoModel *sysinfo, const bool& x64)
+{
+	return QString("%1/toolset/%2/avs_check_%2.exe").arg(sysinfo->getAppPath(), (x64 ? "x64": "x86"));
+}
 
 class Wow64RedirectionDisabler
 {
@@ -221,7 +227,7 @@ bool AvisynthCheckThread::checkAvisynth(const SysinfoModel *const sysinfo, QFile
 	process.setReadChannel(QProcess::StandardOutput);
 
 	//Try to start VSPIPE.EXE
-	process.start(CHK_BINARY(sysinfo, x64), QStringList());
+	process.start(AVS_CHECK_BINARY(sysinfo, x64), QStringList());
 	if(!process.waitForStarted())
 	{
 		qWarning("Failed to launch AVS_CHECK.EXE -> %s", process.errorString().toUtf8().constData());

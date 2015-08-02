@@ -25,7 +25,6 @@
 #include "global.h"
 #include "model_options.h"
 #include "model_status.h"
-#include "binaries.h"
 #include "mediainfo.h"
 #include "model_sysinfo.h"
 
@@ -106,7 +105,15 @@ public:
 		return tunings;
 	}
 
-	virtual QStringList getProfiles(const int &variant) const
+	virtual QStringList getPresets(void) const
+	{
+		QStringList presets;
+		presets << "ultrafast" << "superfast" << "veryfast" << "faster"   << "fast";
+		presets << "medium"    << "slow"      << "slower"   << "veryslow" << "placebo";
+		return presets;
+	}
+
+	virtual QStringList getProfiles(const OptionsModel::EncVariant &variant) const
 	{
 		QStringList profiles;
 		switch(variant)
@@ -131,7 +138,7 @@ public:
 		return extLst;
 	}
 
-	virtual bool isRCModeSupported(const int rcMode) const
+	virtual bool isRCModeSupported(const OptionsModel::RCMode &rcMode) const
 	{
 		switch(rcMode)
 		{

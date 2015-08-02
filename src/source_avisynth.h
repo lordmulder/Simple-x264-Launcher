@@ -22,6 +22,8 @@
 #pragma once
 
 #include "source_abstract.h"
+#include "model_sysinfo.h"
+#include "model_preferences.h"
 
 class AvisynthSource : public AbstractSource
 {
@@ -37,6 +39,8 @@ public:
 
 	virtual void flushProcess(QProcess &processInput);
 
+	static const AbstractSourceInfo& getSourceInfo(void);
+
 protected:
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
@@ -45,9 +49,6 @@ protected:
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen);
 
-	virtual QString getBinaryPath() const { return m_binaryFile; }
+	virtual QString getBinaryPath() const { return getSourceInfo().getBinaryPath(m_sysinfo, (m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_preferences->getPrefer64BitSource())); }
 	virtual void buildCommandLine(QStringList &cmdLine);
-
-	const QString m_sourceName;
-	const QString m_binaryFile;
 };

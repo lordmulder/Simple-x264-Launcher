@@ -32,10 +32,11 @@ class AbstractEncoderInfo
 {
 public:
 	virtual QFlags<OptionsModel::EncVariant> getVariants(void) const = 0;
-	virtual QStringList getProfiles(const int &variant) const = 0;
+	virtual QStringList getProfiles(const OptionsModel::EncVariant &variant) const = 0;
 	virtual QStringList getTunings(void) const = 0;
+	virtual QStringList getPresets(void) const = 0;
 	virtual QStringList supportedOutputFormats(void) const = 0;
-	virtual bool isRCModeSupported(const int rcMode) const = 0;
+	virtual bool isRCModeSupported(const OptionsModel::RCMode &rcMode) const = 0;
 	virtual bool isInputTypeSupported(const int format) const = 0;
 	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const = 0;
 };

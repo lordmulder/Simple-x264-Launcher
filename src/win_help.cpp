@@ -25,8 +25,10 @@
 //Internal
 #include "global.h"
 #include "model_options.h"
-#include "binaries.h"
+#include "model_sysinfo.h"
+#include "model_preferences.h"
 #include "encoder_factory.h"
+#include "source_factory.h"
 
 //MUtils
 #include <MUtils/Sound.h>
@@ -91,7 +93,7 @@ void HelpDialog::showEvent(QShowEvent *event)
 	}
 	else
 	{
-		m_process->start(AVS_BINARY(m_sysinfo, m_preferences), QStringList());
+		m_process->start(SourceFactory::getSourceInfo(SourceFactory::SourceType_AVS).getBinaryPath(m_sysinfo, m_preferences->getPrefer64BitSource() && m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64)), QStringList());
 	}
 
 	if(!m_process->waitForStarted())

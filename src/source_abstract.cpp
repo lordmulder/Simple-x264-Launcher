@@ -29,6 +29,7 @@
 
 //MUtils
 #include <MUtils/Global.h>
+#include <MUtils/Exception.h>
 
 //Qt
 #include <QProcess>
@@ -200,4 +201,13 @@ bool AbstractSource::createProcess(QProcess &processEncode, QProcess&processInpu
 	}
 
 	return true;
+}
+
+// ------------------------------------------------------------
+// Source Info
+// ------------------------------------------------------------
+
+const AbstractSourceInfo& AbstractSource::getSourceInfo(void)
+{
+	MUTILS_THROW("[getSourceInfo] This function must be overwritten in sub-classes!");
 }

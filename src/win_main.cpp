@@ -42,7 +42,6 @@
 #include "win_about.h"
 #include "win_preferences.h"
 #include "win_updater.h"
-#include "binaries.h"
 #include "resource.h"
 
 //MUtils

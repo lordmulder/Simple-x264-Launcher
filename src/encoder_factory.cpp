@@ -49,7 +49,7 @@ AbstractEncoder *EncoderFactory::createEncoder(JobObject *jobObject, const Optio
 	return encoder;
 }
 
-const AbstractEncoderInfo& EncoderFactory::getEncoderInfo(const int &encoderType)
+const AbstractEncoderInfo& EncoderFactory::getEncoderInfo(const OptionsModel::EncType &encoderType)
 {
 	switch(encoderType)
 	{

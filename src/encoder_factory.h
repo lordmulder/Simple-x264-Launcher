@@ -27,7 +27,7 @@ class EncoderFactory
 {
 public:
 	static AbstractEncoder *createEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
-	static const AbstractEncoderInfo& getEncoderInfo(const int &encoderType);
+	static const AbstractEncoderInfo& getEncoderInfo(const OptionsModel::EncType &encoderType);
 
 private:
 	EncoderFactory(void) {/*Disabled*/}

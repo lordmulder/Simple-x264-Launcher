@@ -35,6 +35,7 @@
 
 //MUtils
 #include <MUtils/Global.h>
+#include <MUtils/OSSupport.h>
 #include <MUtils/Exception.h>
 
 //Qt
@@ -137,49 +138,92 @@ public:
 protected:
 	QLabel *const m_notifier, *const m_icon;
 
-	bool checkParam(const QString &input, const QString &param, const bool doubleMinus) const
+	bool checkParam(const QStringList &input, const char *const params[], const bool &doubleMinus) const
 	{
-		static const char c[20] = {' ', '*', '?', '<', '>', '/', '\\', '"', '\'', '!', '+', '#', '&', '%', '=', ',', ';', '.', '´', '`'};
-		const QString prefix = doubleMinus ? QLatin1String("--") : QLatin1String("-");
-		
-		bool flag = false;
-		if(param.length() > 1)
+		for(QStringList::ConstIterator iter = input.constBegin(); iter != input.constEnd(); iter++)
 		{
-			flag = flag || input.endsWith(QString("%1%2").arg(prefix, param), Qt::CaseInsensitive);
-			for(size_t i = 0; i < sizeof(c); i++)
+			for(size_t k = 0; params[k]; k++)
 			{
-				flag = flag || input.contains(QString("%1%2%3").arg(prefix, param, QChar::fromLatin1(c[i])), Qt::CaseInsensitive);
+				const QString param = QLatin1String(params[k]);
+				const QString prefix = ((param.length() > 1) && doubleMinus) ? QLatin1String("--") : QLatin1String("-");
+				if(iter->compare(QString("%1%2").arg(prefix, param), Qt::CaseInsensitive) == 0)
+				{
+					if(m_notifier)
+					{
+						m_notifier->setText(tr("Invalid parameter: %1").arg(*iter));
+					}
+					return true;
+				}
+			}
+			if(iter->startsWith("-", Qt::CaseInsensitive) || iter->startsWith("--", Qt::CaseInsensitive))
+			{
+				for(int i = 1; i < iter->length(); i++)
+				{
+					if((!iter->at(i).isLetter()) && (iter->at(i) != '-'))
+					{
+						if(m_notifier)
+						{
+							m_notifier->setText(tr("Invalid string: %1").arg(*iter));
+						}
+						return true;
+					}
+				}
 			}
 		}
-		else
-		{
-			flag = flag || input.startsWith(QString("-%1").arg(param));
-			for(size_t i = 0; i < sizeof(c); i++)
-			{
-				flag = flag || input.contains(QString("%1-%2").arg(QChar::fromLatin1(c[i]), param), Qt::CaseSensitive);
-			}
-		}
-		if((flag) && (m_notifier))
-		{
-			m_notifier->setText(tr("Invalid parameter: %1").arg((param.length() > 1) ? QString("%1%2").arg(prefix, param) : QString("-%1").arg(param)));
-		}
-		return flag;
+
+		return false;
 	}
 
-	bool checkPrefix(const QString &input) const
+	bool checkPrefix(const QStringList &input, const bool &doubleMinus) const
 	{
-		static const char *const c[3] = { "--", "-", NULL };
-		for(size_t i = 0; c[i]; i++)
+		for(QStringList::ConstIterator iter = input.constBegin(); iter != input.constEnd(); iter++)
 		{
-			const QString prefix = QString::fromLatin1(c[i]);
-			if(input.startsWith(QString("%1 ").arg(prefix)) || input.contains(QString(" %1 ").arg(prefix)) || input.endsWith(prefix))
+			static const char *const c[3] = { "--", "-", NULL };
+			for(size_t i = 0; c[i]; i++)
 			{
-				qDebug("A");
+				const QString prefix = QString::fromLatin1(c[i]);
+				if(iter->compare(prefix, Qt::CaseInsensitive) == 0)
+				{
+					if(m_notifier)
+					{
+						m_notifier->setText(tr("Invalid parameter: %1").arg(prefix));
+					}
+					return true;
+				}
+			}
+			if
+			(
+				((!doubleMinus) && iter->startsWith("--", Qt::CaseInsensitive)) ||
+				(doubleMinus && iter->startsWith("-", Qt::CaseInsensitive) && (!iter->startsWith("--", Qt::CaseInsensitive)) && (iter->length() > 2)) ||
+				(doubleMinus && iter->startsWith("--", Qt::CaseInsensitive) && (iter->length() < 4))
+			)
+			{
 				if(m_notifier)
 				{
-					m_notifier->setText(tr("Invalid parameter: %1").arg(prefix));
+					m_notifier->setText(tr("Invalid syntax: %1").arg(*iter));
 				}
 				return true;
+			}
+		}
+		return false;
+	}
+
+	bool checkCharacters(const QStringList &input) const
+	{
+		static const char c[] = {'*', '?', '<', '>', '|', NULL};
+
+		for(QStringList::ConstIterator iter = input.constBegin(); iter != input.constEnd(); iter++)
+		{
+			for(size_t i = 0; c[i]; i++)
+			{
+				if(iter->indexOf(QLatin1Char(c[i])) >= 0)
+				{
+					if(m_notifier)
+					{
+						m_notifier->setText(tr("Invalid character: '%1'").arg(QLatin1Char(c[i])));
+					}
+					return true;
+				}
 			}
 		}
 		return false;
@@ -219,16 +263,13 @@ public:
 
 	virtual State validate(QString &input, int &pos) const
 	{
-		static const char* p[] = {"B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
-			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help","quiet", NULL};
+		static const char *const params[] = {"B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
+			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help", "quiet", NULL};
 
-		bool invalid = checkPrefix(input);
+		const QString commandLine = input.trimmed();
+		const QStringList tokens =  commandLine.isEmpty() ? QStringList() : MUtils::OS::crack_command_line(commandLine);
 
-		for(size_t i = 0; p[i] && (!invalid); i++)
-		{
-			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), true);
-		}
-
+		const bool invalid = checkCharacters(tokens) || checkPrefix(tokens, true) || checkParam(tokens, params, true);
 		return setStatus(invalid, "encoder") ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 };
@@ -240,15 +281,12 @@ public:
 
 	virtual State validate(QString &input, int &pos) const
 	{
-		static const char* p[] = {"o", "frames", "seek", "raw", "hfyu", "slave", NULL};
+		static const char *const params[] = {"o", "frames", "seek", "raw", "hfyu", "slave", NULL};
 
-		bool invalid = checkPrefix(input);
+		const QString commandLine = input.trimmed();
+		const QStringList tokens =  commandLine.isEmpty() ? QStringList() : MUtils::OS::crack_command_line(commandLine);
 
-		for(size_t i = 0; p[i] && (!invalid); i++)
-		{
-			invalid = invalid || checkParam(input, QString::fromLatin1(p[i]), false);
-		}
-		
+		const bool invalid = checkCharacters(tokens) || checkPrefix(tokens, false) || checkParam(tokens, params, false);
 		return setStatus(invalid, "Avs2YUV") ? QValidator::Intermediate : QValidator::Acceptable;
 	}
 };

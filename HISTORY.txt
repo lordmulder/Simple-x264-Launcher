@@ -2,6 +2,9 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.60 [unreleased]
+* Much improved validation of custom parameters
+
 Version 2.51 [2015-04-26]
 * Fixed regression: Config files were stored in a wrong directory
 * Updated x265 to version 1.6+239

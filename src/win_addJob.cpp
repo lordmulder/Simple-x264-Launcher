@@ -150,14 +150,14 @@ protected:
 				{
 					if(m_notifier)
 					{
-						m_notifier->setText(tr("Invalid parameter: %1").arg(*iter));
+						m_notifier->setText(tr("Forbidden parameter: %1").arg(*iter));
 					}
 					return true;
 				}
 			}
-			if(iter->startsWith("-", Qt::CaseInsensitive) || iter->startsWith("--", Qt::CaseInsensitive))
+			if(iter->startsWith("--", Qt::CaseInsensitive))
 			{
-				for(int i = 1; i < iter->length(); i++)
+				for(int i = 2; i < iter->length(); i++)
 				{
 					if((!iter->at(i).isLetter()) && (iter->at(i) != '-'))
 					{
@@ -194,7 +194,7 @@ protected:
 			if
 			(
 				((!doubleMinus) && iter->startsWith("--", Qt::CaseInsensitive)) ||
-				(doubleMinus && iter->startsWith("-", Qt::CaseInsensitive) && (!iter->startsWith("--", Qt::CaseInsensitive)) && (iter->length() > 2)) ||
+				(doubleMinus && iter->startsWith("-", Qt::CaseInsensitive) && (!iter->startsWith("--", Qt::CaseInsensitive)) && (iter->length() > 2) && (!iter->at(1).isDigit())) ||
 				(doubleMinus && iter->startsWith("--", Qt::CaseInsensitive) && (iter->length() < 4))
 			)
 			{

@@ -2,7 +2,7 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
-Version 2.60 [unreleased]
+Version 2.60 [2015-10-12]
 * Much improved validation of custom parameters
 * Massive code clean-up
 * Some minor fixes and improvements

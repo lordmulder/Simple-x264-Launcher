@@ -51,8 +51,8 @@ const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
 	{ "wget.exe", "7b522345239bcb95b5b0f7f50a883ba5957894a1feb769763e38ed789a8a0f63fead0155f54b9ffd0f1cdc5dfd855d207a6e7a8e4fd192589a8838ce646c504e", 1 },
 	{ "gpgv.exe", "18c5456cbb9ebf5cb9012a939b199d9eaa71c92a39f574f1e032babad0bbd9e72a064af96ca9d3d01f2892b064ec239fd61f27bac2eb9a64f7b2ece7beea3158", 1 },
-	{ "gpgv.gpg", "58e0f0e462bbd0b5aa4f638801c1097da7da4b3eb38c8c88ad1db23705c0f11e174b083fa55fe76bd3ba196341c967833a6f3427d6f63ad8565900745535d8fa", 0 },
-	{ "wupd.exe", "8724fc114ed34e9f4443fb60374ab5250c758567234e07d2be2e977246e35d24e6a51e883dab3e5f061faa2dcfd055102ecd9e1cfc2bc046bd59a53f607c9950", 1 },
+	{ "gpgv.gpg", "745c7a9c040196d9d322b1580e0046ff26ec13238cfd04325ceb3d4c8948294c593c027f895dc8ec427295175003e75d34f083019b706b0f4f06f81cce8df47d", 0 },
+	{ "wupd.exe", "7eb8338efe0ddf973ee9fda5e5bfa4728876f2fcff2b3add30cb8c439d3d59a5de1a0636176c34be0b0da1a764363d0cfec014679749dc504999aa184f35dfd5", 1 },
 	{ NULL, NULL, 0 }
 };
 
@@ -417,7 +417,8 @@ void UpdaterDialog::installUpdate(void)
 	args << QString("/Location=%1").arg(updateInfo->getDownloadAddress());
 	args << QString("/Filename=%1").arg(updateInfo->getDownloadFilename());
 	args << QString("/TicketID=%1").arg(updateInfo->getDownloadFilecode());
-	args << QString("/ToFolder=%1").arg(QDir::toNativeSeparators(QDir(QApplication::applicationDirPath()).canonicalPath())); 
+	args << QString("/CheckSum=%1").arg(updateInfo->getDownloadChecksum());
+	args << QString("/ToFolder=%1").arg(QDir::toNativeSeparators(QDir(QApplication::applicationDirPath()).canonicalPath()));
 	args << QString("/ToExFile=%1.exe").arg(QFileInfo(QFileInfo(QApplication::applicationFilePath()).canonicalFilePath()).completeBaseName());
 	args << QString("/AppTitle=Simple x264 Launcher (Build #%1)").arg(QString::number(updateInfo->getBuildNo()));
 

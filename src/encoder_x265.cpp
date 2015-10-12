@@ -37,8 +37,8 @@
 #include <QRegExp>
 
 //x265 version info
-static const unsigned int VERSION_X265_MINIMUM_VER =  17;
-static const unsigned int VERSION_X265_MINIMUM_REV = 382;
+static const unsigned int VERSION_X265_MINIMUM_VER = 18;
+static const unsigned int VERSION_X265_MINIMUM_REV =  0;
 
 // ------------------------------------------------------------
 // Helper Macros

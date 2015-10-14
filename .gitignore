@@ -17,3 +17,5 @@
 *.old
 *.db
 *.local.*
+/etc/*.ini
+/etc/*.log

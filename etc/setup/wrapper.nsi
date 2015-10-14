@@ -65,7 +65,7 @@ OutFile "${X264_OUTPUT_FILE}"
 BrandingText "${X264_DATE} / Build #${X264_BUILD}"
 Icon "${NSISDIR}\Contrib\Graphics\Icons\orange-install.ico"
 ChangeUI all "${NSISDIR}\Contrib\UIs\sdbarker_tiny.exe"
-ShowInstDetails show
+ShowInstDetails nevershow
 AutoCloseWindow true
 InstallDir ""
 
@@ -94,6 +94,7 @@ SubCaption 4 " "
 
 ReserveFile "${NSISDIR}\Plugins\System.dll"
 ReserveFile "${NSISDIR}\Plugins\StdUtils.dll"
+ReserveFile "${NSISDIR}\Plugins\SelfDel.dll"
 
 
 ;--------------------------------
@@ -127,6 +128,12 @@ Section "-LaunchTheInstaller"
 	
 	InitPluginsDir
 	SetOutPath "$PLUGINSDIR"
+	
+	${StdUtils.TestParameter} $R0 "Update"
+	${If} "$R0" == "true"
+		SetFileAttributes "$EXEPATH" FILE_ATTRIBUTE_NORMAL
+		SelfDel::del /RMDIR
+	${EndIf}
 	
 	SetOverwrite on
 	File "/oname=${InstallerFileName}" "${X264_SOURCE_FILE}"
@@ -194,6 +201,7 @@ Section "-LaunchTheInstaller"
 	SetDetailsPrint listonly
 
 	SetErrorLevel 1
+	SetOutPath "$TEMP"
 	Abort "Aborted."
 
 	; --------
@@ -202,4 +210,5 @@ Section "-LaunchTheInstaller"
 
 	Delete /REBOOTOK "${InstallerFileName}"
 	SetErrorLevel 0
+	SetOutPath "$TEMP"
 SectionEnd

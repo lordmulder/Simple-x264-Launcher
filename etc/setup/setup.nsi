@@ -62,6 +62,16 @@
 
 
 ;--------------------------------
+;Manifest
+;--------------------------------
+
+!packhdr "$%TEMP%\~exehead.tmp" `"..\reshacker.exe" -addoverwrite "$%TEMP%\~exehead.tmp", "$%TEMP%\~exehead.tmp", "setup.manifest", 24,1,1033`
+
+!delfile "..\reshacker.log"
+!delfile "..\reshacker.ini"
+
+
+;--------------------------------
 ;Installer Attributes
 ;--------------------------------
 
@@ -82,7 +92,7 @@ InstallDirRegKey HKLM "${MyRegPath}" "InstallLocation"
 SetCompressor /SOLID LZMA
 SetCompressorDictSize 64
 
-!packhdr "$%TEMP%\exehead.tmp" '"${X264_UPX_PATH}\upx.exe" --brute "$%TEMP%\exehead.tmp"'
+#!packhdr "$%TEMP%\exehead.tmp" '"${X264_UPX_PATH}\upx.exe" --brute "$%TEMP%\exehead.tmp"'
 
 
 ;--------------------------------

@@ -159,7 +159,11 @@ protected:
 			{
 				for(int i = 2; i < iter->length(); i++)
 				{
-					if((!iter->at(i).isLetter()) && (iter->at(i) != '-'))
+					if((iter->at(i) == QLatin1Char('=')) && (i > 2) && (i + 1 < iter->length()))
+					{
+						break; /*to allow "--param=value" format*/
+					}
+					if((!iter->at(i).isLetter()) && ((iter->at(i) != QLatin1Char('-')) || (i < 3)))
 					{
 						if(m_notifier)
 						{

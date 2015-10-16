@@ -174,7 +174,6 @@ VIAddVersionKey "Website" "${MyWebSite}"
 
 ;Welcome
 !define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUnattended
-!define MUI_PAGE_CUSTOMFUNCTION_LEAVE CheckForPreRelease
 !define MUI_WELCOMEPAGE_TITLE_3LINES
 !define MUI_FINISHPAGE_TITLE_3LINES
 !insertmacro MUI_PAGE_WELCOME
@@ -456,10 +455,16 @@ FunctionEnd
 	EnableWindow ${TmpVar} 0
 !macroend
 
+!macro DisableBackButton TmpVar
+	GetDlgItem ${TmpVar} $HWNDPARENT 3
+	EnableWindow ${TmpVar} 0
+!macroend
+
 !macro CleanUpFiles options
 	Delete ${options} `$INSTDIR\*.exe`
 	Delete ${options} `$INSTDIR\*.dll`
 	Delete ${options} `$INSTDIR\*.txt`
+	Delete ${options} `$INSTDIR\*.htm`
 	Delete ${options} `$INSTDIR\*.html`
 	
 	RMDir /r ${options} `$INSTDIR\toolset`

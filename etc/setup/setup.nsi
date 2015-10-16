@@ -52,6 +52,14 @@
 
 
 ;--------------------------------
+;Manifest
+;--------------------------------
+
+!tempfile PACKHDRTEMP
+!packhdr "${PACKHDRTEMP}" '"..\mt.exe" -manifest "setup.manifest" -outputresource:"${PACKHDRTEMP};1"'
+
+
+;--------------------------------
 ;Includes
 ;--------------------------------
 
@@ -59,16 +67,6 @@
 !include `WinVer.nsh`
 !include `x64.nsh`
 !include `StdUtils.nsh`
-
-
-;--------------------------------
-;Manifest
-;--------------------------------
-
-!packhdr "$%TEMP%\~exehead.tmp" `"..\reshacker.exe" -addoverwrite "$%TEMP%\~exehead.tmp", "$%TEMP%\~exehead.tmp", "setup.manifest", 24,1,1033`
-
-!delfile "..\reshacker.log"
-!delfile "..\reshacker.ini"
 
 
 ;--------------------------------
@@ -108,7 +106,6 @@ ReserveFile "${NSISDIR}\Plugins\StartMenu.dll"
 ReserveFile "${NSISDIR}\Plugins\StdUtils.dll"
 ReserveFile "${NSISDIR}\Plugins\System.dll"
 ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
-ReserveFile "checkproc.exe"
 
 
 ;--------------------------------
@@ -170,31 +167,64 @@ VIAddVersionKey "Website" "${MyWebSite}"
 !define MUI_CUSTOMFUNCTION_UNGUIINIT un.MyGuiInit
 !define MUI_LANGDLL_ALWAYSSHOW
 
+
 ;--------------------------------
-;MUI2 Pages
+;MUI2 Pages (Installer)
 ;--------------------------------
 
-;Installer
+;Welcome
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUnattended
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE CheckForPreRelease
 !define MUI_WELCOMEPAGE_TITLE_3LINES
 !define MUI_FINISHPAGE_TITLE_3LINES
 !insertmacro MUI_PAGE_WELCOME
+
+;License
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUnattended
 !insertmacro MUI_PAGE_LICENSE "license.rtf"
+
+;Directory
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUnattended
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW CheckForUpdate
 !insertmacro MUI_PAGE_DIRECTORY
+
+;Startmenu
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUnattended
 !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
+
+;LockedList
 Page Custom LockedListShow
+
+;Install Files
 !insertmacro MUI_PAGE_INSTFILES
+
+;Finish
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfUnattended
 !insertmacro MUI_PAGE_FINISH
 
-;Uninstaller
+
+;--------------------------------
+;MUI2 Pages (Uninstaller)
+;--------------------------------
+
+;Welcome
 !define MUI_WELCOMEPAGE_TITLE_3LINES
 !define MUI_FINISHPAGE_TITLE_3LINES
 !define MUI_PAGE_CUSTOMFUNCTION_PRE un.CheckForcedUninstall
 !insertmacro MUI_UNPAGE_WELCOME
+
+;Confirm
 !define MUI_PAGE_CUSTOMFUNCTION_PRE un.CheckForcedUninstall
 !insertmacro MUI_UNPAGE_CONFIRM
+
+;LockedList
 UninstPage Custom un.LockedListShow
+
+;Uninstall
 !insertmacro MUI_UNPAGE_INSTFILES
+
+;Finish
+!define MUI_PAGE_CUSTOMFUNCTION_PRE un.CheckForcedUninstall
 !insertmacro MUI_UNPAGE_FINISH
 
 
@@ -238,10 +268,40 @@ UninstPage Custom un.LockedListShow
 
 
 ;--------------------------------
+;LogicLib Extensions
+;--------------------------------
+
+!macro _UnattendedMode _a _b _t _f
+	!insertmacro _LOGICLIB_TEMP
+	${StdUtils.TestParameter} $_LOGICLIB_TEMP "Update"
+	StrCmp "$_LOGICLIB_TEMP" "true" `${_t}` `${_f}`
+!macroend
+!define UnattendedMode `"" UnattendedMode ""`
+
+!macro _ForcedMode _a _b _t _f
+	!insertmacro _LOGICLIB_TEMP
+	${StdUtils.TestParameter} $_LOGICLIB_TEMP "Force"
+	StrCmp "$_LOGICLIB_TEMP" "true" `${_t}` `${_f}`
+!macroend
+!define ForcedMode `"" ForcedMode ""`
+
+!macro _ValidFileName _a _b _t _f
+	!insertmacro _LOGICLIB_TEMP
+	${StdUtils.ValidFileName} $_LOGICLIB_TEMP `${_b}`
+	StrCmp "$_LOGICLIB_TEMP" "ok" `${_t}` `${_f}`
+!macroend
+!define ValidFileName `"" ValidFileName`
+
+
+;--------------------------------
 ;Installer initialization
 ;--------------------------------
 
 Function .onInit
+	InitPluginsDir
+
+	; --------
+
 	System::Call 'kernel32::CreateMutexA(i 0, i 0, t "{2B3D1EBF-B3B6-4E93-92B9-6853029A7162}") i .r1 ?e'
 	Pop $0
 	${If} $0 <> 0
@@ -291,8 +351,7 @@ Function .onInit
 
 	; --------
 
-	${StdUtils.GetParameter} $R0 "Update" "?"
-	${If} "$R0" == "?"
+	${IfNot} ${UnattendedMode}
 		!insertmacro MUI_LANGDLL_DISPLAY
 	${EndIf}
 
@@ -305,14 +364,6 @@ Function .onInit
 		SetErrorLevel 740 ;ERROR_ELEVATION_REQUIRED
 		Quit
 	${EndIf}
-	
-	; --------
-
-	InitPluginsDir
-	
-	File "/oname=$PLUGINSDIR\checkproc.exe" "checkproc.exe"
-	nsExec::Exec /TIMEOUT=5000 '"$PLUGINSDIR\checkproc.exe" Softonic Brothersoft Afreecodec'
-	Pop $0
 FunctionEnd
 
 Function un.onInit
@@ -323,8 +374,7 @@ Function un.onInit
 		Quit
 	${EndIf}
 
-	${StdUtils.GetParameter} $R0 "Force" "?"
-	${If} "$R0" == "?"
+	${IfNot} ${ForcedMode}
 		!insertmacro MUI_LANGDLL_DISPLAY
 	${EndIf}
 	
@@ -395,12 +445,26 @@ FunctionEnd
 !macro GetExecutableName OutVar
 	${StdUtils.GetParameter} ${OutVar} "Update" ""
 	${StdUtils.TrimStr} ${OutVar}
-	${IfThen} "${OutVar}" == "" ${|} StrCpy ${OutVar} "x264_launcher.exe" ${|}
+	${If} "${OutVar}" == ""
+	${OrIfNot} ${ValidFileName} "${OutVar}"
+		StrCpy ${OutVar} "x264_launcher.exe"
+	${EndIf}
 !macroend
 
 !macro DisableNextButton TmpVar
 	GetDlgItem ${TmpVar} $HWNDPARENT 1
 	EnableWindow ${TmpVar} 0
+!macroend
+
+!macro CleanUpFiles options
+	Delete ${options} `$INSTDIR\*.exe`
+	Delete ${options} `$INSTDIR\*.dll`
+	Delete ${options} `$INSTDIR\*.txt`
+	Delete ${options} `$INSTDIR\*.html`
+	
+	RMDir /r ${options} `$INSTDIR\toolset`
+	RMDir /r ${options} `$INSTDIR\imageformats`
+	RMDir /r ${options} `$INSTDIR\sources`
 !macroend
 
 
@@ -413,21 +477,16 @@ Section "-PreInit"
 	SetOutPath "$INSTDIR"
 SectionEnd
 
+Section "-Clean Up Old Cruft"
+	!insertmacro PrintProgress "$(X264_LANG_STATUS_CLEANUP)"
+	!insertmacro CleanUpFiles ""
+SectionEnd
+
 Section "!Install Files"
 	!insertmacro PrintProgress "$(X264_LANG_STATUS_INSTFILES)"
-
-	; Clean up leftover from an existing installation
-	Delete `$INSTDIR\*.exe`
-	Delete `$INSTDIR\*.dll`
-	Delete `$INSTDIR\*.txt`
-	Delete `$INSTDIR\*.html`
-	RMDir /r `$INSTDIR\toolset`
-	RMDir /r `$INSTDIR\imageformats`
-	RMDir /r `$INSTDIR\sources`
-
-	!insertmacro GetExecutableName $R0
-
+	
 	DeleteOldBinary:
+	!insertmacro GetExecutableName $R0
 	ClearErrors
 	Delete "$INSTDIR\$R0"
 	
@@ -511,6 +570,9 @@ Section "-Update Registry"
 	WriteRegStr HKLM "${MyRegPath}" "DisplayVersion" "Build #${X264_BUILD} (${X264_DATE})"
 	WriteRegStr HKLM "${MyRegPath}" "URLInfoAbout" "${MyWebSite}"
 	WriteRegStr HKLM "${MyRegPath}" "URLUpdateInfo" "${MyWebSite}"
+	
+	WriteRegStr HKLM "${AppPaths}\x264_launcher.exe" "" "$INSTDIR\$R0"
+	WriteRegStr HKLM "${AppPaths}\x264_launcher.exe" "Path" "$INSTDIR"
 SectionEnd
 
 Section "-Finished"
@@ -523,7 +585,7 @@ SectionEnd
 ;--------------------------------
 
 Section "Uninstall"
-	SetOutPath "$INSTDIR"
+	SetOutPath "$EXEDIR"
 	!insertmacro PrintProgress "$(X264_LANG_STATUS_UNINSTALL)"
 
 	; --------------
@@ -562,34 +624,9 @@ Section "Uninstall"
 	ReadRegStr $R0 HKLM "${MyRegPath}" "ExecutableName"
 	${IfThen} "$R0" == "" ${|} StrCpy $R0 "x264_launcher.exe" ${|}
 
-	DeleteAppBinary:
-	ClearErrors
-	Delete `$INSTDIR\$R0`
-	
-	${If} ${Errors}
-		MessageBox MB_TOPMOST|MB_ICONSTOP|MB_RETRYCANCEL 'Could not delete the "$R0" file. Is program still running?' IDRETRY DeleteAppBinary
-		Abort "Could not delete application binary!"
-	${EndIf}
-	
-	Delete /REBOOTOK `$INSTDIR\*.exe`
-	Delete /REBOOTOK `$INSTDIR\*.dll`
-	Delete /REBOOTOK `$INSTDIR\*.txt`
-	Delete /REBOOTOK `$INSTDIR\*.html`
-	
-	Delete /REBOOTOK `$INSTDIR\toolset\*.exe`
-	Delete /REBOOTOK `$INSTDIR\toolset\*.dll`
-	Delete /REBOOTOK `$INSTDIR\toolset\x86\*.exe`
-	Delete /REBOOTOK `$INSTDIR\toolset\x86\*.dll`
-	Delete /REBOOTOK `$INSTDIR\toolset\x64\*.exe`
-	Delete /REBOOTOK `$INSTDIR\toolset\x64\*.dll`
-	Delete /REBOOTOK `$INSTDIR\toolset\common\*.exe`
-	Delete /REBOOTOK `$INSTDIR\toolset\common\*.dll`
-	Delete /REBOOTOK `$INSTDIR\toolset\common\*.gpg`
-	
-	Delete /REBOOTOK `$INSTDIR\imageformats\*.dll`
-	Delete /REBOOTOK `$INSTDIR\sources\*.*`
-
-	RMDir /r /REBOOTOK "$INSTDIR"
+	Delete /REBOOTOK "$INSTDIR\$R0"
+	!insertmacro CleanUpFiles /REBOOTOK
+	RMDir "$INSTDIR"
 
 	; --------------
 	; Registry
@@ -601,6 +638,9 @@ Section "Uninstall"
 	DeleteRegKey HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{54dcbccb-c905-46dc-b6e6-48563d0e9e55}"
 	DeleteRegKey HKCU "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{54dcbccb-c905-46dc-b6e6-48563d0e9e55}"
 	
+	DeleteRegKey HKLM "${AppPaths}\x264_launcher.exe"
+	DeleteRegKey HKCU "${AppPaths}\x264_launcherexe"
+
 	MessageBox MB_YESNO|MB_TOPMOST "$(X264_LANG_UNINST_PERSONAL)" IDNO +3
 	Delete "$LOCALAPPDATA\LoRd_MuldeR\Simple x264 Launcher\*.ini"
 	RMDir "$LOCALAPPDATA\LoRd_MuldeR\Simple x264 Launcher"
@@ -613,15 +653,16 @@ SectionEnd
 ;Check For Update Mode
 ;--------------------------------
 
+Function SkipIfUnattended
+	${IfThen} ${UnattendedMode} ${|} Abort ${|}
+FunctionEnd
+
 Function CheckForUpdate
-	${StdUtils.GetParameter} $R0 "Update" "?"
-	${IfNotThen} "$R0" == "?" ${|} Goto EnableUpdateMode ${|}
-
-	${IfThen} "$INSTDIR" == "" ${|} Return ${|}
-	${IfThen} "$INSTDIR" == "$EXEDIR" ${|} Return ${|}
-	${IfNotThen} ${FileExists} "$INSTDIR\x264_launcher.exe" ${|} Return ${|}
-
-	EnableUpdateMode:
+	${If} "$INSTDIR" == ""
+	${OrIf} "$INSTDIR" == "$EXEDIR"
+	${OrIfNot} ${FileExists} "$INSTDIR\x264_launcher.exe"
+		Return
+	${EndIf}
 
 	FindWindow $R0 "#32770" "" $HWNDPARENT
 	GetDlgItem $R1 $R0 1019
@@ -633,8 +674,7 @@ Function CheckForUpdate
 FunctionEnd
 
 Function un.CheckForcedUninstall
-	${StdUtils.GetParameter} $R0 "Force" "?"
-	${IfNotThen} "$R0" == "?" ${|} Abort ${|}
+	${IfThen} ${ForcedMode} ${|} Abort ${|}
 FunctionEnd
 
 
@@ -642,22 +682,35 @@ FunctionEnd
 ;Locked List
 ;--------------------------------
 
-Function LockedListShow
+!macro _LockedListShow uinst
 	!insertmacro MUI_HEADER_TEXT "$(X264_LANG_LOCKEDLIST_HEADER)" "$(X264_LANG_LOCKEDLIST_TEXT)"
+	${If} ${UnattendedMode}
+		!insertmacro DisableBackButton $R0
+	${EndIf}
+	${If} ${RunningX64}
+		InitPluginsDir
+		File /oname=$PLUGINSDIR\LockedList64.dll `${NSISDIR}\Plugins\LockedList64.dll`
+	${EndIf}
 	!insertmacro GetExecutableName $R0
 	LockedList::AddModule "\$R0"
+	${If} "$R0" != "x264_launcher.exe"
+		LockedList::AddModule "\x264_launcher.exe"
+	${EndIf}
 	LockedList::AddModule "\Uninstall.exe"
-	LockedList::AddModule "\Au_.exe"
+	!if ${uinst} < 1
+		LockedList::AddModule "\Au_.exe"
+	!endif
+	LockedList::AddFolder "$INSTDIR"
 	LockedList::Dialog /autonext /heading "$(X264_LANG_LOCKEDLIST_HEADING)" /noprograms "$(X264_LANG_LOCKEDLIST_NOPROG)" /searching  "$(X264_LANG_LOCKEDLIST_SEARCH)" /colheadings "$(X264_LANG_LOCKEDLIST_COLHDR1)" "$(X264_LANG_LOCKEDLIST_COLHDR2)"
 	Pop $R0
+!macroend
+
+Function LockedListShow
+	!insertmacro _LockedListShow 0
 FunctionEnd
 
 Function un.LockedListShow
-	!insertmacro MUI_HEADER_TEXT "$(X264_LANG_LOCKEDLIST_HEADER)" "$(X264_LANG_LOCKEDLIST_TEXT)"
-	LockedList::AddModule "\x264_launcher.exe"
-	LockedList::AddModule "\Uninstall.exe"
-	LockedList::Dialog /autonext /heading "$(X264_LANG_LOCKEDLIST_HEADING)" /noprograms "$(X264_LANG_LOCKEDLIST_NOPROG)" /searching  "$(X264_LANG_LOCKEDLIST_SEARCH)" /colheadings "$(X264_LANG_LOCKEDLIST_COLHDR1)" "$(X264_LANG_LOCKEDLIST_COLHDR2)"
-	Pop $R0
+	!insertmacro _LockedListShow 1
 FunctionEnd
 
 

@@ -19,6 +19,7 @@
 ; // http://www.gnu.org/licenses/gpl-2.0.txt
 ; ///////////////////////////////////////////////////////////////////////////////
 
+LangString X264_LANG_STATUS_CLEANUP      ${LANG_ENGLISH} "Cleaning up old cruft, please wait..."
 LangString X264_LANG_STATUS_CLOSING      ${LANG_ENGLISH} "Closing running instance, please wait..."
 LangString X264_LANG_STATUS_INSTFILES    ${LANG_ENGLISH} "Installing program files, please wait..."
 LangString X264_LANG_STATUS_MAKEUNINST   ${LANG_ENGLISH} "Creating the uninstaller, please wait..."

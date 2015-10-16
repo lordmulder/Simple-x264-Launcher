@@ -100,6 +100,7 @@ SetCompressorDictSize 64
 ReserveFile "${NSISDIR}\Plugins\Aero.dll"
 ReserveFile "${NSISDIR}\Plugins\LangDLL.dll"
 ReserveFile "${NSISDIR}\Plugins\LockedList.dll"
+ReserveFile "${NSISDIR}\Plugins\LockedList64.dll"
 ReserveFile "${NSISDIR}\Plugins\nsDialogs.dll"
 ReserveFile "${NSISDIR}\Plugins\nsExec.dll"
 ReserveFile "${NSISDIR}\Plugins\StartMenu.dll"

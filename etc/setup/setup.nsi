@@ -500,10 +500,8 @@ Section "!Install Files"
 		Abort "Could not delete old binary!"
 	${EndIf}
 
-	SetOutPath "$INSTDIR"
 	File /a `/oname=$R0` `${X264_SOURCE_PATH}\x264_launcher.exe`
 
-	SetOutPath "$INSTDIR"
 	File /a `${X264_SOURCE_PATH}\*.dll`
 	File /a `${X264_SOURCE_PATH}\*.txt`
 	File /a `${X264_SOURCE_PATH}\*.html`
@@ -582,6 +580,7 @@ SectionEnd
 
 Section "-Finished"
 	!insertmacro PrintProgress "$(MUI_TEXT_FINISH_TITLE)."
+	${IfThen} ${UnattendedMode} ${|} SetAutoClose true ${|}
 SectionEnd
 
 
@@ -733,4 +732,12 @@ FunctionEnd
 Function ShowReadmeFunction
 	!insertmacro DisableNextButton $R0
 	${StdUtils.ExecShellAsUser} $R1 "$INSTDIR\README.html" "open" ""
+FunctionEnd
+
+Function .onInstSuccess
+	${If} ${UnattendedMode}
+		!insertmacro GetExecutableName $R0
+		${StdUtils.ExecShellAsUser} $R1 "$INSTDIR" "explore" ""
+		${StdUtils.ExecShellAsUser} $R1 "$INSTDIR\$R0" "open" "--first-run"
+	${EndIf}
 FunctionEnd

@@ -142,7 +142,7 @@ Note that x264 will now *only* try to load the OpenCL.DLL if you really use the 
 
 # Command-line Syntax #
 
-**PLEASE NOTE:** These are parameters you can pass to Simple x264 Launcher, they can ***not*** be passed to x264 or x265 as "custom" parameters !!!
+**PLEASE NOTE:** These are parameters you can pass to Simple x264 Launcher (`x264_launcher.exe`), they can **NOT** be passed to x264 or x265 as "custom" parameters !!!
 
 The following command-line switches are available:
 ```
@@ -152,8 +152,9 @@ The following command-line switches are available:
 --[no-]force-enqueue ............. Append the next job to the queue
 --skip-avisynth-check ............ Skip Avisynth detection
 --skip-vapoursynth-check ......... Skip VapourSynth detection
+--skip-version-checks    ......... Skip x264/x265 version checks, NOT recommended!
 --force-cpu-no-64bit ............. Forcefully disable 64-Bit support
---no-deadlock-detection .......... Don't abort a processes on deadlock
+--no-deadlock-detection .......... Do not abort a sub-process on possible deadlock
 --[no-]console ................... Do [not] show the Debug console
 --no-style ....................... Don't use the Qt "Plastique" style
 ```

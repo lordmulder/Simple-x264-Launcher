@@ -2,7 +2,7 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
-Version 2.61 [unreleased]
+Version 2.61 [2015-10-19]
 * Refined custom parameters validation code, again
 * Fixed processing of CLI arguments for Launcher (regression in v2.60)
 * Remove "junk" Trolltech registry key when application quits

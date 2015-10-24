@@ -165,10 +165,9 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	//Setup view
 	ui->jobsView->horizontalHeader()->setSectionHidden(3, true);
 	ui->jobsView->horizontalHeader()->setResizeMode(0, QHeaderView::Stretch);
-	ui->jobsView->horizontalHeader()->setResizeMode(1, QHeaderView::Fixed);
-	ui->jobsView->horizontalHeader()->setResizeMode(2, QHeaderView::Fixed);
-	ui->jobsView->horizontalHeader()->resizeSection(1, 150);
-	ui->jobsView->horizontalHeader()->resizeSection(2, 90);
+	ui->jobsView->horizontalHeader()->setResizeMode(1, QHeaderView::ResizeToContents);
+	ui->jobsView->horizontalHeader()->setResizeMode(2, QHeaderView::ResizeToContents);
+	ui->jobsView->horizontalHeader()->setMinimumSectionSize(96);
 	ui->jobsView->verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
 	connect(ui->jobsView->selectionModel(), SIGNAL(currentChanged(QModelIndex, QModelIndex)), this, SLOT(jobSelected(QModelIndex, QModelIndex)));
 

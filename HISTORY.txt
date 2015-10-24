@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.62 [unreleased]
+* Changed mode for the Status/Progress columns to "ResizeToContents"
+* Updated x265 to version 1.8+49
+
 Version 2.61 [2015-10-19]
 * Refined custom parameters validation code, again
 * Fixed processing of CLI arguments for Launcher (regression in v2.60)

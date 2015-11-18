@@ -45,20 +45,6 @@
 #include <QLocale>
 
 // ------------------------------------------------------------
-// Helper Macros
-// ------------------------------------------------------------
-
-#define APPEND_AND_CLEAR(LIST, STR) do \
-{ \
-	if(!((STR).isEmpty())) \
-	{ \
-		(LIST) << (STR); \
-		(STR).clear(); \
-	} \
-} \
-while(0)
-
-// ------------------------------------------------------------
 // Constructor & Destructor
 // ------------------------------------------------------------
 
@@ -263,38 +249,6 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 // ------------------------------------------------------------
 // Utilities
 // ------------------------------------------------------------
-
-QStringList AbstractEncoder::splitParams(const QString &params, const QString &sourceFile, const QString &outputFile)
-{
-	QStringList list; 
-	bool ignoreWhitespaces = false;
-	QString temp;
-
-	for(int i = 0; i < params.length(); i++)
-	{
-		const QChar c = params.at(i);
-
-		if(c == QChar::fromLatin1('"'))
-		{
-			ignoreWhitespaces = (!ignoreWhitespaces);
-			continue;
-		}
-		else if((!ignoreWhitespaces) && (c == QChar::fromLatin1(' ')))
-		{
-			APPEND_AND_CLEAR(list, temp);
-			continue;
-		}
-		
-		temp.append(c);
-	}
-	
-	APPEND_AND_CLEAR(list, temp);
-
-	list.replaceInStrings("$(INPUT)",  QDir::toNativeSeparators(sourceFile), Qt::CaseInsensitive);
-	list.replaceInStrings("$(OUTPUT)", QDir::toNativeSeparators(outputFile), Qt::CaseInsensitive);
-
-	return list;
-}
 
 double AbstractEncoder::estimateSize(const QString &fileName, const double &progress)
 {

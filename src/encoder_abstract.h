@@ -57,7 +57,6 @@ protected:
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns) = 0;
 	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass, double &last_progress, double &size_estimate) = 0;
 
-	static QStringList splitParams(const QString &params, const QString &sourceFile, const QString &outputFile);
 	static double estimateSize(const QString &fileName, const double &progress);
 	static QString sizeToString(qint64 size);
 

@@ -40,6 +40,23 @@
 QMutex AbstractTool::s_mutexStartProcess;
 
 // ------------------------------------------------------------
+// Helper Macros
+// ------------------------------------------------------------
+
+static void APPEND_AND_CLEAR(QStringList &list, QString &str)
+{
+	if(!str.isEmpty())
+	{
+		const QString temp = str.trimmed();
+		if(!temp.isEmpty())
+		{
+			list << temp;
+		}
+		str.clear();
+	}
+}
+
+// ------------------------------------------------------------
 // Constructor & Destructor
 // ------------------------------------------------------------
 
@@ -208,6 +225,43 @@ QString AbstractTool::commandline2string(const QString &program, const QStringLi
 	}
 
 	return commandline;
+}
+
+QStringList AbstractTool::splitParams(const QString &params, const QString &sourceFile, const QString &outputFile)
+{
+	QStringList list; 
+	bool ignoreWhitespaces = false;
+	QString temp;
+
+	for(int i = 0; i < params.length(); i++)
+	{
+		const QChar c = params.at(i);
+		if(c == QLatin1Char('"'))
+		{
+			ignoreWhitespaces = (!ignoreWhitespaces);
+			continue;
+		}
+		else if((!ignoreWhitespaces) && (c == QChar::fromLatin1(' ')))
+		{
+			APPEND_AND_CLEAR(list, temp);
+			continue;
+		}
+		temp.append(c);
+	}
+	
+	APPEND_AND_CLEAR(list, temp);
+
+	if(!sourceFile.isEmpty())
+	{
+		list.replaceInStrings("$(INPUT)",  QDir::toNativeSeparators(sourceFile), Qt::CaseInsensitive);
+	}
+
+	if(!outputFile.isEmpty())
+	{
+		list.replaceInStrings("$(OUTPUT)", QDir::toNativeSeparators(outputFile), Qt::CaseInsensitive);
+	}
+
+	return list;
 }
 
 QString AbstractTool::stringToHash(const QString &string)

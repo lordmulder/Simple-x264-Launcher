@@ -87,6 +87,7 @@ protected:
 	QSemaphore *const m_semaphorePause;
 
 	static QString commandline2string(const QString &program, const QStringList &arguments);
+	static QStringList splitParams(const QString &params, const QString &sourceFile = QString(), const QString &outputFile = QString());
 	static QString stringToHash(const QString &string);
 	static unsigned int makeRevision(const unsigned int &core, const unsigned int &build);
 	static void splitRevision(const unsigned int &revision, unsigned int &core, unsigned int &build);

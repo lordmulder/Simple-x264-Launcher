@@ -78,30 +78,30 @@ public:
 	static const char *const PROFILE_UNRESTRICTED;
 
 	//Getter
-	EncType encType(void) const { return m_encoderType; }
-	EncArch encArch(void) const { return m_encoderArch; }
-	EncVariant encVariant(void) const { return m_encoderVariant; }
-	RCMode rcMode(void) const { return m_rcMode; }
-	unsigned int bitrate(void) const { return m_bitrate; }
-	double quantizer(void) const { return m_quantizer; }
-	QString preset(void) const { return m_preset; }
-	QString tune(void) const { return m_tune; }
-	QString profile(void) const { return m_profile; }
+	EncType encType(void)         const { return m_encoderType; }
+	EncArch encArch(void)         const { return m_encoderArch; }
+	EncVariant encVariant(void)   const { return m_encoderVariant; }
+	RCMode rcMode(void)           const { return m_rcMode; }
+	unsigned int bitrate(void)    const { return m_bitrate; }
+	double quantizer(void)        const { return m_quantizer; }
+	QString preset(void)          const { return m_preset; }
+	QString tune(void)            const { return m_tune; }
+	QString profile(void)         const { return m_profile; }
 	QString customEncParams(void) const { return m_custom_encoder; }
-	QString customAvs2YUV(void) const { return m_custom_avs2yuv; }
+	QString customAvs2YUV(void)   const { return m_custom_avs2yuv; }
 
 	//Setter
-	void setEncType(EncType type) { m_encoderType = qBound(EncType_X264, type, EncType_X265); }
-	void setEncArch(EncArch arch) { m_encoderArch = qBound(EncArch_x86_32, arch, EncArch_x86_64); }
-	void setEncVariant(EncVariant variant) { m_encoderVariant = qBound(EncVariant_8Bit, variant, EncVariant_12Bit); }
-	void setRCMode(RCMode mode) { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
-	void setBitrate(unsigned int bitrate) { m_bitrate = qBound(10U, bitrate, 800000U); }
-	void setQuantizer(double quantizer) { m_quantizer = qBound(0.0, quantizer, 52.0); }
-	void setPreset(const QString &preset) { m_preset = preset.trimmed(); }
-	void setTune(const QString &tune) { m_tune = tune.trimmed(); }
-	void setProfile(const QString &profile) { m_profile = profile.trimmed(); }
+	void setEncType(EncType type)                  { m_encoderType = qBound(EncType_X264, type, EncType_X265); }
+	void setEncArch(EncArch arch)                  { m_encoderArch = qBound(EncArch_x86_32, arch, EncArch_x86_64); }
+	void setEncVariant(EncVariant variant)         { m_encoderVariant = qBound(EncVariant_8Bit, variant, EncVariant_12Bit); }
+	void setRCMode(RCMode mode)                    { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
+	void setBitrate(unsigned int bitrate)          { m_bitrate = qBound(10U, bitrate, 800000U); }
+	void setQuantizer(double quantizer)            { m_quantizer = qBound(0.0, quantizer, 52.0); }
+	void setPreset(const QString &preset)          { m_preset = preset.trimmed(); }
+	void setTune(const QString &tune)              { m_tune = tune.trimmed(); }
+	void setProfile(const QString &profile)        { m_profile = profile.trimmed(); }
 	void setCustomEncParams(const QString &custom) { m_custom_encoder = custom.trimmed(); }
-	void setCustomAvs2YUV(const QString &custom) { m_custom_avs2yuv = custom.trimmed(); }
+	void setCustomAvs2YUV(const QString &custom)   { m_custom_avs2yuv = custom.trimmed(); }
 
 	//Stuff
 	bool equals(const OptionsModel *model);

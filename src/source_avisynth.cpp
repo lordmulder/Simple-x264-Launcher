@@ -156,6 +156,11 @@ bool AvisynthSource::isVersionSupported(const unsigned int &revision, const bool
 
 void AvisynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
+	if(!m_options->customAvs2YUV().isEmpty())
+	{
+		cmdLine << splitParams(m_options->customAvs2YUV());
+	}
+
 	cmdLine << "-frames" << "1";
 	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFile, true)) << "NUL";
 
@@ -217,6 +222,11 @@ void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<
 
 void AvisynthSource::buildCommandLine(QStringList &cmdLine)
 {
+	if(!m_options->customAvs2YUV().isEmpty())
+	{
+		cmdLine << splitParams(m_options->customAvs2YUV());
+	}
+
 	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFile, true));
 	cmdLine << "-";
 }

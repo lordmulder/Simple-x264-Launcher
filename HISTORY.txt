@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.63 [2015-12-19]
+* Updated build environment to Visual Studio 2015 with Update-1
+* Updated x265 to version 1.8+167
+
 Version 2.62 [2015-11-18]
 * Make 'custom' Avs2YUV parameters work again
 * Changed mode for the Status/Progress columns to "ResizeToContents"

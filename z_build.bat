@@ -2,11 +2,11 @@
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
-set "MSVC_PATH=C:\Program Files\Microsoft Visual Studio 12.0\VC"
+set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
 set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
 set "UPX3_PATH=C:\Program Files\UPX"
 set "PDOC_PATH=C:\Program Files\Pandoc"
-set "TOOLS_VER=120"
+set "TOOLS_VER=140"
 
 REM ###############################################
 REM # DO NOT MODIFY ANY LINES BELOW THIS LINE !!! #
@@ -58,9 +58,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD
 echo ---------------------------------------------------------------------
-MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2013.sln"
+MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2015.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2013.sln"
+MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2015.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////

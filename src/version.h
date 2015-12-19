@@ -25,8 +25,8 @@
 
 #define VER_X264_MAJOR 2
 #define VER_X264_MINOR 6
-#define VER_X264_PATCH 2
-#define VER_X264_BUILD 994
+#define VER_X264_PATCH 3
+#define VER_X264_BUILD 996
 
 #define VER_X264_PORTABLE_EDITION (0)
 

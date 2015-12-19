@@ -2,6 +2,9 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.64 [2015-12-20]
+* Fixed a dependency issue with Visual Studio runtime libraries
+
 Version 2.63 [2015-12-19]
 * Updated build environment to Visual Studio 2015 with Update-1
 * Updated x265 to version 1.8+167

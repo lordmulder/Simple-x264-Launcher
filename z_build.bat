@@ -3,6 +3,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
 set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
+set "WSDK_PATH=C:\Program Files (x86)\Windows Kits\10"
 set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
 set "UPX3_PATH=C:\Program Files\UPX"
 set "PDOC_PATH=C:\Program Files\Pandoc"
@@ -108,6 +109,9 @@ copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"         
 copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
 copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
 del "%PACK_PATH%\imageformats\*d4.dll" 2> NUL
+if %TOOLS_VER% GEQ 140 (
+	copy "%WSDK_PATH%\Redist\ucrt\DLLs\x86\*.dll" "%PACK_PATH%"
+)
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Generate Docs
@@ -118,7 +122,8 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress
 REM ///////////////////////////////////////////////////////////////////////////
 "%UPX3_PATH%\upx.exe" --brute "%PACK_PATH%\*.exe"
-"%UPX3_PATH%\upx.exe" --best  "%PACK_PATH%\*.dll"
+"%UPX3_PATH%\upx.exe" --brute "%PACK_PATH%\MUtils32-?.dll
+"%UPX3_PATH%\upx.exe" --best  "%PACK_PATH%\Qt*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Attributes

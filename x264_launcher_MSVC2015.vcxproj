@@ -488,7 +488,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <Manifest Include="etc\manifest\compat.manifest" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MUtilities\MUtilities_VS2013.vcxproj">
+    <ProjectReference Include="..\MUtilities\MUtilities_VS2015.vcxproj">
       <Project>{55405fe1-149f-434c-9d72-4b64348d2a08}</Project>
     </ProjectReference>
   </ItemGroup>

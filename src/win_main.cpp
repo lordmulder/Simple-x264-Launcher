@@ -90,7 +90,7 @@ static const int   vsynth_rev = 24;
 #define INIT_ERROR_EXIT() do { close(); qApp->exit(-1); return; } while(0)
 #define SETUP_WEBLINK(OBJ, URL) do { (OBJ)->setData(QVariant(QUrl(URL))); connect((OBJ), SIGNAL(triggered()), this, SLOT(showWebLink())); } while(0)
 #define APP_IS_READY (m_initialized && (!m_fileTimer->isActive()) && (QApplication::activeModalWidget() == NULL))
-#define ENSURE_APP_IS_READY() do { if(!APP_IS_READY) { 		MUtils::Sound::beep(MUtils::Sound::BEEP_WRN); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
+#define ENSURE_APP_IS_READY() do { if(!APP_IS_READY) { MUtils::Sound::beep(MUtils::Sound::BEEP_WRN); qWarning("Cannot perfrom this action at this time!"); return; } } while(0)
 #define X264_STRCMP(X,Y) ((X).compare((Y), Qt::CaseInsensitive) == 0)
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -214,10 +214,14 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	connect(ui->actionJob_MoveDown, SIGNAL(triggered()),   this, SLOT(moveButtonPressed()     ));
 
 	//Enable menu
-	connect(ui->actionOpen, SIGNAL(triggered()), this, SLOT(openActionTriggered()));
-	connect(ui->actionAbout, SIGNAL(triggered()), this, SLOT(showAbout()));
-	connect(ui->actionPreferences, SIGNAL(triggered()), this, SLOT(showPreferences()));
-	connect(ui->actionCheckForUpdates, SIGNAL(triggered()), this, SLOT(checkUpdates()));
+	connect(ui->actionOpen,             SIGNAL(triggered()), this, SLOT(openActionTriggered()));
+	connect(ui->actionCleanup_Finished, SIGNAL(triggered()), this, SLOT(cleanupActionTriggered()));
+	connect(ui->actionCleanup_Enqueued, SIGNAL(triggered()), this, SLOT(cleanupActionTriggered()));
+	connect(ui->actionAbout,            SIGNAL(triggered()), this, SLOT(showAbout()));
+	connect(ui->actionPreferences,      SIGNAL(triggered()), this, SLOT(showPreferences()));
+	connect(ui->actionCheckForUpdates,  SIGNAL(triggered()), this, SLOT(checkUpdates()));
+	ui->actionCleanup_Finished->setData(QVariant(bool(0)));
+	ui->actionCleanup_Enqueued->setData(QVariant(bool(1)));
 
 	//Setup web-links
 	SETUP_WEBLINK(ui->actionWebMulder,          home_url);
@@ -342,6 +346,7 @@ void MainWindow::addButtonPressed()
 void MainWindow::openActionTriggered()
 {
 	ENSURE_APP_IS_READY();
+	qWarning("openActionTriggered()");
 
 	QStringList fileList = QFileDialog::getOpenFileNames(this, tr("Open Source File(s)"), m_recentlyUsed->sourceDirectory(), AddJobDialog::getInputFilterLst(), NULL, QFileDialog::DontUseNativeDialog);
 	if(!fileList.empty())
@@ -358,6 +363,51 @@ void MainWindow::openActionTriggered()
 			if(createJob(sourceFileName, outputFileName, m_options.data(), runImmediately))
 			{
 				appendJob(sourceFileName, outputFileName, m_options.data(), runImmediately);
+			}
+		}
+	}
+}
+
+/*
+* The "clean-up" action was invoked
+*/
+void MainWindow::cleanupActionTriggered(void)
+{
+	ENSURE_APP_IS_READY();
+
+	QAction *const sender = dynamic_cast<QAction*>(QObject::sender());
+	if (sender)
+	{
+		const QVariant data = sender->data();
+		if (data.isValid() && (data.type() == QVariant::Bool))
+		{
+			const bool mode = data.toBool();
+			const int rows = m_jobList->rowCount(QModelIndex());
+			QList<int> jobIndices;
+			for (int i = 0; i < rows; i++)
+			{
+				const JobStatus status = m_jobList->getJobStatus(m_jobList->index(i, 0, QModelIndex()));
+				if (mode && (status == JobStatus_Enqueued))
+				{
+					jobIndices.append(i);
+				}
+				else if ((!mode) && ((status == JobStatus_Completed) || (status == JobStatus_Aborted) || (status == JobStatus_Failed)))
+				{
+					jobIndices.append(i);
+				}
+			}
+			if (!jobIndices.isEmpty())
+			{
+				QListIterator<int> iter(jobIndices);
+				iter.toBack();
+				while(iter.hasPrevious())
+				{
+					m_jobList->deleteJob(m_jobList->index(iter.previous(), 0, QModelIndex()));
+				}
+			}
+			else
+			{
+				MUtils::Sound::beep(MUtils::Sound::BEEP_WRN);
 			}
 		}
 	}

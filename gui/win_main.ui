@@ -319,9 +319,23 @@
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Application</string>
     </property>
+    <widget class="QMenu" name="menuRemove_Jobs">
+     <property name="title">
+      <string>Clean-Up</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../res/resources.qrc">
+       <normaloff>:/buttons/clean.png</normaloff>:/buttons/clean.png</iconset>
+     </property>
+     <addaction name="actionCleanup_Finished"/>
+     <addaction name="actionCleanup_Enqueued"/>
+    </widget>
     <addaction name="actionOpen"/>
+    <addaction name="actionCreateJob"/>
+    <addaction name="separator"/>
+    <addaction name="menuRemove_Jobs"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
@@ -395,8 +409,6 @@
     <property name="title">
      <string>Job</string>
     </property>
-    <addaction name="actionJob_New"/>
-    <addaction name="separator"/>
     <addaction name="actionJob_Start"/>
     <addaction name="actionJob_Pause"/>
     <addaction name="actionJob_Abort"/>
@@ -484,13 +496,13 @@
     <string>BluRay Authoring Guide</string>
    </property>
   </action>
-  <action name="actionJob_New">
+  <action name="actionCreateJob">
    <property name="icon">
     <iconset resource="../res/resources.qrc">
      <normaloff>:/buttons/add.png</normaloff>:/buttons/add.png</iconset>
    </property>
    <property name="text">
-    <string>Create Job</string>
+    <string>Create New Job</string>
    </property>
   </action>
   <action name="actionJob_Start">
@@ -778,6 +790,29 @@
     <string>x265 Online Documentation</string>
    </property>
   </action>
+  <action name="actionRemove_Jobs">
+   <property name="text">
+    <string>Remove Jobs</string>
+   </property>
+  </action>
+  <action name="actionCleanup_Finished">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/trash.png</normaloff>:/buttons/trash.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove Completed/Failed Jobs</string>
+   </property>
+  </action>
+  <action name="actionCleanup_Enqueued">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/trash.png</normaloff>:/buttons/trash.png</iconset>
+   </property>
+   <property name="text">
+    <string>Remove Enqued Jobs</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>buttonAddJob</tabstop>
@@ -808,7 +843,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>actionJob_New</sender>
+   <sender>actionCreateJob</sender>
    <signal>triggered()</signal>
    <receiver>buttonAddJob</receiver>
    <slot>click()</slot>

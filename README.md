@@ -49,7 +49,7 @@ Occasionally your Antivirus program may mistakenly detect "malware" (virus, troj
 
 # License #
 
-Simple x264/x265 Launcher is Copyright (C) 2004-2015 LoRd_MuldeR.
+Simple x264/x265 Launcher is Copyright (C) 2004-2016 LoRd_MuldeR.
 
 ```
 This program is free software; you can redistribute it and/or modify
@@ -78,11 +78,11 @@ The following third-party software is used by this application:
   http://qt.digia.com/
   Qt is a free software, released under the terms of GNU GPL, version 3.
 
-* The x264 encoder software is Copyright (C) 2003-2015 x264 project.
+* The x264 encoder software is Copyright (C) 2003-2016 x264 project.
   http://www.videolan.org/developers/x264.html
   x264 is a free software and is released under the terms of the GNU GPL.
 
-* The x265 encoder software is Copyright (C) 2013-2015 x265 project.
+* The x265 encoder software is Copyright (C) 2013-2016 x265 project.
   http://www.videolan.org/developers/x265.html
   x265 is a free software and is released under the terms of the GNU GPL.
 
@@ -90,7 +90,7 @@ The following third-party software is used by this application:
   http://avisynth.nl/index.php/Main_Page
   AviSynth is a free software, released under the terms of the GNU GPL.
 
-* VapourSynth is Copyright (c) 2012-2015 Fredrik Mellbin.
+* VapourSynth is Copyright (c) 2012-2016 Fredrik Mellbin.
   http://www.vapoursynth.com/
   VapourSynth is free software, released under the terms of the GNU LGPL.
 

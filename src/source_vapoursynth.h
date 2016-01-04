@@ -48,6 +48,6 @@ protected:
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen);
 
-	virtual QString getBinaryPath() const { return getSourceInfo().getBinaryPath(m_sysinfo, (m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_preferences->getPrefer64BitSource())); }
+	virtual QString getBinaryPath() const { return getSourceInfo().getBinaryPath(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86)))); }
 	virtual void buildCommandLine(QStringList &cmdLine);
 };

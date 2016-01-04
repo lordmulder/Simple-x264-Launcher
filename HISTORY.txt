@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.65 [2015-??-??]
+* Added menu entry to remove all completed or enqueued jobs at once
+* Improved 32-Bit vs. 64-Bit selection for Avisynth/VapourSynth
+
 Version 2.64 [2015-12-20]
 * Fixed a dependency issue with Visual Studio runtime libraries
 

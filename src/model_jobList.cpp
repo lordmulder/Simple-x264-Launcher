@@ -239,39 +239,25 @@ QVariant JobListModel::data(const QModelIndex &index, int role) const
 
 QModelIndex JobListModel::insertJob(EncodeThread *thread)
 {
-	QUuid id = thread->getId();
-
+	const QUuid id = thread->getId();
 	if(m_jobs.contains(id))
 	{
 		return QModelIndex();
 	}
 	
-	QString config = "N/A";
-
-	switch(thread->options()->rcMode())
+	QString config = QLatin1String("N/A");
+	switch(thread->options()->encType())
 	{
-	case OptionsModel::EncType_X264:
-		config = QString("x264");
-		break;
-	case OptionsModel::EncType_X265:
-		config = QString("x265");
-		break;
+		case OptionsModel::EncType_X264: config = QLatin1String("x264"); break;
+		case OptionsModel::EncType_X265: config = QLatin1String("x265"); break;
 	}
 	
 	switch(thread->options()->rcMode())
 	{
-	case OptionsModel::RCMode_CRF:
-		config = QString("%1 CRF@%2")  .arg(config, QString::number(thread->options()->quantizer()));
-		break;
-	case OptionsModel::RCMode_CQ:
-		config = QString("%1 CQ@%2")   .arg(config, QString::number(qRound(thread->options()->quantizer())));
-		break;
-	case OptionsModel::RCMode_2Pass:
-		config = QString("%1 2Pass@%2").arg(config, QString::number(thread->options()->bitrate()));
-		break;
-	case OptionsModel::RCMode_ABR:
-		config = QString("%1 ABR@%2")  .arg(config, QString::number(thread->options()->bitrate()));
-		break;
+		case OptionsModel::RCMode_CRF:   config.append(QString(" CRF@%1")  .arg(QString::number(thread->options()->quantizer())));         break;
+		case OptionsModel::RCMode_CQ:    config.append(QString(" CQ@%1")   .arg(QString::number(qRound(thread->options()->quantizer())))); break;
+		case OptionsModel::RCMode_2Pass: config.append(QString(" 2Pass@%1").arg(QString::number(thread->options()->bitrate())));           break;
+		case OptionsModel::RCMode_ABR:   config.append(QString(" ABR@%1")  .arg(QString::number(thread->options()->bitrate())));           break;
 	}
 
 	int n = 2;

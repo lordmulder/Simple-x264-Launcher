@@ -294,28 +294,6 @@ QString x264_path2ansi(const QString &longPath, bool makeLowercase)
 }
 
 /*
- * Read value from registry
- */
-QString x264_query_reg_string(const bool bUser, const QString &path, const QString &name)
-{
-	QString result; HKEY hKey = NULL;
-	if(RegOpenKey((bUser ? HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE), MUTILS_WCHR(path), &hKey) == ERROR_SUCCESS)
-	{
-		const size_t DATA_LEN = 2048; wchar_t data[DATA_LEN];
-		DWORD type = REG_NONE, size = sizeof(wchar_t) * DATA_LEN;
-		if(RegQueryValueEx(hKey, MUTILS_WCHR(name), NULL, &type, ((BYTE*)&data[0]), &size) == ERROR_SUCCESS)
-		{
-			if((type == REG_SZ) || (type == REG_EXPAND_SZ))
-			{
-				result = MUTILS_QSTR(&data[0]);
-			}
-		}
-		RegCloseKey(hKey);
-	}
-	return result;
-}
-
-/*
  * Inform the system that it is in use, thereby preventing the system from entering sleep
  */
 bool x264_set_thread_execution_state(const bool systemRequired)

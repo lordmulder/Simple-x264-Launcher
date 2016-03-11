@@ -42,7 +42,6 @@ class QProcess;
 //Utility functions
 const QString &x264_data_path(void);
 QString x264_path2ansi(const QString &longPath, bool makeLowercase = false);
-QString x264_query_reg_string(const bool bUser, const QString &path, const QString &name);
 bool x264_set_thread_execution_state(const bool systemRequired);
 
 //Version getters

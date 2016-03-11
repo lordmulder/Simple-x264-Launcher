@@ -23,6 +23,7 @@
 
 //Mutils
 #include <MUtils/OSSupport.h>
+#include <MUtils/Registry.h>
 
 //Qt
 #include <QLibrary>
@@ -186,6 +187,12 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 		"Inno Setup: App Path",
 		NULL
 	};
+	static const MUtils::Registry::reg_scope_t REG_SCOPE[3] =
+	{
+		MUtils::Registry::scope_default,
+		MUtils::Registry::scope_wow_x32,
+		MUtils::Registry::scope_wow_x64
+	};
 
 	//Read VapourSynth path from registry
 	QString vapoursynthPath;
@@ -193,10 +200,28 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 	{
 		for(size_t j = 0; VPS_REG_NAME[j]; j++)
 		{
-			vapoursynthPath = cleanDir(x264_query_reg_string(false, VPS_REG_KEYS[i], VPS_REG_NAME[j]));
-			if(VALID_DIR(vapoursynthPath)) break;
+			for (size_t k = 0; k < 3; k++)
+			{
+				QString temp;
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS[i]), QString::fromLatin1(VPS_REG_NAME[j]), temp, REG_SCOPE[k]))
+				{
+					temp = cleanDir(temp);
+					if (VALID_DIR(temp))
+					{
+						vapoursynthPath = temp;
+						break;
+					}
+				}
+			}
+			if (!vapoursynthPath.isEmpty())
+			{
+				break;
+			}
 		}
-		if(VALID_DIR(vapoursynthPath)) break;
+		if (!vapoursynthPath.isEmpty())
+		{
+			break;
+		}
 	}
 
 	//Make sure VapourSynth does exist

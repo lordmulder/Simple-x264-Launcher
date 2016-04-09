@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.68 [2016-04-09]
+* Updated build environment to Visual Studio 2015 with Update-2
+* Updated x265 to version 1.9+106
+
 Version 2.67 [2016-03-17]
 * Updated x265 to version 1.9+96
 * Fixed detection of 64-Bit VapourSynth in certain cases

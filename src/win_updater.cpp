@@ -50,6 +50,7 @@
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
 	{ "wget.exe", "7b522345239bcb95b5b0f7f50a883ba5957894a1feb769763e38ed789a8a0f63fead0155f54b9ffd0f1cdc5dfd855d207a6e7a8e4fd192589a8838ce646c504e", 1 },
+	{ "netc.exe", "c199ea12d761fa3191006da250f8f600ad426265fdf4a43e551cdf04a451a105692efd3ef82ac621c0799394aa21ac65bfbb4bab90c3fbb1f557e93f490fcb75", 1 },
 	{ "gpgv.exe", "18c5456cbb9ebf5cb9012a939b199d9eaa71c92a39f574f1e032babad0bbd9e72a064af96ca9d3d01f2892b064ec239fd61f27bac2eb9a64f7b2ece7beea3158", 1 },
 	{ "gpgv.gpg", "745c7a9c040196d9d322b1580e0046ff26ec13238cfd04325ceb3d4c8948294c593c027f895dc8ec427295175003e75d34f083019b706b0f4f06f81cce8df47d", 0 },
 	{ "wupd.exe", "7eb8338efe0ddf973ee9fda5e5bfa4728876f2fcff2b3add30cb8c439d3d59a5de1a0636176c34be0b0da1a764363d0cfec014679749dc504999aa184f35dfd5", 1 },
@@ -197,8 +198,7 @@ void UpdaterDialog::initUpdate(void)
 	}
 
 	//Check binary files
-	QString wgetBin, gpgvBin;
-	if(!checkBinaries(wgetBin, gpgvBin))
+	if(!checkBinaries())
 	{
 		ui->buttonCancel->setEnabled(true);
 		const QString message = QString("%1<br><br><nobr><a href=\"%2\">%3</a></nobr><br>").arg(tr("At least one file required by the web-update tool is missing or corrupted.<br>Please re-install this application and then try again!"), QString::fromLatin1(m_updateUrl), QString::fromLatin1(m_updateUrl).replace("-", "&minus;"));
@@ -226,7 +226,7 @@ void UpdaterDialog::initUpdate(void)
 	//Create and setup thread
 	if(!m_thread)
 	{
-		m_thread.reset(new MUtils::UpdateChecker(m_binaries.value("wget.exe"), m_binaries.value("gpgv.exe"), m_binaries.value("gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
+		m_thread.reset(new MUtils::UpdateChecker(m_binaries.value("wget.exe"), m_binaries.value("netc.exe"), m_binaries.value("gpgv.exe"), m_binaries.value("gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
 		connect(m_thread.data(), SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
 		connect(m_thread.data(), SIGNAL(finished()), this, SLOT(threadFinished()));
 		connect(m_thread.data(), SIGNAL(terminated()), this, SLOT(threadFinished()));
@@ -458,7 +458,7 @@ void UpdaterDialog::installUpdate(void)
 // Private Functions
 ///////////////////////////////////////////////////////////////////////////////
 
-bool UpdaterDialog::checkBinaries(QString &wgetBin, QString &gpgvBin)
+bool UpdaterDialog::checkBinaries(void)
 {
 	qDebug("[File Verification]");
 	m_binaries.clear();

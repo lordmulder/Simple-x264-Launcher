@@ -77,7 +77,7 @@ private slots:
 private:
 	Ui::UpdaterDialog *const ui;
 
-	bool checkBinaries(QString &wgetBin, QString &gpgvBin);
+	bool checkBinaries();
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
 	void cleanFiles(void);
 

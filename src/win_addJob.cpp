@@ -680,7 +680,7 @@ void AddJobDialog::accept(void)
 	}
 	else if(sourceType == MediaInfo::FILETYPE_VAPOURSYNTH)
 	{
-		if(!m_sysinfo->hasAvisynth())
+		if(!m_sysinfo->hasVapourSynth())
 		{
 			if(QMessageBox::warning(this, tr("VapurSynth unsupported!"), tr("<nobr>A VapourSynth script was selected as input, although VapourSynth is <b>not/<b> available!</nobr>"), tr("Abort"), tr("Ignore (at your own risk!)")) != 1)
 			{

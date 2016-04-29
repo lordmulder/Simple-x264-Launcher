@@ -114,6 +114,7 @@ ReserveFile "${NSISDIR}\Plugins\UserInfo.dll"
 ;--------------------------------
 
 Var StartMenuFolder
+Var UpdateNotificationShown
 
 
 ;--------------------------------
@@ -473,6 +474,19 @@ FunctionEnd
 	RMDir /r ${options} `$INSTDIR\sources`
 !macroend
 
+!macro SetControlEnabled item_id enable
+	FindWindow $R0 "#32770" "" $HWNDPARENT
+	${IfNot} $R0 == 0
+		GetDlgItem $R1 $R0 ${item_id}
+		EnableWindow $R1 ${enable}
+	${EndIf}
+!macroend
+
+!macro SkipToNextPage
+	GetDlgItem $R0 $HWNDPARENT 1
+	System::Call "User32::PostMessage(i $HWNDPARENT, i ${WM_COMMAND}, i 1, i $R0)"
+!macroend
+
 
 ;--------------------------------
 ;Install Files
@@ -666,16 +680,19 @@ Function CheckForUpdate
 	${If} "$INSTDIR" == ""
 	${OrIf} "$INSTDIR" == "$EXEDIR"
 	${OrIfNot} ${FileExists} "$INSTDIR\x264_launcher.exe"
+		StrCpy $UpdateNotificationShown FALSE
+		!insertmacro SetControlEnabled 1019 1
+		!insertmacro SetControlEnabled 1001 1
 		Return
+	${Else}
+		!insertmacro SetControlEnabled 1019 0
+		!insertmacro SetControlEnabled 1001 0
+		${If} "$UpdateNotificationShown" != TRUE
+			StrCpy $UpdateNotificationShown TRUE
+			MessageBox MB_ICONINFORMATION|MB_TOPMOST "$(X264_LANG_UNINST_UPDATE_MODE)"
+			!insertmacro SkipToNextPage
+		${EndIf}
 	${EndIf}
-
-	FindWindow $R0 "#32770" "" $HWNDPARENT
-	GetDlgItem $R1 $R0 1019
-	EnableWindow $R1 0
-
-	FindWindow $R0 "#32770" "" $HWNDPARENT
-	GetDlgItem $R1 $R0 1001
-	EnableWindow $R1 0
 FunctionEnd
 
 Function un.CheckForcedUninstall

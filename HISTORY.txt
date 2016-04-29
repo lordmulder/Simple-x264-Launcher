@@ -2,8 +2,9 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
-Version 2.69 [2016-04-28]
-* Fixed a VapourSynth error, when Avisynth is *not* installed
+Version 2.70 [2016-04-29]
+* Fixed potential VapourSynth error, when Avisynth is *not* installed
+* Some installer improvements
 
 Version 2.69 [2016-04-23]
 * Updated x264 to revision 2692

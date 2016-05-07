@@ -37,11 +37,12 @@ public:
 
 	enum EncType
 	{
-		EncType_X264 = 0,
-		EncType_X265 = 1,
+		EncType_X264  = 0,
+		EncType_X265  = 1,
+		EncType_NVEnc = 2,
 
 		EncType_MIN  = EncType_X264,
-		EncType_MAX  = EncType_X265,
+		EncType_MAX  = EncType_NVEnc,
 	};
 
 	enum EncArch
@@ -91,9 +92,9 @@ public:
 	QString customAvs2YUV(void)   const { return m_custom_avs2yuv; }
 
 	//Setter
-	void setEncType(EncType type)                  { m_encoderType = qBound(EncType_X264, type, EncType_X265); }
-	void setEncArch(EncArch arch)                  { m_encoderArch = qBound(EncArch_x86_32, arch, EncArch_x86_64); }
-	void setEncVariant(EncVariant variant)         { m_encoderVariant = qBound(EncVariant_8Bit, variant, EncVariant_12Bit); }
+	void setEncType(EncType type)                  { m_encoderType = qBound(EncType_MIN, type, EncType_MAX); }
+	void setEncArch(EncArch arch)                  { m_encoderArch = qBound(EncArch_MIN, arch, EncArch_MAX); }
+	void setEncVariant(EncVariant variant)         { m_encoderVariant = qBound(EncVariant_MIN, variant, EncVariant_MAX); }
 	void setRCMode(RCMode mode)                    { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
 	void setBitrate(unsigned int bitrate)          { m_bitrate = qBound(10U, bitrate, 800000U); }
 	void setQuantizer(double quantizer)            { m_quantizer = qBound(0.0, quantizer, 52.0); }

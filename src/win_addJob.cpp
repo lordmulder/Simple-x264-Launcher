@@ -322,8 +322,9 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	setMaximumHeight(height());
 
 	//Init encoder combobox
-	ui->cbxEncoderType->addItem(tr("x264 (AVC)"), OptionsModel::EncType_X264);
+	ui->cbxEncoderType->addItem(tr("x264 (AVC)"),  OptionsModel::EncType_X264);
 	ui->cbxEncoderType->addItem(tr("x265 (HEVC)"), OptionsModel::EncType_X265);
+	ui->cbxEncoderType->addItem(tr("NVEncC"),      OptionsModel::EncType_NVEnc);
 
 	//Init arch combobox
 	ui->cbxEncoderArch->addItem(tr("32-Bit"), OptionsModel::EncArch_x86_32);

@@ -164,12 +164,12 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 		}
 
 		//Process all output
-		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass, last_progress, size_estimate);
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, frames, pass, last_progress, size_estimate);
 	}
 	
 	if(!(bTimeout || bAborted))
 	{
-		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, pass, last_progress, size_estimate);
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, frames, pass, last_progress, size_estimate);
 	}
 
 	processEncode.waitForFinished(5000);
@@ -296,4 +296,9 @@ QString AbstractEncoder::sizeToString(qint64 size)
 const AbstractEncoderInfo& AbstractEncoder::getEncoderInfo(void)
 {
 	MUTILS_THROW("[getEncoderInfo] This function must be overwritten in sub-classes!");
+}
+
+QStringList AbstractEncoderInfo::getDependencies(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const
+{
+	return QStringList();
 }

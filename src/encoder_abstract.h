@@ -39,6 +39,7 @@ public:
 	virtual bool isRCModeSupported(const OptionsModel::RCMode &rcMode) const = 0;
 	virtual bool isInputTypeSupported(const int format) const = 0;
 	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const = 0;
+	virtual QStringList getDependencies(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const;
 };
 
 class AbstractEncoder : public AbstractTool
@@ -55,7 +56,7 @@ protected:
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile) = 0;
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns) = 0;
-	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass, double &last_progress, double &size_estimate) = 0;
+	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate) = 0;
 
 	static double estimateSize(const QString &fileName, const double &progress);
 	static QString sizeToString(qint64 size);

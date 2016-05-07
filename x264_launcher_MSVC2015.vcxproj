@@ -167,6 +167,8 @@ mkdir "$(TargetDir)\imageformats"
 
 copy /Y "$(SolutionDir)res\toolset\x86\*.exe" "$(TargetDir)\toolset\x86\"
 copy /Y "$(SolutionDir)res\toolset\x64\*.exe" "$(TargetDir)\toolset\x64\"
+copy /Y "$(SolutionDir)res\toolset\x86\*.dll" "$(TargetDir)\toolset\x86\"
+copy /Y "$(SolutionDir)res\toolset\x64\*.dll" "$(TargetDir)\toolset\x64\"
 copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
 copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
 
@@ -285,6 +287,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <ClInclude Include="src\encoder_nvenc.h" />
     <ClInclude Include="src\source_factory.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_about.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_addJob.h" />
@@ -428,6 +431,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
   <ItemGroup>
     <ClCompile Include="src\encoder_abstract.cpp" />
     <ClCompile Include="src\encoder_factory.cpp" />
+    <ClCompile Include="src\encoder_nvenc.cpp" />
     <ClCompile Include="src\encoder_x264.cpp" />
     <ClCompile Include="src\encoder_x265.cpp" />
     <ClCompile Include="src\job_object.cpp" />

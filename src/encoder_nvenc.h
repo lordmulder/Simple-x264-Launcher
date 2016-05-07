@@ -23,11 +23,11 @@
 
 #include "encoder_abstract.h"
 
-class X265Encoder : public AbstractEncoder
+class NVEncEncoder : public AbstractEncoder
 {
 public:
-	X265Encoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
-	virtual ~X265Encoder(void);
+	NVEncEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
+	virtual ~NVEncEncoder(void);
 
 	virtual QString getName(void) const;
 
@@ -42,6 +42,7 @@ protected:
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
 	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
+	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
 	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate);

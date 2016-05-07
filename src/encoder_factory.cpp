@@ -14,7 +14,7 @@
 //
 // You should have received a copy of the GNU General Public License along
 // with this program; if not, write to the Free Software Foundation, Inc.,
-// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+// 51 Franklin Street, Fifth Floory, Boston, MA 02110-1301 USA.
 //
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
@@ -26,6 +26,7 @@
 #include "model_options.h"
 #include "encoder_x264.h"
 #include "encoder_x265.h"
+#include "encoder_nvenc.h"
 
 //MUtils
 #include <MUtils/Exception.h>
@@ -42,6 +43,9 @@ AbstractEncoder *EncoderFactory::createEncoder(JobObject *jobObject, const Optio
 	case OptionsModel::EncType_X265:
 		encoder = new X265Encoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile);
 		break;
+	case OptionsModel::EncType_NVEnc:
+		encoder = new NVEncEncoder(jobObject, options, sysinfo, preferences, jobStatus, abort, pause, semaphorePause, sourceFile, outputFile);
+		break;
 	default:
 		MUTILS_THROW("Unknown encoder type encountered!");
 	}
@@ -57,6 +61,8 @@ const AbstractEncoderInfo& EncoderFactory::getEncoderInfo(const OptionsModel::En
 		return X264Encoder::getEncoderInfo();
 	case OptionsModel::EncType_X265:
 		return X265Encoder::getEncoderInfo();
+	case OptionsModel::EncType_NVEnc:
+		return NVEncEncoder::getEncoderInfo();
 	default:
 		MUTILS_THROW("Unknown encoder type encountered!");
 	}

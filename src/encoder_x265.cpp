@@ -400,7 +400,7 @@ void X265Encoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 	patterns << new QRegExp("\\[\\s*(\\d+)\\.(\\d+)%\\]\\s+(\\d+)/(\\d+)\\s(\\d+).(\\d+)\\s(\\d+).(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+):(\\d+):(\\d+)"); //regExpModified
 }
 
-void X265Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass, double &last_progress, double &size_estimate)
+void X265Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate)
 {
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)

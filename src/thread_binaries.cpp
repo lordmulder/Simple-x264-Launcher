@@ -145,8 +145,9 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 	success = true;
 
 	//Create list of all required binary files
-	QStringList binFiles;
-	for(OptionsModel::EncType encdr = OptionsModel::EncType_X264; encdr <= OptionsModel::EncType_X265; NEXT(encdr))
+	typedef QPair<QString, bool> FileEntry;
+	QList<FileEntry> binFiles;
+	for(OptionsModel::EncType encdr = OptionsModel::EncType_MIN; encdr <= OptionsModel::EncType_MAX; NEXT(encdr))
 	{
 		const AbstractEncoderInfo &encInfo = EncoderFactory::getEncoderInfo(encdr);
 		const QFlags<OptionsModel::EncVariant> variants = encInfo.getVariants();
@@ -156,34 +157,42 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 			{
 				if(variants.testFlag(varnt))
 				{
-					binFiles << encInfo.getBinaryPath(sysinfo, arch, varnt);
+					binFiles << qMakePair(encInfo.getBinaryPath(sysinfo, arch, varnt), false);
+					const QStringList dependencies = encInfo.getDependencies(sysinfo, arch, varnt);
+					if (!dependencies.empty())
+					{
+						for (QStringList::ConstIterator iter = dependencies.constBegin(); iter != dependencies.constEnd(); iter++)
+						{
+							binFiles << qMakePair(*iter, true);
+						}
+					}
 				}
 			}
 		}
 	}
 	for(int i = 0; i < 2; i++)
 	{
-		binFiles << SourceFactory::getSourceInfo(SourceFactory::SourceType_AVS).getBinaryPath(sysinfo, bool(i));
-		binFiles << AVS_CHECK_BINARY(sysinfo, bool(i));
+		binFiles << qMakePair(SourceFactory::getSourceInfo(SourceFactory::SourceType_AVS).getBinaryPath(sysinfo, bool(i)), false);
+		binFiles << qMakePair(AVS_CHECK_BINARY(sysinfo, bool(i)), false);
 	}
 	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
 	{
 		if(UpdaterDialog::BINARIES[i].exec)
 		{
-			binFiles << QString("%1/toolset/common/%2").arg(sysinfo->getAppPath(), QString::fromLatin1(UpdaterDialog::BINARIES[i].name));
+			binFiles << qMakePair(QString("%1/toolset/common/%2").arg(sysinfo->getAppPath(), QString::fromLatin1(UpdaterDialog::BINARIES[i].name)), false);
 		}
 	}
 
 	//Actually validate the binaries
 	size_t currentFile = 0;
-	for(QStringList::ConstIterator iter = binFiles.constBegin(); iter != binFiles.constEnd(); iter++)
+	for(QList<FileEntry>::ConstIterator iter = binFiles.constBegin(); iter != binFiles.constEnd(); iter++)
 	{
-		QScopedPointer<QFile> file(new QFile(*iter));
+		QScopedPointer<QFile> file(new QFile(iter->first));
 		qDebug("%s", MUTILS_UTF8(file->fileName()));
 
 		if(file->open(QIODevice::ReadOnly))
 		{
-			if(!MUtils::OS::is_executable_file(file->fileName()))
+			if(!(iter->second || MUtils::OS::is_executable_file(file->fileName())))
 			{
 				success = false;
 				qWarning("Required tool does NOT look like a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));

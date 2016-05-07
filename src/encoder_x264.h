@@ -44,6 +44,6 @@ protected:
 	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
-	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const int &pass, double &last_progress, double &size_estimate);
+	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate);
 
 };

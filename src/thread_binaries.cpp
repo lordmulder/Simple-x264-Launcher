@@ -24,6 +24,7 @@
 #include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
+#include <QSet>
 #include <QMutexLocker>
 #include <QApplication>
 #include <QProcess>
@@ -150,23 +151,22 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 	for(OptionsModel::EncType encdr = OptionsModel::EncType_MIN; encdr <= OptionsModel::EncType_MAX; NEXT(encdr))
 	{
 		const AbstractEncoderInfo &encInfo = EncoderFactory::getEncoderInfo(encdr);
-		const QFlags<OptionsModel::EncVariant> variants = encInfo.getVariants();
-		for(OptionsModel::EncArch arch = OptionsModel::EncArch_x86_32; arch <= OptionsModel::EncArch_x86_64; NEXT(arch))
+		const QStringList archs = encInfo.getArchitectures(), variants = encInfo.getVariants();
+		QSet<QString> dependencySet;
+		for (quint32 archIdx = 0; archIdx < quint32(archs.count()); ++archIdx)
 		{
-			for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_MIN; varnt <= OptionsModel::EncVariant_MAX; SHFL(varnt))
+			for (quint32 varntIdx = 0; varntIdx < quint32(variants.count()); ++varntIdx)
 			{
-				if(variants.testFlag(varnt))
+				const QStringList dependencies = encInfo.getDependencies(sysinfo, archIdx, varntIdx);
+				for (QStringList::ConstIterator iter = dependencies.constBegin(); iter != dependencies.constEnd(); iter++)
 				{
-					binFiles << qMakePair(encInfo.getBinaryPath(sysinfo, arch, varnt), false);
-					const QStringList dependencies = encInfo.getDependencies(sysinfo, arch, varnt);
-					if (!dependencies.empty())
+					if (!dependencySet.contains(*iter))
 					{
-						for (QStringList::ConstIterator iter = dependencies.constBegin(); iter != dependencies.constEnd(); iter++)
-						{
-							binFiles << qMakePair(*iter, true);
-						}
+						dependencySet << (*iter);
+						binFiles << qMakePair(*iter, true);
 					}
 				}
+				binFiles << qMakePair(encInfo.getBinaryPath(sysinfo, archIdx, varntIdx), false);
 			}
 		}
 	}
@@ -192,11 +192,23 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 
 		if(file->open(QIODevice::ReadOnly))
 		{
-			if(!(iter->second || MUtils::OS::is_executable_file(file->fileName())))
+			if(!iter->second)
 			{
-				success = false;
-				qWarning("Required tool does NOT look like a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));
-				return;
+				if (!MUtils::OS::is_executable_file(file->fileName()))
+				{
+					success = false;
+					qWarning("Required tool does NOT look like a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));
+					return;
+				}
+			}
+			else
+			{
+				if (!MUtils::OS::is_library_file(file->fileName()))
+				{
+					success = false;
+					qWarning("Required tool does NOT look like a valid Win32/Win64 library:\n%s\n", MUTILS_UTF8(file->fileName()));
+					return;
+				}
 			}
 			if(currentFile < MAX_BINARIES)
 			{

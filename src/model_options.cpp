@@ -57,9 +57,9 @@ const char *const OptionsModel::PROFILE_UNRESTRICTED = "<Unrestricted>";
 OptionsModel::OptionsModel(const SysinfoModel *sysinfo)
 {
 	m_encoderType = EncType_X264;
-	m_encoderArch = sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) ? EncArch_x86_64 : EncArch_x86_32;
-	m_encoderVariant = EncVariant_8Bit;
-	m_rcMode = RCMode_CRF;
+	m_encoderArch = sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) ? 0 : 1;
+	m_encoderVariant = 0;
+	m_rcMode = 0;
 	m_bitrate = 1200;
 	m_quantizer = 22;
 	m_preset = "Medium";
@@ -86,28 +86,6 @@ OptionsModel::OptionsModel(const OptionsModel &rhs)
 
 OptionsModel::~OptionsModel(void)
 {
-}
-
-QString OptionsModel::rcMode2String(RCMode mode)
-{
-	switch(mode)
-	{
-	case RCMode_CRF:
-		return QObject::tr("CRF");
-		break;
-	case RCMode_CQ:
-		return QObject::tr("CQ");
-		break;
-	case RCMode_2Pass:
-		return QObject::tr("2-Pass");
-		break;
-	case RCMode_ABR:
-		return QObject::tr("ABR");
-		break;
-	default:
-		return QString();
-		break;
-	}
 }
 
 bool OptionsModel::equals(const OptionsModel *model)
@@ -251,17 +229,17 @@ bool OptionsModel::loadOptions(OptionsModel *model, QSettings &settingsFile)
 
 	if(complete)
 	{
-		model->setEncType        (static_cast<OptionsModel::EncType>   (settingsFile.value(KEY_ENCODER_TYPE,    model->m_encoderType)   .toInt()));
-		model->setEncArch        (static_cast<OptionsModel::EncArch>   (settingsFile.value(KEY_ENCODER_ARCH,    model->m_encoderArch)   .toInt()));
-		model->setEncVariant     (static_cast<OptionsModel::EncVariant>(settingsFile.value(KEY_ENCODER_VARIANT, model->m_encoderVariant).toInt()));
-		model->setRCMode         (static_cast<OptionsModel::RCMode>    (settingsFile.value(KEY_RATECTRL_MODE,   model->m_rcMode)        .toInt()));
-		model->setBitrate        (settingsFile.value(KEY_TARGET_BITRATE, model->m_bitrate)       .toUInt()  );
-		model->setQuantizer      (settingsFile.value(KEY_TARGET_QUANT,   model->m_quantizer)     .toDouble());
-		model->setPreset         (settingsFile.value(KEY_PRESET_NAME,    model->m_preset)        .toString());
-		model->setTune           (settingsFile.value(KEY_TUNING_NAME,    model->m_tune)          .toString());
-		model->setProfile        (settingsFile.value(KEY_PROFILE_NAME,   model->m_profile)       .toString());
-		model->setCustomEncParams(settingsFile.value(KEY_CUSTOM_ENCODER, model->m_custom_encoder).toString());
-		model->setCustomAvs2YUV  (settingsFile.value(KEY_CUSTOM_AVS2YUV, model->m_custom_avs2yuv).toString());
+		model->setEncType        (settingsFile.value(KEY_ENCODER_TYPE,    model->m_encoderType)   .toInt());
+		model->setEncArch        (settingsFile.value(KEY_ENCODER_ARCH,    model->m_encoderArch)   .toInt());
+		model->setEncVariant     (settingsFile.value(KEY_ENCODER_VARIANT, model->m_encoderVariant).toInt());
+		model->setRCMode         (settingsFile.value(KEY_RATECTRL_MODE,   model->m_rcMode)        .toInt());
+		model->setBitrate        (settingsFile.value(KEY_TARGET_BITRATE,  model->m_bitrate)       .toUInt());
+		model->setQuantizer      (settingsFile.value(KEY_TARGET_QUANT,    model->m_quantizer)     .toDouble());
+		model->setPreset         (settingsFile.value(KEY_PRESET_NAME,     model->m_preset)        .toString());
+		model->setTune           (settingsFile.value(KEY_TUNING_NAME,     model->m_tune)          .toString());
+		model->setProfile        (settingsFile.value(KEY_PROFILE_NAME,    model->m_profile)       .toString());
+		model->setCustomEncParams(settingsFile.value(KEY_CUSTOM_ENCODER,  model->m_custom_encoder).toString());
+		model->setCustomAvs2YUV  (settingsFile.value(KEY_CUSTOM_AVS2YUV,  model->m_custom_avs2yuv).toString());
 	}
 	
 	return complete;
@@ -271,9 +249,9 @@ void OptionsModel::fixTemplate(QSettings &settingsFile)
 {
 	if(!(settingsFile.contains(KEY_ENCODER_TYPE) || settingsFile.contains(KEY_ENCODER_ARCH) || settingsFile.contains(KEY_ENCODER_VARIANT)))
 	{
-		settingsFile.setValue(KEY_ENCODER_TYPE,    OptionsModel::EncType_X264);
-		settingsFile.setValue(KEY_ENCODER_ARCH,    OptionsModel::EncArch_x86_32);
-		settingsFile.setValue(KEY_ENCODER_VARIANT, OptionsModel::EncVariant_8Bit);
+		settingsFile.setValue(KEY_ENCODER_TYPE,    0);
+		settingsFile.setValue(KEY_ENCODER_ARCH,    0);
+		settingsFile.setValue(KEY_ENCODER_VARIANT, 0);
 	}
 
 	static const char *legacyKey[] = { "custom_params", "custom_params_x264", NULL };

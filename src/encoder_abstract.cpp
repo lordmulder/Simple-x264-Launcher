@@ -293,12 +293,47 @@ QString AbstractEncoder::sizeToString(qint64 size)
 // Encoder Info
 // ------------------------------------------------------------
 
+template <class T>
+static T getElementAt(const QList<T> &list, const quint32 &index)
+{
+	if (index >= quint32(list.count()))
+	{
+		MUTILS_THROW("Index is out of bounds!");
+	}
+	return list[index];
+}
+
 const AbstractEncoderInfo& AbstractEncoder::getEncoderInfo(void)
 {
 	MUTILS_THROW("[getEncoderInfo] This function must be overwritten in sub-classes!");
 }
 
-QStringList AbstractEncoderInfo::getDependencies(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const
+QStringList AbstractEncoderInfo::getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 {
 	return QStringList();
+}
+
+QString AbstractEncoderInfo::getFullName(const quint32 &encArch, const quint32 &encVariant) const
+{
+	return QString("%1, %2, %3").arg(getName(), archToString(encArch), variantToString(encVariant));
+}
+
+QString AbstractEncoderInfo::archToString(const quint32 &index) const
+{
+	return getElementAt(getArchitectures(), index);
+}
+
+QString AbstractEncoderInfo::variantToString(const quint32 &index) const
+{
+	return getElementAt(getVariants(), index);
+}
+
+QString AbstractEncoderInfo::rcModeToString(const quint32 &index) const
+{
+	return getElementAt(getRCModes(), index).first;
+}
+
+AbstractEncoderInfo::RCType AbstractEncoderInfo::rcModeToType(const quint32 &index) const
+{
+	return getElementAt(getRCModes(), index).second;
 }

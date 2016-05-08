@@ -260,7 +260,7 @@ void EncodeThread::encode(void)
 	log(tr("\n--- SETTINGS ---\n"));
 	log(tr("Encoder : %1").arg(m_encoder->getName()));
 	log(tr("Source  : %1").arg(m_pipedSource ? m_pipedSource->getName() : tr("Native")));
-	log(tr("RC Mode : %1").arg(OptionsModel::rcMode2String(m_options->rcMode())));
+	log(tr("RC Mode : %1").arg(m_encoder->getEncoderInfo().rcModeToString(m_options->rcMode())));
 	log(tr("Preset  : %1").arg(m_options->preset()));
 	log(tr("Tuning  : %1").arg(m_options->tune()));
 	log(tr("Profile : %1").arg(m_options->profile()));
@@ -326,7 +326,7 @@ void EncodeThread::encode(void)
 	// -----------------------------------------------------------------------------------
 
 	//Run encoding passes
-	if(m_options->rcMode() == OptionsModel::RCMode_2Pass)
+	if(m_encoder->getEncoderInfo().rcModeToType(m_options->rcMode()) == AbstractEncoderInfo::RC_TYPE_MULTIPASS)
 	{
 		const QString passLogFile = getPasslogFile(m_outputFileName);
 		

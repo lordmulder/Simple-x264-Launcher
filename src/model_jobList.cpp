@@ -23,6 +23,7 @@
 #include "global.h"
 #include "model_jobList.h"
 #include "thread_encode.h"
+#include "encoder_factory.h"
 #include "model_options.h"
 #include "model_preferences.h"
 #include "resource.h"
@@ -245,24 +246,21 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		return QModelIndex();
 	}
 	
-	QString config = QLatin1String("N/A");
-	switch(thread->options()->encType())
+	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(thread->options()->encType());
+	QString config = encoderInfo.getName();
+	switch(encoderInfo.rcModeToType(thread->options()->rcMode()))
 	{
-		case OptionsModel::EncType_X264: config = QLatin1String("x264"); break;
-		case OptionsModel::EncType_X265: config = QLatin1String("x265"); break;
-	}
-	
-	switch(thread->options()->rcMode())
-	{
-		case OptionsModel::RCMode_CRF:   config.append(QString(" CRF@%1")  .arg(QString::number(thread->options()->quantizer())));         break;
-		case OptionsModel::RCMode_CQ:    config.append(QString(" CQ@%1")   .arg(QString::number(qRound(thread->options()->quantizer())))); break;
-		case OptionsModel::RCMode_2Pass: config.append(QString(" 2Pass@%1").arg(QString::number(thread->options()->bitrate())));           break;
-		case OptionsModel::RCMode_ABR:   config.append(QString(" ABR@%1")  .arg(QString::number(thread->options()->bitrate())));           break;
+	case AbstractEncoderInfo::RC_TYPE_QUANTIZER:
+		config.append(QString(", %1@%2").arg(encoderInfo.rcModeToString(thread->options()->rcMode()), QString::number(qRound(thread->options()->quantizer()))));
+		break;
+	case AbstractEncoderInfo::RC_TYPE_RATE_KBPS:
+	case AbstractEncoderInfo::RC_TYPE_MULTIPASS:
+		config.append(QString(", %1@%2").arg(encoderInfo.rcModeToString(thread->options()->rcMode()), QString::number(thread->options()->bitrate())));
+		break;
 	}
 
 	int n = 2;
 	QString jobName = QString("%1 (%2)").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), config);
-
 	forever
 	{
 		bool unique = true;

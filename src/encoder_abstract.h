@@ -17,7 +17,7 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 // http://www.gnu.org/licenses/gpl-2.0.txt
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
@@ -26,20 +26,40 @@
 
 class QRegExp;
 template<class T> class QList;
+template <class T1, class T2> struct QPair;
 class AbstractSource;
 
 class AbstractEncoderInfo
 {
 public:
-	virtual QFlags<OptionsModel::EncVariant> getVariants(void) const = 0;
-	virtual QStringList getProfiles(const OptionsModel::EncVariant &variant) const = 0;
-	virtual QStringList getTunings(void) const = 0;
-	virtual QStringList getPresets(void) const = 0;
-	virtual QStringList supportedOutputFormats(void) const = 0;
-	virtual bool isRCModeSupported(const OptionsModel::RCMode &rcMode) const = 0;
-	virtual bool isInputTypeSupported(const int format) const = 0;
-	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const = 0;
-	virtual QStringList getDependencies(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const;
+	typedef enum _RCType
+	{
+		RC_TYPE_QUANTIZER = 0,
+		RC_TYPE_RATE_KBPS = 1,
+		RC_TYPE_MULTIPASS = 2
+	}
+	RCType;
+
+	typedef QPair<QString, RCType> RCMode;
+
+	virtual QString       getName(void) const = 0;
+	virtual QString       getFullName(const quint32 &encArch, const quint32 &encVariant) const;
+	virtual QStringList   getArchitectures(void) const = 0;
+	virtual QStringList   getVariants(void) const = 0;
+	virtual QList<RCMode> getRCModes(void) const = 0;
+	virtual QStringList   getProfiles(const quint32 &variant) const = 0;
+	virtual QStringList   getTunings(void) const = 0;
+	virtual QStringList   getPresets(void) const = 0;
+	virtual QStringList   supportedOutputFormats(void) const = 0;
+	virtual bool          isInputTypeSupported(const int format) const = 0;
+	virtual QString       getBinaryPath(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const = 0;
+	virtual QStringList   getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const;
+
+	//Utilities
+	QString archToString   (const quint32 &index) const;
+	QString variantToString(const quint32 &index) const;
+	QString rcModeToString (const quint32 &index) const;
+	RCType  rcModeToType   (const quint32 &index) const;
 };
 
 class AbstractEncoder : public AbstractTool

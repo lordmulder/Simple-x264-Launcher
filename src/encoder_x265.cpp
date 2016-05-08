@@ -35,6 +35,7 @@
 #include <QStringList>
 #include <QDir>
 #include <QRegExp>
+#include <QPair>
 
 //x265 version info
 static const unsigned int VERSION_X265_MINIMUM_VER =  19;
@@ -89,67 +90,57 @@ while(0)
 class X265EncoderInfo : public AbstractEncoderInfo
 {
 public:
-	virtual QFlags<OptionsModel::EncVariant> getVariants(void) const
+	virtual QString getName(void) const
 	{
-		QFlags<OptionsModel::EncVariant> variants;
-		variants |= OptionsModel::EncVariant_8Bit;
-		variants |= OptionsModel::EncVariant_10Bit;
-		variants |= OptionsModel::EncVariant_12Bit;
-		return variants;
+		return "x265 (HEVC/H.265)";
+	}
+
+	virtual QStringList getArchitectures(void) const
+	{
+		return QStringList() << "32-Bit (x86)" << "64-Bit (x64)";
+	}
+
+	virtual QStringList getVariants(void) const
+	{
+		return QStringList() << "8-Bit" << "10-Bit" << "12-Bit";
+	}
+	virtual QList<RCMode> getRCModes(void) const
+	{
+		return QList<RCMode>()
+		<< qMakePair(QString("CRF"),    RC_TYPE_QUANTIZER)
+		<< qMakePair(QString("CQ"),     RC_TYPE_QUANTIZER)
+		<< qMakePair(QString("2-Pass"), RC_TYPE_MULTIPASS)
+		<< qMakePair(QString("ABR"),    RC_TYPE_RATE_KBPS);
 	}
 
 	virtual QStringList getTunings(void) const
 	{
-		QStringList tunings;
-		tunings << "Grain" << "PSNR" << "SSIM" << "FastDecode" << "ZeroLatency";
-		return tunings;
+		return QStringList() << "Grain" << "PSNR" << "SSIM" << "FastDecode" << "ZeroLatency";
 	}
 
 	virtual QStringList getPresets(void) const
 	{
-		QStringList presets;
-		presets << "ultrafast" << "superfast" << "veryfast" << "faster"   << "fast";
-		presets << "medium"    << "slow"      << "slower"   << "veryslow" << "placebo";
-		return presets;
+		return QStringList()
+		<< "ultrafast" << "superfast" << "veryfast" << "faster"   << "fast"
+		<< "medium"    << "slow"      << "slower"   << "veryslow" << "placebo";
 	}
 
-	virtual QStringList getProfiles(const OptionsModel::EncVariant &variant) const
+	virtual QStringList getProfiles(const quint32 &variant) const
 	{
 		QStringList profiles;
 		switch(variant)
 		{
-		case OptionsModel::EncVariant_8Bit:
-			profiles << "main" << "main-intra" << "mainstillpicture" << "main444-8" << "main444-intra" << "main444-stillpicture";
-			break;
-		case OptionsModel::EncVariant_10Bit:
-			profiles << "main10" << "main10-intra" << "main422-10" << "main422-10-intra" << "main444-10" << "main444-10-intra";
-			break;
-		case OptionsModel::EncVariant_12Bit:
-			profiles << "main12" << "main12-intra" << "main422-12" << "main422-12-intra" << "main444-12" << "main444-12-intra";
-			break;
+			case 0: profiles << "main"   << "main-intra"   << "mainstillpicture" << "main444-8"        << "main444-intra" << "main444-stillpicture"; break;
+			case 1: profiles << "main10" << "main10-intra" << "main422-10"       << "main422-10-intra" << "main444-10"    << "main444-10-intra";     break;
+			case 2: profiles << "main12" << "main12-intra" << "main422-12"       << "main422-12-intra" << "main444-12"    << "main444-12-intra";     break;
+			default: MUTILS_THROW("Unknown encoder variant!");
 		}
 		return profiles;
 	}
 
 	virtual QStringList supportedOutputFormats(void) const
 	{
-		QStringList extLst;
-		extLst << "hevc";
-		return extLst;
-	}
-
-	virtual bool isRCModeSupported(const OptionsModel::RCMode &rcMode) const
-	{
-		switch(rcMode)
-		{
-		case OptionsModel::RCMode_CRF:
-		case OptionsModel::RCMode_CQ:
-		case OptionsModel::RCMode_2Pass:
-		case OptionsModel::RCMode_ABR:
-			return true;
-		default:
-			return false;
-		}
+		return QStringList() << "hevc";
 	}
 
 	virtual bool isInputTypeSupported(const int format) const
@@ -163,20 +154,20 @@ public:
 		}
 	}
 
-	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const
+	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 	{
 		QString arch, variant;
 		switch(encArch)
 		{
-			case OptionsModel::EncArch_x86_32: arch = "x86"; break;
-			case OptionsModel::EncArch_x86_64: arch = "x64"; break;
+			case 0: arch = "x86"; break;
+			case 1: arch = "x64"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
 		switch(encVariant)
 		{
-			case OptionsModel::EncVariant_8Bit:  variant = "8bit";  break;
-			case OptionsModel::EncVariant_10Bit: variant = "10bit"; break;
-			case OptionsModel::EncVariant_12Bit: variant = "12bit"; break;
+			case 0: variant =  "8bit"; break;
+			case 1: variant = "10bit"; break;
+			case 2: variant = "12bit"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
 		return QString("%1/toolset/%2/x265_%3_%2.exe").arg(sysinfo->getAppPath(), arch, variant);
@@ -211,21 +202,7 @@ X265Encoder::~X265Encoder(void)
 
 QString X265Encoder::getName(void) const
 {
-	QString arch, variant;
-	switch(m_options->encArch())
-	{
-		case OptionsModel::EncArch_x86_32: arch = "x86"; break;
-		case OptionsModel::EncArch_x86_64: arch = "x64"; break;
-		default: MUTILS_THROW("Unknown encoder arch!");
-	}
-	switch(m_options->encVariant())
-	{
-		case OptionsModel::EncVariant_8Bit:  variant = "8-Bit";  break;
-		case OptionsModel::EncVariant_10Bit: variant = "10-Bit"; break;
-		case OptionsModel::EncVariant_12Bit: variant = "12-Bit"; break;
-		default: MUTILS_THROW("Unknown encoder arch!");
-	}
-	return QString("x265 (H.265/HEVC), %1, %2").arg(arch, variant);
+	return s_x265EncoderInfo.getFullName(m_options->encArch(), m_options->encVariant());
 }
 
 // ------------------------------------------------------------
@@ -312,15 +289,15 @@ void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 
 	switch(m_options->rcMode())
 	{
-	case OptionsModel::RCMode_CQ:
+	case 0:
 		cmdLine << "--qp" << QString::number(qRound(m_options->quantizer()));
 		break;
-	case OptionsModel::RCMode_CRF:
+	case 1:
 		crf_frc = modf(m_options->quantizer(), &crf_int);
 		cmdLine << "--crf" << QString("%1.%2").arg(QString::number(qRound(crf_int)), QString::number(qRound(crf_frc * 10.0)));
 		break;
-	case OptionsModel::RCMode_2Pass:
-	case OptionsModel::RCMode_ABR:
+	case 2:
+	case 3:
 		cmdLine << "--bitrate" << QString::number(m_options->bitrate());
 		break;
 	default:

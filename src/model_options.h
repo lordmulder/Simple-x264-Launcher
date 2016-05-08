@@ -45,44 +45,14 @@ public:
 		EncType_MAX  = EncType_NVEnc,
 	};
 
-	enum EncArch
-	{
-		EncArch_x86_32 = 0,
-		EncArch_x86_64 = 1,
-
-		EncArch_MIN    = EncArch_x86_32,
-		EncArch_MAX    = EncArch_x86_64
-	};
-
-	enum EncVariant
-	{
-		EncVariant_8Bit  = 1,
-		EncVariant_10Bit = 2,
-		EncVariant_12Bit = 4,
-
-		EncVariant_MIN   = EncVariant_8Bit,
-		EncVariant_MAX   = EncVariant_12Bit
-	};
-
-	enum RCMode
-	{
-		RCMode_CRF   = 0,
-		RCMode_CQ    = 1,
-		RCMode_2Pass = 2,
-		RCMode_ABR   = 3,
-
-		RCMode_MIN   = RCMode_CRF,
-		RCMode_MAX   = RCMode_ABR,
-	};
-
 	static const char *const SETTING_UNSPECIFIED;
 	static const char *const PROFILE_UNRESTRICTED;
 
 	//Getter
 	EncType encType(void)         const { return m_encoderType; }
-	EncArch encArch(void)         const { return m_encoderArch; }
-	EncVariant encVariant(void)   const { return m_encoderVariant; }
-	RCMode rcMode(void)           const { return m_rcMode; }
+	quint32 encArch(void)         const { return m_encoderArch; }
+	quint32 encVariant(void)      const { return m_encoderVariant; }
+	quint32 rcMode(void)          const { return m_rcMode; }
 	unsigned int bitrate(void)    const { return m_bitrate; }
 	double quantizer(void)        const { return m_quantizer; }
 	QString preset(void)          const { return m_preset; }
@@ -92,10 +62,11 @@ public:
 	QString customAvs2YUV(void)   const { return m_custom_avs2yuv; }
 
 	//Setter
+	void setEncType(quint32 type)                  { setEncType(static_cast<EncType>(type)); }
 	void setEncType(EncType type)                  { m_encoderType = qBound(EncType_MIN, type, EncType_MAX); }
-	void setEncArch(EncArch arch)                  { m_encoderArch = qBound(EncArch_MIN, arch, EncArch_MAX); }
-	void setEncVariant(EncVariant variant)         { m_encoderVariant = qBound(EncVariant_MIN, variant, EncVariant_MAX); }
-	void setRCMode(RCMode mode)                    { m_rcMode = qBound(RCMode_CRF, mode, RCMode_ABR); }
+	void setEncArch(quint32 arch)                  { m_encoderArch = arch; }
+	void setEncVariant(quint32 variant)            { m_encoderVariant = variant; }
+	void setRCMode(quint32 mode)                   { m_rcMode = mode; }
 	void setBitrate(unsigned int bitrate)          { m_bitrate = qBound(10U, bitrate, 800000U); }
 	void setQuantizer(double quantizer)            { m_quantizer = qBound(0.0, quantizer, 52.0); }
 	void setPreset(const QString &preset)          { m_preset = preset.trimmed(); }
@@ -108,7 +79,6 @@ public:
 	bool equals(const OptionsModel *model);
 
 	//Static functions
-	static QString rcMode2String(RCMode mode);
 	static bool saveTemplate(const OptionsModel *model, const QString &name);
 	static bool loadTemplate(OptionsModel *model, const QString &name);
 	static QMap<QString, OptionsModel*> loadAllTemplates(const SysinfoModel *sysinfo);
@@ -119,9 +89,9 @@ public:
 
 protected:
 	EncType m_encoderType;
-	EncArch m_encoderArch;
-	EncVariant m_encoderVariant;
-	RCMode m_rcMode;
+	quint32 m_encoderArch;
+	quint32 m_encoderVariant;
+	quint32 m_rcMode;
 	unsigned int m_bitrate;
 	double m_quantizer;
 	QString m_preset;

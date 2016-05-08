@@ -35,6 +35,7 @@
 #include <QStringList>
 #include <QDir>
 #include <QRegExp>
+#include <QPair>
 
 //x265 version info
 static const unsigned int VERSION_NVENCC_MINIMUM_VER = 206;
@@ -88,11 +89,28 @@ while(0)
 class NVEncEncoderInfo : public AbstractEncoderInfo
 {
 public:
-	virtual QFlags<OptionsModel::EncVariant> getVariants(void) const
+	virtual QString getName(void) const
 	{
-		QFlags<OptionsModel::EncVariant> variants;
-		variants |= OptionsModel::EncVariant_8Bit;
-		return variants;
+		return "NVEncC";
+	}
+
+	virtual QStringList getArchitectures(void) const
+	{
+		return QStringList() << "32-Bit (x86)" << "64-Bit (x64)";
+	}
+
+	virtual QStringList getVariants(void) const
+	{
+		return QStringList() << "AVC" << "HEVC";
+	}
+
+	virtual QList<RCMode> getRCModes(void) const
+	{
+		return QList<RCMode>()
+		<< qMakePair(QString("CQP"),  RC_TYPE_QUANTIZER)
+		<< qMakePair(QString("VBR"),  RC_TYPE_RATE_KBPS)
+		<< qMakePair(QString("VBR2"), RC_TYPE_RATE_KBPS)
+		<< qMakePair(QString("CBR"),  RC_TYPE_RATE_KBPS);
 	}
 
 	virtual QStringList getTunings(void) const
@@ -105,14 +123,14 @@ public:
 		return QStringList();
 	}
 
-	virtual QStringList getProfiles(const OptionsModel::EncVariant &variant) const
+	virtual QStringList getProfiles(const quint32 &variant) const
 	{
 		QStringList profiles;
 		switch(variant)
 		{
-		case OptionsModel::EncVariant_8Bit:
-			profiles << "baseline" << "main" << "high";
-			break;
+			case 0: profiles << "baseline" << "main" << "high"; break;
+			case 1: profiles << "main";                         break;
+			default: MUTILS_THROW("Unknown encoder variant!");
 		}
 		return profiles;
 	}
@@ -122,18 +140,6 @@ public:
 		QStringList extLst;
 		extLst << "mp4";
 		return extLst;
-	}
-
-	virtual bool isRCModeSupported(const OptionsModel::RCMode &rcMode) const
-	{
-		switch(rcMode)
-		{
-		case OptionsModel::RCMode_CQ:
-		case OptionsModel::RCMode_ABR:
-			return true;
-		default:
-			return false;
-		}
 	}
 
 	virtual bool isInputTypeSupported(const int format) const
@@ -147,52 +153,54 @@ public:
 		}
 	}
 
-	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const
+	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 	{
-		QString arch, variant;
+		QString arch;
 		switch(encArch)
 		{
-			case OptionsModel::EncArch_x86_32: arch = "x86"; break;
-			case OptionsModel::EncArch_x86_64: arch = "x64"; break;
+			case 0: arch = "x86"; break;
+			case 1: arch = "x64"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
 		switch(encVariant)
 		{
-			case OptionsModel::EncVariant_8Bit:  variant = "8bit";  break;
-			default: MUTILS_THROW("Unknown encoder arch!");
+			case 0: break;
+			case 1: break;
+			default: MUTILS_THROW("Unknown encoder variant!");
 		}
 		return QString("%1/toolset/%2/nvencc_%2.exe").arg(sysinfo->getAppPath(), arch);
 	}
 
-	virtual QStringList getDependencies(const SysinfoModel *sysinfo, const OptionsModel::EncArch &encArch, const OptionsModel::EncVariant &encVariant) const
+	virtual QStringList getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 	{
-		QString arch, variant;
+		QString arch;
 		switch (encArch)
 		{
-			case OptionsModel::EncArch_x86_32: arch = "x86"; break;
-			case OptionsModel::EncArch_x86_64: arch = "x64"; break;
+			case 0: arch = "x86"; break;
+			case 1: arch = "x64"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
 		switch (encVariant)
 		{
-			case OptionsModel::EncVariant_8Bit:  variant = "8bit";  break;
-			default: MUTILS_THROW("Unknown encoder arch!");
+			case 0: break;
+			case 1: break;
+			default: MUTILS_THROW("Unknown encoder variant!");
+
 		}
-		QStringList dependencies;
-		dependencies << QString("%1/toolset/%2/avcodec-57.dll"  ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString("%1/toolset/%2/avfilter-6.dll"  ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString("%1/toolset/%2/avformat-57.dll" ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString("%1/toolset/%2/avutil-55.dll"   ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString("%1/toolset/%2/swresample-2.dll").arg(sysinfo->getAppPath(), arch);
-		return dependencies;
+		return QStringList()
+		<< QString("%1/toolset/%2/avcodec-57.dll"  ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/avfilter-6.dll"  ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/avformat-57.dll" ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/avutil-55.dll"   ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/swresample-2.dll").arg(sysinfo->getAppPath(), arch);
 	}
 };
 
-static const NVEncEncoderInfo s_x265EncoderInfo;
+static const NVEncEncoderInfo s_nvencEncoderInfo;
 
 const AbstractEncoderInfo &NVEncEncoder::getEncoderInfo(void)
 {
-	return s_x265EncoderInfo;
+	return s_nvencEncoderInfo;
 }
 
 // ------------------------------------------------------------
@@ -216,19 +224,7 @@ NVEncEncoder::~NVEncEncoder(void)
 
 QString NVEncEncoder::getName(void) const
 {
-	QString arch, variant;
-	switch(m_options->encArch())
-	{
-		case OptionsModel::EncArch_x86_32: arch = "x86"; break;
-		case OptionsModel::EncArch_x86_64: arch = "x64"; break;
-		default: MUTILS_THROW("Unknown encoder arch!");
-	}
-	switch(m_options->encVariant())
-	{
-		case OptionsModel::EncVariant_8Bit:  variant = "8-Bit";  break;
-		default: MUTILS_THROW("Unknown encoder arch!");
-	}
-	return QString("NVEncC, %1, %2").arg(arch, variant);
+	return s_nvencEncoderInfo.getFullName(m_options->encArch(), m_options->encVariant());
 }
 
 // ------------------------------------------------------------
@@ -313,19 +309,34 @@ bool NVEncEncoder::isVersionSupported(const unsigned int &revision, const bool &
 
 void NVEncEncoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
 {
-	double crf_int = 0.0, crf_frc = 0.0;
+	switch (m_options->encVariant())
+	{
+	case 0:
+		cmdLine << "--codec" << "avc";
+		break;
+	case 1:
+		cmdLine << "--codec" << "hevc";
+		break;
+	default:
+		MUTILS_THROW("Bad encoder variant !!!");
+	}
 
 	switch(m_options->rcMode())
 	{
-	case OptionsModel::RCMode_ABR:
+	case 0:
+		cmdLine << "--cqp" << QString::number(qRound(m_options->quantizer()));
+		break;
+	case 1:
 		cmdLine << "--vbr" << QString::number(m_options->bitrate());
 		break;
-	case OptionsModel::RCMode_CQ:
-		cmdLine << "--cqp" << QString::number(qRound(m_options->quantizer()));
+	case 2:
+		cmdLine << "--vbr2" << QString::number(m_options->bitrate());
+		break;
+	case 3:
+		cmdLine << "--cbr" << QString::number(m_options->bitrate());
 		break;
 	default:
 		MUTILS_THROW("Bad rate-control mode !!!");
-		break;
 	}
 	
 	const QString profile = m_options->profile().simplified().toLower();

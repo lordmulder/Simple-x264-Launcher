@@ -47,7 +47,7 @@ protected:
 	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen);
+	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo);
 
 	virtual QString getBinaryPath() const { return getSourceInfo().getBinaryPath(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)))); }
 	virtual void buildCommandLine(QStringList &cmdLine);

@@ -35,6 +35,7 @@
 #include <QProcess>
 #include <QTextCodec>
 #include <QDir>
+#include <QPair>
 
 // ------------------------------------------------------------
 // Constructor & Destructor
@@ -57,7 +58,7 @@ AbstractSource::~AbstractSource(void)
 // Check Source Properties
 // ------------------------------------------------------------
 
-bool AbstractSource::checkSourceProperties(unsigned int &frames)
+bool AbstractSource::checkSourceProperties(ClipInfo &clipInfo)
 {
 	QStringList cmdLine;
 	QList<QRegExp*> patterns;
@@ -75,14 +76,9 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 
 	bool bTimeout = false;
 	bool bAborted = false;
-
-	frames = 0;
 	
-	unsigned int fpsNom = 0;
-	unsigned int fpsDen = 0;
-	unsigned int fSizeW = 0;
-	unsigned int fSizeH = 0;
-	
+	clipInfo.reset();
+		
 	unsigned int waitCounter = 0;
 
 	while(process.state() != QProcess::NotRunning)
@@ -119,12 +115,12 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 		}
 		
 		waitCounter = 0;
-		PROCESS_PENDING_LINES(process, checkSourceProperties_parseLine, patterns, frames, fSizeW, fSizeH, fpsNom, fpsDen);
+		PROCESS_PENDING_LINES(process, checkSourceProperties_parseLine, patterns, clipInfo);
 	}
 
 	if(!(bTimeout || bAborted))
 	{
-		PROCESS_PENDING_LINES(process, checkSourceProperties_parseLine, patterns, frames, fSizeW, fSizeH, fpsNom, fpsDen);
+		PROCESS_PENDING_LINES(process, checkSourceProperties_parseLine, patterns, clipInfo);
 	}
 
 	process.waitForFinished();
@@ -155,31 +151,31 @@ bool AbstractSource::checkSourceProperties(unsigned int &frames)
 		return false;
 	}
 
-	if(frames == 0)
+	if(clipInfo.getFrameCount() < 1)
 	{
-		log(tr("\nFAILED TO DETERMINE AVS PROPERTIES !!!"));
+		log(tr("\nFAILED TO DETERMINE CLIP PROPERTIES !!!"));
 		return false;
 	}
 	
 	log("");
 
-	if((fSizeW > 0) && (fSizeH > 0))
+	const QPair<quint32, quint32> frameSize = clipInfo.getFrameSize();
+	if((frameSize.first > 0) && (frameSize.second > 0))
 	{
-		log(tr("Resolution: %1x%2").arg(QString::number(fSizeW), QString::number(fSizeH)));
-	}
-	if((fpsNom > 0) && (fpsDen > 0))
-	{
-		log(tr("Frame Rate: %1/%2").arg(QString::number(fpsNom), QString::number(fpsDen)));
-	}
-	if((fpsNom > 0) && (fpsDen == 0))
-	{
-		log(tr("Frame Rate: %1").arg(QString::number(fpsNom)));
-	}
-	if(frames > 0)
-	{
-		log(tr("No. Frames: %1").arg(QString::number(frames)));
+		log(tr("Resolution: %1 x %2").arg(QString::number(frameSize.first), QString::number(frameSize.second)));
 	}
 
+	const QPair<quint32, quint32> frameRate = clipInfo.getFrameRate();
+	if((frameRate.first > 0) && (frameRate.second > 0))
+	{
+		log(tr("Frame Rate: %1/%2").arg(QString::number(frameRate.first), QString::number(frameRate.second)));
+	}
+	else if(frameRate.first > 0)
+	{
+		log(tr("Frame Rate: %1").arg(QString::number(frameRate.first)));
+	}
+
+	log(tr("No. Frames: %1").arg(QString::number(clipInfo.getFrameCount())));
 	return true;
 }
 

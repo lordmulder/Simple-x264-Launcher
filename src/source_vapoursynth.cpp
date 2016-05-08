@@ -27,6 +27,7 @@
 
 #include <QDir>
 #include <QProcess>
+#include <QPair>
 
 static const unsigned int VER_X264_VSPIPE_API =  3;
 static const unsigned int VER_X264_VSPIPE_VER = 24;
@@ -170,7 +171,7 @@ void VapoursynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QS
 	patterns << new QRegExp("\\bFPS:\\s+(\\d+)/(\\d+)\\b");
 }
 
-void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen)
+void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo)
 {
 	int offset = -1;
 
@@ -178,25 +179,25 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QLi
 	{
 		bool ok = false;
 		unsigned int temp = patterns[0]->cap(1).toUInt(&ok);
-		if(ok) frames = temp;
+		if(ok) clipInfo.setFrameCount(temp);
 	}
 	if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
 		bool ok = false;
 		unsigned int temp =patterns[1]->cap(1).toUInt(&ok);
-		if(ok) fSizeW = temp;
+		if(ok) clipInfo.setFrameSize(temp, clipInfo.getFrameSize().second);
 	}
 	if((offset = patterns[2]->lastIndexIn(line)) >= 0)
 	{
 		bool ok = false;
 		unsigned int temp = patterns[2]->cap(1).toUInt(&ok);
-		if(ok) fSizeH = temp;
+		if(ok) clipInfo.setFrameSize(clipInfo.getFrameSize().first, temp);
 	}
 	if((offset = patterns[3]->lastIndexIn(line)) >= 0)
 	{
 		bool ok = false;
 		unsigned int temp = patterns[3]->cap(1).toUInt(&ok);
-		if(ok) fpsNom = temp;
+		if(ok) clipInfo.setFrameRate(temp, 0);
 	}
 	if((offset = patterns[4]->lastIndexIn(line)) >= 0)
 	{
@@ -205,8 +206,7 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QLi
 		unsigned int temp2 = patterns[4]->cap(2).toUInt(&ok2);
 		if(ok1 && ok2)
 		{
-			fpsNom = temp1;
-			fpsDen = temp2;
+			clipInfo.setFrameRate(temp1, temp2);
 		}
 	}
 

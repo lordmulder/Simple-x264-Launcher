@@ -23,6 +23,7 @@
 
 #include "tool_abstract.h"
 #include "model_options.h"
+#include "model_clipInfo.h"
 
 class QRegExp;
 template<class T> class QList;
@@ -41,7 +42,7 @@ public:
 	virtual ~AbstractSource(void);
 
 	virtual bool isSourceAvailable(void) = 0;
-	virtual bool checkSourceProperties(unsigned int &frames);
+	virtual bool checkSourceProperties(ClipInfo &clipInfo);
 	virtual bool createProcess(QProcess &processEncode, QProcess&processInput);
 	virtual void flushProcess(QProcess &processInput) = 0;
 
@@ -49,7 +50,7 @@ public:
 
 protected:
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
-	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen) = 0;
+	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo) = 0;
 	
 	virtual void buildCommandLine(QStringList &cmdLine) = 0;
 

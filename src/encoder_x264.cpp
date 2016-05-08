@@ -27,6 +27,7 @@
 #include "model_status.h"
 #include "mediainfo.h"
 #include "model_sysinfo.h"
+#include "model_clipInfo.h"
 
 //MUtils
 #include <MUtils/Exception.h>
@@ -299,7 +300,7 @@ bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 // Encoding Functions
 // ------------------------------------------------------------
 
-void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
+void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const ClipInfo &clipInfo, const QString &indexFile, const int &pass, const QString &passLogFile)
 {
 	double crf_int = 0.0, crf_frc = 0.0;
 
@@ -374,8 +375,11 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 	
 	if(usePipe)
 	{
-		if(frames < 1) MUTILS_THROW("Frames not set!");
-		cmdLine << "--frames" << QString::number(frames);
+		if (clipInfo.getFrameCount() < 1)
+		{
+			MUTILS_THROW("Frames not set!");
+		}
+		cmdLine << "--frames" << QString::number(clipInfo.getFrameCount());
 		cmdLine << "--demuxer" << "y4m";
 		cmdLine << "--stdin" << "y4m" << "-";
 	}
@@ -394,7 +398,7 @@ void X264Encoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 	patterns << new QRegExp("\\[\\s*(\\d+)\\.(\\d+)%\\]\\s+(\\d+)/(\\d+)\\s(\\d+).(\\d+)\\s(\\d+).(\\d+)\\s+(\\d+):(\\d+):(\\d+)\\s+(\\d+):(\\d+):(\\d+)"); //regExpModified
 }
 
-void X264Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate)
+void X264Encoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate)
 {
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)

@@ -168,37 +168,52 @@ void AvisynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStri
 	patterns << new QRegExp(": (\\d+)x(\\d+), (\\d+)/(\\d+) fps, (\\d+) frames");
 }
 
-void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &frames, unsigned int &fSizeW, unsigned int &fSizeH, unsigned int &fpsNom, unsigned int &fpsDen)
+void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo)
 {
 	int offset = -1;
 
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		bool ok3 = false, ok4 = false;
-		unsigned int temp1 = patterns[0]->cap(1).toUInt(&ok1);
-		unsigned int temp2 = patterns[0]->cap(2).toUInt(&ok2);
-		unsigned int temp3 = patterns[0]->cap(3).toUInt(&ok3);
-		unsigned int temp4 = patterns[0]->cap(4).toUInt(&ok4);
-		if(ok1) fSizeW = temp1;
-		if(ok2) fSizeH = temp2;
-		if(ok3) fpsNom = temp3;
-		if(ok4) frames = temp4;
+		bool ok[4] = { false, false, false, false };
+		quint32 temp[4];
+		temp[0] = patterns[0]->cap(1).toUInt(&ok[0]);
+		temp[1] = patterns[0]->cap(2).toUInt(&ok[1]);
+		temp[2] = patterns[0]->cap(3).toUInt(&ok[2]);
+		temp[3] = patterns[0]->cap(4).toUInt(&ok[3]);
+		if (ok[0] && ok[1])
+		{
+			clipInfo.setFrameSize(temp[0], temp[1]);
+		}
+		if (ok[2])
+		{
+			clipInfo.setFrameRate(temp[2], 0);
+		}
+		if (ok[3])
+		{
+			clipInfo.setFrameCount(temp[3]);
+		}
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		bool ok3 = false, ok4 = false, ok5 = false;
-		unsigned int temp1 = patterns[1]->cap(1).toUInt(&ok1);
-		unsigned int temp2 = patterns[1]->cap(2).toUInt(&ok2);
-		unsigned int temp3 = patterns[1]->cap(3).toUInt(&ok3);
-		unsigned int temp4 = patterns[1]->cap(4).toUInt(&ok4);
-		unsigned int temp5 = patterns[1]->cap(5).toUInt(&ok5);
-		if(ok1) fSizeW = temp1;
-		if(ok2) fSizeH = temp2;
-		if(ok3) fpsNom = temp3;
-		if(ok4) fpsDen = temp4;
-		if(ok5) frames = temp5;
+		bool ok[5] = { false, false, false, false, false };
+		quint32 temp[5];
+		temp[0] = patterns[1]->cap(1).toUInt(&ok[0]);
+		temp[1] = patterns[1]->cap(2).toUInt(&ok[1]);
+		temp[2] = patterns[1]->cap(3).toUInt(&ok[2]);
+		temp[3] = patterns[1]->cap(4).toUInt(&ok[3]);
+		temp[4] = patterns[1]->cap(5).toUInt(&ok[4]);
+		if (ok[0] && ok[1])
+		{
+			clipInfo.setFrameSize(temp[0], temp[1]);
+		}
+		if (ok[2] && ok[3])
+		{
+			clipInfo.setFrameRate(temp[2], temp[3]);
+		}
+		if (ok[4])
+		{
+			clipInfo.setFrameCount(temp[4]);
+		}
 	}
 
 	if(!line.isEmpty())

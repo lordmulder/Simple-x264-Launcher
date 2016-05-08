@@ -247,7 +247,8 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 	}
 	
 	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(thread->options()->encType());
-	QString config = encoderInfo.getName();
+	const QStringList encoderNameParts = encoderInfo.getName().simplified().split(' ', QString::SkipEmptyParts);
+	QString config = encoderNameParts.isEmpty() ? encoderInfo.getName() : encoderNameParts.first();
 	switch(encoderInfo.rcModeToType(thread->options()->rcMode()))
 	{
 	case AbstractEncoderInfo::RC_TYPE_QUANTIZER:
@@ -260,7 +261,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 	}
 
 	int n = 2;
-	QString jobName = QString("%1 (%2)").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), config);
+	QString jobName = QString("%1 [%2]").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), config);
 	forever
 	{
 		bool unique = true;

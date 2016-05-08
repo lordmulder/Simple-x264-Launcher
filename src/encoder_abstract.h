@@ -28,6 +28,7 @@ class QRegExp;
 template<class T> class QList;
 template <class T1, class T2> struct QPair;
 class AbstractSource;
+class ClipInfo;
 
 class AbstractEncoderInfo
 {
@@ -77,15 +78,15 @@ public:
 	AbstractEncoder(JobObject *jobObject, const OptionsModel *options, const SysinfoModel *const sysinfo, const PreferencesModel *const preferences, JobStatus &jobStatus, volatile bool *abort, volatile bool *pause, QSemaphore *semaphorePause, const QString &sourceFile, const QString &outputFile);
 	virtual ~AbstractEncoder(void);
 
-	virtual bool runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass = 0, const QString &passLogFile = QString());
+	virtual bool runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const ClipInfo &clipInfo, const int &pass = 0, const QString &passLogFile = QString());
 	
 	virtual const AbstractEncoderInfo& getEncoderInfo(void) const = 0;
 
 protected:
-	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile) = 0;
+	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const ClipInfo &clipInfo, const QString &indexFile, const int &pass, const QString &passLogFile) = 0;
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns) = 0;
-	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate) = 0;
+	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate) = 0;
 
 	static double estimateSize(const QString &fileName, const double &progress);
 	static QString sizeToString(qint64 size);

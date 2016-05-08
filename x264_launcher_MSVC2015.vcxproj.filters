@@ -114,6 +114,9 @@
     <ClInclude Include="src\encoder_nvenc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\model_clipInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -270,6 +273,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\encoder_nvenc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model_clipInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

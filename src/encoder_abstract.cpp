@@ -67,7 +67,7 @@ AbstractEncoder::~AbstractEncoder(void)
 // Encoding Functions
 // ------------------------------------------------------------
 
-bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass, const QString &passLogFile)
+bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const ClipInfo &clipInfo, const int &pass, const QString &passLogFile)
 {
 	QProcess processEncode, processInput;
 	
@@ -77,7 +77,7 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	}
 
 	QStringList cmdLine_Encode;
-	buildCommandLine(cmdLine_Encode, (pipedSource != NULL), frames, m_indexFile, pass, passLogFile);
+	buildCommandLine(cmdLine_Encode, (pipedSource != NULL), clipInfo, m_indexFile, pass, passLogFile);
 
 	log("Creating encoder process:");
 	if(!startProcess(processEncode, getBinaryPath(), cmdLine_Encode))
@@ -164,12 +164,12 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 		}
 
 		//Process all output
-		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, frames, pass, last_progress, size_estimate);
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, clipInfo, pass, last_progress, size_estimate);
 	}
 	
 	if(!(bTimeout || bAborted))
 	{
-		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, frames, pass, last_progress, size_estimate);
+		PROCESS_PENDING_LINES(processEncode, runEncodingPass_parseLine, patterns, clipInfo, pass, last_progress, size_estimate);
 	}
 
 	processEncode.waitForFinished(5000);

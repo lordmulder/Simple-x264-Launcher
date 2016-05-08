@@ -27,6 +27,7 @@
 #include "model_status.h"
 #include "mediainfo.h"
 #include "model_sysinfo.h"
+#include "model_clipInfo.h"
 
 //MUtils
 #include <MUtils/Exception.h>
@@ -39,7 +40,7 @@
 
 //x265 version info
 static const unsigned int VERSION_NVENCC_MINIMUM_VER = 206;
-static const unsigned int VERSION_NVENCC_MINIMUM_API =  60;
+static const unsigned int VERSION_NVENCC_MINIMUM_API = 60;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -49,10 +50,11 @@ static const unsigned int VERSION_NVENCC_MINIMUM_API =  60;
 { \
 	bool ok = false; \
 	unsigned int progressFrames = (X)->cap(1).toUInt(&ok); \
+	double progress = 0.0; \
 	setStatus(JobStatus_Running); \
-	if(ok && (totalFrames > 0) && (totalFrames != UINT_MAX)) \
+	if(ok && (clipInfo.getFrameCount() > 0)) \
 	{ \
-		const double progress = (double(progressFrames) / double(totalFrames)); \
+		progress = (double(progressFrames) / double(clipInfo.getFrameCount())); \
 		if(!qFuzzyCompare(progress, last_progress)) \
 		{ \
 			setProgress(floor(progress * 100.0)); \
@@ -60,7 +62,7 @@ static const unsigned int VERSION_NVENCC_MINIMUM_API =  60;
 			last_progress = progress; \
 		} \
 	} \
-	setDetails(tr("%1, est. file size %2").arg(line.mid(offset).trimmed(), sizeToString(qRound64(size_estimate)))); \
+	setDetails(tr("[%1] %2, est. file size %3").arg(QString().sprintf("%.1f%%", 100.0 * progress), line.mid(offset).trimmed(), sizeToString(qRound64(size_estimate)))); \
 } \
 while(0)
 
@@ -314,7 +316,7 @@ bool NVEncEncoder::isVersionSupported(const unsigned int &revision, const bool &
 // Encoding Functions
 // ------------------------------------------------------------
 
-void NVEncEncoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile)
+void NVEncEncoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const ClipInfo &clipInfo, const QString &indexFile, const int &pass, const QString &passLogFile)
 {
 	switch (m_options->encVariant())
 	{
@@ -386,15 +388,20 @@ void NVEncEncoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, c
 
 void NVEncEncoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 {
-	patterns << new QRegExp("^(\\d+) frames:"); //regExpFrameCnt
+	patterns << new QRegExp("^(\\d+) frames:");
+	patterns << new QRegExp("Selected\\s+codec\\s+is\\s+not\\s+supported", Qt::CaseInsensitive);
 }
 
-void NVEncEncoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const unsigned int &totalFrames, const int &pass, double &last_progress, double &size_estimate)
+void NVEncEncoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate)
 {
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
 		NVENCC_UPDATE_PROGRESS(patterns[0]);
+	}
+	else if ((offset = patterns[1]->lastIndexIn(line)) >= 0)
+	{
+		log(QString("YOUR HARDWARE DOES *NOT* SUPPORT THE '%1' CODEC !!!\n").arg(s_nvencEncoderInfo.variantToString(m_options->encVariant())));
 	}
 	else if(!line.isEmpty())
 	{

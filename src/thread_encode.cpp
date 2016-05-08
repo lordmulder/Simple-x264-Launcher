@@ -26,6 +26,7 @@
 #include "model_options.h"
 #include "model_preferences.h"
 #include "model_sysinfo.h"
+#include "model_clipInfo.h"
 #include "job_object.h"
 #include "mediainfo.h"
 
@@ -267,7 +268,7 @@ void EncodeThread::encode(void)
 	log(tr("Custom  : %1").arg(m_options->customEncParams().isEmpty() ? tr("<None>") : m_options->customEncParams()));
 	
 	bool ok = false;
-	unsigned int frames = 0;
+	ClipInfo clipInfo;
 	
 	// -----------------------------------------------------------------------------------
 	// Check Versions
@@ -317,7 +318,7 @@ void EncodeThread::encode(void)
 	if(m_pipedSource)
 	{
 		log(tr("\n--- GET SOURCE INFO ---\n"));
-		ok = m_pipedSource->checkSourceProperties(frames);
+		ok = m_pipedSource->checkSourceProperties(clipInfo);
 		CHECK_STATUS(m_abort, ok);
 	}
 
@@ -331,17 +332,17 @@ void EncodeThread::encode(void)
 		const QString passLogFile = getPasslogFile(m_outputFileName);
 		
 		log(tr("\n--- ENCODING PASS #1 ---\n"));
-		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, frames, 1, passLogFile);
+		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, clipInfo, 1, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 
 		log(tr("\n--- ENCODING PASS #2 ---\n"));
-		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, frames, 2, passLogFile);
+		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, clipInfo, 2, passLogFile);
 		CHECK_STATUS(m_abort, ok);
 	}
 	else
 	{
 		log(tr("\n--- ENCODING VIDEO ---\n"));
-		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, frames);
+		ok = m_encoder->runEncodingPass(m_pipedSource, m_outputFileName, clipInfo);
 		CHECK_STATUS(m_abort, ok);
 	}
 

@@ -142,7 +142,7 @@ public:
 	virtual QStringList supportedOutputFormats(void) const
 	{
 		QStringList extLst;
-		extLst << "mp4";
+		extLst << "mp4" << "264" << "hevc";
 		return extLst;
 	}
 

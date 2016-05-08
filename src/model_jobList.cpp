@@ -275,7 +275,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 		}
 		if(!unique)
 		{
-			jobName = QString("%1 %2 (%3)").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), QString::number(n++), config);
+			jobName = QString("%1 %2 [%3]").arg(QFileInfo(thread->sourceFileName()).completeBaseName().simplified(), QString::number(n++), config);
 			continue;
 		}
 		break;

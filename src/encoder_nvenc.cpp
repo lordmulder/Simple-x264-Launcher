@@ -390,6 +390,7 @@ void NVEncEncoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 {
 	patterns << new QRegExp("^(\\d+) frames:");
 	patterns << new QRegExp("Selected\\s+codec\\s+is\\s+not\\s+supported", Qt::CaseInsensitive);
+	patterns << new QRegExp("nvEncodeAPI.dll\\s+does\\s+not\\s+exists\\s+in\\s+your\\s+system", Qt::CaseInsensitive);
 }
 
 void NVEncEncoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate)
@@ -401,7 +402,11 @@ void NVEncEncoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*
 	}
 	else if ((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		log(QString("YOUR HARDWARE DOES *NOT* SUPPORT THE '%1' CODEC !!!\n").arg(s_nvencEncoderInfo.variantToString(m_options->encVariant())));
+		log(QString("ERROR: YOUR HARDWARE DOES *NOT* SUPPORT THE '%1' CODEC !!!\n").arg(s_nvencEncoderInfo.variantToString(m_options->encVariant())));
+	}
+	else if ((offset = patterns[2]->lastIndexIn(line)) >= 0)
+	{
+		log("ERROR: NVIDIA ENCODER API (NVENCODEAPI.DLL) IS *NOT* AVAILABLE !!!\n");
 	}
 	else if(!line.isEmpty())
 	{

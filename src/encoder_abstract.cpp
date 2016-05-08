@@ -303,11 +303,6 @@ static T getElementAt(const QList<T> &list, const quint32 &index)
 	return list[index];
 }
 
-const AbstractEncoderInfo& AbstractEncoder::getEncoderInfo(void)
-{
-	MUTILS_THROW("[getEncoderInfo] This function must be overwritten in sub-classes!");
-}
-
 QStringList AbstractEncoderInfo::getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 {
 	return QStringList();
@@ -320,7 +315,12 @@ QString AbstractEncoderInfo::getFullName(const quint32 &encArch, const quint32 &
 
 QString AbstractEncoderInfo::archToString(const quint32 &index) const
 {
-	return getElementAt(getArchitectures(), index);
+	return getElementAt(getArchitectures(), index).first;
+}
+
+AbstractEncoderInfo::ArchBit AbstractEncoderInfo::archToType(const quint32 &index) const
+{
+	return getElementAt(getArchitectures(), index).second;
 }
 
 QString AbstractEncoderInfo::variantToString(const quint32 &index) const

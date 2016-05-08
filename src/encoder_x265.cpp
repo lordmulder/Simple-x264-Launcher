@@ -95,9 +95,11 @@ public:
 		return "x265 (HEVC/H.265)";
 	}
 
-	virtual QStringList getArchitectures(void) const
+	virtual QList<ArchId> getArchitectures(void) const
 	{
-		return QStringList() << "32-Bit (x86)" << "64-Bit (x64)";
+		return QList<ArchId>()
+		<< qMakePair(QString("32-Bit (x86)"), ARCH_TYPE_X86)
+		<< qMakePair(QString("64-Bit (x64)"), ARCH_TYPE_X64);
 	}
 
 	virtual QStringList getVariants(void) const
@@ -176,9 +178,14 @@ public:
 
 static const X265EncoderInfo s_x265EncoderInfo;
 
-const AbstractEncoderInfo &X265Encoder::getEncoderInfo(void)
+const AbstractEncoderInfo& X265Encoder::encoderInfo(void)
 {
 	return s_x265EncoderInfo;
+}
+
+const AbstractEncoderInfo &X265Encoder::getEncoderInfo(void) const
+{
+	return encoderInfo();
 }
 
 // ------------------------------------------------------------

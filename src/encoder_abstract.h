@@ -40,11 +40,19 @@ public:
 	}
 	RCType;
 
-	typedef QPair<QString, RCType> RCMode;
+	typedef enum _ArchBit
+	{
+		ARCH_TYPE_X86 = 0,
+		ARCH_TYPE_X64 = 1,
+	}
+	ArchBit;
+
+	typedef QPair<QString, RCType>  RCMode;
+	typedef QPair<QString, ArchBit> ArchId;
 
 	virtual QString       getName(void) const = 0;
 	virtual QString       getFullName(const quint32 &encArch, const quint32 &encVariant) const;
-	virtual QStringList   getArchitectures(void) const = 0;
+	virtual QList<ArchId> getArchitectures(void) const = 0;
 	virtual QStringList   getVariants(void) const = 0;
 	virtual QList<RCMode> getRCModes(void) const = 0;
 	virtual QStringList   getProfiles(const quint32 &variant) const = 0;
@@ -57,6 +65,7 @@ public:
 
 	//Utilities
 	QString archToString   (const quint32 &index) const;
+	ArchBit archToType     (const quint32 &index) const;
 	QString variantToString(const quint32 &index) const;
 	QString rcModeToString (const quint32 &index) const;
 	RCType  rcModeToType   (const quint32 &index) const;
@@ -70,7 +79,7 @@ public:
 
 	virtual bool runEncodingPass(AbstractSource* pipedSource, const QString outputFile, const unsigned int &frames, const int &pass = 0, const QString &passLogFile = QString());
 	
-	static const AbstractEncoderInfo& getEncoderInfo(void);
+	virtual const AbstractEncoderInfo& getEncoderInfo(void) const = 0;
 
 protected:
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const unsigned int &frames, const QString &indexFile, const int &pass, const QString &passLogFile) = 0;

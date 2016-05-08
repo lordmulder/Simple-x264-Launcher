@@ -58,11 +58,11 @@ const AbstractEncoderInfo& EncoderFactory::getEncoderInfo(const OptionsModel::En
 	switch(encoderType)
 	{
 	case OptionsModel::EncType_X264:
-		return X264Encoder::getEncoderInfo();
+		return X264Encoder::encoderInfo();
 	case OptionsModel::EncType_X265:
-		return X265Encoder::getEncoderInfo();
+		return X265Encoder::encoderInfo();
 	case OptionsModel::EncType_NVEnc:
-		return NVEncEncoder::getEncoderInfo();
+		return NVEncEncoder::encoderInfo();
 	default:
 		MUTILS_THROW("Unknown encoder type encountered!");
 	}

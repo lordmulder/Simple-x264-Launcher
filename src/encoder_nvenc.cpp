@@ -94,9 +94,11 @@ public:
 		return "NVEncC";
 	}
 
-	virtual QStringList getArchitectures(void) const
+	virtual QList<ArchId> getArchitectures(void) const
 	{
-		return QStringList() << "32-Bit (x86)" << "64-Bit (x64)";
+		return QList<ArchId>()
+		<< qMakePair(QString("32-Bit (x86)"), ARCH_TYPE_X86)
+		<< qMakePair(QString("64-Bit (x64)"), ARCH_TYPE_X64);
 	}
 
 	virtual QStringList getVariants(void) const
@@ -198,9 +200,14 @@ public:
 
 static const NVEncEncoderInfo s_nvencEncoderInfo;
 
-const AbstractEncoderInfo &NVEncEncoder::getEncoderInfo(void)
+const AbstractEncoderInfo& NVEncEncoder::encoderInfo(void)
 {
 	return s_nvencEncoderInfo;
+}
+
+const AbstractEncoderInfo &NVEncEncoder::getEncoderInfo(void) const
+{
+	return encoderInfo();
 }
 
 // ------------------------------------------------------------

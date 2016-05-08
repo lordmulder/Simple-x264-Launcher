@@ -34,7 +34,8 @@ public:
 	virtual QString printVersion(const unsigned int &revision, const bool &modified);
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified);
 
-	static const AbstractEncoderInfo& getEncoderInfo(void);
+	virtual const AbstractEncoderInfo& getEncoderInfo(void) const;
+	static const AbstractEncoderInfo& encoderInfo(void);
 
 protected:
 	virtual QString getBinaryPath() const { return getEncoderInfo().getBinaryPath(m_sysinfo, m_options->encArch(), m_options->encVariant()); }

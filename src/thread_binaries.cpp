@@ -151,10 +151,11 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 	for(OptionsModel::EncType encdr = OptionsModel::EncType_MIN; encdr <= OptionsModel::EncType_MAX; NEXT(encdr))
 	{
 		const AbstractEncoderInfo &encInfo = EncoderFactory::getEncoderInfo(encdr);
-		const QStringList archs = encInfo.getArchitectures(), variants = encInfo.getVariants();
+		const quint32 archCount = encInfo.getArchitectures().count();
 		QSet<QString> dependencySet;
-		for (quint32 archIdx = 0; archIdx < quint32(archs.count()); ++archIdx)
+		for (quint32 archIdx = 0; archIdx < archCount; ++archIdx)
 		{
+			const QStringList variants = encInfo.getVariants();
 			for (quint32 varntIdx = 0; varntIdx < quint32(variants.count()); ++varntIdx)
 			{
 				const QStringList dependencies = encInfo.getDependencies(sysinfo, archIdx, varntIdx);

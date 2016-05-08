@@ -260,15 +260,15 @@ protected:
 	}
 };
 
-class StringValidatorX264 : public StringValidator
+class StringValidatorEncoder : public StringValidator
 {
 public:
-	StringValidatorX264(QLabel *notifier, QLabel *icon) : StringValidator(notifier, icon) {}
+	StringValidatorEncoder(QLabel *notifier, QLabel *icon) : StringValidator(notifier, icon) {}
 
 	virtual State validate(QString &input, int &pos) const
 	{
 		static const char *const params[] = {"B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
-			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help", "quiet", NULL};
+			"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help", "quiet", "codec", "y4m", NULL};
 
 		const QString commandLine = input.trimmed();
 		const QStringList tokens =  commandLine.isEmpty() ? QStringList() : MUtils::OS::crack_command_line(commandLine);
@@ -326,16 +326,6 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 	ui->cbxEncoderType->addItem(tr("x265 (HEVC)"), OptionsModel::EncType_X265);
 	ui->cbxEncoderType->addItem(tr("NVEncC"),      OptionsModel::EncType_NVEnc);
 
-	//Init arch combobox
-	ui->cbxEncoderArch->addItem(tr("32-Bit"), OptionsModel::EncArch_x86_32);
-	ui->cbxEncoderArch->addItem(tr("64-Bit"), OptionsModel::EncArch_x86_64);
-
-	//Init rc-mode combobox
-	ui->cbxRateControlMode->addItem(tr("CRF"),    OptionsModel::RCMode_CRF);
-	ui->cbxRateControlMode->addItem(tr("CQ"),     OptionsModel::RCMode_CQ);
-	ui->cbxRateControlMode->addItem(tr("2-Pass"), OptionsModel::RCMode_2Pass);
-	ui->cbxRateControlMode->addItem(tr("ABR"),    OptionsModel::RCMode_ABR);
-
 	//Init combobox items
 	ui->cbxTuning ->addItem(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED));
 	ui->cbxProfile->addItem(QString::fromLatin1(OptionsModel::PROFILE_UNRESTRICTED));
@@ -356,7 +346,7 @@ AddJobDialog::AddJobDialog(QWidget *parent, OptionsModel *const options, Recentl
 
 	//Setup validator
 	ui->editCustomX264Params->installEventFilter(this);
-	ui->editCustomX264Params->setValidator(new StringValidatorX264(ui->labelNotificationX264, ui->iconNotificationX264));
+	ui->editCustomX264Params->setValidator(new StringValidatorEncoder(ui->labelNotificationX264, ui->iconNotificationX264));
 	ui->editCustomX264Params->clear();
 	ui->editCustomAvs2YUVParams->installEventFilter(this);
 	ui->editCustomAvs2YUVParams->setValidator(new StringValidatorAvs2YUV(ui->labelNotificationAvs2YUV, ui->iconNotificationAvs2YUV));
@@ -537,23 +527,28 @@ void AddJobDialog::encoderIndexChanged(int index)
 	const OptionsModel::EncType encType = static_cast<OptionsModel::EncType>(ui->cbxEncoderType->itemData(ui->cbxEncoderType->currentIndex()).toInt());
 	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(encType);
 
-	//Update encoder variants
-	const QFlags<OptionsModel::EncVariant> variants = encoderInfo.getVariants();
-	ui->cbxEncoderVariant->clear();
-	for(OptionsModel::EncVariant varnt = OptionsModel::EncVariant_MIN; varnt <= OptionsModel::EncVariant_MAX; SHFL(varnt))
+	//Update encoder architectures
+	const QList<AbstractEncoderInfo::ArchId> archs = encoderInfo.getArchitectures();
+	ui->cbxEncoderArch->clear();
+	for (quint32 archIdx = 0; archIdx < quint32(archs.count()); ++archIdx)
 	{
-		if(variants.testFlag(varnt))
-		{
-			QString varntText;
-			switch(varnt)
-			{
-				case OptionsModel::EncVariant_8Bit:  varntText = tr("8-Bit");  break;
-				case OptionsModel::EncVariant_10Bit: varntText = tr("10-Bit"); break;
-				case OptionsModel::EncVariant_12Bit: varntText = tr("12-Bit"); break;
-				default: MUTILS_THROW("Bad encoder variant!");
-			}
-			ui->cbxEncoderVariant->addItem(varntText, QVariant(varnt));
-		}
+		ui->cbxEncoderArch->addItem(archs[archIdx].first, archIdx);
+	}
+
+	//Update encoder variants
+	const QStringList variants = encoderInfo.getVariants();
+	ui->cbxEncoderVariant->clear();
+	for(quint32 varntIdx = 0; varntIdx < quint32(variants.count()); ++varntIdx)
+	{
+		ui->cbxEncoderVariant->addItem(variants[varntIdx], varntIdx);
+	}
+
+	//Update encoder RC modes
+	const QList<AbstractEncoderInfo::RCMode> rcModes = encoderInfo.getRCModes();
+	ui->cbxRateControlMode->clear();
+	for (quint32 rcIndex = 0; rcIndex < quint32(rcModes.count()); ++rcIndex)
+	{
+		ui->cbxRateControlMode->addItem(rcModes[rcIndex].first, rcIndex);
 	}
 
 	//Update presets
@@ -595,7 +590,7 @@ void AddJobDialog::variantIndexChanged(int index)
 	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(encType);
 
 	//Update encoder profiles
-	const QStringList profiles = encoderInfo.getProfiles(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant->itemData(index).toInt()));
+	const QStringList profiles = encoderInfo.getProfiles(ui->cbxEncoderVariant->itemData(index).toUInt());
 	if(profiles.empty())
 	{
 		ui->cbxProfile->setEnabled(false);
@@ -614,18 +609,30 @@ void AddJobDialog::variantIndexChanged(int index)
 
 void AddJobDialog::modeIndexChanged(int index)
 {
-	ui->spinQuantizer->setEnabled(index == OptionsModel::RCMode_CRF || index == OptionsModel::RCMode_CQ);
-	ui->spinBitrate  ->setEnabled(index == OptionsModel::RCMode_ABR || index == OptionsModel::RCMode_2Pass);
+	const OptionsModel::EncType encType = static_cast<OptionsModel::EncType>(ui->cbxEncoderType->itemData(ui->cbxEncoderType->currentIndex()).toInt());
+	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(encType);
+
+	//Update bitrate/quantizer boxes
+	const AbstractEncoderInfo::RCType rcType = encoderInfo.rcModeToType(ui->cbxRateControlMode->itemData(index).toUInt());
+	ui->spinQuantizer->setEnabled(rcType == AbstractEncoderInfo::RC_TYPE_QUANTIZER);
+	ui->spinBitrate  ->setEnabled(rcType != AbstractEncoderInfo::RC_TYPE_QUANTIZER);
 }
 
 void AddJobDialog::accept(void)
 {
+	//Get encoder info
+	const OptionsModel::EncType encType = static_cast<OptionsModel::EncType>(ui->cbxEncoderType->itemData(ui->cbxEncoderType->currentIndex()).toInt());
+	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(encType);
+
 	//Check 64-Bit support
-	if((ui->cbxEncoderArch->currentIndex() == OptionsModel::EncArch_x86_64) && (!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64)))
+	if (encoderInfo.archToType(ui->cbxEncoderArch->itemData(ui->cbxEncoderArch->currentIndex()).toUInt()) == AbstractEncoderInfo::ARCH_TYPE_X64)
 	{
-		QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("<nobr>Sorry, this computer does <b>not</b> support 64-Bit encoders!</nobr>"));
-		ui->cbxEncoderArch->setCurrentIndex(OptionsModel::EncArch_x86_32);
-		return;
+		if (!m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64))
+		{
+			QMessageBox::warning(this, tr("64-Bit unsupported!"), tr("<nobr>Sorry, this computer does <b>not</b> support 64-Bit encoders!</nobr>"));
+			ui->cbxEncoderArch->setCurrentIndex(AbstractEncoderInfo::ARCH_TYPE_X86);
+			return;
+		}
 	}
 	
 	//Selection complete?
@@ -645,25 +652,6 @@ void AddJobDialog::accept(void)
 	if(!(sourceFile.exists() && sourceFile.isFile()))
 	{
 		QMessageBox::warning(this, tr("Not Found!"), tr("<nobr>The selected source file could not be found!</nobr>"));
-		return;
-	}
-
-	//Get encoder info
-	const OptionsModel::EncType encType = static_cast<OptionsModel::EncType>(ui->cbxEncoderType->itemData(ui->cbxEncoderType->currentIndex()).toInt());
-	const AbstractEncoderInfo &encoderInfo = EncoderFactory::getEncoderInfo(encType);
-
-	//Is selected RC mode supported?
-	if(!encoderInfo.isRCModeSupported(static_cast<OptionsModel::RCMode>(ui->cbxRateControlMode->currentIndex())))
-	{
-		QMessageBox::warning(this, tr("Bad RC Mode!"), tr("<nobr>The selected RC mode is not supported by the selected encoder!</nobr>"));
-		for(int i = 0; i < ui->cbxRateControlMode->count(); i++)
-		{
-			if(encoderInfo.isRCModeSupported(static_cast<OptionsModel::RCMode>(i)))
-			{
-				ui->cbxRateControlMode->setCurrentIndex(i);
-				break;
-			}
-		}
 		return;
 	}
 
@@ -1099,11 +1087,28 @@ void AddJobDialog::updateComboBox(QComboBox *const cbox, const QString &text)
 void AddJobDialog::updateComboBox(QComboBox *const cbox, const int &data)
 {
 	int index = 0;
+	if (QAbstractItemModel *model = cbox->model())
+	{
+		for (int i = 0; i < cbox->model()->rowCount(); i++)
+		{
+			if (cbox->itemData(i).toInt() == data)
+			{
+				index = i;
+				break;
+			}
+		}
+	}
+	cbox->setCurrentIndex(index);
+}
+
+void AddJobDialog::updateComboBox(QComboBox *const cbox, const quint32 &data)
+{
+	int index = 0;
 	if(QAbstractItemModel *model = cbox->model())
 	{
 		for(int i = 0; i < cbox->model()->rowCount(); i++)
 		{
-			if(cbox->itemData(i).toInt() == data)
+			if(cbox->itemData(i).toUInt() == data)
 			{
 				index = i;
 				break;
@@ -1115,7 +1120,7 @@ void AddJobDialog::updateComboBox(QComboBox *const cbox, const int &data)
 
 void AddJobDialog::restoreOptions(const OptionsModel *options)
 {
-	DisableHelperRAII disbale(&m_monitorConfigChanges);
+	DisableHelperRAII disable(&m_monitorConfigChanges);
 
 	updateComboBox(ui->cbxEncoderType,     options->encType());
 	updateComboBox(ui->cbxEncoderArch,     options->encArch());
@@ -1135,19 +1140,20 @@ void AddJobDialog::restoreOptions(const OptionsModel *options)
 
 void AddJobDialog::saveOptions(OptionsModel *options)
 {
-	options->setEncType   (static_cast<OptionsModel::EncType>   (ui->cbxEncoderType    ->itemData(ui->cbxEncoderType    ->currentIndex()).toInt()));
-	options->setEncArch   (static_cast<OptionsModel::EncArch>   (ui->cbxEncoderArch    ->itemData(ui->cbxEncoderArch    ->currentIndex()).toInt()));
-	options->setEncVariant(static_cast<OptionsModel::EncVariant>(ui->cbxEncoderVariant ->itemData(ui->cbxEncoderVariant ->currentIndex()).toInt()));
-	options->setRCMode    (static_cast<OptionsModel::RCMode>    (ui->cbxRateControlMode->itemData(ui->cbxRateControlMode->currentIndex()).toInt()));
+	options->setEncType(static_cast<OptionsModel::EncType>(ui->cbxEncoderType->itemData(ui->cbxEncoderType->currentIndex()).toInt()));
+
+	options->setEncArch   (ui->cbxEncoderArch    ->itemData(ui->cbxEncoderArch    ->currentIndex()).toUInt());
+	options->setEncVariant(ui->cbxEncoderVariant ->itemData(ui->cbxEncoderVariant ->currentIndex()).toUInt());
+	options->setRCMode    (ui->cbxRateControlMode->itemData(ui->cbxRateControlMode->currentIndex()).toUInt());
 	
 	options->setQuantizer(ui->spinQuantizer->value());
-	options->setBitrate(ui->spinBitrate->value());
+	options->setBitrate  (ui->spinBitrate  ->value());
 	
 	options->setPreset (ui->cbxPreset ->model()->data(ui->cbxPreset ->model()->index(ui->cbxPreset ->currentIndex(), 0)).toString());
 	options->setTune   (ui->cbxTuning ->model()->data(ui->cbxTuning ->model()->index(ui->cbxTuning ->currentIndex(), 0)).toString());
 	options->setProfile(ui->cbxProfile->model()->data(ui->cbxProfile->model()->index(ui->cbxProfile->currentIndex(), 0)).toString());
 
-	options->setCustomEncParams(ui->editCustomX264Params->hasAcceptableInput() ? ui->editCustomX264Params->text().simplified() : QString());
+	options->setCustomEncParams(ui->editCustomX264Params->hasAcceptableInput() ? ui->editCustomX264Params->text().simplified()     : QString());
 	options->setCustomAvs2YUV(ui->editCustomAvs2YUVParams->hasAcceptableInput() ? ui->editCustomAvs2YUVParams->text().simplified() : QString());
 }
 

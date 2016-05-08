@@ -99,6 +99,7 @@ private:
 	void saveOptions(OptionsModel *options);
 	void updateComboBox(QComboBox *const cbox, const QString &text);
 	void updateComboBox(QComboBox *const cbox, const int &data);
+	void updateComboBox(QComboBox *const cbox, const quint32 &data);
 
 	QString currentSourcePath(const bool bWithName = false);
 	QString currentOutputPath(const bool bWithName = false);

@@ -63,6 +63,7 @@ public:
 	virtual bool          isInputTypeSupported(const int format) const = 0;
 	virtual QString       getBinaryPath(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const = 0;
 	virtual QStringList   getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const;
+	virtual QString       getHelpCommand(void) const = 0;
 
 	//Utilities
 	QString archToString   (const quint32 &index) const;

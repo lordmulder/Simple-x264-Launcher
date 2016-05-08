@@ -138,7 +138,8 @@ void HelpDialog::finished(void)
 		m_startAgain = false;
 		if(!m_avs2yuv)
 		{
-			m_process->start(EncoderFactory::getEncoderInfo(m_options->encType()).getBinaryPath(m_sysinfo, m_options->encArch(), m_options->encVariant()), QStringList() << "--fullhelp");
+			const AbstractEncoderInfo &encInfo = EncoderFactory::getEncoderInfo(m_options->encType());
+			m_process->start(encInfo.getBinaryPath(m_sysinfo, m_options->encArch(), m_options->encVariant()), QStringList() << encInfo.getHelpCommand());
 			ui->plainTextEdit->appendPlainText("\n--------\n");
 
 			if(!m_process->waitForStarted())

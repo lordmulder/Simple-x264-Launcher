@@ -179,6 +179,11 @@ public:
 		}
 		return QString("%1/toolset/%2/x264_%3_%2.exe").arg(sysinfo->getAppPath(), arch, variant);
 	}
+
+	virtual QString getHelpCommand(void) const
+	{
+		return "--fullhelp";
+	}
 };
 
 static const X264EncoderInfo s_x264EncoderInfo;

@@ -198,6 +198,11 @@ public:
 		<< QString("%1/toolset/%2/avutil-55.dll"   ).arg(sysinfo->getAppPath(), arch)
 		<< QString("%1/toolset/%2/swresample-2.dll").arg(sysinfo->getAppPath(), arch);
 	}
+
+	virtual QString getHelpCommand(void) const
+	{
+		return "--help";
+	}
 };
 
 static const NVEncEncoderInfo s_nvencEncoderInfo;

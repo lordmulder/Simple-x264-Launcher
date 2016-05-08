@@ -32,20 +32,20 @@
          <property name="minimumSize">
           <size>
            <width>48</width>
-           <height>40</height>
+           <height>48</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
            <width>48</width>
-           <height>40</height>
+           <height>48</height>
           </size>
          </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../res/resources.qrc">:/images/x264.png</pixmap>
+          <pixmap resource="../res/resources.qrc">:/images/help.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>

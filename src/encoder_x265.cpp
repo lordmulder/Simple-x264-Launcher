@@ -175,6 +175,11 @@ public:
 		}
 		return QString("%1/toolset/%2/x265_%3_%2.exe").arg(sysinfo->getAppPath(), arch, variant);
 	}
+
+	virtual QString getHelpCommand(void) const
+	{
+		return "--fullhelp";
+	}
 };
 
 static const X265EncoderInfo s_x265EncoderInfo;

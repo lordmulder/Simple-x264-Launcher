@@ -312,11 +312,11 @@ void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, co
 	switch(m_options->rcMode())
 	{
 	case 0:
-		cmdLine << "--qp" << QString::number(qRound(m_options->quantizer()));
-		break;
-	case 1:
 		crf_frc = modf(m_options->quantizer(), &crf_int);
 		cmdLine << "--crf" << QString("%1.%2").arg(QString::number(qRound(crf_int)), QString::number(qRound(crf_frc * 10.0)));
+		break;
+	case 1:
+		cmdLine << "--qp" << QString::number(qRound(m_options->quantizer()));
 		break;
 	case 2:
 	case 3:

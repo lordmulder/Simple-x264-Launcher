@@ -3,6 +3,7 @@ Simple x264/x265 Launcher version history
 ----------------------------------------- 
 
 Version 2.71 [2016-??-??]
+* Updated x265 to version 1.9+183
 * Added experimental NVEncC (NVIDIA GPU encoding) support
 * Code refactoring
 

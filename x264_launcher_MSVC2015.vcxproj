@@ -136,7 +136,7 @@ copy /Y "$(SolutionDir)\..\Prerequisites\VisualLeakDetector\bin\$(Platform)\*.ma
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>QtCore4.lib;QtGui4.lib;Winmm.lib;dwmapi.lib;Psapi.lib;SensAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>notelemetry.obj;QtCore4.lib;QtGui4.lib;Winmm.lib;dwmapi.lib;Psapi.lib;SensAPI.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <EntryPointSymbol>x264_entry_point</EntryPointSymbol>

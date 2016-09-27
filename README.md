@@ -105,7 +105,7 @@ Simple x264/x265 Launcher can be run in a "portable" mode. This may be helpful, 
 
 ## VapourSynth
 
-There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VapourSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of VapourSynth needs to go to the `extra\VapourSynth\core32` sub-directory and the *64-Bit* version of VapourSynth needs to go to the `extra\VapourSynth\core64` sub-directory.
+There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VapourSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of "portable" VapourSynth needs to go to the `extra\VapourSynth\core32` sub-directory and the *64-Bit* version needs to go to the `extra\VapourSynth\core64` sub-directory. Be aware, however, that "portable" VapourSynth requires **embeddable Python** to work! So you *must* download Python as "embeddable zip file" from the Python web-site (a bit difficult to find) and extract that into the same sub-directory as the VapourSynth "portable" binaries.
 
 
 # Updating Your Encoder Binaries #

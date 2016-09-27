@@ -103,9 +103,9 @@ Simple x264/x265 Launcher can be run in a "portable" mode. This may be helpful, 
 
 ***Note:*** Regardless of whether you enable the *portable* mode or not, the Simple x264/x265 Launcher application is **always** "portable", in the sense that the program is fully self-contained. It does *not* require any "external" libraries or frameworks to be installed on the computer. The only exceptions here are Avisynth and VapourSynth, which have to be installed *separately*, if they are needed. The *sole* purpose of the *portable* mode is to control where the configuration files will be stored. There is **no** such thing as a separate "portable" version of Simple x264/x265 Launcher.
 
-## VapourSynth Portable
+## VapourSynth
 
-There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VaporSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of VapourSynth needs to go into the `extra\VaporSynth\core32` sub-directory and the *64-Bit* version of VapourSynth needs to go into the `extra\VaporSynth\core64` sub-directory.
+There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VapourSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of VapourSynth needs to go to the `extra\VapourSynth\core32` sub-directory and the *64-Bit* version of VapourSynth needs to go to the `extra\VapourSynth\core64` sub-directory.
 
 
 # Updating Your Encoder Binaries #

@@ -123,6 +123,25 @@ InstallPath
          └─ etc…
 ```
 
+## Avisynth
+
+There now is a "portable" edition **Avisynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download and run the standard Avisynth 2.6 (or later) installer, but be sure to select *"Standalone, Unpack Files only"* as the installation type! Note that this needs to be selected on the *"Choose Components"* page of the installer. This will create a "portable" version of Avisynth in the selected output directory. Let the installer *extract* the Avisynth files into the sub-directory `extra\Avisynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of "portable" Avisynth needs to go to the `extra\Avisynth\x86` sub-directory and the *64-Bit* version needs to go to the `extra\Avisynth\x64` sub-directory. In the end, it should look like this:
+```
+InstallPath
+├─ x264_launcher_portable.exe
+└─ extra\
+   └─ Avisynth\
+      ├─ x86\
+      │  ├─ avisynth.dll  <32-Bit>
+      │  ├─ devil.dll     <32-Bit>
+      │  └─ etc…
+      └─ x64\
+         ├─ avisynth.dll  <64-Bit>
+         ├─ devil.dll     <64-Bit>
+         └─ etc…
+```
+
+
 # Updating Your Encoder Binaries #
 
 This application works best with the encoder binaries that are included in the distribution package. That's because these binaries have been tested to work properly with the GUI. Nonetheless, in some cases, you may wish to replace the included binaries with a newer encoder version or with an alternative build of the same version. Generally, newer versions of x264/x265 should work properly, though there is **no** guarantee! In rare cases, the CLI syntax (or console output) may have changed in a way that breaks compatibility with the GUI program. Furthermore, this application does **not** provide any support for "unofficial" patches. Usually custom builds that contain such patches will work anyway, but again there is **no** guarantee. Also, using *outdated* binaries with this application is **not** supported or intended. Please report bugs rather than reverting to an old version!

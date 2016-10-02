@@ -5,6 +5,7 @@ Simple x264/x265 Launcher version history
 Version 2.75 [2016-??-??]
 * Updated x265 to version 2.1+2
 * Detection of "portable" VapourSynth (see README for details!)
+* Detection of "portable" Avisynth (see README for details!)
 
 Version 2.75 [2016-09-25]
 * Updated build environment to Visual Studio 2015 with Update-3

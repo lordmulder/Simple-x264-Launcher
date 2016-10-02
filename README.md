@@ -107,7 +107,7 @@ Simple x264/x265 Launcher can be run in a "portable" mode. This may be helpful, 
 
 There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VapourSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of "portable" VapourSynth needs to go to the `extra\VapourSynth\core32` sub-directory and the *64-Bit* version needs to go to the `extra\VapourSynth\core64` sub-directory. Be aware, however, that "portable" VapourSynth requires **embeddable Python** to work! So, you *must* download Python as "embeddable zip file" from the Python web-site and extract that into the same sub-directory as the VapourSynth "portable" binaries. In the end, it should look like this:
 ```
-InstallPath
+InstallPath\
 ├─ x264_launcher_portable.exe
 └─ extra\
    └─ VapourSynth\
@@ -127,7 +127,7 @@ InstallPath
 
 There now is a "portable" edition **Avisynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download and run the standard Avisynth 2.6 (or later) installer, but be sure to select *"Standalone, Unpack Files only"* as the installation type! Note that this needs to be selected on the *"Choose Components"* page of the installer. This will create a "portable" version of Avisynth in the selected output directory. Let the installer *extract* the Avisynth files into the sub-directory `extra\Avisynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of "portable" Avisynth needs to go to the `extra\Avisynth\x86` sub-directory and the *64-Bit* version needs to go to the `extra\Avisynth\x64` sub-directory. In the end, it should look like this:
 ```
-InstallPath
+InstallPath\
 ├─ x264_launcher_portable.exe
 └─ extra\
    └─ Avisynth\

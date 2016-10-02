@@ -39,7 +39,7 @@ static const unsigned int VER_X264_VSPIPE_VER = 24;
 class VapoursyntSourceInfo : public AbstractSourceInfo
 {
 public:
-	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const bool& x64) const
+	virtual QString getBinaryPath(const SysinfoModel *const sysinfo, const bool& x64) const
 	{
 		return QString("%1/core%2/vspipe.exe").arg(sysinfo->getVPSPath(), (x64 ? "64" : "32"));
 	}

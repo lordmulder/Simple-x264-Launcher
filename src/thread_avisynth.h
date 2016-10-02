@@ -41,6 +41,7 @@ protected:
 
 	int getSuccess(void) { return m_success; }
 	bool getException(void) { return m_exception; }
+	QString getPath(void) { return m_basePath; }
 
 	typedef enum _AvisynthFlags
 	{
@@ -55,6 +56,7 @@ private slots:
 private:
 	volatile bool m_exception;
 	int m_success;
+	QString m_basePath;
 	const SysinfoModel *const m_sysinfo;
 
 	static QMutex m_avsLock;
@@ -64,10 +66,10 @@ private:
 	virtual void run(void);
 
 	//Functions
-	static void detectAvisynthVersion1(int &success, const SysinfoModel *const sysinfo, volatile bool *exception);
-	static void detectAvisynthVersion2(int &success, const SysinfoModel *const sysinfo, volatile bool *exception);
-	static void detectAvisynthVersion3(int &success, const SysinfoModel *const sysinfo);
+	static void detectAvisynthVersion1(int &success, QString &basePath, const SysinfoModel *const sysinfo, volatile bool *exception);
+	static void detectAvisynthVersion2(int &success, QString &basePath, const SysinfoModel *const sysinfo, volatile bool *exception);
+	static void detectAvisynthVersion3(int &success, QString &basePath, const SysinfoModel *const sysinfo);
 
 	//Internal functions
-	static bool checkAvisynth(const SysinfoModel *const sysinfo, QFile *&path, const bool &x64);
+	static bool checkAvisynth(QString &basePath, const SysinfoModel *const sysinfo, QFile *&path, const bool &x64);
 };

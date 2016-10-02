@@ -25,6 +25,8 @@
 
 #include "global.h"
 
+#include <MUtils/Global.h>
+
 #include <QDir>
 #include <QProcess>
 
@@ -37,9 +39,20 @@ static const unsigned int VER_X264_AVS2YUV_VER = 243;
 class AvisynthSourceInfo : public AbstractSourceInfo
 {
 public:
-	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const bool& x64) const
+	virtual QString getBinaryPath(const SysinfoModel *const sysinfo, const bool& x64) const
 	{
 		return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), (x64 ? "x64": "x86"));
+	}
+
+	virtual QString getExtraPath(const SysinfoModel *const sysinfo, const bool& x64) const
+	{
+		const QString avsPath = sysinfo->getAVSPath();
+		if (!avsPath.isEmpty())
+		{
+		
+			return QString("%1/%2").arg(avsPath, x64 ? QLatin1String("x64") : QLatin1String("x86"));
+		}
+		return QString();
 	}
 };
 
@@ -49,6 +62,7 @@ const AbstractSourceInfo &AvisynthSource::getSourceInfo(void)
 {
 	return s_avisynthEncoderInfo;
 }
+
 
 // ------------------------------------------------------------
 // Constructor & Destructor

@@ -94,7 +94,7 @@ unsigned int AbstractTool::checkVersion(bool &modified)
 	checkVersion_init(patterns, cmdLine);
 
 	log("Creating process:");
-	if(!startProcess(process, getBinaryPath(), cmdLine))
+	if(!startProcess(process, getBinaryPath(), cmdLine, true, getExtraPath()))
 	{
 		return false;
 	}
@@ -173,19 +173,14 @@ bool AbstractTool::checkVersion_succeeded(const int &exitCode)
 // Process Creation
 // ------------------------------------------------------------
 
-bool AbstractTool::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels)
+bool AbstractTool::startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels, const QString &extraPath)
 {
 	QMutexLocker lock(&s_mutexStartProcess);
 	log(commandline2string(program, args) + "\n");
+	log("EXTRAPATH: '" + extraPath + "'\n");
 
-	process.setWorkingDirectory(QDir::tempPath());
-
-	if(mergeChannels)
-	{
-		process.setProcessChannelMode(QProcess::MergedChannels);
-		process.setReadChannel(QProcess::StandardOutput);
-	}
-	else
+	MUtils::init_process(process, QDir::tempPath(), true, extraPath);
+	if(!mergeChannels)
 	{
 		process.setProcessChannelMode(QProcess::SeparateChannels);
 		process.setReadChannel(QProcess::StandardError);

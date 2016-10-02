@@ -32,7 +32,8 @@ class QProcess;
 class AbstractSourceInfo
 {
 public:
-	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const bool& x64) const = 0;
+	virtual QString getBinaryPath(const SysinfoModel *const sysinfo, const bool& x64) const = 0;
+	virtual QString getExtraPath(const SysinfoModel *const sysinfo, const bool& x64) const { return QString(); }
 };
 
 class AbstractSource : public AbstractTool

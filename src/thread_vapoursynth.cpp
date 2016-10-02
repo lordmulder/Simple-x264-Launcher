@@ -262,14 +262,12 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 		}
 	}
 
-
 	//Make sure VapourSynth directory does exist
 	if(vapoursynthPath.isEmpty())
 	{
 		qWarning("VapourSynth install path not found -> disable VapouSynth support!");
 		return;
 	}
-
 
 	//Validate the VapourSynth installation now!
 	qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());

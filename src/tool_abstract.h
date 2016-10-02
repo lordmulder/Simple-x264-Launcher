@@ -51,8 +51,6 @@ public:
 	virtual bool isVersionSupported(const unsigned int &revision, const bool &modified) = 0;
 	virtual QString printVersion(const unsigned int &revision, const bool &modified) = 0;
 
-	//static const unsigned int REV_MULT = 10000;
-
 signals:
 	void statusChanged(const JobStatus &newStatus);
 	void progressChanged(unsigned int newProgress);
@@ -65,6 +63,7 @@ protected:
 	static const unsigned int m_processTimeoutWarning = 24;
 
 	virtual QString getBinaryPath(void) const = 0;
+	virtual QString getExtraPath(void) const { return QString(); }
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
 	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified) = 0;
@@ -75,7 +74,7 @@ protected:
 	void setProgress(unsigned int newProgress) { emit progressChanged(newProgress); }
 	void setDetails(const QString &text) { emit detailsChanged(text); }
 
-	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true);
+	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true, const QString &extraPath = QString());
 
 	JobObject *const m_jobObject;
 	const OptionsModel *const m_options;

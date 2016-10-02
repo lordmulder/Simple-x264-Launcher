@@ -67,7 +67,7 @@ bool AbstractSource::checkSourceProperties(ClipInfo &clipInfo)
 	checkSourceProperties_init(patterns, cmdLine);
 
 	log("Creating process:");
-	if(!startProcess(process, getBinaryPath(), cmdLine))
+	if(!startProcess(process, getBinaryPath(), cmdLine, true, getExtraPath()))
 	{
 		return false;;
 	}
@@ -191,7 +191,7 @@ bool AbstractSource::createProcess(QProcess &processEncode, QProcess&processInpu
 	buildCommandLine(cmdLine_Input);
 
 	log("Creating input process:");
-	if(!startProcess(processInput, getBinaryPath(), cmdLine_Input, false))
+	if(!startProcess(processInput, getBinaryPath(), cmdLine_Input, false, getExtraPath()))
 	{
 		return false;
 	}

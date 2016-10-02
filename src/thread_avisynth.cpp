@@ -21,6 +21,7 @@
 
 #include "thread_avisynth.h"
 
+//Qt
 #include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
@@ -37,11 +38,15 @@
 #include <MUtils/Global.h>
 #include <MUtils/OSSupport.h>
 
+//Const
+static const bool ENABLE_PORTABLE_AVS = true;
+
 //Static
 QMutex AvisynthCheckThread::m_avsLock;
 QScopedPointer<QFile> AvisynthCheckThread::m_avsDllPath[2];
 
 //Helper
+#define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
 #define BOOLIFY(X) ((X) ? '1' : '0')
 
 //Utility function
@@ -118,6 +123,7 @@ bool AvisynthCheckThread::detect(SysinfoModel *sysinfo)
 	{
 		sysinfo->setAvisynth(SysinfoModel::Avisynth_X86, thread.getSuccess() & AVISYNTH_X86);
 		sysinfo->setAvisynth(SysinfoModel::Avisynth_X64, thread.getSuccess() & AVISYNTH_X64);
+		sysinfo->setAVSPath(thread.getPath());
 		qDebug("Avisynth support is officially enabled now! [x86=%c, x64=%c]", BOOLIFY(sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)), BOOLIFY(sysinfo->getAvisynth(SysinfoModel::Avisynth_X64)));
 	}
 	else
@@ -148,15 +154,16 @@ void AvisynthCheckThread::run(void)
 {
 	m_exception = false;
 	m_success &= 0;
+	m_basePath.clear();
 
-	detectAvisynthVersion1(m_success, m_sysinfo, &m_exception);
+	detectAvisynthVersion1(m_success, m_basePath, m_sysinfo, &m_exception);
 }
 
-void AvisynthCheckThread::detectAvisynthVersion1(int &success, const SysinfoModel *const sysinfo, volatile bool *exception)
+void AvisynthCheckThread::detectAvisynthVersion1(int &success, QString &basePath, const SysinfoModel *const sysinfo, volatile bool *exception)
 {
 	__try
 	{
-		detectAvisynthVersion2(success, sysinfo, exception);
+		detectAvisynthVersion2(success, basePath, sysinfo, exception);
 	}
 	__except(1)
 	{
@@ -165,11 +172,11 @@ void AvisynthCheckThread::detectAvisynthVersion1(int &success, const SysinfoMode
 	}
 }
 
-void AvisynthCheckThread::detectAvisynthVersion2(int &success, const SysinfoModel *const sysinfo, volatile bool *exception)
+void AvisynthCheckThread::detectAvisynthVersion2(int &success, QString &basePath, const SysinfoModel *const sysinfo, volatile bool *exception)
 {
 	try
 	{
-		return detectAvisynthVersion3(success, sysinfo);
+		return detectAvisynthVersion3(success, basePath, sysinfo);
 	}
 	catch(...)
 	{
@@ -178,12 +185,12 @@ void AvisynthCheckThread::detectAvisynthVersion2(int &success, const SysinfoMode
 	}
 }
 
-void AvisynthCheckThread::detectAvisynthVersion3(int &success, const SysinfoModel *const sysinfo)
+void AvisynthCheckThread::detectAvisynthVersion3(int &success, QString &basePath, const SysinfoModel *const sysinfo)
 {
 	success &= 0;
 
 	QFile *avsPath32;
-	if(checkAvisynth(sysinfo, avsPath32, false))
+	if(checkAvisynth(basePath, sysinfo, avsPath32, false))
 	{
 		m_avsDllPath[0].reset(avsPath32);
 		success |= AVISYNTH_X86;
@@ -197,7 +204,7 @@ void AvisynthCheckThread::detectAvisynthVersion3(int &success, const SysinfoMode
 	if(sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64))
 	{
 		QFile *avsPath64;
-		if(checkAvisynth(sysinfo, avsPath64, true))
+		if(checkAvisynth(basePath, sysinfo, avsPath64, true))
 		{
 			m_avsDllPath[1].reset(avsPath64);
 			success |= AVISYNTH_X64;
@@ -214,17 +221,33 @@ void AvisynthCheckThread::detectAvisynthVersion3(int &success, const SysinfoMode
 	}
 }
 
-bool AvisynthCheckThread::checkAvisynth(const SysinfoModel *const sysinfo, QFile *&path, const bool &x64)
+bool AvisynthCheckThread::checkAvisynth(QString &basePath, const SysinfoModel *const sysinfo, QFile *&path, const bool &x64)
 {
 	qDebug("Avisynth %s-Bit support is being tested.", x64 ? "64" : "32");
 
 	QProcess process;
 	QStringList output;
+	QString extraPath;
+
+	//Look for "portable" Avisynth version
+	if (ENABLE_PORTABLE_AVS)
+	{
+		const QString avsPortableDir = QString("%1/extra/Avisynth").arg(QCoreApplication::applicationDirPath());
+		if (VALID_DIR(avsPortableDir))
+		{
+			const QString archDir = x64 ? QLatin1String("x64") : QLatin1String("x86");
+			QFileInfo avsDllFile(QString("%1/%2/avisynth.dll").arg(avsPortableDir, archDir)), devilDllFile(QString("%1/%2/devil.dll").arg(avsPortableDir, archDir));
+			if (avsDllFile.exists() && devilDllFile.exists() && avsDllFile.isFile() && devilDllFile.isFile())
+			{
+				qWarning("Adding portable Avisynth to PATH environment variable: %s", MUTILS_UTF8(avsPortableDir));
+				basePath = avsPortableDir;
+				extraPath = QString("%1/%2").arg(avsPortableDir, archDir);
+			}
+		}
+	}
 
 	//Setup process object
-	process.setWorkingDirectory(QDir::tempPath());
-	process.setProcessChannelMode(QProcess::MergedChannels);
-	process.setReadChannel(QProcess::StandardOutput);
+	MUtils::init_process(process, QDir::tempPath(), true, extraPath);
 
 	//Try to start VSPIPE.EXE
 	process.start(AVS_CHECK_BINARY(sysinfo, x64), QStringList());
@@ -319,7 +342,6 @@ bool AvisynthCheckThread::checkAvisynth(const SysinfoModel *const sysinfo, QFile
 		{
 			MUTILS_DELETE(path);
 		}
-
 		qDebug("Avisynth was detected successfully (current version: %u.%02u).", avisynthVersion[0], avisynthVersion[1]);
 		qDebug("Avisynth DLL path: %s", MUTILS_UTF8(avisynthPath));
 		return true;

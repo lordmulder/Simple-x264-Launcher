@@ -50,6 +50,6 @@ protected:
 	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo);
 
 	virtual QString getBinaryPath(void) const { return getSourceInfo().getBinaryPath(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)))); }
-	virtual QString getExtraPath(void) const { return getSourceInfo().getExtraPath(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)))); }
+	virtual QStringList getExtraPath(void) const { return getSourceInfo().getExtraPaths(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)))); }
 	virtual void buildCommandLine(QStringList &cmdLine);
 };

@@ -44,15 +44,15 @@ public:
 		return QString("%1/toolset/%2/avs2yuv_%2.exe").arg(sysinfo->getAppPath(), (x64 ? "x64": "x86"));
 	}
 
-	virtual QString getExtraPath(const SysinfoModel *const sysinfo, const bool& x64) const
+	virtual QStringList getExtraPaths(const SysinfoModel *const sysinfo, const bool& x64) const
 	{
 		const QString avsPath = sysinfo->getAVSPath();
 		if (!avsPath.isEmpty())
 		{
 		
-			return QString("%1/%2").arg(avsPath, x64 ? QLatin1String("x64") : QLatin1String("x86"));
+			return QStringList() << QString("%1/%2").arg(avsPath, x64 ? QLatin1String("x64") : QLatin1String("x86"));
 		}
-		return QString();
+		return QStringList();
 	}
 };
 

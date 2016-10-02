@@ -227,27 +227,26 @@ bool AvisynthCheckThread::checkAvisynth(QString &basePath, const SysinfoModel *c
 
 	QProcess process;
 	QStringList output;
-	QString extraPath;
 
 	//Look for "portable" Avisynth version
+	static const char *const ARCH_DIR[] = { "x64", "x86" };
+	const QLatin1String archSuffix = QLatin1String(ARCH_DIR[x64 ? 1 : 0]);
 	if (ENABLE_PORTABLE_AVS)
 	{
 		const QString avsPortableDir = QString("%1/extra/Avisynth").arg(QCoreApplication::applicationDirPath());
 		if (VALID_DIR(avsPortableDir))
 		{
-			const QString archDir = x64 ? QLatin1String("x64") : QLatin1String("x86");
-			QFileInfo avsDllFile(QString("%1/%2/avisynth.dll").arg(avsPortableDir, archDir)), devilDllFile(QString("%1/%2/devil.dll").arg(avsPortableDir, archDir));
+			QFileInfo avsDllFile(QString("%1/%2/avisynth.dll").arg(avsPortableDir, archSuffix)), devilDllFile(QString("%1/%2/devil.dll").arg(avsPortableDir, archSuffix));
 			if (avsDllFile.exists() && devilDllFile.exists() && avsDllFile.isFile() && devilDllFile.isFile())
 			{
 				qWarning("Adding portable Avisynth to PATH environment variable: %s", MUTILS_UTF8(avsPortableDir));
 				basePath = avsPortableDir;
-				extraPath = QString("%1/%2").arg(avsPortableDir, archDir);
 			}
 		}
 	}
 
 	//Setup process object
-	MUtils::init_process(process, QDir::tempPath(), true, extraPath);
+	MUtils::init_process(process, QDir::tempPath(), true, basePath.isEmpty() ? NULL : &(QStringList() << QString("%1/%2").arg(basePath, archSuffix)));
 
 	//Try to start VSPIPE.EXE
 	process.start(AVS_CHECK_BINARY(sysinfo, x64), QStringList());

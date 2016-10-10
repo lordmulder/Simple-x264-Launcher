@@ -722,7 +722,7 @@ FunctionEnd
 	!if ${uinst} < 1
 		LockedList::AddModule "\Au_.exe"
 	!endif
-	LockedList::AddFolder "$INSTDIR"
+	#LockedList::AddFolder "$INSTDIR"
 	LockedList::Dialog /autonext /heading "$(X264_LANG_LOCKEDLIST_HEADING)" /noprograms "$(X264_LANG_LOCKEDLIST_NOPROG)" /searching  "$(X264_LANG_LOCKEDLIST_SEARCH)" /colheadings "$(X264_LANG_LOCKEDLIST_COLHDR1)" "$(X264_LANG_LOCKEDLIST_COLHDR2)"
 	Pop $R0
 !macroend

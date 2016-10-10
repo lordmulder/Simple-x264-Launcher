@@ -176,10 +176,10 @@ echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
 REM ///////////////////////////////////////////////////////////////////////////
-"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%UPX3_PATH%" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%"    "%~dp0\etc\setup\setup.nsi"
+"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%UPX3_PATH%" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
-"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%UPX3_PATH%" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.exe" "/DX264_SOURCE_FILE=%OUT_PATH%.sfx" "%~dp0\etc\setup\wrapper.nsi"
+call "%~dp0\etc\7zSD.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 attrib +R "%OUT_PATH%.exe"

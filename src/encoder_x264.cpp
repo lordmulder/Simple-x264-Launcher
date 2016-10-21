@@ -30,6 +30,7 @@
 #include "model_clipInfo.h"
 
 //MUtils
+#include <MUtils/Global.h>
 #include <MUtils/Exception.h>
 
 //Qt
@@ -235,28 +236,22 @@ void X264Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdL
 
 void X264Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
-	int offset = -1;
-
-	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
+	if(patterns[0]->lastIndexIn(line) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		unsigned int temp1 = patterns[0]->cap(2).toUInt(&ok1);
-		unsigned int temp2 = patterns[0]->cap(3).toUInt(&ok2);
-		if(ok1 && ok2 && (temp1 > 0) && (temp2 > 0))
+		unsigned int temp[3];
+		if(MUtils::regexp_parse_uint32(*patterns[0], temp, 3))
 		{
-			core  = temp1;
-			build = temp2;
+			core  = temp[1];
+			build = temp[2];
 		}
 	}
-	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
+	else if(patterns[1]->lastIndexIn(line) >= 0)
 	{
-		bool ok1 = false, ok2 = false;
-		unsigned int temp1 = patterns[1]->cap(2).toUInt(&ok1);
-		unsigned int temp2 = patterns[1]->cap(3).toUInt(&ok2);
-		if(ok1 && ok2 && (temp1 > 0) && (temp2 > 0))
+		unsigned int temp[3];
+		if (MUtils::regexp_parse_uint32(*patterns[1], temp, 3))
 		{
-			core  = temp1;
-			build = temp2;
+			core  = temp[1];
+			build = temp[2];
 		}
 		modified = true;
 	}

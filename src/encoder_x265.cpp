@@ -30,6 +30,7 @@
 #include "model_clipInfo.h"
 
 //MUtils
+#include <MUtils/Global.h>
 #include <MUtils/Exception.h>
 
 //Qt
@@ -40,7 +41,7 @@
 
 //x265 version info
 static const unsigned int VERSION_X265_MINIMUM_VER = 21;
-static const unsigned int VERSION_X265_MINIMUM_REV = 20;
+static const unsigned int VERSION_X265_MINIMUM_REV = 25;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -235,24 +236,17 @@ void X265Encoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &p
 
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
-		bool ok[3] = { false, false, false };
 		unsigned int temp[3];
-		temp[0] = patterns[0]->cap(1).toUInt(&ok[0]);
-		temp[1] = patterns[0]->cap(2).toUInt(&ok[1]);
-		temp[2] = patterns[0]->cap(3).toUInt(&ok[2]);
-		if(ok[0] && ok[1])
+		if(MUtils::regexp_parse_uint32(*patterns[0], temp, 3))
 		{
-			core = (10 * temp[0]) + temp[1];
+			core  = (10 * temp[0]) + temp[1];
+			build = temp[2];
 		}
-		if(ok[2]) build = temp[2];
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		bool ok[2] = { false, false };
 		unsigned int temp[2];
-		temp[0] = patterns[1]->cap(1).toUInt(&ok[0]);
-		temp[1] = patterns[1]->cap(2).toUInt(&ok[1]);
-		if(ok[0] && ok[1])
+		if (MUtils::regexp_parse_uint32(*patterns[0], temp, 2))
 		{
 			core = (10 * temp[0]) + temp[1];
 		}
@@ -280,7 +274,7 @@ bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 
 	if((core < VERSION_X265_MINIMUM_VER) || ((core == VERSION_X265_MINIMUM_VER) && (build < VERSION_X265_MINIMUM_REV)))
 	{
-		log(tr("\nERROR: Your version of x265 is too old! (Minimum required revision is 0.%1+%2)").arg(QString::number(VERSION_X265_MINIMUM_VER), QString::number(VERSION_X265_MINIMUM_REV)));
+		log(tr("\nERROR: Your version of x265 is too old! (Minimum required revision is %1.%2+%3)").arg(QString::number(VERSION_X265_MINIMUM_VER / 10), QString::number(VERSION_X265_MINIMUM_VER % 10), QString::number(VERSION_X265_MINIMUM_REV)));
 		return false;
 	}
 	else if(core > VERSION_X265_MINIMUM_VER)

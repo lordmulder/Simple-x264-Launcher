@@ -30,6 +30,7 @@
 #include "model_clipInfo.h"
 
 //MUtils
+#include <MUtils/Global.h>
 #include <MUtils/Exception.h>
 
 //Qt
@@ -39,7 +40,7 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_NVENCC_MINIMUM_VER = 211;
+static const unsigned int VERSION_NVENCC_MINIMUM_VER = 301;
 static const unsigned int VERSION_NVENCC_MINIMUM_API =  70;
 
 // ------------------------------------------------------------
@@ -248,27 +249,17 @@ QString NVEncEncoder::getName(void) const
 void NVEncEncoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bNVEncC\\s+\\(\\w+\\)\\s+(\\d)\\.(\\d+)\\s+by\\s+rigaya\\s+\\[NVENC\\s+API\\s+v(\\d+)\\.(\\d+)\\]", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bNVEncC\\s+\\(x\\d+\\)\\s+(\\d)\\.(\\d+).*\\[NVENC\\s+API\\s+v(\\d+)\\.(\\d+)\\]", Qt::CaseInsensitive);
 }
 
 void NVEncEncoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
-	int offset = -1;
-
-	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
+	if(patterns[0]->lastIndexIn(line) >= 0)
 	{
-		bool ok[4] = { false, false, false, false };
 		unsigned int temp[4];
-		temp[0] = patterns[0]->cap(1).toUInt(&ok[0]);
-		temp[1] = patterns[0]->cap(2).toUInt(&ok[1]);
-		temp[2] = patterns[0]->cap(2).toUInt(&ok[2]);
-		temp[3] = patterns[0]->cap(2).toUInt(&ok[3]);
-		if(ok[0] && ok[1])
+		if(MUtils::regexp_parse_uint32(*patterns[0], temp, 4))
 		{
 			core = (100 * temp[0]) + temp[1];
-		}
-		if (ok[2] && ok[3])
-		{
 			build = (10 * temp[2]) + temp[3];
 		}
 	}
@@ -289,7 +280,7 @@ QString NVEncEncoder::printVersion(const unsigned int &revision, const bool &mod
 	unsigned int core, build;
 	splitRevision(revision, core, build);
 
-	return tr("NVEncC version: %1.%2").arg(QString::number(core / 100), QString::number(core % 100).leftJustified(2, QLatin1Char('0')));
+	return tr("NVEncC version: %1.%2 [API: %3.%4]").arg(QString::number(core / 100), QString::number(core % 100).leftJustified(2, QLatin1Char('0')), QString::number(build / 10), QString::number(build % 10));
 }
 
 bool NVEncEncoder::isVersionSupported(const unsigned int &revision, const bool &modified)

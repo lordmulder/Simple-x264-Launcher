@@ -86,6 +86,10 @@ The following third-party software is used by this application:
   http://www.videolan.org/developers/x265.html
   x265 is a free software and is released under the terms of the GNU GPL.
 
+* The NVEncC encoder software is Copyright (c) 1999-2016 rigaya.
+  https://onedrive.live.com/?id=6BDD4375AC8933C6%212293&cid=6BDD4375AC8933C6
+  NVEncC is a free software and is released under the terms of the MIT License.
+
 * AviSynth is Copyright (C) 2002-2006 Ben Rudiak-Gould et al.
   http://avisynth.nl/index.php/Main_Page
   AviSynth is a free software, released under the terms of the GNU GPL.

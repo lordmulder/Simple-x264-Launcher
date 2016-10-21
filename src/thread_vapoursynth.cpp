@@ -239,14 +239,17 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 			{
 				for (size_t k = 0; k < 3; k++)
 				{
-					QString temp;
-					if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS[i]), QString::fromLatin1(VPS_REG_NAME[j]), temp, REG_SCOPE[k]))
+					if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS[i]), REG_SCOPE[k]))
 					{
-						temp = cleanDir(temp);
-						if (VALID_DIR(temp))
+						QString temp;
+						if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS[i]), QString::fromLatin1(VPS_REG_NAME[j]), temp, REG_SCOPE[k]))
 						{
-							vapoursynthPath = temp;
-							break;
+							temp = cleanDir(temp);
+							if (VALID_DIR(temp))
+							{
+								vapoursynthPath = temp;
+								break;
+							}
 						}
 					}
 				}

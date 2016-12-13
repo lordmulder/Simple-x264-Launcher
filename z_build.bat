@@ -5,7 +5,6 @@ REM ///////////////////////////////////////////////////////////////////////////
 set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
 set "WSDK_PATH=C:\Program Files (x86)\Windows Kits\10"
 set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
-set "UPX3_PATH=C:\Program Files\UPX"
 set "PDOC_PATH=C:\Program Files\Pandoc"
 set "TOOLS_VER=140"
 
@@ -131,9 +130,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress
 REM ///////////////////////////////////////////////////////////////////////////
-"%UPX3_PATH%\upx.exe" --brute "%PACK_PATH%\*.exe"
-"%UPX3_PATH%\upx.exe" --brute "%PACK_PATH%\MUtils32-?.dll
-"%UPX3_PATH%\upx.exe" --best  "%PACK_PATH%\Qt*.dll"
+"%~dp0\etc\upx.exe" --brute "%PACK_PATH%\*.exe"
+"%~dp0\etc\upx.exe" --brute "%PACK_PATH%\MUtils32-?.dll
+"%~dp0\etc\upx.exe" --best  "%PACK_PATH%\Qt*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Attributes
@@ -176,10 +175,15 @@ echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
 REM ///////////////////////////////////////////////////////////////////////////
-"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%UPX3_PATH%" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
+"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%~dp0\etc\upx.exe" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 call "%~dp0\etc\7zSD.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"
+if not "%ERRORLEVEL%"=="0" goto BuildError
+
+set "VERPATCH_PRODUCT=Simple x264/x265 Launcher (Setup)"
+set "VERPATCH_FILEVER=%ISO_DATE:-=.%.%BUILD_NO%"
+"%~dp0\etc\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2016 LoRd_MuldeR" /s company "Free Software Foundation"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 attrib +R "%OUT_PATH%.exe"

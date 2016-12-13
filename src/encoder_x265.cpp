@@ -41,7 +41,7 @@
 
 //x265 version info
 static const unsigned int VERSION_X265_MINIMUM_VER = 21;
-static const unsigned int VERSION_X265_MINIMUM_REV = 25;
+static const unsigned int VERSION_X265_MINIMUM_REV = 69;
 
 // ------------------------------------------------------------
 // Helper Macros

@@ -50,6 +50,9 @@
 ;Web-Site
 !define MyWebSite "http://muldersoft.com/"
 
+;App Paths
+!define AppPaths "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths"
+
 
 ;--------------------------------
 ;Manifest
@@ -90,7 +93,7 @@ InstallDirRegKey HKLM "${MyRegPath}" "InstallLocation"
 SetCompressor /SOLID LZMA
 SetCompressorDictSize 64
 
-#!packhdr "$%TEMP%\exehead.tmp" '"${X264_UPX_PATH}\upx.exe" --brute "$%TEMP%\exehead.tmp"'
+!packhdr "$%TEMP%\exehead.tmp" '"${X264_UPX_PATH}" --brute "$%TEMP%\exehead.tmp"'
 
 
 ;--------------------------------
@@ -569,7 +572,7 @@ Section "-Create Shortcuts"
 		!insertmacro CreateWebLink "$SMPROGRAMS\$StartMenuFolder\VapourSynth.com.url"   "http://www.vapoursynth.com/"
 
 		${If} ${FileExists} "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk"
-			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ISV_PinToTaskbar}
+			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ShellVerb.PinToTaskbar}
 			DetailPrint 'Pin: "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk" -> $R1'
 		${EndIf}
 	!insertmacro MUI_STARTMENU_WRITE_END
@@ -589,6 +592,7 @@ Section "-Update Registry"
 	WriteRegStr HKLM "${MyRegPath}" "URLInfoAbout" "${MyWebSite}"
 	WriteRegStr HKLM "${MyRegPath}" "URLUpdateInfo" "${MyWebSite}"
 	
+	DeleteRegKey HKCU "${AppPaths}\x264_launcher.exe"
 	WriteRegStr HKLM "${AppPaths}\x264_launcher.exe" "" "$INSTDIR\$R0"
 	WriteRegStr HKLM "${AppPaths}\x264_launcher.exe" "Path" "$INSTDIR"
 SectionEnd
@@ -615,7 +619,7 @@ Section "Uninstall"
 	${IfNot} "$StartMenuFolder" == ""
 		SetShellVarContext current
 		${If} ${FileExists} "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk"
-			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ISV_UnpinFromTaskbar}
+			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ShellVerb.UnpinFromTaskbar}
 			DetailPrint 'Unpin: "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk" -> $R1'
 		${EndIf}
 		${If} ${FileExists} "$SMPROGRAMS\$StartMenuFolder\*.*"
@@ -626,7 +630,7 @@ Section "Uninstall"
 		
 		SetShellVarContext all
 		${If} ${FileExists} "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk"
-			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ISV_UnpinFromTaskbar}
+			${StdUtils.InvokeShellVerb} $R1 "$SMPROGRAMS\$StartMenuFolder" "Simple x264 Launcher.lnk" ${StdUtils.Const.ShellVerb.UnpinFromTaskbar}
 			DetailPrint 'Unpin: "$SMPROGRAMS\$StartMenuFolder\Simple x264 Launcher.lnk" -> $R1'
 		${EndIf}
 		${If} ${FileExists} "$SMPROGRAMS\$StartMenuFolder\*.*"
@@ -658,7 +662,7 @@ Section "Uninstall"
 	DeleteRegKey HKCU "SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\{54dcbccb-c905-46dc-b6e6-48563d0e9e55}"
 	
 	DeleteRegKey HKLM "${AppPaths}\x264_launcher.exe"
-	DeleteRegKey HKCU "${AppPaths}\x264_launcherexe"
+	DeleteRegKey HKCU "${AppPaths}\x264_launcher.exe"
 
 	MessageBox MB_YESNO|MB_TOPMOST "$(X264_LANG_UNINST_PERSONAL)" IDNO +3
 	Delete "$LOCALAPPDATA\LoRd_MuldeR\Simple x264 Launcher\*.ini"

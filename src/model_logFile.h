@@ -25,7 +25,7 @@
 
 #include "QAbstractItemModel"
 #include <QUuid>
-#include <QStringList>
+#include <QList>
 #include <QMap>
 
 class LogFileModel : public QAbstractItemModel
@@ -47,9 +47,10 @@ public:
 	bool saveToLocalFile(const QString &fileName);
 
 protected:
-	QStringList m_lines;
 	bool m_firstLine;
+	typedef QPair<qint64, QString> LogEntry;
+	QList<LogEntry> m_lines;
 
 public slots:
-	void addLogMessage(const QUuid &jobId, const QString &text);
+	void addLogMessage(const QUuid &jobId, const qint64 &timeStamp, const QString &text);
 };

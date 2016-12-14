@@ -295,7 +295,7 @@ QModelIndex JobListModel::insertJob(EncodeThread *thread)
 
 	connect(thread, SIGNAL(statusChanged(QUuid, JobStatus)), this, SLOT(updateStatus(QUuid, JobStatus)), Qt::QueuedConnection);
 	connect(thread, SIGNAL(progressChanged(QUuid, unsigned int)), this, SLOT(updateProgress(QUuid, unsigned int)), Qt::QueuedConnection);
-	connect(thread, SIGNAL(messageLogged(QUuid, QString)), logFile, SLOT(addLogMessage(QUuid, QString)), Qt::QueuedConnection);
+	connect(thread, SIGNAL(messageLogged(QUuid, qint64, QString)), logFile, SLOT(addLogMessage(QUuid, qint64,  QString)), Qt::QueuedConnection);
 	connect(thread, SIGNAL(detailsChanged(QUuid, QString)), this, SLOT(updateDetails(QUuid, QString)), Qt::QueuedConnection);
 	
 	return createIndex(m_jobs.count() - 1, 0, NULL);

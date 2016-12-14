@@ -27,13 +27,18 @@
 #include <QClipboard>
 #include <QDir>
 #include <QTextStream>
+#include <QDateTime>
+
+static const QLatin1String FMT_TIMESTAMP("[yyyy-MM-dd][HH:mm:ss] ");
 
 LogFileModel::LogFileModel(const QString &sourceName, const QString &outputName, const QString &configName)
 {
-	m_lines << "Job not started yet." << QString();
-	m_lines << QString("Scheduled source: %1").arg(QDir::toNativeSeparators(sourceName));
-	m_lines << QString("Scheduled output: %1").arg(QDir::toNativeSeparators(outputName));
-	m_lines << QString("Scheduled config: %1").arg(configName);
+	const qint64 timeStamp = QDateTime::currentMSecsSinceEpoch();
+	m_lines << qMakePair(timeStamp, QString("Job not started yet."));
+	m_lines << qMakePair(timeStamp, QString());
+	m_lines << qMakePair(timeStamp, QString("Scheduled source: %1").arg(QDir::toNativeSeparators(sourceName)));
+	m_lines << qMakePair(timeStamp, QString("Scheduled output: %1").arg(QDir::toNativeSeparators(outputName)));
+	m_lines << qMakePair(timeStamp, QString("Scheduled config: %1").arg(configName));
 	m_firstLine = true;
 }
 
@@ -76,7 +81,16 @@ QVariant LogFileModel::data(const QModelIndex &index, int role) const
 	{
 		if(index.row() >= 0 && index.row() < m_lines.count() && index.column() == 0)
 		{
-			return m_lines.at(index.row());
+			if (role == Qt::ToolTipRole)
+			{
+				const LogEntry &entry = m_lines.at(index.row());
+				const QString timeStamp = QDateTime::fromMSecsSinceEpoch(entry.first).toString(FMT_TIMESTAMP);
+				return timeStamp + entry.second;
+			}
+			else
+			{
+				return m_lines.at(index.row()).second;
+			}
 		}
 	}
 
@@ -89,8 +103,14 @@ QVariant LogFileModel::data(const QModelIndex &index, int role) const
 
 void LogFileModel::copyToClipboard(void)
 {
-	QClipboard *clipboard = QApplication::clipboard();
-	clipboard->setText(m_lines.join("\r\n"));
+	QClipboard *const clipboard = QApplication::clipboard();
+	QStringList buffer;
+	for (QList<LogEntry>::ConstIterator iter = m_lines.constBegin(); iter != m_lines.constEnd(); iter++)
+	{
+		const QString timeStamp = QDateTime::fromMSecsSinceEpoch(iter->first).toString(FMT_TIMESTAMP);
+		buffer << (timeStamp + iter->second);
+	}
+	clipboard->setText(buffer.join("\r\n"));
 }
 
 bool  LogFileModel::saveToLocalFile(const QString &fileName)
@@ -105,9 +125,10 @@ bool  LogFileModel::saveToLocalFile(const QString &fileName)
 	stream.setCodec("UTF-8");
 	stream.setGenerateByteOrderMark(true);
 
-	for(QStringList::ConstIterator iter = m_lines.constBegin(); iter != m_lines.constEnd(); iter++)
+	for(QList<LogEntry>::ConstIterator iter = m_lines.constBegin(); iter != m_lines.constEnd(); iter++)
 	{
-		stream << (*iter) << QLatin1String("\r\n");
+		const QString timeStamp = QDateTime::fromMSecsSinceEpoch(iter->first).toString(FMT_TIMESTAMP);
+		stream << timeStamp << iter->second << QLatin1String("\r\n");
 		if(stream.status() != QTextStream::Status::Ok)
 		{
 			file.close();
@@ -130,7 +151,7 @@ bool  LogFileModel::saveToLocalFile(const QString &fileName)
 // Slots
 ///////////////////////////////////////////////////////////////////////////////
 
-void LogFileModel::addLogMessage(const QUuid &jobId, const QString &text)
+void LogFileModel::addLogMessage(const QUuid &jobId, const qint64 &timeStamp, const QString &text)
 {
 	beginInsertRows(QModelIndex(), m_lines.count(), m_lines.count());
 
@@ -140,10 +161,10 @@ void LogFileModel::addLogMessage(const QUuid &jobId, const QString &text)
 		m_lines.clear();
 	}
 
-	QStringList lines = text.split("\n");
-	for(int i = 0; i < lines.count(); i++)
+	const QStringList lines = text.split("\n");
+	for(QStringList::ConstIterator iter = lines.constBegin(); iter != lines.constEnd(); iter++)
 	{
-		m_lines.append(lines.at(i));
+		m_lines << qMakePair(timeStamp, (*iter));
 	}
 
 	endInsertRows();

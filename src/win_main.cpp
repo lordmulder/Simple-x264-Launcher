@@ -735,8 +735,15 @@ void MainWindow::saveLogFile(const QModelIndex &index)
 	{
 		if(LogFileModel *log = m_jobList->getLogFile(index))
 		{
-			QDir(QString("%1/logs").arg(x264_data_path())).mkpath(".");
-			QString logFilePath = QString("%1/logs/LOG.%2.%3.txt").arg(x264_data_path(), QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate).replace(':', "-"));
+			const QString outputDir = QString("%1/logs").arg(x264_data_path());
+			const QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd.HH-mm-ss");
+			QDir(outputDir).mkpath(".");
+			const QString logFilePath = MUtils::make_unique_file(outputDir, QString("LOG.%1").arg(timeStamp), QLatin1String("txt"));
+			if(logFilePath.isEmpty())
+			{
+				qWarning("Failed to generate log file name. Giving up!");
+				return;
+			}
 			if(!log->saveToLocalFile(logFilePath))
 			{
 				qWarning("Failed to open log file for writing:\n%s", logFilePath.toUtf8().constData());

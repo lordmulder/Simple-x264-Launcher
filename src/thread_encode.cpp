@@ -363,7 +363,7 @@ void EncodeThread::encode(void)
 
 void EncodeThread::log(const QString &text)
 {
-	emit messageLogged(m_jobId, text);
+	emit messageLogged(m_jobId, QDateTime::currentMSecsSinceEpoch(), text);
 }
 
 void EncodeThread::setStatus(const JobStatus &newStatus)

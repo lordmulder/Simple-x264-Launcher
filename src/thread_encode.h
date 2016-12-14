@@ -111,7 +111,7 @@ protected:
 signals:
 	void statusChanged(const QUuid &jobId, const JobStatus &newStatus);
 	void progressChanged(const QUuid &jobId, const unsigned int &newProgress);
-	void messageLogged(const QUuid &jobId, const QString &text);
+	void messageLogged(const QUuid &jobId, qint64, const QString &text);
 	void detailsChanged(const QUuid &jobId, const QString &details);
 
 private slots:

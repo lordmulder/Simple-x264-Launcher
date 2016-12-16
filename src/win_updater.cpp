@@ -170,17 +170,21 @@ void UpdaterDialog::keyPressEvent(QKeyEvent *event)
 {
 	if(event->key() == Qt::Key_F11)
 	{
-		QFile logFile(QString("%1/%2.log").arg(MUtils::temp_folder(), MUtils::rand_str()));
-		if(logFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
+		const QString logFilePath = MUtils::make_temp_file(MUtils::temp_folder(), "log", true);
+		if (!logFilePath.isEmpty())
 		{
-			logFile.write("\xEF\xBB\xBF");
-			for(QStringList::ConstIterator iter = m_logFile.constBegin(); iter != m_logFile.constEnd(); iter++)
+			QFile logFile(logFilePath);
+			if (logFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
 			{
-				logFile.write(iter->toUtf8());
-				logFile.write("\r\n");
+				logFile.write("\xEF\xBB\xBF");
+				for (QStringList::ConstIterator iter = m_logFile.constBegin(); iter != m_logFile.constEnd(); iter++)
+				{
+					logFile.write(iter->toUtf8());
+					logFile.write("\r\n");
+				}
+				logFile.close();
+				QDesktopServices::openUrl(QUrl::fromLocalFile(logFile.fileName()));
 			}
-			logFile.close();
-			QDesktopServices::openUrl(QUrl::fromLocalFile(logFile.fileName()));
 		}
 	}
 }
@@ -469,13 +473,13 @@ bool UpdaterDialog::checkBinaries(void)
 	{
 		const QString orgName = QString::fromLatin1(BINARIES[i].name);
 		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), orgName);
-		const QString outPath = QString("%1/%2_%3.%4").arg(tempPath, QFileInfo(orgName).baseName(), MUtils::rand_str(), QFileInfo(orgName).suffix());
+		const QString outPath = MUtils::make_unique_file(tempPath, QFileInfo(orgName).baseName(), QFileInfo(orgName).suffix());
 		if(!checkFileHash(binPath, BINARIES[i].hash))
 		{
 			qWarning("Verification of '%s' has failed!", MUTILS_UTF8(orgName));
 			return false;
 		}
-		if(!QFile::copy(binPath, outPath))
+		if(outPath.isEmpty() || (!QFile::copy(binPath, outPath)))
 		{
 			qWarning("Copying of '%s' has failed!", MUTILS_UTF8(orgName));
 			return false;

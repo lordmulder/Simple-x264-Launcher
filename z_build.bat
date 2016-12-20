@@ -3,9 +3,6 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
 set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
-set "WSDK_PATH=C:\Program Files (x86)\Windows Kits\10"
-set "NSIS_PATH=C:\Program Files\NSIS\Unicode"
-set "PDOC_PATH=C:\Program Files\Pandoc"
 set "TOOLS_VER=140"
 
 REM ###############################################
@@ -24,16 +21,16 @@ if "%VCINSTALLDIR%"=="" (
 	echo %%VCINSTALLDIR%% not specified. Please check your MSVC_PATH var!
 	goto BuildError
 )
-if "%QTDIR%"=="" (
-	echo %%QTDIR%% not specified. Please check your MSVC_PATH var!
-	goto BuildError
-)
 if not exist "%VCINSTALLDIR%\bin\cl.exe" (
 	echo C++ compiler not found. Please check your MSVC_PATH var!
 	goto BuildError
 )
-if not exist "%PDOC_PATH%\pandoc.exe" (
-	echo Pandoc binary could not be found. Please check your PDOC_PATH var!
+if "%QTDIR%"=="" (
+	echo %%QTDIR%% not specified. Please check your QTDIR var!
+	goto BuildError
+)
+if not exist "%QTDIR%\include\QtCore\qglobal.h" (
+	echo %%QTDIR%% header files not found. Please check your QTDIR var!
 	goto BuildError
 )
 
@@ -42,11 +39,11 @@ REM // Get current date and time (in ISO format)
 REM ///////////////////////////////////////////////////////////////////////////
 set "ISO_DATE="
 set "ISO_TIME="
-if not exist "%~dp0\etc\date.exe" BuildError
-for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\etc\date.exe" +ISODATE:%%Y-%%m-%%d') do (
+if not exist "%~dp0\..\Prerequisites\GnuWin32\date.exe" BuildError
+for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\..\Prerequisites\GnuWin32\date.exe" +ISODATE:%%Y-%%m-%%d') do (
 	if "%%a"=="ISODATE" set "ISO_DATE=%%b"
 )
-for /F "tokens=1,2,3,4 delims=:" %%a in ('"%~dp0\etc\date.exe" +ISOTIME:%%T') do (
+for /F "tokens=1,2,3,4 delims=:" %%a in ('"%~dp0\..\Prerequisites\GnuWin32\date.exe" +ISOTIME:%%T') do (
 	if "%%a"=="ISOTIME" set "ISO_TIME=%%b:%%c:%%d"
 )
 if "%ISO_DATE%"=="" goto BuildError
@@ -119,20 +116,20 @@ copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"         
 copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
 del "%PACK_PATH%\imageformats\*d4.dll" 2> NUL
 if %TOOLS_VER% GEQ 140 (
-	copy "%WSDK_PATH%\Redist\ucrt\DLLs\x86\*.dll" "%PACK_PATH%"
+	copy "%~dp0\..\Prerequisites\MSVC\redist\ucrt\DLLs\x86\*.dll" "%PACK_PATH%"
 )
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Generate Docs
 REM ///////////////////////////////////////////////////////////////////////////
-"%PDOC_PATH%\pandoc.exe" --from markdown_github+pandoc_title_block+header_attributes+implicit_figures --to html5 --toc -N --standalone -H "%~dp0\etc\css\style.inc" --output "%PACK_PATH%\README.html" "%~dp0\README.md"
+"%~dp0\..\Prerequisites\Pandoc\pandoc.exe" --from markdown_github+pandoc_title_block+header_attributes+implicit_figures --to html5 --toc -N --standalone -H "%~dp0\etc\css\style.inc" --output "%PACK_PATH%\README.html" "%~dp0\README.md"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress
 REM ///////////////////////////////////////////////////////////////////////////
-"%~dp0\etc\upx.exe" --brute "%PACK_PATH%\*.exe"
-"%~dp0\etc\upx.exe" --brute "%PACK_PATH%\MUtils32-?.dll
-"%~dp0\etc\upx.exe" --best  "%PACK_PATH%\Qt*.dll"
+"%~dp0\..\Prerequisites\UPX\upx.exe" --brute "%PACK_PATH%\*.exe"
+"%~dp0\..\Prerequisites\UPX\upx.exe" --brute "%PACK_PATH%\MUtils32-?.dll
+"%~dp0\..\Prerequisites\UPX\upx.exe" --best  "%PACK_PATH%\Qt*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Attributes
@@ -170,20 +167,20 @@ echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo Build #%BUILD_NO%, created on %ISO_DATE% at %ISO_TIME% >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
-"%~dp0\etc\cat.exe" "%~dp0\etc\setup\build.nfo" >> "%PACK_PATH%\BUILD_TAG.txt"
+"%~dp0\..\Prerequisites\GnuWin32\cat.exe" "%~dp0\etc\setup\build.nfo" >> "%PACK_PATH%\BUILD_TAG.txt"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
 REM ///////////////////////////////////////////////////////////////////////////
-"%NSIS_PATH%\makensis.exe" "/DX264_UPX_PATH=%~dp0\etc\upx.exe" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
+"%~dp0\..\Prerequisites\NSIS\makensis.exe" "/DX264_UPX_PATH=%~dp0\..\Prerequisites\UPX\upx.exe" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
-call "%~dp0\etc\7zSD.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"
+call "%~dp0\..\Prerequisites\SevenZip\7zSD.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 set "VERPATCH_PRODUCT=Simple x264/x265 Launcher (Setup)"
 set "VERPATCH_FILEVER=%ISO_DATE:-=.%.%BUILD_NO%"
-"%~dp0\etc\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2016 LoRd_MuldeR" /s company "Free Software Foundation"
+"%~dp0\..\Prerequisites\VerPatch\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2016 LoRd_MuldeR" /s company "Free Software Foundation"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 attrib +R "%OUT_PATH%.exe"
@@ -193,7 +190,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Build ZIP package
 REM ///////////////////////////////////////////////////////////////////////////
 pushd "%PACK_PATH%"
-"%~dp0\etc\zip.exe" -r -9 -z "%OUT_PATH%.zip" "*.*" < "%PACK_PATH%\BUILD_TAG.txt"
+"%~dp0\..\Prerequisites\GnuWin32\zip.exe" -r -9 -z "%OUT_PATH%.zip" "*.*" < "%PACK_PATH%\BUILD_TAG.txt"
 popd
 
 if not "%ERRORLEVEL%"=="0" goto BuildError

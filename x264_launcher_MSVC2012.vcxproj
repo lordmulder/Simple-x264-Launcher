@@ -97,7 +97,7 @@ copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"</Command>
       <Message>Copy Toolset</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_BUILD "$(SolutionDir)src\version.h" 5</Command>
+      <Command>"$(SolutionDir)..\Prerequisites\AutoInc\auto_inc.exe" VER_X264_BUILD "$(SolutionDir)src\version.h" 5</Command>
       <Message>Update Build Number</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -135,7 +135,7 @@ copy /Y "$(SolutionDir)etc\vld\bin\Win32\*.manifest" "$(TargetDir)"</Command>
       <EntryPointSymbol>x264_entry_point</EntryPointSymbol>
     </Link>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)etc\auto_inc.exe" VER_X264_BUILD "$(SolutionDir)src\version.h" 5</Command>
+      <Command>"$(SolutionDir)..\Prerequisites\AutoInc\auto_inc.exe" VER_X264_BUILD "$(SolutionDir)src\version.h" 5</Command>
     </PreBuildEvent>
     <PreBuildEvent>
       <Message>Update Build Number</Message>

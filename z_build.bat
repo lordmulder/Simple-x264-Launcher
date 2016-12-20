@@ -172,7 +172,7 @@ echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
 REM ///////////////////////////////////////////////////////////////////////////
-"%~dp0\..\Prerequisites\NSIS\makensis.exe" "/DX264_UPX_PATH=%~dp0\..\Prerequisites\UPX\upx.exe" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
+"%~dp0\..\Prerequisites\NSIS\makensis.exe" "/DX264_DATE=%ISO_DATE%" "/DX264_BUILD=%BUILD_NO%" "/DX264_OUTPUT_FILE=%OUT_PATH%.sfx" "/DX264_SOURCE_PATH=%PACK_PATH%" "%~dp0\etc\setup\setup.nsi"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 call "%~dp0\..\Prerequisites\SevenZip\7zSD.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"

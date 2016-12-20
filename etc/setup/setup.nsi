@@ -40,9 +40,6 @@
 !ifndef X264_SOURCE_PATH
   !error "X264_SOURCE_PATH is not defined !!!"
 !endif
-!ifndef X264_UPX_PATH
-  !error "X264_UPX_PATH is not defined !!!"
-!endif
 
 ;UUID
 !define MyRegPath "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{986E454F-DACA-4326-A9C7-3E46C0BFFDCE}"
@@ -59,7 +56,7 @@
 ;--------------------------------
 
 !tempfile PACKHDRTEMP
-!packhdr "${PACKHDRTEMP}" '"..\mt.exe" -manifest "setup.manifest" -outputresource:"${PACKHDRTEMP};1"'
+!packhdr "${PACKHDRTEMP}" '"..\..\..\Prerequisites\MSVC\redist\bin\mt.exe" -manifest "setup.manifest" -outputresource:"${PACKHDRTEMP};1" && "..\..\..\Prerequisites\UPX\upx.exe" --brute "${PACKHDRTEMP}"'
 
 
 ;--------------------------------
@@ -92,8 +89,6 @@ InstallDirRegKey HKLM "${MyRegPath}" "InstallLocation"
 
 SetCompressor /SOLID LZMA
 SetCompressorDictSize 64
-
-!packhdr "$%TEMP%\exehead.tmp" '"${X264_UPX_PATH}" --brute "$%TEMP%\exehead.tmp"'
 
 
 ;--------------------------------

@@ -12,6 +12,8 @@ REM ###############################################
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Setup environment
 REM ///////////////////////////////////////////////////////////////////////////
+if exist "%QTVC_PATH%\bin\qtvars.bat" ( call "%QTVC_PATH%\bin\qtvars.bat" )
+if exist "%QTVC_PATH%\bin\qtenv2.bat" ( call "%QTVC_PATH%\bin\qtenv2.bat" )
 call "%MSVC_PATH%\vcvarsall.bat" x86
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -27,6 +29,10 @@ if not exist "%VCINSTALLDIR%\bin\cl.exe" (
 )
 if "%QTDIR%"=="" (
 	echo %%QTDIR%% not specified. Please check your QTDIR var!
+	goto BuildError
+)
+if not exist "%QTDIR%\bin\moc.exe" (
+	echo Qt meta compiler not found. Please check your QTDIR var!
 	goto BuildError
 )
 if not exist "%QTDIR%\include\QtCore\qglobal.h" (

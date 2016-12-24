@@ -27,6 +27,7 @@
 //Qt
 #include <QMainWindow>
 
+//Forward declarations
 class JobListModel;
 class OptionsModel;
 class SysinfoModel;
@@ -48,14 +49,12 @@ namespace Ui
 
 namespace MUtils
 {
-	namespace CPUFetaures
-	{
-		struct _cpu_info_t;
-		typedef struct _cpu_info_t cpu_info_t;
-	}
-
 	class IPCChannel;
 	class Taskbar7;
+	namespace CPUFetaures
+	{
+		typedef struct _cpu_info_t cpu_info_t;
+	}
 }
 
 class MainWindow: public QMainWindow

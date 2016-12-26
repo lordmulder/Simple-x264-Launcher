@@ -28,7 +28,7 @@
 
 //MUtils
 #include <MUtils/UpdateChecker.h>
-#include <MUtils/Hash_Blake2.h>
+#include <MUtils/Hash.h>
 #include <MUtils/GUI.h>
 #include <MUtils/OSSupport.h>
 #include <MUtils/Exception.h>
@@ -47,13 +47,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static const char *const DIGEST_KEY = "~Dv/bW3/7t>6?RXVwkaZk-hmS0#O4JS/5YQAO>\\8hvr0B~7[n!X~KMYruemu:MDq";
+
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
-	{ "wget.exe", "227a6af7648ab6ef3a497b04dbd6b6b80b1e7223810f04a31649513baee4efaa9d58ae35ee5c7aafd030d9bccfb6862ea6d95bd731db5dad66738915071a1825", 1 },
-	{ "netc.exe", "c199ea12d761fa3191006da250f8f600ad426265fdf4a43e551cdf04a451a105692efd3ef82ac621c0799394aa21ac65bfbb4bab90c3fbb1f557e93f490fcb75", 1 },
-	{ "gpgv.exe", "18c5456cbb9ebf5cb9012a939b199d9eaa71c92a39f574f1e032babad0bbd9e72a064af96ca9d3d01f2892b064ec239fd61f27bac2eb9a64f7b2ece7beea3158", 1 },
-	{ "gpgv.gpg", "745c7a9c040196d9d322b1580e0046ff26ec13238cfd04325ceb3d4c8948294c593c027f895dc8ec427295175003e75d34f083019b706b0f4f06f81cce8df47d", 0 },
-	{ "wupd.exe", "41bc1ddfcfc0b04a0b8b2c4f95b189d4031afdceaac7bb4a3a31e9235997c1afec4a65c7c71b9c3546c1b6c66950bc764929b89c80fef66f5516a9fd181c2581", 1 },
+	{ "wget.exe", "35d70bf8a1799956b5de3975ff99088a4444a2d17202059afb63949b297e2cc81e5e49e2b95df1c4e26b49ab7430399c293bf805a0b250d686c6f4dd994a0764", 1 },
+	{ "netc.exe", "2e890533473134e074d65e1670c4212a06e4f685c4ee202593b0427defdf2f01e4d22cf7b48855436f1c57109c131f3469daa1a523a5a05fc9d23fb41d2e6ea9", 1 },
+	{ "gpgv.exe", "a8d4d1702e5fb1eee5a2c22fdaf255816a9199ae48142aeec1c8ce16bbcf61d6d634f1e769e62d05cf52c204ba2611f09c9bb661bc6688b937749d478af3e47d", 1 },
+	{ "gpgv.gpg", "1a2f528e551b9abfb064f08674fdd421d3abe403469ddfee2beafd007775a6c684212a6274dc2b41a0b20dd5c2200021c91320e737f7a90b2ac5a40a6221d93f", 0 },
+	{ "wupd.exe", "c7fe72259ae781889a18f688321275e3bae39d75fb96c9c650446e177cb3af3d3ea84db2c1590e44bc2440b2ea79f9684e3a14e47e57e6083ec6f98c5bf72a73", 1 },
 	{ NULL, NULL, 0 }
 };
 
@@ -495,12 +497,12 @@ bool UpdaterDialog::checkBinaries(void)
 bool UpdaterDialog::checkFileHash(const QString &filePath, const char *expectedHash)
 {
 	qDebug("Checking file: %s", filePath.toUtf8().constData());
-	MUtils::Hash::Blake2 checksum2;
+	QScopedPointer<MUtils::Hash::Hash> checksum(MUtils::Hash::create(MUtils::Hash::HASH_BLAKE2_512, DIGEST_KEY));
 	QFile file(filePath);
 	if(file.open(QIODevice::ReadOnly))
 	{
-		checksum2.update(file);
-		const QByteArray fileHash = checksum2.finalize();
+		checksum->update(file);
+		const QByteArray fileHash = checksum->digest();
 		if((strlen(expectedHash) != fileHash.size()) || (memcmp(fileHash.constData(), expectedHash, fileHash.size()) != 0))
 		{
 			qWarning("\nFile appears to be corrupted:\n%s\n", filePath.toUtf8().constData());

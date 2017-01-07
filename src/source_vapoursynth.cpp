@@ -95,7 +95,7 @@ void VapoursynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList
 	patterns << new QRegExp("\\bAPI\\s+r(\\d+)\\b", Qt::CaseInsensitive);
 }
 
-void VapoursynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
+void VapoursynthSource::checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
@@ -171,7 +171,7 @@ void VapoursynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QS
 	patterns << new QRegExp("\\bFPS:\\s+(\\d+)/(\\d+)\\b");
 }
 
-void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo)
+void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, const QList<QRegExp*> &patterns, ClipInfo &clipInfo)
 {
 	int offset = -1;
 

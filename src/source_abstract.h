@@ -51,7 +51,7 @@ public:
 
 protected:
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
-	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo) = 0;
+	virtual void checkSourceProperties_parseLine(const QString &line, const QList<QRegExp*> &patterns, ClipInfo &clipInfo) = 0;
 	
 	virtual void buildCommandLine(QStringList &cmdLine) = 0;
 

@@ -252,7 +252,7 @@ void NVEncEncoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmd
 	patterns << new QRegExp("\\bNVEncC\\s+\\(x\\d+\\)\\s+(\\d)\\.(\\d+).*\\[NVENC\\s+API\\s+v(\\d+)\\.(\\d+)\\]", Qt::CaseInsensitive);
 }
 
-void NVEncEncoder::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
+void NVEncEncoder::checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	if(patterns[0]->lastIndexIn(line) >= 0)
 	{
@@ -389,7 +389,7 @@ void NVEncEncoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 	patterns << new QRegExp("nvEncodeAPI.dll\\s+does\\s+not\\s+exists\\s+in\\s+your\\s+system", Qt::CaseInsensitive);
 }
 
-void NVEncEncoder::runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate)
+void NVEncEncoder::runEncodingPass_parseLine(const QString &line, const QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate)
 {
 	int offset = -1;
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)

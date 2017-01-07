@@ -43,11 +43,11 @@ public:
 
 protected:
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
+	virtual void checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
 	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo);
+	virtual void checkSourceProperties_parseLine(const QString &line, const QList<QRegExp*> &patterns, ClipInfo &clipInfo);
 
 	virtual QString getBinaryPath(void) const { return getSourceInfo().getBinaryPath(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)))); }
 	virtual QStringList getExtraPath(void) const { return getSourceInfo().getExtraPaths(m_sysinfo, m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64) && m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X64) && (m_preferences->getPrefer64BitSource() || (!m_sysinfo->getAvisynth(SysinfoModel::Avisynth_X86)))); }

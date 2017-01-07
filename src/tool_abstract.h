@@ -67,7 +67,7 @@ protected:
 	virtual QStringList getExtraPaths(void) const { return QStringList(); }
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified) = 0;
+	virtual void checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified) = 0;
 	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	void log(const QString &text) { emit messageLogged(text); }

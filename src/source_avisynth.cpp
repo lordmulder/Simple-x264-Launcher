@@ -105,7 +105,7 @@ void AvisynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &c
 	patterns << new QRegExp("\\bAvs2YUV (\\d+).(\\d+)bm(\\d)\\b", Qt::CaseInsensitive);
 }
 
-void AvisynthSource::checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
+void AvisynthSource::checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
@@ -178,54 +178,30 @@ void AvisynthSource::checkSourceProperties_init(QList<QRegExp*> &patterns, QStri
 	cmdLine << "-frames" << "1";
 	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFile, true)) << "NUL";
 
-	patterns << new QRegExp(": (\\d+)x(\\d+), (\\d+) fps, (\\d+) frames");
-	patterns << new QRegExp(": (\\d+)x(\\d+), (\\d+)/(\\d+) fps, (\\d+) frames");
+	patterns << new QRegExp(":\\s+(\\d+)\\s*x\\s*(\\d+)\\s*,\\s+\\w+\\s*,\\s+\\d+-bits\\s*,\\s+\\w+\\s*,\\s+(\\d+)\\s+fps\\s*,\\s+(\\d+)\\s+frames");
+	patterns << new QRegExp(":\\s+(\\d+)\\s*x\\s*(\\d+)\\s*,\\s+\\w+\\s*,\\s+\\d+-bits\\s*,\\s+\\w+\\s*,\\s+(\\d+)\\s*/\\s*(\\d+)\\s+fps\\s*,\\s+(\\d+)\\s+frames");
 }
 
-void AvisynthSource::checkSourceProperties_parseLine(const QString &line, QList<QRegExp*> &patterns, ClipInfo &clipInfo)
+void AvisynthSource::checkSourceProperties_parseLine(const QString &line, const QList<QRegExp*> &patterns, ClipInfo &clipInfo)
 {
 	int offset = -1;
+	quint32 temp[5];
 
 	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
 	{
-		bool ok[4] = { false, false, false, false };
-		quint32 temp[4];
-		temp[0] = patterns[0]->cap(1).toUInt(&ok[0]);
-		temp[1] = patterns[0]->cap(2).toUInt(&ok[1]);
-		temp[2] = patterns[0]->cap(3).toUInt(&ok[2]);
-		temp[3] = patterns[0]->cap(4).toUInt(&ok[3]);
-		if (ok[0] && ok[1])
+		if (MUtils::regexp_parse_uint32((*patterns[0]), temp, 4))
 		{
 			clipInfo.setFrameSize(temp[0], temp[1]);
-		}
-		if (ok[2])
-		{
 			clipInfo.setFrameRate(temp[2], 0);
-		}
-		if (ok[3])
-		{
 			clipInfo.setFrameCount(temp[3]);
 		}
 	}
 	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		bool ok[5] = { false, false, false, false, false };
-		quint32 temp[5];
-		temp[0] = patterns[1]->cap(1).toUInt(&ok[0]);
-		temp[1] = patterns[1]->cap(2).toUInt(&ok[1]);
-		temp[2] = patterns[1]->cap(3).toUInt(&ok[2]);
-		temp[3] = patterns[1]->cap(4).toUInt(&ok[3]);
-		temp[4] = patterns[1]->cap(5).toUInt(&ok[4]);
-		if (ok[0] && ok[1])
+		if (MUtils::regexp_parse_uint32((*patterns[1]), temp, 5))
 		{
 			clipInfo.setFrameSize(temp[0], temp[1]);
-		}
-		if (ok[2] && ok[3])
-		{
 			clipInfo.setFrameRate(temp[2], temp[3]);
-		}
-		if (ok[4])
-		{
 			clipInfo.setFrameCount(temp[4]);
 		}
 	}

@@ -42,9 +42,9 @@ protected:
 	virtual void buildCommandLine(QStringList &cmdLine, const bool &usePipe, const ClipInfo &clipInfo, const QString &indexFile, const int &pass, const QString &passLogFile);
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine);
-	virtual void checkVersion_parseLine(const QString &line, QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
+	virtual void checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified);
 	virtual bool checkVersion_succeeded(const int &exitCode);
 
 	virtual void runEncodingPass_init(QList<QRegExp*> &patterns);
-	virtual void runEncodingPass_parseLine(const QString &line, QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate);
+	virtual void runEncodingPass_parseLine(const QString &line, const QList<QRegExp*> &patterns, const ClipInfo &clipInfo, const int &pass, double &last_progress, double &size_estimate);
 };

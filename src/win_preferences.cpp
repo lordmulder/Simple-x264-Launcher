@@ -74,14 +74,15 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 	ui->comboBoxPriority->setItemData(2, QVariant::fromValue(-1)); //Below Normal
 	ui->comboBoxPriority->setItemData(3, QVariant::fromValue(-2)); //Idle
 
-	ui->labelRunNextJob->installEventFilter(this);
-	ui->labelUse64BitAvs2YUV->installEventFilter(this);
-	ui->labelShutdownComputer->installEventFilter(this);
-	ui->labelSaveLogFiles->installEventFilter(this);
+	ui->labelRunNextJob        ->installEventFilter(this);
+	ui->labelUse64BitAvs2YUV   ->installEventFilter(this);
+	ui->labelShutdownComputer  ->installEventFilter(this);
+	ui->labelSaveLogFiles      ->installEventFilter(this);
 	ui->labelSaveToSourceFolder->installEventFilter(this);
-	ui->labelEnableSounds->installEventFilter(this);
-	ui->labelDisableWarnings->installEventFilter(this);
-	ui->labelNoUpdateReminder->installEventFilter(this);
+	ui->labelEnableSounds      ->installEventFilter(this);
+	ui->labelDisableWarnings   ->installEventFilter(this);
+	ui->labelNoUpdateReminder  ->installEventFilter(this);
+	ui->labelSaveQueueNoConfirm->installEventFilter(this);
 
 	ui->checkBoxDummy1->installEventFilter(this);
 	ui->checkBoxDummy2->installEventFilter(this);
@@ -109,9 +110,9 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	UPDATE_CHECKBOX(ui->checkEnableSounds,       m_preferences->getEnableSounds());
 	UPDATE_CHECKBOX(ui->checkNoUpdateReminder,   m_preferences->getNoUpdateReminder());
 	UPDATE_CHECKBOX(ui->checkDisableWarnings,    m_preferences->getDisableWarnings(), true);
+	UPDATE_CHECKBOX(ui->checkSaveQueueNoConfirm, m_preferences->getSaveQueueNoConfirm());
 	
 	ui->spinBoxJobCount->setValue(m_preferences->getMaxRunningJobCount());
-	
 	UPDATE_COMBOBOX(ui->comboBoxPriority, qBound(-2, m_preferences->getProcessPriority(), 1), 0);
 	
 	const bool hasX64 = m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64);
@@ -136,6 +137,7 @@ bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 		emulateMouseEvent(o, e, ui->labelEnableSounds,       ui->checkEnableSounds);
 		emulateMouseEvent(o, e, ui->labelDisableWarnings,    ui->checkDisableWarnings);
 		emulateMouseEvent(o, e, ui->labelNoUpdateReminder,   ui->checkNoUpdateReminder);
+		emulateMouseEvent(o, e, ui->labelSaveQueueNoConfirm, ui->checkSaveQueueNoConfirm);
 	}
 	return false;
 }
@@ -159,16 +161,17 @@ void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidge
 
 void PreferencesDialog::done(int n)
 {
-	m_preferences->setAutoRunNextJob(ui->checkRunNextJob->isChecked());
-	m_preferences->setShutdownComputer(ui->checkShutdownComputer->isChecked());
-	m_preferences->setPrefer64BitSource(ui->checkUse64BitAvs2YUV->isChecked());
-	m_preferences->setSaveLogFiles(ui->checkSaveLogFiles->isChecked());
-	m_preferences->setSaveToSourcePath(ui->checkSaveToSourceFolder->isChecked());
+	m_preferences->setAutoRunNextJob    (ui->checkRunNextJob->isChecked());
+	m_preferences->setShutdownComputer  (ui->checkShutdownComputer->isChecked());
+	m_preferences->setPrefer64BitSource (ui->checkUse64BitAvs2YUV->isChecked());
+	m_preferences->setSaveLogFiles      (ui->checkSaveLogFiles->isChecked());
+	m_preferences->setSaveToSourcePath  (ui->checkSaveToSourceFolder->isChecked());
 	m_preferences->setMaxRunningJobCount(ui->spinBoxJobCount->value());
-	m_preferences->setProcessPriority(ui->comboBoxPriority->itemData(ui->comboBoxPriority->currentIndex()).toInt());
-	m_preferences->setEnableSounds(ui->checkEnableSounds->isChecked());
-	m_preferences->setDisableWarnings(ui->checkDisableWarnings->isChecked());
-	m_preferences->setNoUpdateReminder(ui->checkNoUpdateReminder->isChecked());
+	m_preferences->setProcessPriority   (ui->comboBoxPriority->itemData(ui->comboBoxPriority->currentIndex()).toInt());
+	m_preferences->setEnableSounds      (ui->checkEnableSounds->isChecked());
+	m_preferences->setDisableWarnings   (ui->checkDisableWarnings->isChecked());
+	m_preferences->setNoUpdateReminder  (ui->checkNoUpdateReminder->isChecked());
+	m_preferences->setSaveQueueNoConfirm(ui->checkSaveQueueNoConfirm->isChecked());
 
 	PreferencesModel::savePreferences(m_preferences);
 	QDialog::done(n);
@@ -179,22 +182,6 @@ void PreferencesDialog::resetButtonPressed(void)
 	PreferencesModel::initPreferences(m_preferences);
 	showEvent(NULL);
 }
-
-//void PreferencesDialog::use10BitEncodingToggled(bool checked)
-//{
-//	if(checked)
-//	{
-//		QString text;
-//		text += QString("<nobr>%1</nobr><br>").arg(tr("Please note that 10&minus;Bit H.264 streams are <b>not</b> currently supported by hardware (standalone) players!"));
-//		text += QString("<nobr>%1</nobr><br>").arg(tr("To play such streams, you will need an <i>up&minus;to&minus;date</i> ffdshow&minus;tryouts, CoreAVC 3.x or another supported s/w decoder."));
-//		text += QString("<nobr>%1</nobr><br>").arg(tr("Also be aware that hardware&minus;acceleration (CUDA, DXVA, etc) usually will <b>not</b> work with 10&minus;Bit H.264 streams."));
-//		
-//		if(QMessageBox::warning(this, tr("10-Bit Encoding"), text.replace("-", "&minus;"), tr("Continue"), tr("Revert"), QString(), 1) != 0)
-//		{
-//			UPDATE_CHECKBOX(ui->checkUse10BitEncoding, false, true);
-//		}
-//	}
-//}
 
 void PreferencesDialog::disableWarningsToggled(bool checked)
 {

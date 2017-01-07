@@ -82,6 +82,7 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 	INIT_VALUE(AbortOnTimeout,     true );
 	INIT_VALUE(SkipVersionTest,    false);
 	INIT_VALUE(NoSystrayWarning,   false);
+	INIT_VALUE(SaveQueueNoConfirm, false);
 }
 
 void PreferencesModel::loadPreferences(PreferencesModel *preferences)
@@ -102,6 +103,7 @@ void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 	LOAD_VALUE_B(DisableWarnings   );
 	LOAD_VALUE_B(NoUpdateReminder  );
 	LOAD_VALUE_B(NoSystrayWarning  );
+	LOAD_VALUE_B(SaveQueueNoConfirm);
 
 	//Validation
 	preferences->setProcessPriority(qBound(-2, preferences->getProcessPriority(), 2));
@@ -125,6 +127,7 @@ void PreferencesModel::savePreferences(PreferencesModel *preferences)
 	STORE_VALUE(DisableWarnings   );
 	STORE_VALUE(NoUpdateReminder  );
 	STORE_VALUE(NoSystrayWarning  );
+	STORE_VALUE(SaveQueueNoConfirm);
 	
 	settings.sync();
 }

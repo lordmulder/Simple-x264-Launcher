@@ -1342,18 +1342,22 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	//Save pending jobs for next time, if desired by user
 	if(countPendingJobs() > 0)
 	{
-		int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("You still have pending jobs. How do you want to proceed?"), tr("Save Pending Jobs"), tr("Discard"));
-		if(ret == 0)
+		if (!m_preferences->getSaveQueueNoConfirm())
 		{
-			m_jobList->saveQueuedJobs();
+			const int ret = QMessageBox::question(this, tr("Jobs Are Pending"), tr("<nobr>You still have some pending jobs in your queue. How do you want to proceed?</nobr>"), tr("Save Jobs"), tr("Always Save Jobs"), tr("Discard Jobs"));
+			if ((ret >= 0) && (ret <= 1))
+			{
+				if (ret > 0)
+				{
+					m_preferences->setSaveQueueNoConfirm(true);
+					PreferencesModel::savePreferences(m_preferences.data());
+				}
+				m_jobList->saveQueuedJobs();
+			}
 		}
 		else
 		{
-			if(QMessageBox::warning(this, tr("Jobs Are Pending"), tr("Do you really want to discard all pending jobs?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No) != QMessageBox::Yes)
-			{
-				e->ignore();
-				return;
-			}
+			m_jobList->saveQueuedJobs();
 		}
 	}
 	

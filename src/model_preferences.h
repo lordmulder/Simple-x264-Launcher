@@ -66,6 +66,7 @@ public:
 	PREFERENCES_MAKE_B(AbortOnTimeout)
 	PREFERENCES_MAKE_B(SkipVersionTest)
 	PREFERENCES_MAKE_B(NoSystrayWarning)
+	PREFERENCES_MAKE_B(SaveQueueNoConfirm)
 
 public:
 	static void initPreferences(PreferencesModel *preferences);

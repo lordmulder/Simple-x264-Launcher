@@ -4,6 +4,8 @@ Simple x264/x265 Launcher version history
 
 Version 2.78 [2017-01-07]
 * Updated x265 to version 2.2+22
+* Updated Avs2YUV to version 0.24 (BugMaster's mod 5)
+* Added new option to save pending jobs *without* confirmation
 * Some fixes to parameter validation code
 
 Version 2.77 [2016-12-13]

@@ -30,7 +30,7 @@
 #include <QDir>
 #include <QProcess>
 
-static const unsigned int VER_X264_AVS2YUV_VER = 243;
+static const unsigned int VER_X264_AVS2YUV_VER = 245;
 
 // ------------------------------------------------------------
 // Encoder Info

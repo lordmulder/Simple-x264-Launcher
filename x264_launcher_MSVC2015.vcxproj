@@ -290,6 +290,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClInclude Include="src\encoder_nvenc.h" />
     <ClInclude Include="src\model_clipInfo.h" />
     <ClInclude Include="src\source_factory.h" />
+    <ClInclude Include="src\string_validator.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_about.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_addJob.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_editor.h" />
@@ -448,6 +449,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClCompile Include="src\source_avisynth.cpp" />
     <ClCompile Include="src\source_factory.cpp" />
     <ClCompile Include="src\source_vapoursynth.cpp" />
+    <ClCompile Include="src\string_validator.cpp" />
     <ClCompile Include="src\thread_avisynth.cpp" />
     <ClCompile Include="src\thread_binaries.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />

@@ -111,6 +111,15 @@
     <ClInclude Include="src\source_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\encoder_nvenc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model_clipInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\string_validator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -264,6 +273,15 @@
       <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="src\source_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\encoder_nvenc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model_clipInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\string_validator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -216,7 +216,7 @@ Use `--[no-]force-start` or `--[no-]force-enqueue` to tweak startup behavior. If
 Please download the latest version of Simple x264/x265 Launcher from one of the official download mirrors:
 
 * https://github.com/lordmulder/Simple-x264-Launcher/releases/latest
-* https://bitbucket.org/lord_mulder/simple-x264-launcher/downloads
+* https://bitbucket.org/muldersoft/simple-x264-launcher/downloads
 * https://x264launcher.codeplex.com/releases/
 * http://sourceforge.net/projects/muldersoft/files/Simple%20x264%20Launcher/
 * https://www.assembla.com/spaces/simple-x264-x265-launcher/documents
@@ -238,7 +238,7 @@ The source codes can be obtained from the official Git repository:
 
 * https://github.com/lordmulder/Simple-x264-Launcher
 * https://gitlab.com/simple-x264-launcher/simple-x264-launcher/
-* https://bitbucket.org/lord_mulder/simple-x264-launcher/src
+* https://bitbucket.org/muldersoft/simple-x264-launcher/src
 * https://www.assembla.com/code/simple-x264-x265-launcher/git/nodes
 * https://x264launcher.codeplex.com/SourceControl/latest
 

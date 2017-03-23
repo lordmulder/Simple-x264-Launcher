@@ -219,8 +219,8 @@ Please download the latest version of Simple x264/x265 Launcher from one of the 
 * https://bitbucket.org/muldersoft/simple-x264-launcher/downloads
 * https://x264launcher.codeplex.com/releases/
 * http://sourceforge.net/projects/muldersoft/files/Simple%20x264%20Launcher/
+* https://www.mediafire.com/folder/7sac4w9fdszuf/x264_x64_Launcher
 * https://www.assembla.com/spaces/simple-x264-x265-launcher/documents
-
 
 # Help & Support #
 

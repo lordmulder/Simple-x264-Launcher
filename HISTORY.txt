@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.79 [2017-03-23]
+* Updated x265 to version 2.3+22
+* Fixed possible application startup error "0xc0000005"
+
 Version 2.78 [2017-01-07]
 * Updated x265 to version 2.2+22
 * Updated Avs2YUV to version 0.24 (BugMaster's mod 5)

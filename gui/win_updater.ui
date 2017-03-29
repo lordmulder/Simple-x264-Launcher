@@ -599,6 +599,28 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
+        <widget class="QLabel" name="labelCancel">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="baseSize">
+          <size>
+           <width>1</width>
+           <height>1</height>
+          </size>
+         </property>
+         <property name="visible">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Press Esc button to cancel...</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignBottom|Qt::AlignLeading|Qt::AlignLeft</set>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>

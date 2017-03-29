@@ -112,6 +112,7 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const
 	ui->buttonCancel->setEnabled(false);
 	ui->buttonRetry->hide();
 	ui->buttonDownload->hide();
+	ui->labelCancel->hide();
 
 	//Start animation
 	SHOW_ANIMATION(true);
@@ -170,24 +171,44 @@ void UpdaterDialog::closeEvent(QCloseEvent *e)
 
 void UpdaterDialog::keyPressEvent(QKeyEvent *event)
 {
-	if(event->key() == Qt::Key_F11)
+	switch (event->key())
 	{
-		const QString logFilePath = MUtils::make_temp_file(MUtils::temp_folder(), "log", true);
-		if (!logFilePath.isEmpty())
+	case Qt::Key_Escape:
+		if ((!m_thread.isNull()) && m_thread->isRunning())
 		{
-			QFile logFile(logFilePath);
-			if (logFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
+			if (m_status >= MUtils::UpdateChecker::UpdateStatus_FetchingUpdates)
 			{
-				logFile.write("\xEF\xBB\xBF");
-				for (QStringList::ConstIterator iter = m_logFile.constBegin(); iter != m_logFile.constEnd(); iter++)
+				UPDATE_TEXT(2, tr("Cancellation requested..."));
+			}
+			else
+			{
+				UPDATE_TEXT(1, tr("Cancellation requested..."));
+			}
+			m_thread->cancel();
+		}
+		break;
+	case Qt::Key_F11:
+		{
+			const QString logFilePath = MUtils::make_temp_file(MUtils::temp_folder(), "log", true);
+			if (!logFilePath.isEmpty())
+			{
+				QFile logFile(logFilePath);
+				if (logFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
 				{
-					logFile.write(iter->toUtf8());
-					logFile.write("\r\n");
+					logFile.write("\xEF\xBB\xBF");
+					for (QStringList::ConstIterator iter = m_logFile.constBegin(); iter != m_logFile.constEnd(); iter++)
+					{
+						logFile.write(iter->toUtf8());
+						logFile.write("\r\n");
+					}
+					logFile.close();
+					QDesktopServices::openUrl(QUrl::fromLocalFile(logFile.fileName()));
 				}
-				logFile.close();
-				QDesktopServices::openUrl(QUrl::fromLocalFile(logFile.fileName()));
 			}
 		}
+		break;
+	default:
+		QDialog::keyPressEvent(event);
 	}
 }
 
@@ -262,6 +283,7 @@ void UpdaterDialog::checkForUpdates(void)
 	//Hide labels
 	ui->labelInfo->hide();
 	ui->labelUrl->hide();
+	ui->labelCancel->show();
 
 	//Update status
 	threadStatusChanged(MUtils::UpdateChecker::UpdateStatus_NotStartedYet);
@@ -282,6 +304,7 @@ void UpdaterDialog::checkForUpdates(void)
 
 void UpdaterDialog::threadStatusChanged(int status)
 {
+	const int prevStatus = m_status;
 	switch(m_status = status)
 	{
 	case MUtils::UpdateChecker::UpdateStatus_NotStartedYet:
@@ -321,6 +344,21 @@ void UpdaterDialog::threadStatusChanged(int status)
 		UPDATE_TEXT(2, tr("Update information received successfully."));
 		UPDATE_ICON(3, "play");
 		break;
+	case MUtils::UpdateChecker::UpdateStatus_CancelledByUser:
+		if (prevStatus >= MUtils::UpdateChecker::UpdateStatus_FetchingUpdates)
+		{
+			UPDATE_ICON(2, "shield_error");
+			UPDATE_TEXT(2, tr("Operation was cancelled by the user!"));
+			UPDATE_ICON(3, "shield_grey");
+		}
+		else
+		{
+			UPDATE_ICON(1, "shield_error");
+			UPDATE_TEXT(1, tr("Operation was cancelled by the user!"));
+			UPDATE_ICON(2, "shield_grey");
+			UPDATE_ICON(3, "shield_grey");
+		}
+		break;
 	default:
 		MUTILS_THROW("Unknown status code!");
 	}
@@ -330,6 +368,7 @@ void UpdaterDialog::threadFinished(void)
 {
 	m_success = m_thread->getSuccess();
 	QTimer::singleShot((m_success ? 1000 : 0), this, SLOT(updateFinished()));
+	ui->labelCancel->hide();
 }
 
 void UpdaterDialog::updateFinished(void)
@@ -373,6 +412,7 @@ void UpdaterDialog::updateFinished(void)
 	case MUtils::UpdateChecker::UpdateStatus_ErrorNoConnection:
 	case MUtils::UpdateChecker::UpdateStatus_ErrorConnectionTestFailed:
 	case MUtils::UpdateChecker::UpdateStatus_ErrorFetchUpdateInfo:
+	case MUtils::UpdateChecker::UpdateStatus_CancelledByUser:
 		m_animator->stop();
 		ui->buttonRetry->show();
 		break;

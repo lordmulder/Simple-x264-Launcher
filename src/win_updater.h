@@ -25,6 +25,7 @@
 #include <QMap>
 
 class QMovie;
+class QElapsedTimer;
 class SysinfoModel;
 
 namespace Ui
@@ -89,6 +90,7 @@ private:
 
 	QScopedPointer<QMovie> m_animator;
 	QScopedPointer<MUtils::UpdateChecker> m_thread;
+	QScopedPointer<QElapsedTimer> m_elapsed;
 
 	unsigned long m_updaterProcess;
 	QStringList m_logFile;

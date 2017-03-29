@@ -44,6 +44,7 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QMap>
+#include <QElapsedTimer>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -189,9 +190,10 @@ void UpdaterDialog::keyPressEvent(QKeyEvent *event)
 		break;
 	case Qt::Key_F11:
 		{
-			const QString logFilePath = MUtils::make_temp_file(MUtils::temp_folder(), "log", true);
+			const QString logFilePath = MUtils::make_temp_file(MUtils::temp_folder(), "txt", true);
 			if (!logFilePath.isEmpty())
 			{
+				qWarning("Write log to: '%s'", MUTILS_UTF8(logFilePath));
 				QFile logFile(logFilePath);
 				if (logFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
 				{
@@ -298,8 +300,12 @@ void UpdaterDialog::checkForUpdates(void)
 	//Clear log
 	m_logFile.clear();
 
+	//Init timer
+	m_elapsed.reset(new QElapsedTimer());
+	m_elapsed->start();
+
 	//Start the updater thread
-	QTimer::singleShot(250, m_thread.data(), SLOT(start()));
+	QTimer::singleShot(125, m_thread.data(), SLOT(start()));
 }
 
 void UpdaterDialog::threadStatusChanged(int status)
@@ -367,12 +373,19 @@ void UpdaterDialog::threadStatusChanged(int status)
 void UpdaterDialog::threadFinished(void)
 {
 	m_success = m_thread->getSuccess();
-	QTimer::singleShot((m_success ? 1000 : 0), this, SLOT(updateFinished()));
 	ui->labelCancel->hide();
+	QTimer::singleShot((m_success ? 500 : 0), this, SLOT(updateFinished()));
 }
 
 void UpdaterDialog::updateFinished(void)
 {
+	//Query the timer, if available
+	if (!m_elapsed.isNull())
+	{
+		const quint64 elapsed = m_elapsed->restart();
+		qDebug("Update check completed after %.2f seconds.", double(elapsed) / 1000.0);
+	}
+
 	//Restore cursor
 	QApplication::restoreOverrideCursor();
 

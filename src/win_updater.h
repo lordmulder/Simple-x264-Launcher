@@ -25,6 +25,7 @@
 #include <QMap>
 
 class QMovie;
+class QFile;
 class QElapsedTimer;
 class SysinfoModel;
 
@@ -80,7 +81,7 @@ private:
 
 	bool checkBinaries();
 	bool checkFileHash(const QString &filePath, const char *expectedHash);
-	void cleanFiles(void);
+	void closeFiles(void);
 
 	const SysinfoModel *const m_sysinfo;
 	const char *const m_updateUrl;
@@ -94,6 +95,6 @@ private:
 
 	unsigned long m_updaterProcess;
 	QStringList m_logFile;
-	QMap<QString,QString> m_binaries;
+	QMap<QString,QFile*> m_binaries;
 	int m_status;
 };

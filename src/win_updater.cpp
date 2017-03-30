@@ -73,6 +73,11 @@ const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 } \
 while(0)
 
+static inline QString GETBIN(const QMap<QString, QFile*> &binaries, const QString &nameName)
+{
+	const QFile *const file = binaries.value(nameName);
+	return file ? file->fileName() : QString();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor & Destructor
@@ -129,8 +134,7 @@ UpdaterDialog::~UpdaterDialog(void)
 			m_thread->wait();
 		}
 	}
-
-	cleanFiles();
+	closeFiles();
 	delete ui;
 }
 
@@ -220,12 +224,6 @@ void UpdaterDialog::keyPressEvent(QKeyEvent *event)
 
 void UpdaterDialog::initUpdate(void)
 {
-	//Clean up files from previous attempt
-	if(!m_binaries.isEmpty())
-	{
-		cleanFiles();
-	}
-
 	//Check binary files
 	if(!checkBinaries())
 	{
@@ -235,7 +233,8 @@ void UpdaterDialog::initUpdate(void)
 		{
 			QDesktopServices::openUrl(QUrl(QString::fromLatin1(m_updateUrl)));
 		}
-		close(); return;
+		close();
+		return;
 	}
 
 	//Make sure user does have admin access
@@ -248,14 +247,15 @@ void UpdaterDialog::initUpdate(void)
 		if(QMessageBox::critical(this, this->windowTitle(), message, tr("Discard"), tr("Ignore")) != 1)
 		{
 			ui->buttonCancel->setEnabled(true);
-			close(); return;
+			close();
+			return;
 		}
 	}
 	
 	//Create and setup thread
 	if(!m_thread)
 	{
-		m_thread.reset(new MUtils::UpdateChecker(m_binaries.value("wget.exe"), m_binaries.value("netc.exe"), m_binaries.value("gpgv.exe"), m_binaries.value("gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
+		m_thread.reset(new MUtils::UpdateChecker(GETBIN(m_binaries, "wget.exe"), GETBIN(m_binaries, "netc.exe"), GETBIN(m_binaries, "gpgv.exe"), GETBIN(m_binaries, "gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
 		connect(m_thread.data(), SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
 		connect(m_thread.data(), SIGNAL(finished()), this, SLOT(threadFinished()));
 		connect(m_thread.data(), SIGNAL(terminated()), this, SLOT(threadFinished()));
@@ -481,7 +481,7 @@ void UpdaterDialog::installUpdate(void)
 	args << QString("/ToExFile=%1.exe").arg(QFileInfo(QFileInfo(QApplication::applicationFilePath()).canonicalFilePath()).completeBaseName());
 	args << QString("/AppTitle=Simple x264 Launcher (Build #%1)").arg(QString::number(updateInfo->getBuildNo()));
 
-	process.start(m_binaries.value("wupd.exe"), args);
+	process.start(GETBIN(m_binaries, "wupd.exe"), args);
 	if(!process.waitForStarted())
 	{
 		QApplication::restoreOverrideCursor();
@@ -520,36 +520,39 @@ void UpdaterDialog::installUpdate(void)
 bool UpdaterDialog::checkBinaries(void)
 {
 	qDebug("[File Verification]");
-	m_binaries.clear();
-
-	//Validate hashes first
-	const QString tempPath = MUtils::temp_folder();
 	for(size_t i = 0; BINARIES[i].name; i++)
 	{
-		const QString orgName = QString::fromLatin1(BINARIES[i].name);
-		const QString binPath = QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), orgName);
-		const QString outPath = MUtils::make_unique_file(tempPath, QFileInfo(orgName).baseName(), QFileInfo(orgName).suffix());
-		if(!checkFileHash(binPath, BINARIES[i].hash))
+		const QString name = QString::fromLatin1(BINARIES[i].name);
+		if (!m_binaries.contains(name))
 		{
-			qWarning("Verification of '%s' has failed!", MUTILS_UTF8(orgName));
-			return false;
+			QScopedPointer<QFile> binary(new QFile(QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), name)));
+			if (binary->open(QIODevice::ReadOnly))
+			{
+				if (checkFileHash(binary->fileName(), BINARIES[i].hash))
+				{
+					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+					m_binaries.insert(name, binary.take());
+				}
+				else
+				{
+					qWarning("Verification of '%s' has failed!", MUTILS_UTF8(name));
+					return false;
+				}
+			}
+			else
+			{
+				qWarning("File '%s' could not be opened!", MUTILS_UTF8(name));
+				return false;
+			}
 		}
-		if(outPath.isEmpty() || (!QFile::copy(binPath, outPath)))
-		{
-			qWarning("Copying of '%s' has failed!", MUTILS_UTF8(orgName));
-			return false;
-		}
-		QFile::setPermissions(outPath, QFile::ReadOwner);
-		m_binaries.insert(BINARIES[i].name, outPath);
-		QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 	}
-
+	qDebug("File check completed.\n");
 	return true;
 }
 
 bool UpdaterDialog::checkFileHash(const QString &filePath, const char *expectedHash)
 {
-	qDebug("Checking file: %s", filePath.toUtf8().constData());
+	qDebug("Checking file: %s", MUTILS_UTF8(filePath));
 	QScopedPointer<MUtils::Hash::Hash> checksum(MUtils::Hash::create(MUtils::Hash::HASH_BLAKE2_512, DIGEST_KEY));
 	QFile file(filePath);
 	if(file.open(QIODevice::ReadOnly))
@@ -571,17 +574,18 @@ bool UpdaterDialog::checkFileHash(const QString &filePath, const char *expectedH
 	}
 }
 
-void UpdaterDialog::cleanFiles(void)
+void UpdaterDialog::closeFiles(void)
 {
-	const QStringList keys = m_binaries.keys();
-	foreach(const QString &key, keys)
+	if (!m_binaries.empty())
 	{
-		const QString fileName = m_binaries.value(key);
-		QFile::setPermissions(fileName, QFile::ReadOwner | QFile::WriteOwner);
-		if(!QFile::remove(fileName))
+		for (QMap<QString, QFile*>::ConstIterator iter = m_binaries.constBegin(); iter != m_binaries.constEnd(); iter++)
 		{
-			qWarning("Failed to remove file: %s", MUTILS_UTF8(fileName));
+			if (QFile *const file = iter.value())
+			{
+				file->close();
+				delete (file);
+			}
 		}
-		m_binaries.remove(key);
+		m_binaries.clear();
 	}
 }

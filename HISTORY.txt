@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.80 [2017-04-01]
+* Another attempt to fix application startup error "0xc0000005"
+* Some tweaks to speed-up the update checker
+
 Version 2.79 [2017-03-23]
 * Updated x265 to version 2.3+22
 * Fixed possible application startup error "0xc0000005"

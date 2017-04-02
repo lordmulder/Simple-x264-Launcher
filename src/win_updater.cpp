@@ -53,7 +53,7 @@ static const char *const DIGEST_KEY = "~Dv/bW3/7t>6?RXVwkaZk-hmS0#O4JS/5YQAO>\\8
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
 	{ "wget.exe", "35d70bf8a1799956b5de3975ff99088a4444a2d17202059afb63949b297e2cc81e5e49e2b95df1c4e26b49ab7430399c293bf805a0b250d686c6f4dd994a0764", 1 },
-	{ "netc.exe", "2e890533473134e074d65e1670c4212a06e4f685c4ee202593b0427defdf2f01e4d22cf7b48855436f1c57109c131f3469daa1a523a5a05fc9d23fb41d2e6ea9", 1 },
+	{ "netc.exe", "94df9fd3212f72cdfb3c17d612db3ea2748c80b5392902500bc7f7fa4bf4f3dccb2cc049c3edc067f6ed33bf1986800e8a501d34f58a254f2eb38fe6c33e2ade", 1 },
 	{ "gpgv.exe", "a8d4d1702e5fb1eee5a2c22fdaf255816a9199ae48142aeec1c8ce16bbcf61d6d634f1e769e62d05cf52c204ba2611f09c9bb661bc6688b937749d478af3e47d", 1 },
 	{ "gpgv.gpg", "1a2f528e551b9abfb064f08674fdd421d3abe403469ddfee2beafd007775a6c684212a6274dc2b41a0b20dd5c2200021c91320e737f7a90b2ac5a40a6221d93f", 0 },
 	{ "wupd.exe", "c7fe72259ae781889a18f688321275e3bae39d75fb96c9c650446e177cb3af3d3ea84db2c1590e44bc2440b2ea79f9684e3a14e47e57e6083ec6f98c5bf72a73", 1 },
@@ -73,10 +73,19 @@ const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 } \
 while(0)
 
-static inline QString GETBIN(const QMap<QString, QFile*> &binaries, const QString &nameName)
+static inline QString getBin(const QMap<QString, QSharedPointer<QFile>> &binaries, const QString &nameName)
 {
-	const QFile *const file = binaries.value(nameName);
-	return file ? file->fileName() : QString();
+	const QSharedPointer<QFile> file = binaries.value(nameName);
+	return file.isNull() ? QString() : file->fileName();
+}
+
+static void qFileDeleter(QFile *const file)
+{
+	if(file)
+	{
+		file->close();
+		delete file;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -134,15 +143,8 @@ UpdaterDialog::~UpdaterDialog(void)
 			m_thread->wait();
 		}
 	}
-	closeFiles();
 	delete ui;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// Public Functions
-///////////////////////////////////////////////////////////////////////////////
-
-/*None yet*/
 
 ///////////////////////////////////////////////////////////////////////////////
 // Events
@@ -255,7 +257,7 @@ void UpdaterDialog::initUpdate(void)
 	//Create and setup thread
 	if(!m_thread)
 	{
-		m_thread.reset(new MUtils::UpdateChecker(GETBIN(m_binaries, "wget.exe"), GETBIN(m_binaries, "netc.exe"), GETBIN(m_binaries, "gpgv.exe"), GETBIN(m_binaries, "gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
+		m_thread.reset(new MUtils::UpdateChecker(getBin(m_binaries, "wget.exe"), getBin(m_binaries, "netc.exe"), getBin(m_binaries, "gpgv.exe"), getBin(m_binaries, "gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
 		connect(m_thread.data(), SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
 		connect(m_thread.data(), SIGNAL(finished()), this, SLOT(threadFinished()));
 		connect(m_thread.data(), SIGNAL(terminated()), this, SLOT(threadFinished()));
@@ -481,7 +483,7 @@ void UpdaterDialog::installUpdate(void)
 	args << QString("/ToExFile=%1.exe").arg(QFileInfo(QFileInfo(QApplication::applicationFilePath()).canonicalFilePath()).completeBaseName());
 	args << QString("/AppTitle=Simple x264 Launcher (Build #%1)").arg(QString::number(updateInfo->getBuildNo()));
 
-	process.start(GETBIN(m_binaries, "wupd.exe"), args);
+	process.start(getBin(m_binaries, "wupd.exe"), args);
 	if(!process.waitForStarted())
 	{
 		QApplication::restoreOverrideCursor();
@@ -531,11 +533,12 @@ bool UpdaterDialog::checkBinaries(void)
 				if (checkFileHash(binary->fileName(), BINARIES[i].hash))
 				{
 					QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-					m_binaries.insert(name, binary.take());
+					m_binaries.insert(name, QSharedPointer<QFile>(binary.take(), qFileDeleter));
 				}
 				else
 				{
 					qWarning("Verification of '%s' has failed!", MUTILS_UTF8(name));
+					binary->close();
 					return false;
 				}
 			}
@@ -571,21 +574,5 @@ bool UpdaterDialog::checkFileHash(const QString &filePath, const char *expectedH
 	{
 		qWarning("Failed to open file:\n%s\n", filePath.toUtf8().constData());
 		return false;
-	}
-}
-
-void UpdaterDialog::closeFiles(void)
-{
-	if (!m_binaries.empty())
-	{
-		for (QMap<QString, QFile*>::ConstIterator iter = m_binaries.constBegin(); iter != m_binaries.constEnd(); iter++)
-		{
-			if (QFile *const file = iter.value())
-			{
-				file->close();
-				delete (file);
-			}
-		}
-		m_binaries.clear();
 	}
 }

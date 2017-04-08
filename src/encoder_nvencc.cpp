@@ -19,7 +19,7 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "encoder_nvenc.h"
+#include "encoder_nvencc.h"
 
 //Internal
 #include "global.h"
@@ -40,7 +40,7 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_NVENCC_MINIMUM_VER = 302;
+static const unsigned int VERSION_NVENCC_MINIMUM_VER = 307;
 static const unsigned int VERSION_NVENCC_MINIMUM_API =  70;
 
 // ------------------------------------------------------------
@@ -249,7 +249,7 @@ QString NVEncEncoder::getName(void) const
 void NVEncEncoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bNVEncC\\s+\\(x\\d+\\)\\s+(\\d)\\.(\\d+).*\\[NVENC\\s+API\\s+v(\\d+)\\.(\\d+)\\]", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bNVEncC\\s+\\(x\\d+\\)\\s+(\\d)\\.(\\d+).*\\[NVENC\\s+API\\s+v(\\d+)\\.(\\d+)[^\\d]+", Qt::CaseInsensitive);
 }
 
 void NVEncEncoder::checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)

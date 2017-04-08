@@ -26,7 +26,7 @@
 #include "model_options.h"
 #include "encoder_x264.h"
 #include "encoder_x265.h"
-#include "encoder_nvenc.h"
+#include "encoder_nvencc.h"
 
 //MUtils
 #include <MUtils/Exception.h>

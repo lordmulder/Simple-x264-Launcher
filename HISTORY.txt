@@ -2,6 +2,9 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.81 [2017-??-??]
+* Updated NVEncC to version 3.07
+
 Version 2.80 [2017-04-01]
 * Another attempt to fix application startup error "0xc0000005"
 * Some tweaks to speed-up the update checker

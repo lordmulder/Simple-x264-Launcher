@@ -172,7 +172,7 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           <item>
            <widget class="QLabel" name="labelSaveLogFiles">
             <property name="text">
-             <string>Automatically save output to log file when a job has finished</string>
+             <string>Automatically create a log file when the job has finished</string>
             </property>
            </widget>
           </item>

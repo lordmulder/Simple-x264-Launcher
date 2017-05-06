@@ -733,20 +733,31 @@ void MainWindow::saveLogFile(const QModelIndex &index)
 {
 	if(index.isValid())
 	{
-		if(LogFileModel *log = m_jobList->getLogFile(index))
+		const LogFileModel *const logData = m_jobList->getLogFile(index);
+		const QString &outputFilePath = m_jobList->getJobOutputFile(index);
+		if(logData && (!outputFilePath.isEmpty()))
 		{
-			const QString outputDir = QString("%1/logs").arg(x264_data_path());
-			const QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd.HH-mm-ss");
-			QDir(outputDir).mkpath(".");
-			const QString logFilePath = MUtils::make_unique_file(outputDir, QString("LOG.%1").arg(timeStamp), QLatin1String("txt"));
-			if(logFilePath.isEmpty())
+			const QFileInfo outputFileInfo(outputFilePath);
+			if (outputFileInfo.absoluteDir().exists())
 			{
-				qWarning("Failed to generate log file name. Giving up!");
-				return;
+				const QString outputDir = outputFileInfo.absolutePath(), outputName = outputFileInfo.fileName();
+				const QString logFilePath = MUtils::make_unique_file(outputDir, outputName, QLatin1String("log"), true);
+				if (!logFilePath.isEmpty())
+				{
+					qDebug("Saving log file to: \"%s\"", MUTILS_UTF8(logFilePath));
+					if (!logData->saveToLocalFile(logFilePath))
+					{
+						qWarning("Failed to open log file for writing:\n%s", logFilePath.toUtf8().constData());
+					}
+				}
+				else
+				{
+					qWarning("Failed to generate log file name. Giving up!");
+				}
 			}
-			if(!log->saveToLocalFile(logFilePath))
+			else
 			{
-				qWarning("Failed to open log file for writing:\n%s", logFilePath.toUtf8().constData());
+				qWarning("Output directory does not seem to exist. Giving up!");
 			}
 		}
 	}

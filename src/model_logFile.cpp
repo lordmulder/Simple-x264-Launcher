@@ -101,7 +101,7 @@ QVariant LogFileModel::data(const QModelIndex &index, int role) const
 // Public API
 ///////////////////////////////////////////////////////////////////////////////
 
-void LogFileModel::copyToClipboard(void)
+void LogFileModel::copyToClipboard(void) const
 {
 	QClipboard *const clipboard = QApplication::clipboard();
 	QStringList buffer;
@@ -113,7 +113,7 @@ void LogFileModel::copyToClipboard(void)
 	clipboard->setText(buffer.join("\r\n"));
 }
 
-bool  LogFileModel::saveToLocalFile(const QString &fileName)
+bool LogFileModel::saveToLocalFile(const QString &fileName) const
 {
 	QFile file(fileName);
 	if(!file.open(QIODevice::WriteOnly | QIODevice::Truncate))

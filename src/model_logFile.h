@@ -43,8 +43,8 @@ public:
 	virtual QModelIndex parent (const QModelIndex &index) const;
 	virtual QVariant data(const QModelIndex &index, int role) const;
 
-	void copyToClipboard(void);
-	bool saveToLocalFile(const QString &fileName);
+	void copyToClipboard(void) const;
+	bool saveToLocalFile(const QString &fileName) const;
 
 protected:
 	bool m_firstLine;

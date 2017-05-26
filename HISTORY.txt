@@ -2,6 +2,10 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.82 [2017-05-26]
+* Updated x264 to revision 2829
+* Updated x265 to version 2.4+22
+
 Version 2.81 [2017-05-06]
 * Updated x265 to version 2.4+6
 * Updated NVEncC to version 3.07

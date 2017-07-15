@@ -167,7 +167,7 @@ const bool &StringValidator::setStatus(const bool &flag, const QString &toolName
 
 QValidator::State StringValidatorEncoder::validate(QString &input, int &pos) const
 {
-	static const char *const params[] = {"B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
+	static const char *const params[] = {"D", "B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
 		"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "help", "quiet", "codec", "y4m", NULL};
 
 	const QString commandLine = input.trimmed();

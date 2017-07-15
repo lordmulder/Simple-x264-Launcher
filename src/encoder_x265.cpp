@@ -40,8 +40,8 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_X265_MINIMUM_VER = 24;
-static const unsigned int VERSION_X265_MINIMUM_REV = 36;
+static const unsigned int VERSION_X265_MINIMUM_VER = 25;
+static const unsigned int VERSION_X265_MINIMUM_REV =  0;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -160,21 +160,18 @@ public:
 
 	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 	{
-		QString arch, variant;
+		QString arch;
 		switch(encArch)
 		{
 			case 0: arch = "x86"; break;
 			case 1: arch = "x64"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
-		switch(encVariant)
+		if((encVariant < 0) || (encVariant > 2))
 		{
-			case 0: variant =  "8bit"; break;
-			case 1: variant = "10bit"; break;
-			case 2: variant = "12bit"; break;
-			default: MUTILS_THROW("Unknown encoder arch!");
+			MUTILS_THROW("Unknown encoder variant!");
 		}
-		return QString("%1/toolset/%2/x265_%3_%2.exe").arg(sysinfo->getAppPath(), arch, variant);
+		return QString("%1/toolset/%2/x265_%2.exe").arg(sysinfo->getAppPath(), arch);
 	}
 
 	virtual QString getHelpCommand(void) const
@@ -293,6 +290,22 @@ bool X265Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 void X265Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const ClipInfo &clipInfo, const QString &indexFile, const int &pass, const QString &passLogFile)
 {
 	double crf_int = 0.0, crf_frc = 0.0;
+
+	cmdLine << "-D";
+	switch (m_options->encVariant())
+	{
+	case 0:
+		cmdLine << QString::number(8);
+		break;
+	case 1:
+		cmdLine << QString::number(10);
+		break;
+	case 2:
+		cmdLine << QString::number(12);
+		break;
+	default:
+		MUTILS_THROW("Unknown encoder variant!");
+	}
 
 	switch(m_options->rcMode())
 	{

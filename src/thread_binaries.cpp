@@ -152,7 +152,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 	{
 		const AbstractEncoderInfo &encInfo = EncoderFactory::getEncoderInfo(encdr);
 		const quint32 archCount = encInfo.getArchitectures().count();
-		QSet<QString> dependencySet;
+		QSet<QString> filesSet;
 		for (quint32 archIdx = 0; archIdx < archCount; ++archIdx)
 		{
 			const QStringList variants = encInfo.getVariants();
@@ -161,13 +161,18 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 				const QStringList dependencies = encInfo.getDependencies(sysinfo, archIdx, varntIdx);
 				for (QStringList::ConstIterator iter = dependencies.constBegin(); iter != dependencies.constEnd(); iter++)
 				{
-					if (!dependencySet.contains(*iter))
+					if (!filesSet.contains(*iter))
 					{
-						dependencySet << (*iter);
+						filesSet << (*iter);
 						binFiles << qMakePair(*iter, true);
 					}
 				}
-				binFiles << qMakePair(encInfo.getBinaryPath(sysinfo, archIdx, varntIdx), false);
+				const QString binary = encInfo.getBinaryPath(sysinfo, archIdx, varntIdx);
+				if (!filesSet.contains(binary))
+				{
+					filesSet << binary;
+					binFiles << qMakePair(binary, false);
+				}
 			}
 		}
 	}

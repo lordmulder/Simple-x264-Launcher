@@ -2,8 +2,8 @@
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
-set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
-set "TOOLS_VER=140"
+set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build"
+set "TOOLS_VER=141"
 
 REM ###############################################
 REM # DO NOT MODIFY ANY LINES BELOW THIS LINE !!! #
@@ -23,7 +23,7 @@ if "%VCINSTALLDIR%"=="" (
 	echo %%VCINSTALLDIR%% not specified. Please check your MSVC_PATH var!
 	goto BuildError
 )
-if not exist "%VCINSTALLDIR%\bin\cl.exe" (
+if not exist "%VCToolsInstallDir%\bin\HostX86\x86\cl.exe" (
 	echo C++ compiler not found. Please check your MSVC_PATH var!
 	goto BuildError
 )
@@ -71,9 +71,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD
 echo ---------------------------------------------------------------------
-MSBuild.exe /property:Configuration=release /target:clean   "%~dp0\x264_launcher_MSVC2015.sln"
+MSBuild.exe /property:Configuration=release /property:Platform=win32 /target:clean   "%~dp0\x264_launcher_MSVC2017.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-MSBuild.exe /property:Configuration=release /target:rebuild "%~dp0\x264_launcher_MSVC2015.sln"
+MSBuild.exe /property:Configuration=release /property:Platform=win32 /target:rebuild "%~dp0\x264_launcher_MSVC2017.sln"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ copy "%~dp0\*.txt"                                  "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
 REM ///////////////////////////////////////////////////////////////////////////
-copy "%MSVC_PATH%\redist\x86\Microsoft.VC%TOOLS_VER%.CRT\*.dll"                     "%PACK_PATH%"
+copy "%~dp0\..\Prerequisites\MSVC\redist\vc\v%TOOLS_VER%_xp\x86\*.dll"              "%PACK_PATH%"
 copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtCore4.dll"            "%PACK_PATH%"
 copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtGui4.dll"             "%PACK_PATH%"
 copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtSvg4.dll"             "%PACK_PATH%"

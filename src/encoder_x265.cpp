@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2017 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2018 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_X265_MINIMUM_VER = 25;
-static const unsigned int VERSION_X265_MINIMUM_REV = 22;
+static const unsigned int VERSION_X265_MINIMUM_VER = 27;
+static const unsigned int VERSION_X265_MINIMUM_REV =  1;
 
 // ------------------------------------------------------------
 // Helper Macros

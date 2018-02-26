@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2017 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2018 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@
 #include <QPair>
 
 //x264 version info
-static const unsigned int VERSION_X264_MINIMUM_REV = 2795;
-static const unsigned int VERSION_X264_CURRENT_API =  152;
+static const unsigned int VERSION_X264_MINIMUM_REV = 2870;
+static const unsigned int VERSION_X264_CURRENT_API =  155;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -172,13 +172,11 @@ public:
 			case 1: arch = "x64"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
-		switch(encVariant)
+		if ((encVariant < 0) || (encVariant > 1))
 		{
-			case 0: variant = "8bit";  break;
-			case 1: variant = "10bit"; break;
-			default: MUTILS_THROW("Unknown encoder variant!");
+			MUTILS_THROW("Unknown encoder variant!");
 		}
-		return QString("%1/toolset/%2/x264_%3_%2.exe").arg(sysinfo->getAppPath(), arch, variant);
+		return QString("%1/toolset/%2/x264_%2.exe").arg(sysinfo->getAppPath(), arch);
 	}
 
 	virtual QString getHelpCommand(void) const
@@ -303,6 +301,19 @@ bool X264Encoder::isVersionSupported(const unsigned int &revision, const bool &m
 void X264Encoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, const ClipInfo &clipInfo, const QString &indexFile, const int &pass, const QString &passLogFile)
 {
 	double crf_int = 0.0, crf_frc = 0.0;
+
+	cmdLine << "--output-depth";
+	switch (m_options->encVariant())
+	{
+	case 0:
+		cmdLine << QString::number(8);
+		break;
+	case 1:
+		cmdLine << QString::number(10);
+		break;
+	default:
+		MUTILS_THROW("Unknown encoder variant!");
+	}
 
 	switch(m_options->rcMode())
 	{

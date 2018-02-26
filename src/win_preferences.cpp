@@ -76,7 +76,6 @@ PreferencesDialog::PreferencesDialog(QWidget *parent, PreferencesModel *preferen
 
 	ui->labelRunNextJob        ->installEventFilter(this);
 	ui->labelUse64BitAvs2YUV   ->installEventFilter(this);
-	ui->labelShutdownComputer  ->installEventFilter(this);
 	ui->labelSaveLogFiles      ->installEventFilter(this);
 	ui->labelSaveToSourceFolder->installEventFilter(this);
 	ui->labelEnableSounds      ->installEventFilter(this);
@@ -103,7 +102,6 @@ void PreferencesDialog::showEvent(QShowEvent *event)
 	if(event) QDialog::showEvent(event);
 	
 	UPDATE_CHECKBOX(ui->checkRunNextJob,         m_preferences->getAutoRunNextJob());
-	UPDATE_CHECKBOX(ui->checkShutdownComputer,   m_preferences->getShutdownComputer());
 	UPDATE_CHECKBOX(ui->checkUse64BitAvs2YUV,    m_preferences->getPrefer64BitSource() && m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64));
 	UPDATE_CHECKBOX(ui->checkSaveLogFiles,       m_preferences->getSaveLogFiles());
 	UPDATE_CHECKBOX(ui->checkSaveToSourceFolder, m_preferences->getSaveToSourcePath());
@@ -130,7 +128,6 @@ bool PreferencesDialog::eventFilter(QObject *o, QEvent *e)
 	else if((e->type() == QEvent::MouseButtonPress) || (e->type() == QEvent::MouseButtonRelease))
 	{
 		emulateMouseEvent(o, e, ui->labelRunNextJob,         ui->checkRunNextJob);
-		emulateMouseEvent(o, e, ui->labelShutdownComputer,   ui->checkShutdownComputer);
 		emulateMouseEvent(o, e, ui->labelUse64BitAvs2YUV,    ui->checkUse64BitAvs2YUV);
 		emulateMouseEvent(o, e, ui->labelSaveLogFiles,       ui->checkSaveLogFiles);
 		emulateMouseEvent(o, e, ui->labelSaveToSourceFolder, ui->checkSaveToSourceFolder);
@@ -162,7 +159,6 @@ void PreferencesDialog::emulateMouseEvent(QObject *object, QEvent *event, QWidge
 void PreferencesDialog::done(int n)
 {
 	m_preferences->setAutoRunNextJob    (ui->checkRunNextJob->isChecked());
-	m_preferences->setShutdownComputer  (ui->checkShutdownComputer->isChecked());
 	m_preferences->setPrefer64BitSource (ui->checkUse64BitAvs2YUV->isChecked());
 	m_preferences->setSaveLogFiles      (ui->checkSaveLogFiles->isChecked());
 	m_preferences->setSaveToSourcePath  (ui->checkSaveToSourceFolder->isChecked());

@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>369</width>
-    <height>387</height>
+    <height>359</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -209,37 +209,6 @@ Please be aware that this option does NOT have any effect on 32-Bit systems.</st
           </item>
           <item>
            <spacer name="horizontalSpacer_4">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_10">
-          <item>
-           <widget class="QCheckBox" name="checkShutdownComputer">
-            <property name="text">
-             <string notr="true"/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="labelShutdownComputer">
-            <property name="text">
-             <string>Shutdown computer as soon as the last job has completed</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_5">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>

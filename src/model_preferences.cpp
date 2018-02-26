@@ -71,7 +71,6 @@ void PreferencesModel::initPreferences(PreferencesModel *preferences)
 {
 	INIT_VALUE(AutoRunNextJob,     true );
 	INIT_VALUE(MaxRunningJobCount, 1    );
-	INIT_VALUE(ShutdownComputer,   false);
 	INIT_VALUE(Prefer64BitSource,  false);
 	INIT_VALUE(SaveLogFiles,       false);
 	INIT_VALUE(SaveToSourcePath,   false);
@@ -94,7 +93,6 @@ void PreferencesModel::loadPreferences(PreferencesModel *preferences)
 
 	LOAD_VALUE_B(AutoRunNextJob    );
 	LOAD_VALUE_U(MaxRunningJobCount);
-	LOAD_VALUE_B(ShutdownComputer  );
 	LOAD_VALUE_B(Prefer64BitSource );
 	LOAD_VALUE_B(SaveLogFiles      );
 	LOAD_VALUE_B(SaveToSourcePath  );
@@ -118,7 +116,6 @@ void PreferencesModel::savePreferences(PreferencesModel *preferences)
 
 	STORE_VALUE(AutoRunNextJob    );
 	STORE_VALUE(MaxRunningJobCount);
-	STORE_VALUE(ShutdownComputer  );
 	STORE_VALUE(Prefer64BitSource );
 	STORE_VALUE(SaveLogFiles      );
 	STORE_VALUE(SaveToSourcePath  );

@@ -17,12 +17,14 @@
     <file>buttons/computer.png</file>
     <file>buttons/control_pause.png</file>
     <file>buttons/cross.png</file>
+    <file>buttons/cup.png</file>
     <file>buttons/disk.png</file>
     <file>buttons/door_in.png</file>
     <file>buttons/error.png</file>
     <file>buttons/exclamation.png</file>
     <file>buttons/exclamation_small.png</file>
     <file>buttons/find.png</file>
+    <file>buttons/flag.png</file>
     <file>buttons/folder_add.png</file>
     <file>buttons/folder_magnify.png</file>
     <file>buttons/group.png</file>
@@ -37,6 +39,7 @@
     <file>buttons/play_big.png</file>
     <file>buttons/power_off.png</file>
     <file>buttons/power_on.png</file>
+    <file>buttons/power_save.png</file>
     <file>buttons/qt.png</file>
     <file>buttons/restart.png</file>
     <file>buttons/setup.png</file>

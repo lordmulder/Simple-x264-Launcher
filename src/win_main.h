@@ -73,10 +73,20 @@ protected:
 	virtual void dropEvent(QDropEvent *event);
 
 private:
+	typedef enum
+	{
+		POST_OP_DONOTHING = 0,
+		POST_OP_POWERDOWN = 1,
+		POST_OP_HIBERNATE = 2
+	}
+	postOp_t;
+
 	Ui::MainWindow *const ui;
 	MUtils::IPCChannel *const m_ipcChannel;
 
+	postOp_t m_postOperation;
 	bool m_initialized;
+
 	QScopedPointer<QLabel> m_label[2];
 	QScopedPointer<QMovie> m_animation;
 	QScopedPointer<QTimer> m_fileTimer;
@@ -112,6 +122,7 @@ private slots:
 	void addButtonPressed();
 	void openActionTriggered();
 	void cleanupActionTriggered(void);
+	void postOpActionTriggered(void);
 	void abortButtonPressed(void);
 	void browseButtonPressed(void);
 	void deleteButtonPressed(void);

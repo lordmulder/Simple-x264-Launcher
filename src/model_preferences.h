@@ -55,7 +55,6 @@ public:
 
 	PREFERENCES_MAKE_B(AutoRunNextJob)
 	PREFERENCES_MAKE_U(MaxRunningJobCount)
-	PREFERENCES_MAKE_B(ShutdownComputer)
 	PREFERENCES_MAKE_B(Prefer64BitSource)
 	PREFERENCES_MAKE_B(SaveLogFiles)
 	PREFERENCES_MAKE_B(SaveToSourcePath)

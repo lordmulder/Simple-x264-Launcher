@@ -332,10 +332,23 @@
      <addaction name="actionCleanup_Finished"/>
      <addaction name="actionCleanup_Enqueued"/>
     </widget>
+    <widget class="QMenu" name="menuRemove_PostOperation">
+     <property name="title">
+      <string>On Completion</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../res/resources.qrc">
+       <normaloff>:/buttons/flag.png</normaloff>:/buttons/flag.png</iconset>
+     </property>
+     <addaction name="separator"/>
+     <addaction name="actionPostOp_PowerDown"/>
+     <addaction name="actionPostOp_Hibernate"/>
+    </widget>
     <addaction name="actionOpen"/>
     <addaction name="actionCreateJob"/>
     <addaction name="separator"/>
     <addaction name="menuRemove_Jobs"/>
+    <addaction name="menuRemove_PostOperation"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
     <addaction name="separator"/>
@@ -803,6 +816,39 @@
    </property>
    <property name="text">
     <string>Remove Enqued Jobs</string>
+   </property>
+  </action>
+  <action name="actionDo_Nothing">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/cup.png</normaloff>:/buttons/cup.png</iconset>
+   </property>
+   <property name="text">
+    <string>Do Nothing</string>
+   </property>
+  </action>
+  <action name="actionPostOp_PowerDown">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/power_off.png</normaloff>:/buttons/power_off.png</iconset>
+   </property>
+   <property name="text">
+    <string>Shutdown Computer</string>
+   </property>
+  </action>
+  <action name="actionPostOp_Hibernate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/power_save.png</normaloff>:/buttons/power_save.png</iconset>
+   </property>
+   <property name="text">
+    <string>Hibernate Computer</string>
    </property>
   </action>
  </widget>

@@ -109,6 +109,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	m_pendingFiles(new QStringList()),
 	m_preferences(NULL),
 	m_recentlyUsed(NULL),
+	m_postOperation(POST_OP_DONOTHING),
 	m_initialized(false),
 	ui(new Ui::MainWindow())
 {
@@ -217,11 +218,16 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	connect(ui->actionOpen,             SIGNAL(triggered()), this, SLOT(openActionTriggered()));
 	connect(ui->actionCleanup_Finished, SIGNAL(triggered()), this, SLOT(cleanupActionTriggered()));
 	connect(ui->actionCleanup_Enqueued, SIGNAL(triggered()), this, SLOT(cleanupActionTriggered()));
+	connect(ui->actionPostOp_PowerDown, SIGNAL(triggered()), this, SLOT(postOpActionTriggered()));
+	connect(ui->actionPostOp_Hibernate, SIGNAL(triggered()), this, SLOT(postOpActionTriggered()));
 	connect(ui->actionAbout,            SIGNAL(triggered()), this, SLOT(showAbout()));
 	connect(ui->actionPreferences,      SIGNAL(triggered()), this, SLOT(showPreferences()));
 	connect(ui->actionCheckForUpdates,  SIGNAL(triggered()), this, SLOT(checkUpdates()));
 	ui->actionCleanup_Finished->setData(QVariant(bool(0)));
 	ui->actionCleanup_Enqueued->setData(QVariant(bool(1)));
+	ui->actionPostOp_PowerDown->setData(QVariant(POST_OP_POWERDOWN));
+	ui->actionPostOp_Hibernate->setData(QVariant(POST_OP_HIBERNATE));
+	ui->actionPostOp_Hibernate->setEnabled(MUtils::OS::is_hibernation_supported());
 
 	//Setup web-links
 	SETUP_WEBLINK(ui->actionWebMulder,          home_url);
@@ -410,6 +416,42 @@ void MainWindow::cleanupActionTriggered(void)
 			}
 		}
 	}
+}
+
+/*
+* The "clean-up" action was invoked
+*/
+void MainWindow::postOpActionTriggered(void)
+{
+	ENSURE_APP_IS_READY();
+
+	QAction *const sender = dynamic_cast<QAction*>(QObject::sender());
+	if (sender)
+	{
+		const QVariant data = sender->data();
+		if (data.isValid() && (data.type() == QVariant::Int))
+		{
+			const postOp_t mode = (postOp_t)data.toInt();
+			if (sender->isChecked())
+			{
+				m_postOperation = mode;
+				if (mode != POST_OP_POWERDOWN)
+				{
+					ui->actionPostOp_PowerDown->setChecked(false);
+				}
+				if (mode != POST_OP_HIBERNATE)
+				{
+					ui->actionPostOp_Hibernate->setChecked(false);
+				}
+			}
+			else
+			{
+				m_postOperation = POST_OP_DONOTHING;
+			}
+		}
+	}
+
+	qWarning("Post-operation: %d", m_postOperation);
 }
 
 /*
@@ -720,8 +762,9 @@ void MainWindow::launchNextJob(void)
 		
 	qWarning("No enqueued jobs left to be started!");
 
-	if(m_preferences->getShutdownComputer())
+	if(m_postOperation)
 	{
+		qDebug("Post operation has been scheduled! (m_postOperation: %d)", m_postOperation);
 		QTimer::singleShot(0, this, SLOT(shutdownComputer()));
 	}
 }
@@ -769,16 +812,23 @@ void MainWindow::saveLogFile(const QModelIndex &index)
 void MainWindow::shutdownComputer(void)
 {
 	ENSURE_APP_IS_READY();
+	qDebug("shutdownComputer (m_postOperation: %d)", m_postOperation);
 
 	if(countPendingJobs() > 0)
 	{
-		qDebug("Still have pending jobs, won't shutdown yet!");
+		qWarning("Still have pending jobs, won't shutdown yet!");
 		return;
+	}
+
+	if ((m_postOperation != POST_OP_POWERDOWN) && (m_postOperation != POST_OP_HIBERNATE))
+	{
+		qWarning("No post-operation has been schedule!");
 	}
 
 	const int iTimeout = 30;
 	const Qt::WindowFlags flags = Qt::WindowStaysOnTopHint | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::MSWindowsFixedSizeDialogHint | Qt::WindowSystemMenuHint;
-	const QString text = QString("%1%2%1").arg(QString().fill(' ', 18), tr("Warning: Computer will shutdown in %1 seconds..."));
+	const bool hibernate = (m_postOperation == POST_OP_HIBERNATE);
+	const QString text = QString("%1%2%1").arg(QString().fill(' ', 18), hibernate ? tr("Warning: Computer will hibernate in %1 seconds...") : tr("Warning: Computer will shutdown in %1 seconds..."));
 	
 	qWarning("Initiating shutdown sequence!");
 	
@@ -823,7 +873,7 @@ void MainWindow::shutdownComputer(void)
 	
 	qWarning("Shutting down !!!");
 
-	if(MUtils::OS::shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true, false))
+	if(MUtils::OS::shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true, hibernate))
 	{
 		qApp->closeAllWindows();
 	}

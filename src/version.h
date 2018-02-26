@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2017 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2018 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,8 +25,8 @@
 
 #define VER_X264_MAJOR 2
 #define VER_X264_MINOR 8
-#define VER_X264_PATCH 5
-#define VER_X264_BUILD 1118
+#define VER_X264_PATCH 6
+#define VER_X264_BUILD 1120
 
 #define VER_X264_PORTABLE_EDITION (0)
 

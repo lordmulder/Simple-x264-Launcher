@@ -168,7 +168,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Create Tag
 REM ///////////////////////////////////////////////////////////////////////////
 echo Simple x264/x265 Launcher - graphical front-end for x264 and x265 > "%PACK_PATH%\BUILD_TAG.txt"
-echo Copyright (C) 2004-2017 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
+echo Copyright (C) 2004-2018 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo Build #%BUILD_NO%, created on %ISO_DATE% at %ISO_TIME% >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
@@ -186,7 +186,7 @@ if not "%ERRORLEVEL%"=="0" goto BuildError
 
 set "VERPATCH_PRODUCT=Simple x264/x265 Launcher (Setup)"
 set "VERPATCH_FILEVER=%ISO_DATE:-=.%.%BUILD_NO%"
-"%~dp0\..\Prerequisites\VerPatch\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2017 LoRd_MuldeR" /s company "Free Software Foundation"
+"%~dp0\..\Prerequisites\VerPatch\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2018 LoRd_MuldeR" /s company "Free Software Foundation"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 attrib +R "%OUT_PATH%.exe"

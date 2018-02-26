@@ -1,5 +1,5 @@
 Simple x264/x265 Launcher - graphical video encoder front-end
-Copyright (C) 2004-2017 LoRd_MuldeR <mulder2@gmx.de>
+Copyright (C) 2004-2018 LoRd_MuldeR <mulder2@gmx.de>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -41,7 +41,6 @@
 
 //x265 version info
 static const unsigned int VERSION_NVENCC_MINIMUM_VER = 330;
-static const unsigned int VERSION_NVENCC_MINIMUM_API =  80;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -249,18 +248,18 @@ QString NVEncEncoder::getName(void) const
 void NVEncEncoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bNVEncC\\s+\\(x\\d+\\)\\s+(\\d)\\.(\\d+).*\\[NVENC\\s+API\\s+v(\\d+)\\.(\\d+)[^\\d]+", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bNVEncC\\s+\\(x\\d+\\)\\s+(\\d)\\.(\\d+)\\s+\\(r(\\d+)\\)", Qt::CaseInsensitive);
 }
 
 void NVEncEncoder::checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	if(patterns[0]->lastIndexIn(line) >= 0)
 	{
-		unsigned int temp[4];
-		if(MUtils::regexp_parse_uint32(*patterns[0], temp, 4))
+		unsigned int temp[3];
+		if(MUtils::regexp_parse_uint32(*patterns[0], temp, 3))
 		{
 			core = (100 * temp[0]) + temp[1];
-			build = (10 * temp[2]) + temp[3];
+			build = temp[2];
 		}
 	}
 
@@ -280,7 +279,7 @@ QString NVEncEncoder::printVersion(const unsigned int &revision, const bool &mod
 	unsigned int core, build;
 	splitRevision(revision, core, build);
 
-	return tr("NVEncC version: %1.%2 [API: %3.%4]").arg(QString::number(core / 100), QString::number(core % 100).leftJustified(2, QLatin1Char('0')), QString::number(build / 10), QString::number(build % 10));
+	return tr("NVEncC version: %1.%2 [rev #%3]").arg(QString::number(core / 100), QString::number(core % 100).leftJustified(2, QLatin1Char('0')), QString::number(build));
 }
 
 bool NVEncEncoder::isVersionSupported(const unsigned int &revision, const bool &modified)
@@ -297,12 +296,6 @@ bool NVEncEncoder::isVersionSupported(const unsigned int &revision, const bool &
 	{
 		log(tr("\nWARNING: Your version of NVEncC is newer than the latest tested version, take care!"));
 		log(tr("This application works best with NVEncC version %1.%2. Newer versions may work or not.").arg(QString::number(VERSION_NVENCC_MINIMUM_VER / 100), QString::number(VERSION_NVENCC_MINIMUM_VER % 100)));
-	}
-
-	if (build < VERSION_NVENCC_MINIMUM_API)
-	{
-		log(tr("\nERROR: Your version of NVENC API is too old! (Minimum required version is %1.%2)").arg(QString::number(VERSION_NVENCC_MINIMUM_API / 10), QString::number(VERSION_NVENCC_MINIMUM_API % 10)));
-		return false;
 	}
 
 	return true;

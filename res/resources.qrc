@@ -1,7 +1,6 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
   <qresource>
-    <file>icons/movie.ico</file>
     <file>buttons/accept.png</file>
     <file>buttons/add.png</file>
     <file>buttons/arrow_down.png</file>
@@ -17,6 +16,7 @@
     <file>buttons/computer.png</file>
     <file>buttons/control_pause.png</file>
     <file>buttons/cross.png</file>
+    <file>buttons/cross_grey.png</file>
     <file>buttons/cup.png</file>
     <file>buttons/disk.png</file>
     <file>buttons/door_in.png</file>
@@ -49,6 +49,7 @@
     <file>buttons/shield_exclamation.png</file>
     <file>buttons/shield_green.png</file>
     <file>buttons/shield_grey.png</file>
+    <file>buttons/snow_flake.png</file>
     <file>buttons/suspended.png</file>
     <file>buttons/text_wrapping.png</file>
     <file>buttons/transmit.png</file>
@@ -58,6 +59,7 @@
     <file>buttons/wrench.png</file>
     <file>buttons/x264.png</file>
     <file>buttons/x265.png</file>
+    <file>icons/movie.ico</file>
     <file>images/avisynth.png</file>
     <file>images/help.png</file>
     <file>images/loading.gif</file>
@@ -69,11 +71,11 @@
     <file>images/update_wizard.png</file>
     <file>images/x264.png</file>
     <file>images/x265.png</file>
-    <file>sounds/shutdown.wav</file>
     <file>sounds/beep.wav</file>
     <file>sounds/beep2.wav</file>
-    <file>sounds/tada.wav</file>
-    <file>sounds/shattering.wav</file>
     <file>sounds/failure.wav</file>
+    <file>sounds/shattering.wav</file>
+    <file>sounds/shutdown.wav</file>
+    <file>sounds/tada.wav</file>
   </qresource>
 </RCC>

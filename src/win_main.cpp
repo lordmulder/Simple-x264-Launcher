@@ -218,6 +218,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	connect(ui->actionOpen,             SIGNAL(triggered()), this, SLOT(openActionTriggered()));
 	connect(ui->actionCleanup_Finished, SIGNAL(triggered()), this, SLOT(cleanupActionTriggered()));
 	connect(ui->actionCleanup_Enqueued, SIGNAL(triggered()), this, SLOT(cleanupActionTriggered()));
+	connect(ui->actionPostOp_DoNothing, SIGNAL(triggered()), this, SLOT(postOpActionTriggered()));
 	connect(ui->actionPostOp_PowerDown, SIGNAL(triggered()), this, SLOT(postOpActionTriggered()));
 	connect(ui->actionPostOp_Hibernate, SIGNAL(triggered()), this, SLOT(postOpActionTriggered()));
 	connect(ui->actionAbout,            SIGNAL(triggered()), this, SLOT(showAbout()));
@@ -225,6 +226,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	connect(ui->actionCheckForUpdates,  SIGNAL(triggered()), this, SLOT(checkUpdates()));
 	ui->actionCleanup_Finished->setData(QVariant(bool(0)));
 	ui->actionCleanup_Enqueued->setData(QVariant(bool(1)));
+	ui->actionPostOp_DoNothing->setData(QVariant(POST_OP_DONOTHING));
 	ui->actionPostOp_PowerDown->setData(QVariant(POST_OP_POWERDOWN));
 	ui->actionPostOp_Hibernate->setData(QVariant(POST_OP_HIBERNATE));
 	ui->actionPostOp_Hibernate->setEnabled(MUtils::OS::is_hibernation_supported());
@@ -432,26 +434,15 @@ void MainWindow::postOpActionTriggered(void)
 		if (data.isValid() && (data.type() == QVariant::Int))
 		{
 			const postOp_t mode = (postOp_t)data.toInt();
-			if (sender->isChecked())
+			if ((mode >= POST_OP_DONOTHING) && (mode <= POST_OP_HIBERNATE))
 			{
 				m_postOperation = mode;
-				if (mode != POST_OP_POWERDOWN)
-				{
-					ui->actionPostOp_PowerDown->setChecked(false);
-				}
-				if (mode != POST_OP_HIBERNATE)
-				{
-					ui->actionPostOp_Hibernate->setChecked(false);
-				}
-			}
-			else
-			{
-				m_postOperation = POST_OP_DONOTHING;
+				ui->actionPostOp_PowerDown->setChecked(mode == POST_OP_POWERDOWN);
+				ui->actionPostOp_Hibernate->setChecked(mode == POST_OP_HIBERNATE);
+				ui->actionPostOp_DoNothing->setChecked(mode == POST_OP_DONOTHING);
 			}
 		}
 	}
-
-	qWarning("Post-operation: %d", m_postOperation);
 }
 
 /*

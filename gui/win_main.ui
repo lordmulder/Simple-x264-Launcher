@@ -343,6 +343,8 @@
      <addaction name="separator"/>
      <addaction name="actionPostOp_PowerDown"/>
      <addaction name="actionPostOp_Hibernate"/>
+     <addaction name="separator"/>
+     <addaction name="actionPostOp_DoNothing"/>
     </widget>
     <addaction name="actionOpen"/>
     <addaction name="actionCreateJob"/>
@@ -845,10 +847,25 @@
    </property>
    <property name="icon">
     <iconset resource="../res/resources.qrc">
-     <normaloff>:/buttons/power_save.png</normaloff>:/buttons/power_save.png</iconset>
+     <normaloff>:/buttons/snow_flake.png</normaloff>:/buttons/snow_flake.png</iconset>
    </property>
    <property name="text">
     <string>Hibernate Computer</string>
+   </property>
+  </action>
+  <action name="actionPostOp_DoNothing">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/cross_grey.png</normaloff>:/buttons/cross_grey.png</iconset>
+   </property>
+   <property name="text">
+    <string>Do Nothing</string>
    </property>
   </action>
  </widget>

@@ -2,12 +2,13 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
-Version 2.86 [2018-02-26]
+Version 2.86 [2018-02-27]
 * Updated x264 to revision 2901 (API v155)
 * Updated x265 to version 2.7+1
 * Updated NVEncC to version 3.30
-* Moved "shut-down computer" from preferences to main menu
-* x264 now uses combined 8-Bit/10-Bit binaries
+* x264 encoder now uses combined 8-Bit/10-Bit binaries
+* Moved "Shutdown computer" option from preferences to application menu
+* Updated build environment to Visual Studio 2017 with Update-5
 
 Version 2.85 [2017-10-04]
 * Updated x265 to version 2.5+22

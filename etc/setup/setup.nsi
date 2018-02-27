@@ -127,7 +127,7 @@ VIAddVersionKey "Comments" "This program is free software; you can redistribute 
 VIAddVersionKey "CompanyName" "Free Software Foundation"
 VIAddVersionKey "FileDescription" "Simple x264 Launcher [Build #${X264_BUILD}]"
 VIAddVersionKey "FileVersion" "${PRODUCT_VERSION_DATE}.${X264_BUILD}"
-VIAddVersionKey "LegalCopyright" "Copyright 2004-2017 LoRd_MuldeR"
+VIAddVersionKey "LegalCopyright" "Copyright 2004-2018 LoRd_MuldeR"
 VIAddVersionKey "LegalTrademarks" "GNU"
 VIAddVersionKey "OriginalFilename" "x264_x64.${X264_DATE}.exe"
 VIAddVersionKey "ProductName" "Simple x264 Launcher"

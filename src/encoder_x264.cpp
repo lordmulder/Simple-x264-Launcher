@@ -40,8 +40,8 @@
 #include <QPair>
 
 //x264 version info
-static const unsigned int VERSION_X264_MINIMUM_REV = 2870;
-static const unsigned int VERSION_X264_CURRENT_API =  155;
+static const unsigned int VERSION_X264_MINIMUM_REV = 2917;
+static const unsigned int VERSION_X264_CURRENT_API =  157;
 
 // ------------------------------------------------------------
 // Helper Macros

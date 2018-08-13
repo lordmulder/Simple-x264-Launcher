@@ -32,7 +32,7 @@ The required Qt DLLs as well as the encoder binaries are *included* with the app
 
 The minimum system requirements to run Simple x264/x265 Launcher are as follows:
 
-* Windows XP with Service Pack 2 or any later Windows system &ndash; note that Windows XP is **not** recommended!
+* Windows Vista with Service Pack 2 or any later Windows system &ndash; note that Windows XP is **not** supported anymore!
 * 64-Bit editions of Windows are highly recommended, though 32-Bit editions will work as well
 * The CPU must support at least the MMX and SSE instruction sets
 * Avisynth input only available with [Avisynth](http://avisynth.nl/index.php/Main_Page#Official_builds) **2.6** installed &ndash; Avisynth **2.5.x** is *not* recommended!

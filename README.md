@@ -217,8 +217,8 @@ Please download the latest version of Simple x264/x265 Launcher from one of the 
 
 * https://github.com/lordmulder/Simple-x264-Launcher/releases/latest
 * https://bitbucket.org/muldersoft/simple-x264-launcher/downloads
-* https://x264launcher.codeplex.com/releases/
-* http://sourceforge.net/projects/muldersoft/files/Simple%20x264%20Launcher/
+* https://osdn.net/projects/x264-launcher/releases/
+* https://sourceforge.net/projects/muldersoft/files/Simple%20x264%20Launcher/
 * https://www.mediafire.com/folder/7sac4w9fdszuf/x264_x64_Launcher
 * https://www.assembla.com/spaces/simple-x264-x265-launcher/documents
 
@@ -239,15 +239,17 @@ The source codes can be obtained from the official Git repository:
 * https://github.com/lordmulder/Simple-x264-Launcher
 * https://gitlab.com/simple-x264-launcher/simple-x264-launcher/
 * https://bitbucket.org/muldersoft/simple-x264-launcher/src
+* https://osdn.net/projects/x264-launcher/scm/git/x264-launcher/
 * https://www.assembla.com/code/simple-x264-x265-launcher/git/nodes
-* https://x264launcher.codeplex.com/SourceControl/latest
 
-Download Visual Studio Express 2013 for Windows *Desktop* here:
-* http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs
+Download Visual Studio Express 2017 for Windows *Desktop* here:
+* http://www.visualstudio.com/
 
 Download the latest Qt toolkit (4.8.x) from the Qt Project web-site:
 * http://download.qt-project.org/official_releases/qt/4.8/
-* http://sourceforge.net/projects/lamexp/files/Miscellaneous/Qt%20Libraries/
+
+Alternatively, you can download my pre-compiled "prerequisites" package:
+* https://sourceforge.net/projects/lamexp/files/Miscellaneous/Prerequisites/
 
 &nbsp;  
 &nbsp;  

@@ -2,6 +2,12 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.89 [2018-10-12]
+* Updated x264 to revision 2935 (API v157)
+* Updated x265 to version 2.9+1
+* Improved initial window size on the "High DPI" screen
+* Updated build environment to Visual Studio 2017 with Update-8
+
 Version 2.88 [2018-08-11]
 * Updated x264 to revision 2932 (API v157)
 * Updated x265 to version 2.8+57

@@ -141,6 +141,9 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	m_options.reset(new OptionsModel(m_sysinfo.data()));
 	OptionsModel::loadTemplate(m_options.data(), QString::fromLatin1(tpl_last));
 
+	//DPI scaling
+	MUtils::GUI::scale_widget(this);
+
 	//Freeze minimum size
 	setMinimumSize(size());
 	ui->splitter->setSizes(QList<int>() << 16 << 196);

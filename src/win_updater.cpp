@@ -108,7 +108,8 @@ UpdaterDialog::UpdaterDialog(QWidget *parent, const SysinfoModel *sysinfo, const
 	ui->setupUi(this);
 	setWindowFlags(windowFlags() & (~Qt::WindowContextHelpButtonHint));
 
-	//Fix size
+	//Scale and fix size
+	MUtils::GUI::scale_widget(this);
 	setFixedSize(size());
 
 	//Enable buttons

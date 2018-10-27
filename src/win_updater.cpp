@@ -52,7 +52,7 @@ static const char *const DIGEST_KEY = "~Dv/bW3/7t>6?RXVwkaZk-hmS0#O4JS/5YQAO>\\8
 
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
-	{ "curl.exe", "35d70bf8a1799956b5de3975ff99088a4444a2d17202059afb63949b297e2cc81e5e49e2b95df1c4e26b49ab7430399c293bf805a0b250d686c6f4dd994a0764", 1 },
+	{ "curl.exe", "2613aa6f06b8299eeb7f876aa8d495dbae4a206fa8c244d0f49c3afe5e5085fc9eb79d185b13c4c1a5eb56e027e75a0fe4ab6c4539ee6197b16614ec74d90253", 1 },
 	{ "gpgv.exe", "21219d89c1b5e0755264adb2484035309f486be05a15cb1b33d326badfafa3c84879cf15fa0dcc3fef1f02d5f3e581842117ea348b37a89e25674f683fcea5e7", 1 },
 	{ "gpgv.gpg", "1a2f528e551b9abfb064f08674fdd421d3abe403469ddfee2beafd007775a6c684212a6274dc2b41a0b20dd5c2200021c91320e737f7a90b2ac5a40a6221d93f", 0 },
 	{ "wupd.exe", "018a8d0d848407fb0cb530b4540c6f025fd4c280885becd37f83feed8aeb3af6f8e8e0d45066a36549efac7e64706ac1ef09aaa5c75ab8d12c4a70f41518a894", 1 },

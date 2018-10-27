@@ -39,6 +39,10 @@ if not exist "%QTDIR%\include\QtCore\qglobal.h" (
 	echo %%QTDIR%% header files not found. Please check your QTDIR var!
 	goto BuildError
 )
+if not exist "%JAVA_HOME%\bin\java.exe" (
+	echo Java runtime not found. Please check your JAVA_HOME var!
+	goto BuildError
+)
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Get current date and time (in ISO format)
@@ -128,7 +132,7 @@ if %TOOLS_VER% GEQ 140 (
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Generate Docs
 REM ///////////////////////////////////////////////////////////////////////////
-"%~dp0\..\Prerequisites\Pandoc\pandoc.exe" --from markdown_github+pandoc_title_block+header_attributes+implicit_figures --to html5 --toc -N --standalone -H "%~dp0\etc\css\style.inc" --output "%PACK_PATH%\README.html" "%~dp0\README.md"
+"%~dp0\..\Prerequisites\Pandoc\pandoc.exe" --from markdown_github+pandoc_title_block+header_attributes+implicit_figures --to html5 --toc -N --standalone -H "%~dp0\etc\css\style.inc" "%~dp0\README.md" | "%JAVA_HOME%\bin\java.exe" -jar "%~dp0\..\Prerequisites\HTMLCompressor\bin\htmlcompressor-1.5.3.jar" --compress-css -o "%PACK_PATH%\README.html"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress

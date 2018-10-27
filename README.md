@@ -25,7 +25,6 @@ Some key features of the Simple x264/x265 Launcher software include:
 
 # System Requirements #
 
-
 Simple x264 Launcher is *100% standalone*, i.e. it does **not** require Mircrosoft.NET, Java Runtime Environment or other "external" dependencies.
 
 The required Qt DLLs as well as the encoder binaries are *included* with the application. Frameservers, like *Avisynth* or *VapourSynth*, may need to be installed separately though.
@@ -38,6 +37,8 @@ The minimum system requirements to run Simple x264/x265 Launcher are as follows:
 * Avisynth input only available with [Avisynth](http://avisynth.nl/index.php/Main_Page#Official_builds) **2.6** installed &ndash; Avisynth **2.5.x** is *not* recommended!
 * VapourSynth input only available with [VapourSynth](http://www.vapoursynth.com/) **r24+** installed &ndash; [Python](https://www.python.org/downloads/windows/) is a prerequisite for VapourSynth!
 * YV16/YV24 color spaces require Avisynth 2.6 (see section 10)
+
+**Note:** Most of these requirements are *not* imposed by Simple x264 Launcher itself, but by the encoders (e.g. x264 and x265) that we use.
 
 
 # Anti-Virus Warning #

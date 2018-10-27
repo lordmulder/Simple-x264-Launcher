@@ -146,7 +146,7 @@ static int simple_x264_main(int &argc, char **argv)
 	qDebug(" Number of CPU's  :  %d\n", cpuFeatures.count);
 
 	//Initialize Qt
-	QScopedPointer<QApplication> application(MUtils::Startup::create_qt(argc, argv, QLatin1String("Simple x264 Launcher")));
+	QScopedPointer<QApplication> application(MUtils::Startup::create_qt(argc, argv, QLatin1String("Simple x264 Launcher"), QLatin1String("LoRd_MuldeR"), QLatin1String("muldersoft.com"), false));
 	if(application.isNull())
 	{
 		return EXIT_FAILURE;

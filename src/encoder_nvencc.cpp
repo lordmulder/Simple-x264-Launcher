@@ -40,7 +40,7 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_NVENCC_MINIMUM_VER = 401;
+static const unsigned int VERSION_NVENCC_MINIMUM_VER = 436;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -172,7 +172,7 @@ public:
 			case 1: break;
 			default: MUTILS_THROW("Unknown encoder variant!");
 		}
-		return QString("%1/toolset/%2/nvencc_%2.exe").arg(sysinfo->getAppPath(), arch);
+		return QString("%1/toolset/%2/nvencc/nvencc_%2.exe").arg(sysinfo->getAppPath(), arch);
 	}
 
 	virtual QStringList getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const

@@ -192,11 +192,11 @@ public:
 
 		}
 		return QStringList()
-		<< QString("%1/toolset/%2/avcodec-57.dll"  ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/avfilter-6.dll"  ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/avformat-57.dll" ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/avutil-55.dll"   ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/swresample-2.dll").arg(sysinfo->getAppPath(), arch);
+		<< QString("%1/toolset/%2/nvencc/avcodec-58.dll"  ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/nvencc/avfilter-7.dll"  ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/nvencc/avformat-58.dll" ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/nvencc/avutil-56.dll"   ).arg(sysinfo->getAppPath(), arch)
+		<< QString("%1/toolset/%2/nvencc/swresample-3.dll").arg(sysinfo->getAppPath(), arch);
 	}
 
 	virtual QString getHelpCommand(void) const

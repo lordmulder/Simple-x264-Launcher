@@ -2,6 +2,12 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.90 [2019-05-02]
+* Updated x265 to version 3.0+18
+* Updated x264 to revision 2969 (API v157)
+* Updated NVEncC to version 4.36
+* Updated build environment to Visual Studio 2017 with Update-9
+
 Version 2.89 [2018-10-12]
 * Updated x264 to revision 2935 (API v157)
 * Updated x265 to version 2.9+1

@@ -71,7 +71,7 @@
 #include <QFileDialog>
 #include <QSystemTrayIcon>
 #include <QMovie>
-
+#include <QTextDocument>
 #include <ctime>
 
 //Constants
@@ -894,10 +894,11 @@ void MainWindow::init(void)
 	//---------------------------------------
 		
 	qDebug("[Validating binaries]");
-	if(!BinariesCheckThread::check(m_sysinfo.data()))
+	QString failedPath;
+	if(!BinariesCheckThread::check(m_sysinfo.data(), &failedPath))
 	{
-		QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least one tool is missing or is not a valid Win32/Win64 binary.<br>Please re-install the program in order to fix the problem!</nobr>").replace("-", "&minus;"));
-		qFatal("At least one tool is missing or is not a valid Win32/Win64 binary!");
+		QMessageBox::critical(this, tr("Invalid File!"), tr("<nobr>At least one tool is missing or is not a valid Win32/Win64 binary:</nobr><br><tt>%1</tt><br><br><nobr>Please re-install the program in order to fix the problem!</nobr>").replace("-", "&minus;").arg(Qt::escape(QDir::toNativeSeparators(failedPath))));
+		qFatal("At least one tool is missing or is not a valid Win32/Win64 binary. Program will exit now!");
 	}
 	qDebug(" ");
 	

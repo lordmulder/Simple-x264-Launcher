@@ -56,7 +56,7 @@ QString AVS_CHECK_BINARY(const SysinfoModel *sysinfo, const bool& x64);
 // External API
 //-------------------------------------
 
-bool BinariesCheckThread::check(SysinfoModel *sysinfo)
+bool BinariesCheckThread::check(const SysinfoModel *const sysinfo, QString *const failedPath)
 {
 	QMutexLocker lock(&m_binLock);
 
@@ -65,7 +65,7 @@ bool BinariesCheckThread::check(SysinfoModel *sysinfo)
 
 	QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
-	connect(&thread, SIGNAL(finished()), &loop, SLOT(quit()));
+	connect(&thread, SIGNAL(finished()),   &loop, SLOT(quit()));
 	connect(&thread, SIGNAL(terminated()), &loop, SLOT(quit()));
 	
 	thread.start();
@@ -77,7 +77,7 @@ bool BinariesCheckThread::check(SysinfoModel *sysinfo)
 
 	QApplication::restoreOverrideCursor();
 
-	if(!thread.wait(1000))
+	if(!thread.wait(5000))
 	{
 		qWarning("Binaries checker thread encountered timeout -> probably deadlock!");
 		thread.terminate();
@@ -91,7 +91,13 @@ bool BinariesCheckThread::check(SysinfoModel *sysinfo)
 		return false;
 	}
 	
-	return thread.getSuccess();
+	const bool success = thread.getSuccess();
+	if ((!success) && failedPath)
+	{
+		*failedPath = thread.getFailedPath();
+	}
+
+	return success;
 }
 
 //-------------------------------------
@@ -112,14 +118,15 @@ BinariesCheckThread::~BinariesCheckThread(void)
 void BinariesCheckThread::run(void)
 {
 	m_success = m_exception = false;
-	checkBinaries1(m_success, m_sysinfo, &m_exception);
+	m_failedPath = QString();
+	checkBinaries1(m_success, m_failedPath, m_sysinfo, &m_exception);
 }
 
-void BinariesCheckThread::checkBinaries1(volatile bool &success, const SysinfoModel *const sysinfo, volatile bool *exception)
+void BinariesCheckThread::checkBinaries1(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception)
 {
 	__try
 	{
-		checkBinaries2(success, sysinfo, exception);
+		checkBinaries2(success, failedPath, sysinfo, exception);
 	}
 	__except(1)
 	{
@@ -128,11 +135,11 @@ void BinariesCheckThread::checkBinaries1(volatile bool &success, const SysinfoMo
 	}
 }
 
-void BinariesCheckThread::checkBinaries2(volatile bool &success, const SysinfoModel *const sysinfo, volatile bool *exception)
+void BinariesCheckThread::checkBinaries2(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception)
 {
 	try
 	{
-		return checkBinaries3(success, sysinfo);
+		return checkBinaries3(success, failedPath, sysinfo);
 	}
 	catch(...)
 	{
@@ -141,7 +148,7 @@ void BinariesCheckThread::checkBinaries2(volatile bool &success, const SysinfoMo
 	}
 }
 
-void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoModel *const sysinfo)
+void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo)
 {
 	success = true;
 
@@ -202,6 +209,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 			{
 				if (!MUtils::OS::is_executable_file(file->fileName()))
 				{
+					failedPath = file->fileName();
 					success = false;
 					qWarning("Required tool does NOT look like a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));
 					return;
@@ -211,6 +219,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 			{
 				if (!MUtils::OS::is_library_file(file->fileName()))
 				{
+					failedPath = file->fileName();
 					success = false;
 					qWarning("Required tool does NOT look like a valid Win32/Win64 library:\n%s\n", MUTILS_UTF8(file->fileName()));
 					return;
@@ -225,6 +234,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, const SysinfoMo
 		}
 		else
 		{
+			failedPath = file->fileName();
 			success = false;
 			qWarning("Required tool could not be found or access denied:\n%s\n", MUTILS_UTF8(file->fileName()));
 			return;

@@ -33,21 +33,23 @@ class BinariesCheckThread : public QThread
 	Q_OBJECT
 
 public:
-	static bool check(SysinfoModel *sysinfo);
+	static bool check(const SysinfoModel *const sysinfo, QString *const failedPath = NULL);
 
 protected:
 	BinariesCheckThread(const SysinfoModel *const sysinfo);
 	~BinariesCheckThread(void);
 
-	int getSuccess(void) { return m_success; }
+	int  getSuccess(void)   { return m_success; }
 	bool getException(void) { return m_exception; }
+	
+	const QString& getFailedPath(void) { return m_failedPath; }
 
 private slots:
 	void start(Priority priority = InheritPriority) { QThread::start(priority); }
 
 private:
-	volatile bool m_exception;
-	volatile bool m_success;
+	volatile bool m_exception, m_success;
+	QString m_failedPath;
 	const SysinfoModel *const m_sysinfo;
 
 	static const size_t MAX_BINARIES = 32;
@@ -58,7 +60,7 @@ private:
 	virtual void run(void);
 
 	//Functions
-	static void checkBinaries1(volatile bool &success, const SysinfoModel *const sysinfo, volatile bool *exception);
-	static void checkBinaries2(volatile bool &success, const SysinfoModel *const sysinfo, volatile bool *exception);
-	static void checkBinaries3(volatile bool &success, const SysinfoModel *const sysinfo);
+	static void checkBinaries1(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception);
+	static void checkBinaries2(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception);
+	static void checkBinaries3(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo);
 };

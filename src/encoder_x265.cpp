@@ -223,31 +223,40 @@ QString X265Encoder::getName(void) const
 void X265Encoder::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)
 {
 	cmdLine << "--version";
-	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\+(\\d+)\\b", Qt::CaseInsensitive);
-	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\+(\\d+)\\b",      Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\_Au\\+(\\d+)\\b", Qt::CaseInsensitive);
+	patterns << new QRegExp("\\bHEVC\\s+encoder\\s+version\\s+(\\d)\\.(\\d+)\\b",               Qt::CaseInsensitive);
 }
 
 void X265Encoder::checkVersion_parseLine(const QString &line, const QList<QRegExp*> &patterns, unsigned int &core, unsigned int &build, bool &modified)
 {
 	int offset = -1;
 
-	if((offset = patterns[0]->lastIndexIn(line)) >= 0)
+	for (size_t q = 0; q < 2; ++q)
 	{
-		unsigned int temp[3];
-		if(MUtils::regexp_parse_uint32(*patterns[0], temp, 3))
+		if ((offset = patterns[q]->lastIndexIn(line)) >= 0)
 		{
-			core  = (10 * temp[0]) + temp[1];
-			build = temp[2];
+			unsigned int temp[3];
+			if (MUtils::regexp_parse_uint32(*patterns[q], temp, 3))
+			{
+				core = (10 * temp[0]) + temp[1];
+				build = temp[2];
+				break;
+			}
 		}
 	}
-	else if((offset = patterns[1]->lastIndexIn(line)) >= 0)
+
+	if ((!core) || (core == UINT_MAX))
 	{
-		unsigned int temp[2];
-		if (MUtils::regexp_parse_uint32(*patterns[0], temp, 2))
+		if ((offset = patterns[2]->lastIndexIn(line)) >= 0)
 		{
-			core = (10 * temp[0]) + temp[1];
+			unsigned int temp[2];
+			if (MUtils::regexp_parse_uint32(*patterns[2], temp, 2))
+			{
+				core = (10 * temp[0]) + temp[1];
+			}
+			build = 0;
 		}
-		build = 0;
 	}
 
 	if(!line.isEmpty())

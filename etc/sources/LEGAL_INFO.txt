@@ -1,0 +1,8 @@
+THIRD-PARTY SOURCE CODE
+-----------------------
+
+This directory contains the source code of the *third-party* tools included with Simple x264/x265 Launcher.
+
+The copyright of all third-party tools belongs to the respective authors!
+
+These source code packages are provided here for compliance with the GNU General Public License, version 2.

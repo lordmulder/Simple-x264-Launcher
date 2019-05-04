@@ -1,0 +1,8 @@
+THIRD-PARTY BINARIES
+--------------------
+
+This directory contains "unofficial" pre-compiled binaries of various *third-party* tools; these binaries are intended for testing and evaluation purposes.
+
+The copyright of all third-party tools belongs to the respective authors!
+
+All pre-compiled binaries included with Simple x264/x265 Launcher are redistributed in full accordance with the GNU General Public License, version 2.

@@ -35,9 +35,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="x264_launcher.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="x264_launcher.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -74,17 +76,23 @@
 rmdir /S /Q "$(TargetDir)\toolset"
 rmdir /S /Q "$(TargetDir)\imageformats"
 
+mkdir "$(TargetDir)\toolset\common"
 mkdir "$(TargetDir)\toolset\x86"
 mkdir "$(TargetDir)\toolset\x64"
-mkdir "$(TargetDir)\toolset\common"
+mkdir "$(TargetDir)\toolset\x86\nvencc"
+mkdir "$(TargetDir)\toolset\x64\nvencc"
 mkdir "$(TargetDir)\imageformats"
 
-copy /Y "$(SolutionDir)res\toolset\x86\*.exe" "$(TargetDir)\toolset\x86\"
-copy /Y "$(SolutionDir)res\toolset\x86\*.dll" "$(TargetDir)\toolset\x86\"
-copy /Y "$(SolutionDir)res\toolset\x64\*.exe" "$(TargetDir)\toolset\x64\"
-copy /Y "$(SolutionDir)res\toolset\x64\*.dll" "$(TargetDir)\toolset\x64\"
 copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
 copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
+copy /Y "$(SolutionDir)res\toolset\x86\*.exe" "$(TargetDir)\toolset\x86\"
+copy /Y "$(SolutionDir)res\toolset\x64\*.exe" "$(TargetDir)\toolset\x64\"
+copy /Y "$(SolutionDir)res\toolset\x86\*.dll" "$(TargetDir)\toolset\x86\"
+copy /Y "$(SolutionDir)res\toolset\x64\*.dll" "$(TargetDir)\toolset\x64\"
+copy /Y "$(SolutionDir)res\toolset\x86\nvencc\*.exe" "$(TargetDir)\toolset\x86\nvencc"
+copy /Y "$(SolutionDir)res\toolset\x64\nvencc\*.exe" "$(TargetDir)\toolset\x64\nvencc"
+copy /Y "$(SolutionDir)res\toolset\x86\nvencc\*.dll" "$(TargetDir)\toolset\x86\nvencc"
+copy /Y "$(SolutionDir)res\toolset\x64\nvencc\*.dll" "$(TargetDir)\toolset\x64\nvencc"
 
 for %%i in (QtCored4, QtGuid4, QtSvgd4, QtXmld4) do (
     copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Debug\bin\%%i.dll" "$(TargetDir)"
@@ -160,17 +168,23 @@ copy /Y "$(SolutionDir)\..\Prerequisites\VisualLeakDetector\bin\$(Platform)\*.ma
 rmdir /S /Q "$(TargetDir)\toolset"
 rmdir /S /Q "$(TargetDir)\imageformats"
 
+mkdir "$(TargetDir)\toolset\common"
 mkdir "$(TargetDir)\toolset\x86"
 mkdir "$(TargetDir)\toolset\x64"
-mkdir "$(TargetDir)\toolset\common"
+mkdir "$(TargetDir)\toolset\x86\nvencc"
+mkdir "$(TargetDir)\toolset\x64\nvencc"
 mkdir "$(TargetDir)\imageformats"
 
+copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
+copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
 copy /Y "$(SolutionDir)res\toolset\x86\*.exe" "$(TargetDir)\toolset\x86\"
 copy /Y "$(SolutionDir)res\toolset\x64\*.exe" "$(TargetDir)\toolset\x64\"
 copy /Y "$(SolutionDir)res\toolset\x86\*.dll" "$(TargetDir)\toolset\x86\"
 copy /Y "$(SolutionDir)res\toolset\x64\*.dll" "$(TargetDir)\toolset\x64\"
-copy /Y "$(SolutionDir)res\toolset\common\*.exe" "$(TargetDir)\toolset\common\"
-copy /Y "$(SolutionDir)res\toolset\common\*.gpg" "$(TargetDir)\toolset\common\"
+copy /Y "$(SolutionDir)res\toolset\x86\nvencc\*.exe" "$(TargetDir)\toolset\x86\nvencc"
+copy /Y "$(SolutionDir)res\toolset\x64\nvencc\*.exe" "$(TargetDir)\toolset\x64\nvencc"
+copy /Y "$(SolutionDir)res\toolset\x86\nvencc\*.dll" "$(TargetDir)\toolset\x86\nvencc"
+copy /Y "$(SolutionDir)res\toolset\x64\nvencc\*.dll" "$(TargetDir)\toolset\x64\nvencc"
 
 copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\bin\QtCore4.dll" "$(TargetDir)"
 copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\bin\QtGui4.dll"  "$(TargetDir)"
@@ -249,7 +263,6 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\UIC_%(Filename).h;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\UIC_%(Filename).h;%(Outputs)</Outputs>
     </CustomBuild>
-    <None Include="ReadMe.txt" />
     <CustomBuild Include="res\resources.qrc">
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\rcc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\QRC_%(Filename).cpp" -name "%(Filename)" "%(FullPath)"</Command>
@@ -291,6 +304,14 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClInclude Include="src\model_clipInfo.h" />
     <ClInclude Include="src\source_factory.h" />
     <ClInclude Include="src\string_validator.h" />
+    <CustomBuild Include="src\thread_startup.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <ClInclude Include="tmp\x264_launcher\UIC_win_about.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_addJob.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_editor.h" />
@@ -457,6 +478,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\thread_ipc_recv.cpp" />
     <ClCompile Include="src\thread_ipc_send.cpp" />
+    <ClCompile Include="src\thread_startup.cpp" />
     <ClCompile Include="src\thread_vapoursynth.cpp" />
     <ClCompile Include="src\tool_abstract.cpp" />
     <ClCompile Include="src\win_about.cpp" />
@@ -475,6 +497,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClCompile Include="tmp\x264_launcher\MOC_thread_encode.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_ipc_recv.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_ipc_send.cpp" />
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_startup.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_vapoursynth.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_tool_abstract.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_win_about.cpp" />

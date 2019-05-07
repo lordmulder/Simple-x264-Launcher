@@ -25,9 +25,7 @@
 #include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
-#include <QMutexLocker>
 #include <QApplication>
-#include <QProcess>
 #include <QDir>
 
 //Internal
@@ -97,7 +95,7 @@ bool AvisynthCheckThread::detect(SysinfoModel *sysinfo)
 	connect(&thread, SIGNAL(terminated()), &loop, SLOT(quit()));
 	
 	thread.start();
-	QTimer::singleShot(15000, &loop, SLOT(quit()));
+	QTimer::singleShot(30000, &loop, SLOT(quit()));
 	
 	qDebug("Avisynth thread has been created, please wait...");
 	loop.exec(QEventLoop::ExcludeUserInputEvents);
@@ -225,9 +223,6 @@ bool AvisynthCheckThread::checkAvisynth(QString &basePath, const SysinfoModel *c
 {
 	qDebug("Avisynth %s-Bit support is being tested.", x64 ? "64" : "32");
 
-	QProcess process;
-	QStringList output;
-
 	//Look for "portable" Avisynth version
 	static const char *const ARCH_DIR[] = { "x64", "x86" };
 	const QLatin1String archSuffix = QLatin1String(ARCH_DIR[x64 ? 1 : 0]);
@@ -245,56 +240,15 @@ bool AvisynthCheckThread::checkAvisynth(QString &basePath, const SysinfoModel *c
 		}
 	}
 
+	//Get extra paths
+	QStringList avisynthExtraPaths;
+	if (!basePath.isEmpty())
+	{
+		avisynthExtraPaths << QString("%1/%2").arg(basePath, archSuffix);
+	}
+
 	//Setup process object
-	MUtils::init_process(process, QDir::tempPath(), true, basePath.isEmpty() ? NULL : &(QStringList() << QString("%1/%2").arg(basePath, archSuffix)));
-
-	//Try to start VSPIPE.EXE
-	process.start(AVS_CHECK_BINARY(sysinfo, x64), QStringList());
-	if(!process.waitForStarted())
-	{
-		qWarning("Failed to launch AVS_CHECK.EXE -> %s", process.errorString().toUtf8().constData());
-		return false;
-	}
-
-	//Wait for process to finish
-	while(process.state() != QProcess::NotRunning)
-	{
-		if(process.waitForReadyRead(12000))
-		{
-			while(process.canReadLine())
-			{
-				output << QString::fromUtf8(process.readLine()).simplified();
-			}
-			continue;
-		}
-		if(process.state() != QProcess::NotRunning)
-		{
-			qWarning("AVS_CHECK.EXE process encountered a deadlock -> aborting now!");
-			break;
-		}
-	}
-
-	//Make sure VSPIPE.EXE has terminated!
-	process.waitForFinished(2500);
-	if(process.state() != QProcess::NotRunning)
-	{
-		qWarning("AVS_CHECK.EXE process still running, going to kill it!");
-		process.kill();
-		process.waitForFinished(-1);
-	}
-
-	//Read pending lines
-	while(process.canReadLine())
-	{
-		output << QString::fromUtf8(process.readLine()).simplified();
-	}
-
-	//Check exit code
-	if(process.exitCode() != 0)
-	{
-		qWarning("AVS_CHECK.EXE failed with code 0x%08X -> disable Avisynth support!", process.exitCode());
-		return false;
-	}
+	const QStringList output = runProcess(AVS_CHECK_BINARY(sysinfo, x64), QStringList(), &avisynthExtraPaths);
 
 	//Init regular expressions
 	QRegExp avsLogo("Avisynth\\s+Checker\\s+(x86|x64)");

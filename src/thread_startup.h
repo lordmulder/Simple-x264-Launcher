@@ -19,15 +19,16 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 9
-#define VER_X264_PATCH 0
-#define VER_X264_BUILD 1154
+//Qt
+#include <QThread>
+#include <QStringList>
 
-#define VER_X264_PORTABLE_EDITION (0)
+class StarupThread : public QThread
+{
+	Q_OBJECT
 
-#define VER_X264_PRE_RELEASE (0)
+protected:
+	static QStringList runProcess(const QString &exePath, const QStringList &args, const QStringList *const extraPaths = NULL);
+};

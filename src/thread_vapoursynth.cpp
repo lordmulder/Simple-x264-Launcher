@@ -29,10 +29,8 @@
 #include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
-#include <QMutexLocker>
 #include <QApplication>
 #include <QDir>
-#include <QProcess>
 
 //Internal
 #include "global.h"
@@ -86,7 +84,7 @@ bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
 	connect(&thread, SIGNAL(terminated()), &loop, SLOT(quit()));
 	
 	thread.start();
-	QTimer::singleShot(15000, &loop, SLOT(quit()));
+	QTimer::singleShot(30000, &loop, SLOT(quit()));
 	
 	qDebug("VapourSynth thread has been created, please wait...");
 	loop.exec(QEventLoop::ExcludeUserInputEvents);
@@ -336,61 +334,8 @@ bool VapourSynthCheckThread::isVapourSynthComplete(const QString &vsCorePath, QF
 
 bool VapourSynthCheckThread::checkVapourSynth(const QString &vspipePath)
 {
-	QProcess process;
-	QStringList output;
-
-	//Setup process object
-	process.setWorkingDirectory(QDir::tempPath());
-	process.setProcessChannelMode(QProcess::MergedChannels);
-	process.setReadChannel(QProcess::StandardOutput);
-
-	//Try to start VSPIPE.EXE
-	process.start(vspipePath, QStringList() << "--version");
-	if(!process.waitForStarted())
-	{
-		qWarning("Failed to launch VSPIPE.EXE -> %s", process.errorString().toUtf8().constData());
-		return false;
-	}
-
-	//Wait for process to finish
-	while(process.state() != QProcess::NotRunning)
-	{
-		if(process.waitForReadyRead(12000))
-		{
-			while(process.canReadLine())
-			{
-				output << QString::fromUtf8(process.readLine()).simplified();
-			}
-			continue;
-		}
-		if(process.state() != QProcess::NotRunning)
-		{
-			qWarning("VSPIPE.EXE process encountered a deadlock -> aborting now!");
-			break;
-		}
-	}
-
-	//Make sure VSPIPE.EXE has terminated!
-	process.waitForFinished(2500);
-	if(process.state() != QProcess::NotRunning)
-	{
-		qWarning("VSPIPE.EXE process still running, going to kill it!");
-		process.kill();
-		process.waitForFinished(-1);
-	}
-
-	//Read pending lines
-	while(process.canReadLine())
-	{
-		output << QString::fromUtf8(process.readLine()).simplified();
-	}
-
-	//Check exit code
-	if(process.exitCode() != 0)
-	{
-		qWarning("VSPIPE.EXE failed with code 0x%08X -> disable Vapousynth support!", process.exitCode());
-		return false;
-	}
+	//Try to run VSPIPE.EXE
+	const QStringList output = runProcess(vspipePath, QStringList() << "--version");
 
 	//Init regular expressions
 	QRegExp vpsLogo("VapourSynth\\s+Video\\s+Processing\\s+Library");

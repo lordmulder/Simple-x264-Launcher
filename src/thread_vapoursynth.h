@@ -21,15 +21,15 @@
 
 #pragma once
 
+#include "thread_startup.h"
+
 //Qt
-#include <QThread>
 #include <QMutex>
 
-class QLibrary;
 class QFile;
 class SysinfoModel;
 
-class VapourSynthCheckThread : public QThread
+class VapourSynthCheckThread : public StarupThread
 {
 	Q_OBJECT
 

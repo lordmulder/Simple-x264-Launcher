@@ -145,9 +145,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Compress
 REM ///////////////////////////////////////////////////////////////////////////
-"%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\x264_launcher.exe"
-"%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\MUtils32-1.dll"
-"%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\Qt*.dll"
+:: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\x264_launcher.exe"
+:: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\MUtils32-1.dll"
+:: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\Qt*.dll"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Attributes

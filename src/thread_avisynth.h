@@ -21,14 +21,14 @@
 
 #pragma once
 
-#include <QThread>
+#include "thread_startup.h"
+
 #include <QMutex>
 
-class QLibrary;
 class SysinfoModel;
 class QFile;
 
-class AvisynthCheckThread : public QThread
+class AvisynthCheckThread : public StarupThread
 {
 	Q_OBJECT
 

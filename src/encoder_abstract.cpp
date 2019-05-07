@@ -80,7 +80,7 @@ bool AbstractEncoder::runEncodingPass(AbstractSource* pipedSource, const QString
 	buildCommandLine(cmdLine_Encode, (pipedSource != NULL), clipInfo, m_indexFile, pass, passLogFile);
 
 	log("Creating encoder process:");
-	if(!startProcess(processEncode, getBinaryPath(), cmdLine_Encode, true, &getExtraPaths()))
+	if(!startProcess(processEncode, getBinaryPath(), cmdLine_Encode, true, &getExtraPaths(), &getExtraEnv()))
 	{
 		return false;
 	}

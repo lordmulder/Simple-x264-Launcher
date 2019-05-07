@@ -217,7 +217,7 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, con
 }
 
 // ------------------------------------------------------------
-// Check Source Properties
+// Source Processing
 // ------------------------------------------------------------
 
 void VapoursynthSource::buildCommandLine(QStringList &cmdLine)

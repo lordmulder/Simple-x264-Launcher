@@ -25,6 +25,7 @@
 #include <QUuid>
 #include <QMutex>
 #include <QStringList>
+#include <QHash>
 
 class OptionsModel;
 class SysinfoModel;
@@ -64,6 +65,7 @@ protected:
 	static const unsigned int m_processTimeoutWarning = 24;
 
 	virtual QString getBinaryPath(void) const = 0;
+	virtual QHash<QString, QString> getExtraEnv(void) const { return QHash<QString, QString>(); }
 	virtual QStringList getExtraPaths(void) const { return QStringList(); }
 
 	virtual void checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
@@ -75,7 +77,7 @@ protected:
 	void setProgress(unsigned int newProgress) { emit progressChanged(newProgress); }
 	void setDetails(const QString &text) { emit detailsChanged(text); }
 
-	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true, const QStringList *const extraPath = NULL);
+	bool startProcess(QProcess &process, const QString &program, const QStringList &args, bool mergeChannels = true, const QStringList *const extraPath = NULL, const QHash<QString, QString> *const extraEnv = NULL);
 
 	JobObject *const m_jobObject;
 	const OptionsModel *const m_options;

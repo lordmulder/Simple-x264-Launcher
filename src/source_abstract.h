@@ -50,6 +50,8 @@ public:
 	static const AbstractSourceInfo& getSourceInfo(void);
 
 protected:
+	virtual QHash<QString, QString> getExtraEnv(void) const;
+
 	virtual void checkSourceProperties_init(QList<QRegExp*> &patterns, QStringList &cmdLine) = 0;
 	virtual void checkSourceProperties_parseLine(const QString &line, const QList<QRegExp*> &patterns, ClipInfo &clipInfo) = 0;
 	

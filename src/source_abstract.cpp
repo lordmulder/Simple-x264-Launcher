@@ -29,6 +29,7 @@
 
 //MUtils
 #include <MUtils/Global.h>
+#include <MUtils/OSSupport.h>
 #include <MUtils/Exception.h>
 
 //Qt
@@ -67,7 +68,7 @@ bool AbstractSource::checkSourceProperties(ClipInfo &clipInfo)
 	checkSourceProperties_init(patterns, cmdLine);
 
 	log("Creating process:");
-	if(!startProcess(process, getBinaryPath(), cmdLine, true, &getExtraPaths()))
+	if(!startProcess(process, getBinaryPath(), cmdLine, true, &getExtraPaths(), &getExtraEnv()))
 	{
 		return false;;
 	}
@@ -191,7 +192,7 @@ bool AbstractSource::createProcess(QProcess &processEncode, QProcess&processInpu
 	buildCommandLine(cmdLine_Input);
 
 	log("Creating input process:");
-	if(!startProcess(processInput, getBinaryPath(), cmdLine_Input, false, &getExtraPaths()))
+	if(!startProcess(processInput, getBinaryPath(), cmdLine_Input, false, &getExtraPaths(), &getExtraEnv()))
 	{
 		return false;
 	}
@@ -206,4 +207,27 @@ bool AbstractSource::createProcess(QProcess &processEncode, QProcess&processInpu
 const AbstractSourceInfo& AbstractSource::getSourceInfo(void)
 {
 	MUTILS_THROW("[getSourceInfo] This function must be overwritten in sub-classes!");
+}
+
+// ------------------------------------------------------------
+// Auxiliary FUnctions
+// ------------------------------------------------------------
+
+QHash<QString, QString> AbstractSource::getExtraEnv(void) const
+{
+	QHash<QString, QString> extraEnv;
+
+	const QString profilePath = MUtils::OS::known_folder(MUtils::OS::FOLDER_USER_PROFILE);
+	if (!profilePath.isEmpty())
+	{
+		extraEnv.insert("USERPROFILE", QDir::toNativeSeparators(profilePath));
+	}
+
+	const QString appDataPath = MUtils::OS::known_folder(MUtils::OS::FOLDER_ROAMING_DATA);
+	if (!appDataPath.isEmpty())
+	{
+		extraEnv.insert("APPDATA", QDir::toNativeSeparators(appDataPath));
+	}
+
+	return extraEnv;
 }

@@ -29,6 +29,30 @@ class StarupThread : public QThread
 {
 	Q_OBJECT
 
+public:
+	StarupThread(void);
+	~StarupThread(void);
+
+	bool getException(void) { return m_exception; }
+	int getSuccess(void) { return m_success; }
+
+protected slots:
+	void start(Priority priority = InheritPriority) { QThread::start(priority); }
+
 protected:
+	volatile int m_success;
+	volatile bool m_exception;
+
+	//Entry point
+	virtual void run(void);
+	
+	//Error handling
+	static void runChecked1(StarupThread *const thread, volatile int &success, volatile bool *exception);
+	static void runChecked2(StarupThread *const thread, volatile int &success, volatile bool *exception);
+
+	//Thread main
+	virtual int threadMain(void) = 0;
+
+	//Utility functions
 	static QStringList runProcess(const QString &exePath, const QStringList &args, const QStringList *const extraPaths = NULL);
 };

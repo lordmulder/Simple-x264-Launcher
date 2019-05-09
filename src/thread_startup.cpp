@@ -29,6 +29,61 @@
 #include <QElapsedTimer>
 #include <QProcess>
 
+//-------------------------------------
+// Constructor
+//-------------------------------------
+
+StarupThread::StarupThread(void)
+{
+	m_exception = false;
+	m_success = 0;
+}
+
+StarupThread::~StarupThread(void)
+{
+}
+
+//-------------------------------------
+// Thread entry point
+//-------------------------------------
+
+void StarupThread::run(void)
+{
+	m_exception = false;
+	m_success = 0;
+	runChecked1(this, m_success, &m_exception);
+}
+
+void StarupThread::runChecked1(StarupThread *const thread, volatile int &success, volatile bool *exception)
+{
+	__try
+	{
+		return runChecked2(thread, success, exception);
+	}
+	__except(1)
+	{
+		*exception = true;
+		qWarning("Unhandled exception error in startup thread !!!");
+	}
+}
+
+void StarupThread::runChecked2(StarupThread *const thread, volatile int &success, volatile bool *exception)
+{
+	try
+	{
+		success = thread->threadMain();
+	}
+	catch(...)
+	{
+		*exception = true;
+		qWarning("Startup thread raised an C++ exception!");
+	}
+}
+
+//-------------------------------------
+// Utility functions
+//-------------------------------------
+
 QStringList StarupThread::runProcess(const QString &exePath, const QStringList &arguments, const QStringList *const extraPaths)
 {
 	QProcess process;
@@ -64,10 +119,18 @@ QStringList StarupThread::runProcess(const QString &exePath, const QStringList &
 				processOutput << line;
 			}
 		}
-		if (timer.hasExpired(15000))
+		if ((process.state() != QProcess::NotRunning) && timer.hasExpired(15000))
 		{
-			qWarning("%s process encountered a deadlock -> aborting now!", MUTILS_UTF8(fileName));
-			break;
+			process.waitForFinished(125);
+			if (process.state() != QProcess::NotRunning)
+			{
+				qWarning("%s process encountered a deadlock -> aborting now!", MUTILS_UTF8(fileName));
+				break;
+			}
+		}
+		else
+		{
+			QThread::yieldCurrentThread(); /*yield*/
 		}
 	}
 

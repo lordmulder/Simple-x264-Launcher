@@ -37,13 +37,6 @@ public:
 	static bool detect(SysinfoModel *sysinfo);
 
 protected:
-	VapourSynthCheckThread(void);
-	~VapourSynthCheckThread(void);
-
-	bool getException(void) { return m_exception; }
-	int getSuccess(void) { return m_success; }
-	QString getPath(void) { return m_vpsPath; }
-
 	typedef enum _VapourSynthFlags
 	{
 		VAPOURSYNTH_X86 = 0x1,
@@ -51,12 +44,12 @@ protected:
 	}
 	VapourSynthFlags;
 
-private slots:
-	void start(Priority priority = InheritPriority) { QThread::start(priority); }
+	VapourSynthCheckThread(void);
+	~VapourSynthCheckThread(void);
+
+	QString getPath(void) { return m_vpsPath; }
 
 private:
-	volatile bool m_exception;
-	int m_success;
 	QString m_vpsPath;
 
 	static QMutex m_vpsLock;
@@ -66,10 +59,8 @@ private:
 	//Entry point
 	virtual void run(void);
 
-	//Functions
-	static void detectVapourSynthPath1(int &success, QString &path, volatile bool *exception);
-	static void detectVapourSynthPath2(int &success, QString &path, volatile bool *exception);
-	static void detectVapourSynthPath3(int &success, QString &path);
+	//Thread main
+	virtual int threadMain(void);
 
 	//Internal functions
 	static bool isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile);

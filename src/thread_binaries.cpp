@@ -48,6 +48,7 @@ QScopedPointer<QFile> BinariesCheckThread::m_binPath[MAX_BINARIES];
 //Whatever
 #define NEXT(X) ((*reinterpret_cast<int*>(&(X)))++)
 #define SHFL(X) ((*reinterpret_cast<int*>(&(X))) <<= 1)
+#define BOOLIFY(X) (!!(X))
 
 //External
 QString AVS_CHECK_BINARY(const SysinfoModel *sysinfo, const bool& x64);
@@ -91,7 +92,7 @@ bool BinariesCheckThread::check(const SysinfoModel *const sysinfo, QString *cons
 		return false;
 	}
 	
-	const bool success = thread.getSuccess();
+	const bool success = BOOLIFY(thread.getSuccess());
 	if ((!success) && failedPath)
 	{
 		*failedPath = thread.getFailedPath();
@@ -108,7 +109,7 @@ BinariesCheckThread::BinariesCheckThread(const SysinfoModel *const sysinfo)
 :
 	m_sysinfo(sysinfo)
 {
-	m_success = m_exception = false;
+	m_failedPath.clear();
 }
 
 BinariesCheckThread::~BinariesCheckThread(void)
@@ -117,41 +118,12 @@ BinariesCheckThread::~BinariesCheckThread(void)
 
 void BinariesCheckThread::run(void)
 {
-	m_success = m_exception = false;
-	m_failedPath = QString();
-	checkBinaries1(m_success, m_failedPath, m_sysinfo, &m_exception);
+	m_failedPath.clear();
+	StarupThread::run();
 }
 
-void BinariesCheckThread::checkBinaries1(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception)
+int BinariesCheckThread::threadMain(void)
 {
-	__try
-	{
-		checkBinaries2(success, failedPath, sysinfo, exception);
-	}
-	__except(1)
-	{
-		*exception = true;
-		qWarning("Unhandled exception error in binaries checker thread !!!");
-	}
-}
-
-void BinariesCheckThread::checkBinaries2(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception)
-{
-	try
-	{
-		return checkBinaries3(success, failedPath, sysinfo);
-	}
-	catch(...)
-	{
-		*exception = true;
-		qWarning("Binaries checker initializdation raised an C++ exception!");
-	}
-}
-
-void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo)
-{
-	success = true;
-
 	//Create list of all required binary files
 	typedef QPair<QString, bool> FileEntry;
 	QList<FileEntry> binFiles;
@@ -165,7 +137,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failed
 			const QStringList variants = encInfo.getVariants();
 			for (quint32 varntIdx = 0; varntIdx < quint32(variants.count()); ++varntIdx)
 			{
-				const QStringList dependencies = encInfo.getDependencies(sysinfo, archIdx, varntIdx);
+				const QStringList dependencies = encInfo.getDependencies(m_sysinfo, archIdx, varntIdx);
 				for (QStringList::ConstIterator iter = dependencies.constBegin(); iter != dependencies.constEnd(); iter++)
 				{
 					if (!filesSet.contains(*iter))
@@ -174,7 +146,7 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failed
 						binFiles << qMakePair(*iter, true);
 					}
 				}
-				const QString binary = encInfo.getBinaryPath(sysinfo, archIdx, varntIdx);
+				const QString binary = encInfo.getBinaryPath(m_sysinfo, archIdx, varntIdx);
 				if (!filesSet.contains(binary))
 				{
 					filesSet << binary;
@@ -185,14 +157,14 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failed
 	}
 	for(int i = 0; i < 2; i++)
 	{
-		binFiles << qMakePair(SourceFactory::getSourceInfo(SourceFactory::SourceType_AVS).getBinaryPath(sysinfo, bool(i)), false);
-		binFiles << qMakePair(AVS_CHECK_BINARY(sysinfo, bool(i)), false);
+		binFiles << qMakePair(SourceFactory::getSourceInfo(SourceFactory::SourceType_AVS).getBinaryPath(m_sysinfo, bool(i)), false);
+		binFiles << qMakePair(AVS_CHECK_BINARY(m_sysinfo, bool(i)), false);
 	}
 	for(size_t i = 0; UpdaterDialog::BINARIES[i].name; i++)
 	{
 		if(UpdaterDialog::BINARIES[i].exec)
 		{
-			binFiles << qMakePair(QString("%1/toolset/common/%2").arg(sysinfo->getAppPath(), QString::fromLatin1(UpdaterDialog::BINARIES[i].name)), false);
+			binFiles << qMakePair(QString("%1/toolset/common/%2").arg(m_sysinfo->getAppPath(), QString::fromLatin1(UpdaterDialog::BINARIES[i].name)), false);
 		}
 	}
 
@@ -209,20 +181,18 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failed
 			{
 				if (!MUtils::OS::is_executable_file(file->fileName()))
 				{
-					failedPath = file->fileName();
-					success = false;
+					m_failedPath = file->fileName();
 					qWarning("Required tool does NOT look like a valid Win32/Win64 binary:\n%s\n", MUTILS_UTF8(file->fileName()));
-					return;
+					return 0;
 				}
 			}
 			else
 			{
 				if (!MUtils::OS::is_library_file(file->fileName()))
 				{
-					failedPath = file->fileName();
-					success = false;
+					m_failedPath = file->fileName();
 					qWarning("Required tool does NOT look like a valid Win32/Win64 library:\n%s\n", MUTILS_UTF8(file->fileName()));
-					return;
+					return 0;
 				}
 			}
 			if(currentFile < MAX_BINARIES)
@@ -234,10 +204,11 @@ void BinariesCheckThread::checkBinaries3(volatile bool &success, QString &failed
 		}
 		else
 		{
-			failedPath = file->fileName();
-			success = false;
+			m_failedPath = file->fileName();
 			qWarning("Required tool could not be found or access denied:\n%s\n", MUTILS_UTF8(file->fileName()));
-			return;
+			return 0;
 		}
 	}
+
+	return 1;
 }

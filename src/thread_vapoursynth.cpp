@@ -26,7 +26,6 @@
 #include <MUtils/Registry.h>
 
 //Qt
-#include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
 #include <QApplication>
@@ -46,6 +45,10 @@ static const bool ENABLE_PORTABLE_VPS = true;
 QMutex VapourSynthCheckThread::m_vpsLock;
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
+
+//-------------------------------------
+// Auxilary functions
+//-------------------------------------
 
 #define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
 #define BOOLIFY(X) ((X) ? '1' : '0')
@@ -122,13 +125,11 @@ bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
 }
 
 //-------------------------------------
-// Thread class
+// Thread functions
 //-------------------------------------
 
 VapourSynthCheckThread::VapourSynthCheckThread(void)
 {
-	m_success &= 0;
-	m_exception = false;
 	m_vpsPath.clear();
 }
 
@@ -138,44 +139,12 @@ VapourSynthCheckThread::~VapourSynthCheckThread(void)
 
 void VapourSynthCheckThread::run(void)
 {
-	m_success &= 0;
-	m_exception = false;
 	m_vpsPath.clear();
-
-	detectVapourSynthPath1(m_success, m_vpsPath, &m_exception);
+	StarupThread::run();
 }
 
-void VapourSynthCheckThread::detectVapourSynthPath1(int &success, QString &path, volatile bool *exception)
+int VapourSynthCheckThread::threadMain(void)
 {
-	__try
-	{
-		return detectVapourSynthPath2(success, path, exception);
-	}
-	__except(1)
-	{
-		*exception = true;
-		qWarning("Unhandled exception error in VapourSynth thread !!!");
-	}
-}
-
-void VapourSynthCheckThread::detectVapourSynthPath2(int &success, QString &path, volatile bool *exception)
-{
-	try
-	{
-		return detectVapourSynthPath3(success, path);
-	}
-	catch(...)
-	{
-		*exception = true;
-		qWarning("VapourSynth initializdation raised an C++ exception!");
-	}
-}
-
-void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
-{
-	success &= 0;
-	path.clear();
-
 	static const char *VPS_CORE_DIR[] =
 	{
 		"core32",
@@ -209,6 +178,7 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 	};
 
 	QString vapoursynthPath;
+	int flags = 0;
 
 	//Look for "portable" VapourSynth version
 	if (ENABLE_PORTABLE_VPS)
@@ -267,7 +237,7 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 	if(vapoursynthPath.isEmpty())
 	{
 		qWarning("VapourSynth install path not found -> disable VapouSynth support!");
-		return;
+		return 0;
 	}
 
 	//Validate the VapourSynth installation now!
@@ -279,7 +249,7 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 		{
 			if (vpsExeFile && checkVapourSynth(vpsExeFile->fileName()))
 			{
-				success |= VPS_BIT_FLAG[i];
+				flags |= VPS_BIT_FLAG[i];
 				qDebug("VapourSynth %u-Bit edition found!", VPS_BITNESS(i));
 				m_vpsExePath[i].reset(vpsExeFile);
 				m_vpsDllPath[i].reset(vpsDllFile);
@@ -296,11 +266,17 @@ void VapourSynthCheckThread::detectVapourSynthPath3(int &success, QString &path)
 	}
 
 	//Return VapourSynth path
-	if(success)
+	if(flags)
 	{
-		path = vapoursynthPath;
+		m_vpsPath = vapoursynthPath;
 	}
+
+	return flags;
 }
+
+//-------------------------------------
+// Internal functions
+//-------------------------------------
 
 bool VapourSynthCheckThread::isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile)
 {

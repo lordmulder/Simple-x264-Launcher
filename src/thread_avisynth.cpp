@@ -22,7 +22,6 @@
 #include "thread_avisynth.h"
 
 //Qt
-#include <QLibrary>
 #include <QEventLoop>
 #include <QTimer>
 #include <QApplication>
@@ -43,11 +42,13 @@ static const bool ENABLE_PORTABLE_AVS = true;
 QMutex AvisynthCheckThread::m_avsLock;
 QScopedPointer<QFile> AvisynthCheckThread::m_avsDllPath[2];
 
-//Helper
+//-------------------------------------
+// Auxilary functions
+//-------------------------------------
+
 #define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
 #define BOOLIFY(X) ((X) ? '1' : '0')
 
-//Utility function
 QString AVS_CHECK_BINARY(const SysinfoModel *sysinfo, const bool& x64)
 {
 	return QString("%1/toolset/%2/avs_check_%2.exe").arg(sysinfo->getAppPath(), (x64 ? "x64": "x86"));
@@ -58,7 +59,6 @@ class Wow64RedirectionDisabler
 public:
 	Wow64RedirectionDisabler(void)
 	{
-		m_oldValue = NULL;
 		m_disabled = MUtils::OS::wow64fsredir_disable(m_oldValue);
 	}
 	~Wow64RedirectionDisabler(void)
@@ -73,7 +73,7 @@ public:
 	}
 private:
 	bool  m_disabled;
-	void* m_oldValue;
+	uintptr_t m_oldValue;
 };
 
 //-------------------------------------
@@ -140,8 +140,7 @@ AvisynthCheckThread::AvisynthCheckThread(const SysinfoModel *const sysinfo)
 :
 	m_sysinfo(sysinfo)
 {
-	m_success = false;
-	m_exception = false;
+	m_basePath.clear();
 }
 
 AvisynthCheckThread::~AvisynthCheckThread(void)
@@ -150,48 +149,19 @@ AvisynthCheckThread::~AvisynthCheckThread(void)
 
 void AvisynthCheckThread::run(void)
 {
-	m_exception = false;
-	m_success &= 0;
 	m_basePath.clear();
-
-	detectAvisynthVersion1(m_success, m_basePath, m_sysinfo, &m_exception);
+	StarupThread::run();
 }
 
-void AvisynthCheckThread::detectAvisynthVersion1(int &success, QString &basePath, const SysinfoModel *const sysinfo, volatile bool *exception)
+int AvisynthCheckThread::threadMain(void)
 {
-	__try
-	{
-		detectAvisynthVersion2(success, basePath, sysinfo, exception);
-	}
-	__except(1)
-	{
-		*exception = true;
-		qWarning("Unhandled exception error in Avisynth thread !!!");
-	}
-}
-
-void AvisynthCheckThread::detectAvisynthVersion2(int &success, QString &basePath, const SysinfoModel *const sysinfo, volatile bool *exception)
-{
-	try
-	{
-		return detectAvisynthVersion3(success, basePath, sysinfo);
-	}
-	catch(...)
-	{
-		*exception = true;
-		qWarning("Avisynth initializdation raised an C++ exception!");
-	}
-}
-
-void AvisynthCheckThread::detectAvisynthVersion3(int &success, QString &basePath, const SysinfoModel *const sysinfo)
-{
-	success &= 0;
+	int flags = 0;
 
 	QFile *avsPath32;
-	if(checkAvisynth(basePath, sysinfo, avsPath32, false))
+	if(checkAvisynth(m_basePath, m_sysinfo, avsPath32, false))
 	{
 		m_avsDllPath[0].reset(avsPath32);
-		success |= AVISYNTH_X86;
+		flags |= AVISYNTH_X86;
 		qDebug("Avisynth 32-Bit edition found!");
 	}
 	else
@@ -199,13 +169,13 @@ void AvisynthCheckThread::detectAvisynthVersion3(int &success, QString &basePath
 		qDebug("Avisynth 32-Bit edition *not* found!");
 	}
 
-	if(sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64))
+	if(m_sysinfo->getCPUFeatures(SysinfoModel::CPUFeatures_X64))
 	{
 		QFile *avsPath64;
-		if(checkAvisynth(basePath, sysinfo, avsPath64, true))
+		if(checkAvisynth(m_basePath, m_sysinfo, avsPath64, true))
 		{
 			m_avsDllPath[1].reset(avsPath64);
-			success |= AVISYNTH_X64;
+			flags |= AVISYNTH_X64;
 			qDebug("Avisynth 64-Bit edition found!");
 		}
 		else
@@ -217,7 +187,13 @@ void AvisynthCheckThread::detectAvisynthVersion3(int &success, QString &basePath
 	{
 		qWarning("Skipping 64-Bit Avisynth check on non-x64 system!");
 	}
+
+	return flags;
 }
+
+//-------------------------------------
+// Internal functions
+//-------------------------------------
 
 bool AvisynthCheckThread::checkAvisynth(QString &basePath, const SysinfoModel *const sysinfo, QFile *&path, const bool &x64)
 {

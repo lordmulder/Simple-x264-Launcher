@@ -21,14 +21,16 @@
 
 #pragma once
 
-#include <QThread>
+#include "thread_startup.h"
+
+//Qt
 #include <QMutex>
 
 class QLibrary;
 class SysinfoModel;
 class QFile;
 
-class BinariesCheckThread : public QThread
+class BinariesCheckThread : public StarupThread
 {
 	Q_OBJECT
 
@@ -38,17 +40,10 @@ public:
 protected:
 	BinariesCheckThread(const SysinfoModel *const sysinfo);
 	~BinariesCheckThread(void);
-
-	int  getSuccess(void)   { return m_success; }
-	bool getException(void) { return m_exception; }
 	
 	const QString& getFailedPath(void) { return m_failedPath; }
 
-private slots:
-	void start(Priority priority = InheritPriority) { QThread::start(priority); }
-
 private:
-	volatile bool m_exception, m_success;
 	QString m_failedPath;
 	const SysinfoModel *const m_sysinfo;
 
@@ -59,8 +54,6 @@ private:
 	//Entry point
 	virtual void run(void);
 
-	//Functions
-	static void checkBinaries1(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception);
-	static void checkBinaries2(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo, volatile bool *exception);
-	static void checkBinaries3(volatile bool &success, QString &failedPath, const SysinfoModel *const sysinfo);
+	//Thread main
+	virtual int threadMain(void);
 };

@@ -30,7 +30,7 @@
 #include <QPair>
 
 static const unsigned int VER_X264_VSPIPE_API =  3;
-static const unsigned int VER_X264_VSPIPE_VER = 24;
+static const unsigned int VER_X264_VSPIPE_VER = 43;
 
 // ------------------------------------------------------------
 // Encoder Info

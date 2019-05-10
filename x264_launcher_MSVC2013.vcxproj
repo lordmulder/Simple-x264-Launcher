@@ -312,6 +312,14 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
     </CustomBuild>
+    <CustomBuild Include="src\thread_abstract.h">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe" -o "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp" "%(FullPath)"</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp"</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC "$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp"</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)tmp\$(ProjectName)\MOC_%(Filename).cpp;%(Outputs)</Outputs>
+    </CustomBuild>
     <ClInclude Include="tmp\x264_launcher\UIC_win_about.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_addJob.h" />
     <ClInclude Include="tmp\x264_launcher\UIC_win_editor.h" />
@@ -471,6 +479,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClCompile Include="src\source_factory.cpp" />
     <ClCompile Include="src\source_vapoursynth.cpp" />
     <ClCompile Include="src\string_validator.cpp" />
+    <ClCompile Include="src\thread_abstract.cpp" />
     <ClCompile Include="src\thread_avisynth.cpp" />
     <ClCompile Include="src\thread_binaries.cpp" />
     <ClCompile Include="src\thread_encode.cpp" />
@@ -492,6 +501,7 @@ copy /Y "$(ProjectDir)\..\Prerequisites\Qt4\$(PlatformToolset)\Shared\plugins\im
     <ClCompile Include="tmp\x264_launcher\MOC_input_filter.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_model_jobList.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_model_logFile.cpp" />
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_abstract.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_avisynth.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_binaries.cpp" />
     <ClCompile Include="tmp\x264_launcher\MOC_thread_encode.cpp" />

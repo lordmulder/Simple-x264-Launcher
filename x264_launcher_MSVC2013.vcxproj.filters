@@ -119,9 +119,6 @@
     <ClInclude Include="src\encoder_nvencc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_startup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -292,6 +289,12 @@
     <ClCompile Include="tmp\x264_launcher\MOC_thread_startup.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread_abstract.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\MOC_thread_abstract.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -367,6 +370,12 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="src\thread_binaries.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_startup.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\thread_abstract.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

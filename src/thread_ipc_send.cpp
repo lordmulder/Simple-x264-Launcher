@@ -55,9 +55,18 @@ IPCThread_Send::~IPCThread_Send(void)
 {
 }
 
-void IPCThread_Send::run()
+////////////////////////////////////////////////////////////
+// Thread Main
+////////////////////////////////////////////////////////////
+
+void IPCThread_Send::run(void)
 {
 	setTerminationEnabled(true);
+	AbstractThread::run();
+}
+
+int IPCThread_Send::threadMain(void)
+{
 	bool bSentFiles = false;
 	const MUtils::OS::ArgumentMap &args = MUtils::OS::arguments();
 
@@ -114,6 +123,8 @@ void IPCThread_Send::run()
 			qWarning("Failed to send IPC message!");
 		}
 	}
+
+	return 1;
 }
 
 ////////////////////////////////////////////////////////////

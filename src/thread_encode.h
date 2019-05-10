@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "thread_abstract.h"
 #include "model_status.h"
 
 #include <QThread>
@@ -37,7 +38,7 @@ class JobObject;
 class AbstractEncoder;
 class AbstractSource;
 
-class EncodeThread : public QThread
+class EncodeThread : public AbstractThread
 {
 	Q_OBJECT
 
@@ -100,10 +101,9 @@ protected:
 
 	//Entry point
 	virtual void run(void);
-	virtual void checkedRun(void);
 	
-	//Main encoding functions
-	void encode(void);
+	//Thread main
+	virtual int threadMain(void);
 
 	//Static functions
 	static QString getPasslogFile(const QString &outputFile);

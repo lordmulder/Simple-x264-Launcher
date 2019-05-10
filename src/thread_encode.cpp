@@ -86,13 +86,13 @@ private:
 		log("\nPROCESS ABORTED BY USER !!!"); \
 		setStatus(JobStatus_Aborted); \
 		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
-		return; \
+		return 0; \
 	} \
 	else if(!(OK_FLAG)) \
 	{ \
 		setStatus(JobStatus_Failed); \
 		if(QFileInfo(m_outputFileName).exists() && (QFileInfo(m_outputFileName).size() == 0)) QFile::remove(m_outputFileName); \
-		return; \
+		return 0; \
 	} \
 } \
 while(0)
@@ -168,57 +168,21 @@ EncodeThread::~EncodeThread(void)
 
 void EncodeThread::run(void)
 {
-#if !defined(_DEBUG)
-	__try
+	m_progress = 0;
+	m_status = JobStatus_Starting;
+
+	AbstractThread::run();
+
+	if (m_exception)
 	{
-		checkedRun();
+		log(tr("UNHANDLED EXCEPTION ERROR IN THREAD !!!"));
+		setStatus(JobStatus_Failed);
 	}
-	__except(1)
-	{
-		qWarning("STRUCTURED EXCEPTION ERROR IN ENCODE THREAD !!!");
-	}
-#else
-	checkedRun();
-#endif
 
 	if(m_jobObject)
 	{
 		m_jobObject->terminateJob(42);
 		MUTILS_DELETE(m_jobObject);
-	}
-}
-
-void EncodeThread::checkedRun(void)
-{
-	m_progress = 0;
-	m_status = JobStatus_Starting;
-
-	try
-	{
-		try
-		{
-			ExecutionStateHandler executionStateHandler;
-			encode();
-		}
-		catch(const std::exception &e)
-		{
-			log(tr("EXCEPTION ERROR IN THREAD: ").append(QString::fromLatin1(e.what())));
-			setStatus(JobStatus_Failed);
-		}
-		catch(char *msg)
-		{
-			log(tr("EXCEPTION ERROR IN THREAD: ").append(QString::fromLatin1(msg)));
-			setStatus(JobStatus_Failed);
-		}
-		catch(...)
-		{
-			log(tr("UNHANDLED EXCEPTION ERROR IN THREAD !!!"));
-			setStatus(JobStatus_Failed);
-		}
-	}
-	catch(...)
-	{
-		MUtils::OS::fatal_exit(L"Unhandeled exception error in encode thread!");
 	}
 }
 
@@ -230,14 +194,14 @@ void EncodeThread::start(Priority priority)
 	m_pause = false;
 
 	while(m_semaphorePaused.tryAcquire(1, 0));
-	QThread::start(priority);
+	AbstractThread::start(priority);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Encode functions
 ///////////////////////////////////////////////////////////////////////////////
 
-void EncodeThread::encode(void)
+int EncodeThread::threadMain(void)
 {
 	QDateTime startTime = QDateTime::currentDateTime();
 
@@ -355,6 +319,8 @@ void EncodeThread::encode(void)
 	int timePassed = startTime.secsTo(QDateTime::currentDateTime());
 	log(tr("Job finished at %1, %2. Process took %3 minutes, %4 seconds.").arg(QDate::currentDate().toString(Qt::ISODate), QTime::currentTime().toString(Qt::ISODate), QString::number(timePassed / 60), QString::number(timePassed % 60)));
 	setStatus(JobStatus_Completed);
+
+	return 1; /*completed*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////

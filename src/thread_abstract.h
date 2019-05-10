@@ -19,15 +19,33 @@
 // http://www.gnu.org/licenses/gpl-2.0.txt
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef ENABLE_X264_VERSION_INCLUDE
-#error Please do *not* inlcude "version.h" directly!
-#endif
+#pragma once
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 9
-#define VER_X264_PATCH 0
-#define VER_X264_BUILD 1157
+//Qt
+#include <QThread>
 
-#define VER_X264_PORTABLE_EDITION (0)
+class AbstractThread : public QThread
+{
+	Q_OBJECT
 
-#define VER_X264_PRE_RELEASE (0)
+public:
+	AbstractThread(void);
+	~AbstractThread(void);
+
+	bool getException(void) { return m_exception; }
+	int getSuccess(void) { return m_success; }
+
+protected:
+	volatile int m_success;
+	volatile bool m_exception;
+
+	//Entry point
+	virtual void run(void);
+	
+	//Error handling
+	static void runChecked1(AbstractThread *const thread, volatile int &success, volatile bool *exception);
+	static void runChecked2(AbstractThread *const thread, volatile int &success, volatile bool *exception);
+
+	//Thread main
+	virtual int threadMain(void) = 0;
+};

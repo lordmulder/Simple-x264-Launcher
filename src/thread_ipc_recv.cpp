@@ -60,9 +60,14 @@ IPCThread_Recv::~IPCThread_Recv(void)
 // Thread Main
 ////////////////////////////////////////////////////////////
 
-void IPCThread_Recv::run()
+void IPCThread_Recv::run(void)
 {
 	setTerminationEnabled(true);
+	AbstractThread::run();
+}
+
+int IPCThread_Recv::threadMain(void)
+{
 	QStringList params;
 	quint32 command, flags;
 
@@ -81,6 +86,8 @@ void IPCThread_Recv::run()
 			break;
 		}
 	}
+
+	return 1;
 }
 
 ////////////////////////////////////////////////////////////

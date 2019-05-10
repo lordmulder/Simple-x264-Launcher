@@ -22,14 +22,14 @@
 
 #pragma once
 
-#include <QThread>
+#include "thread_abstract.h"
 
 namespace MUtils
 {
 	class IPCChannel;
 }
 
-class IPCThread_Send: public QThread
+class IPCThread_Send: public AbstractThread
 {
 	Q_OBJECT
 
@@ -37,7 +37,11 @@ public:
 	IPCThread_Send(MUtils::IPCChannel *const ipcChannel);
 	~IPCThread_Send(void);
 
-	void run();
+	//Entry point
+	virtual void run(void);
+
+	//Thread main
+	virtual int threadMain(void);
 
 protected:
 	MUtils::IPCChannel *const m_ipcChannel;

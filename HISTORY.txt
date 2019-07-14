@@ -2,6 +2,11 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.91 [2019-07-14]
+* Updated x265 to version 3.1+2
+* Updated build environment to Visual Studio 2019 with Update-1
+* Various improvements to Avisynth/VapourSynth detection
+
 Version 2.90 [2019-05-02]
 * Updated x265 to version 3.0+18
 * Updated x264 to revision 2969 (API v157)

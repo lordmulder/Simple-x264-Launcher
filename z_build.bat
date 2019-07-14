@@ -2,8 +2,9 @@
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
-set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build"
-set "TOOLS_VER=141"
+set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
+set "TOOLS_VER=142"
+set "SLN_FNAME=x264_launcher_MSVC2019.sln"
 
 REM ###############################################
 REM # DO NOT MODIFY ANY LINES BELOW THIS LINE !!! #
@@ -75,9 +76,9 @@ REM ///////////////////////////////////////////////////////////////////////////
 echo ---------------------------------------------------------------------
 echo BEGIN BUILD
 echo ---------------------------------------------------------------------
-MSBuild.exe /property:Configuration=release /property:Platform=win32 /target:clean   "%~dp0\x264_launcher_MSVC2017.sln"
+MSBuild.exe /property:Configuration=release /property:Platform=win32 /target:clean   "%~dp0\%SLN_FNAME%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
-MSBuild.exe /property:Configuration=release /property:Platform=win32 /target:rebuild "%~dp0\x264_launcher_MSVC2017.sln"
+MSBuild.exe /property:Configuration=release /property:Platform=win32 /target:rebuild "%~dp0\%SLN_FNAME%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 REM ///////////////////////////////////////////////////////////////////////////
@@ -125,13 +126,19 @@ copy "%~dp0\*.txt"                               "%PACK_PATH%"
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Copy dependencies
 REM ///////////////////////////////////////////////////////////////////////////
-copy "%~dp0\..\Prerequisites\MSVC\redist\vc\v%TOOLS_VER%_xp\x86\*.dll"              "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtCore4.dll"            "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtGui4.dll"             "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtSvg4.dll"             "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
-copy "%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
+if %TOOLS_VER% GEQ 142 (
+	set "PATH_REDIST_QT=%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%"
+	set "PATH_REDIST_VC=%~dp0\..\Prerequisites\MSVC\redist\vc\v%TOOLS_VER%"
+) else (
+	set "PATH_REDIST_QT=%~dp0\..\Prerequisites\Qt4\v%TOOLS_VER%_xp"
+	set "PATH_REDIST_VC=%~dp0\..\Prerequisites\MSVC\redist\vc\v%TOOLS_VER%_xp"
+)
+copy "%PATH_REDIST_VC%\x86\*.dll"                         "%PACK_PATH%"
+copy "%PATH_REDIST_QT%\Shared\bin\QtCore4.dll"            "%PACK_PATH%"
+copy "%PATH_REDIST_QT%\Shared\bin\QtGui4.dll"             "%PACK_PATH%"
+copy "%PATH_REDIST_QT%\Shared\bin\QtSvg4.dll"             "%PACK_PATH%"
+copy "%PATH_REDIST_QT%\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
+copy "%PATH_REDIST_QT%\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
 del "%PACK_PATH%\imageformats\*d4.dll" 2> NUL
 if %TOOLS_VER% GEQ 140 (
 	copy "%~dp0\..\Prerequisites\MSVC\redist\ucrt\DLLs\x86\*.dll" "%PACK_PATH%"

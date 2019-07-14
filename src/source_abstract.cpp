@@ -217,13 +217,13 @@ QHash<QString, QString> AbstractSource::getExtraEnv(void) const
 {
 	QHash<QString, QString> extraEnv;
 
-	const QString profilePath = MUtils::OS::known_folder(MUtils::OS::FOLDER_USER_PROFILE);
+	const QString profilePath = MUtils::OS::known_folder(MUtils::OS::FOLDER_PROFILE_USER);
 	if (!profilePath.isEmpty())
 	{
 		extraEnv.insert("USERPROFILE", QDir::toNativeSeparators(profilePath));
 	}
 
-	const QString appDataPath = MUtils::OS::known_folder(MUtils::OS::FOLDER_ROAMING_DATA);
+	const QString appDataPath = MUtils::OS::known_folder(MUtils::OS::FOLDER_APPDATA_ROAM);
 	if (!appDataPath.isEmpty())
 	{
 		extraEnv.insert("APPDATA", QDir::toNativeSeparators(appDataPath));

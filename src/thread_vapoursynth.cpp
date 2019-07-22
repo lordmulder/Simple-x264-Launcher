@@ -186,7 +186,7 @@ int VapourSynthCheckThread::threadMain(void)
 	//Look for "portable" VapourSynth version
 	for (size_t i = 0; i < 2U; i++)
 	{
-		const QString vpsPortableDir = QString("%1/extra/VapourSynth-%u").arg(QCoreApplication::applicationDirPath(), VPS_BITNESS(i));
+		const QString vpsPortableDir = QString("%1/extra/VapourSynth-%2").arg(QCoreApplication::applicationDirPath(), QString::number(VPS_BITNESS(i)));
 		if (VALID_DIR(vpsPortableDir))
 		{
 			const QFileInfo vpsPortableFile = QFileInfo(QString("%1/vspipe.exe").arg(vpsPortableDir));
@@ -197,7 +197,7 @@ int VapourSynthCheckThread::threadMain(void)
 		}
 	}
 
-	//Read VapourSynth path from registry
+	//Read VapourSynth path from the registry
 	if (vapoursynthPath.isEmpty())
 	{
 		for (size_t i = 0; i < 3U; i++)

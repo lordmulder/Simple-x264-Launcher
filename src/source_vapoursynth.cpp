@@ -131,7 +131,7 @@ QString VapoursynthSource::printVersion(const unsigned int &revision, const bool
 	unsigned int core, build;
 	splitRevision(revision, core, build);
 
-	return tr("\nVapourSynth version: r%1 (API r%2)").arg(QString::number(build), QString::number(core));
+	return tr("VapourSynth version: r%1 (API r%2)").arg(QString::number(build), QString::number(core));
 }
 
 bool VapoursynthSource::isVersionSupported(const unsigned int &revision, const bool &modified)

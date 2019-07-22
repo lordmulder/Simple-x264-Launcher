@@ -145,8 +145,7 @@ bool AbstractSource::checkSourceProperties(ClipInfo &clipInfo)
 			log(tr("\nPROCESS EXITED WITH ERROR CODE: %1").arg(QString::number(exitCode)));
 			if((exitCode < 0) || (exitCode >= 32))
 			{
-				log(tr("\nIMPORTANT: The Avs2YUV process terminated abnormally. This means Avisynth or one of your Avisynth-Plugin's just crashed."));
-				log(tr("IMPORTANT: Please fix your Avisynth script and try again! If you use Avisynth-MT, try using a *stable* Avisynth instead!"));
+				log(tr("\nIMPORTANT: The input process terminated abnormally. This means Avisynth/VapourSynth or one of its plugins crashed!"));
 			}
 		}
 		return false;

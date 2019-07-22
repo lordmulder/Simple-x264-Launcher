@@ -30,6 +30,7 @@
 #include <QTimer>
 #include <QApplication>
 #include <QDir>
+#include <QHash>
 
 //Internal
 #include "global.h"
@@ -38,13 +39,24 @@
 //CRT
 #include <cassert>
 
-//Const
-static const bool ENABLE_PORTABLE_VPS = true;
-
 //Static
 QMutex VapourSynthCheckThread::m_vpsLock;
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
+
+//Const
+static const char* const VPS_REG_KEYS = "SOFTWARE\\VapourSynth";
+static const char* const VPS_REG_NAME = "Path";
+
+//Default VapurSynth architecture
+#if _WIN64 || __x86_64__
+#define VAPOURSYNTH_DEF VAPOURSYNTH_X64
+#else
+#define VAPOURSYNTH_DEF VAPOURSYNTH_X86;
+#endif
+
+//Enable detection of "portabel" edition?
+#define ENABLE_PORTABLE_VPS true
 
 //-------------------------------------
 // Auxilary functions
@@ -54,12 +66,12 @@ QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 #define BOOLIFY(X) ((X) ? '1' : '0')
 #define VPS_BITNESS(X) (((X) + 1U) * 32U)
 
-static inline QString &cleanDir(QString &path)
+static inline QString& cleanDir(QString& path)
 {
-	if(!path.isEmpty())
+	if (!path.isEmpty())
 	{
 		path = QDir::fromNativeSeparators(path);
-		while(path.endsWith('/'))
+		while (path.endsWith('/'))
 		{
 			path.chop(1);
 		}
@@ -71,12 +83,13 @@ static inline QString &cleanDir(QString &path)
 // External API
 //-------------------------------------
 
-bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
+bool VapourSynthCheckThread::detect(SysinfoModel* sysinfo)
 {
-	sysinfo->clearVapourSynth();
-	sysinfo->clearVPSPath();
-	
 	QMutexLocker lock(&m_vpsLock);
+
+	sysinfo->clearVapourSynth();
+	sysinfo->clearVPS32Path();
+	sysinfo->clearVPS64Path();
 
 	QEventLoop loop;
 	VapourSynthCheckThread thread;
@@ -85,17 +98,17 @@ bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
 
 	connect(&thread, SIGNAL(finished()), &loop, SLOT(quit()));
 	connect(&thread, SIGNAL(terminated()), &loop, SLOT(quit()));
-	
+
 	thread.start();
 	QTimer::singleShot(30000, &loop, SLOT(quit()));
-	
+
 	qDebug("VapourSynth thread has been created, please wait...");
 	loop.exec(QEventLoop::ExcludeUserInputEvents);
 	qDebug("VapourSynth thread finished.");
 
 	QApplication::restoreOverrideCursor();
 
-	if(!thread.wait(1000))
+	if (!thread.wait(1000))
 	{
 		qWarning("VapourSynth thread encountered timeout -> probably deadlock!");
 		thread.terminate();
@@ -103,24 +116,31 @@ bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
 		return false;
 	}
 
-	if(thread.getException())
+	if (thread.getException())
 	{
 		qWarning("VapourSynth thread encountered an exception !!!");
 		return false;
 	}
 
-	if(thread.getSuccess())
-	{
-		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X86, thread.getSuccess() & VAPOURSYNTH_X86);
-		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X64, thread.getSuccess() & VAPOURSYNTH_X64);
-		sysinfo->setVPSPath(thread.getPath());
-		qDebug("VapourSynth support is officially enabled now! [x86=%c, x64=%c]", BOOLIFY(sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86)), BOOLIFY(sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64)));
-	}
-	else
+	if (!thread.getSuccess())
 	{
 		qWarning("VapourSynth could not be found -> VapourSynth support disabled!");
+		return false;
 	}
 
+	if (thread.getSuccess() & VAPOURSYNTH_X86)
+	{
+		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X86, true);
+		sysinfo->setVPS32Path(thread.getPath32());
+	}
+
+	if (thread.getSuccess() & VAPOURSYNTH_X64)
+	{
+		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X64, true);
+		sysinfo->setVPS64Path(thread.getPath64());
+	}
+
+	qDebug("VapourSynth support is officially enabled now! [x86=%c, x64=%c]", BOOLIFY(sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86)), BOOLIFY(sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64)));
 	return true;
 }
 
@@ -130,7 +150,8 @@ bool VapourSynthCheckThread::detect(SysinfoModel *sysinfo)
 
 VapourSynthCheckThread::VapourSynthCheckThread(void)
 {
-	m_vpsPath.clear();
+	m_vpsPath[0U].clear();
+	m_vpsPath[1U].clear();
 }
 
 VapourSynthCheckThread::~VapourSynthCheckThread(void)
@@ -139,61 +160,39 @@ VapourSynthCheckThread::~VapourSynthCheckThread(void)
 
 void VapourSynthCheckThread::run(void)
 {
-	m_vpsPath.clear();
+	m_vpsPath[0U].clear();
+	m_vpsPath[1U].clear();
 	StarupThread::run();
 }
 
 int VapourSynthCheckThread::threadMain(void)
 {
-	static const char *VPS_CORE_DIR[] =
-	{
-		"core32",
-		"core64",
-		NULL
-	};
 	static const int VPS_BIT_FLAG[] =
 	{
 		VAPOURSYNTH_X86,
 		VAPOURSYNTH_X64,
 		NULL
 	};
-	static const char *VPS_REG_KEYS[] = 
-	{
-		"SOFTWARE\\VapourSynth",
-		"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\VapourSynth_is1",
-		NULL
-	};
-	static const char *VPS_REG_NAME[] =
-	{
-		"Path",
-		"InstallLocation",
-		"Inno Setup: App Path",
-		NULL
-	};
 	static const MUtils::Registry::reg_scope_t REG_SCOPE[3] =
 	{
-		MUtils::Registry::scope_default,
 		MUtils::Registry::scope_wow_x32,
-		MUtils::Registry::scope_wow_x64
+		MUtils::Registry::scope_wow_x64,
+		MUtils::Registry::scope_default
 	};
 
-	QString vapoursynthPath;
+	QHash<int, QString> vapoursynthPath;
 	int flags = 0;
 
 	//Look for "portable" VapourSynth version
-	if (ENABLE_PORTABLE_VPS)
+	for (size_t i = 0; i < 2U; i++)
 	{
-		const QString vpsPortableDir = QString("%1/extra/VapourSynth").arg(QCoreApplication::applicationDirPath());
+		const QString vpsPortableDir = QString("%1/extra/VapourSynth-%u").arg(QCoreApplication::applicationDirPath(), VPS_BITNESS(i));
 		if (VALID_DIR(vpsPortableDir))
 		{
-			for (size_t i = 0; VPS_CORE_DIR[i]; i++)
+			const QFileInfo vpsPortableFile = QFileInfo(QString("%1/vspipe.exe").arg(vpsPortableDir));
+			if (vpsPortableFile.exists() && vpsPortableFile.isFile())
 			{
-				const QFileInfo vpsPortableDll = QFileInfo(QString("%1/%2/VapourSynth.dll").arg(vpsPortableDir, QString::fromLatin1(VPS_CORE_DIR[i])));
-				if (vpsPortableDll.exists() && vpsPortableDll.isFile())
-				{
-					vapoursynthPath = vpsPortableDir;
-					break;
-				}
+				vapoursynthPath.insert(VPS_BIT_FLAG[i], vpsPortableDir);
 			}
 		}
 	}
@@ -201,34 +200,26 @@ int VapourSynthCheckThread::threadMain(void)
 	//Read VapourSynth path from registry
 	if (vapoursynthPath.isEmpty())
 	{
-		for (size_t i = 0; VPS_REG_KEYS[i]; i++)
+		for (size_t i = 0; i < 3U; i++)
 		{
-			for (size_t j = 0; VPS_REG_NAME[j]; j++)
+			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), REG_SCOPE[i]))
 			{
-				for (size_t k = 0; k < 3; k++)
+				QString vpsInstallPath;
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), QString::fromLatin1(VPS_REG_NAME), vpsInstallPath, REG_SCOPE[i]))
 				{
-					if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS[i]), REG_SCOPE[k]))
+					if (VALID_DIR(vpsInstallPath))
 					{
-						QString temp;
-						if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS[i]), QString::fromLatin1(VPS_REG_NAME[j]), temp, REG_SCOPE[k]))
+						const QString vpsCorePath = QString("%1/core").arg(cleanDir(vpsInstallPath));
+						if (VALID_DIR(vpsCorePath))
 						{
-							temp = cleanDir(temp);
-							if (VALID_DIR(temp))
+							const int flag = getVapourSynthType(REG_SCOPE[i]);
+							if (!vapoursynthPath.contains(flag))
 							{
-								vapoursynthPath = temp;
-								break;
+								vapoursynthPath.insert(flag, vpsCorePath);
 							}
 						}
 					}
 				}
-				if (!vapoursynthPath.isEmpty())
-				{
-					break;
-				}
-			}
-			if (!vapoursynthPath.isEmpty())
-			{
-				break;
 			}
 		}
 	}
@@ -241,22 +232,31 @@ int VapourSynthCheckThread::threadMain(void)
 	}
 
 	//Validate the VapourSynth installation now!
-	qDebug("VapourSynth Dir: %s", vapoursynthPath.toUtf8().constData());
-	for (size_t i = 0; VPS_CORE_DIR[i]; i++)
+	for (size_t i = 0; i < 2U; i++)
 	{
-		QFile *vpsExeFile, *vpsDllFile;
-		if (isVapourSynthComplete(QString("%1/%2").arg(vapoursynthPath, QString::fromLatin1(VPS_CORE_DIR[i])), vpsExeFile, vpsDllFile))
+		if (vapoursynthPath.contains(VPS_BIT_FLAG[i]))
 		{
-			if (vpsExeFile && checkVapourSynth(vpsExeFile->fileName()))
+			const QString path = vapoursynthPath[VPS_BIT_FLAG[i]];
+			qDebug("VapourSynth %u-Bit \"core\" path: %s", VPS_BITNESS(i), MUTILS_UTF8(path));
+			QFile *vpsExeFile, *vpsDllFile;
+			if (isVapourSynthComplete(path, vpsExeFile, vpsDllFile))
 			{
-				flags |= VPS_BIT_FLAG[i];
-				qDebug("VapourSynth %u-Bit edition found!", VPS_BITNESS(i));
-				m_vpsExePath[i].reset(vpsExeFile);
-				m_vpsDllPath[i].reset(vpsDllFile);
+				if (vpsExeFile && checkVapourSynth(vpsExeFile->fileName()))
+				{
+					qDebug("VapourSynth %u-Bit edition found!", VPS_BITNESS(i));
+					m_vpsExePath[i].reset(vpsExeFile);
+					m_vpsDllPath[i].reset(vpsDllFile);
+					m_vpsPath[i] = path;
+					flags |= VPS_BIT_FLAG[i];
+				}
+				else
+				{
+					qWarning("VapourSynth %u-Bit edition was found, but version check has failed!", VPS_BITNESS(i));
+				}
 			}
 			else
 			{
-				qWarning("VapourSynth %u-Bit edition was found, but version check has failed!", VPS_BITNESS(i));
+				qWarning("VapourSynth %u-Bit edition was found, but appears to be incomplete!", VPS_BITNESS(i));
 			}
 		}
 		else
@@ -265,18 +265,25 @@ int VapourSynthCheckThread::threadMain(void)
 		}
 	}
 
-	//Return VapourSynth path
-	if(flags)
-	{
-		m_vpsPath = vapoursynthPath;
-	}
-
 	return flags;
 }
 
 //-------------------------------------
 // Internal functions
 //-------------------------------------
+
+VapourSynthCheckThread::VapourSynthFlags VapourSynthCheckThread::getVapourSynthType(const int scope)
+{
+	switch (scope)
+	{
+		case MUtils::Registry::scope_wow_x32:
+			return VAPOURSYNTH_X86;
+		case MUtils::Registry::scope_wow_x64:
+			return VAPOURSYNTH_X64;
+		default:
+			return VAPOURSYNTH_DEF;
+	}
+}
 
 bool VapourSynthCheckThread::isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile)
 {

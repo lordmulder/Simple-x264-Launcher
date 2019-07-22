@@ -47,10 +47,11 @@ protected:
 	VapourSynthCheckThread(void);
 	~VapourSynthCheckThread(void);
 
-	QString getPath(void) { return m_vpsPath; }
+	QString getPath32(void) { return m_vpsPath[0U]; }
+	QString getPath64(void) { return m_vpsPath[1U]; }
 
 private:
-	QString m_vpsPath;
+	QString m_vpsPath[2];
 
 	static QMutex m_vpsLock;
 	static QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
@@ -63,6 +64,7 @@ private:
 	virtual int threadMain(void);
 
 	//Internal functions
+	static VapourSynthFlags getVapourSynthType(const int scope);
 	static bool isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile);
 	static bool checkVapourSynth(const QString &vspipePath);
 };

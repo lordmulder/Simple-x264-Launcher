@@ -30,7 +30,7 @@
 #include <QPair>
 
 static const unsigned int VER_X264_VSPIPE_API =  3;
-static const unsigned int VER_X264_VSPIPE_VER = 43;
+static const unsigned int VER_X264_VSPIPE_VER = 46;
 
 // ------------------------------------------------------------
 // Encoder Info
@@ -41,7 +41,7 @@ class VapoursyntSourceInfo : public AbstractSourceInfo
 public:
 	virtual QString getBinaryPath(const SysinfoModel *const sysinfo, const bool& x64) const
 	{
-		return QString("%1/core%2/vspipe.exe").arg(sysinfo->getVPSPath(), (x64 ? "64" : "32"));
+		return QString("%1/vspipe.exe").arg(x64 ? sysinfo->getVPS64Path() : sysinfo->getVPS32Path());
 	}
 };
 
@@ -79,12 +79,20 @@ QString VapoursynthSource::getName(void) const
 
 bool VapoursynthSource::isSourceAvailable()
 {
-	if(!(m_sysinfo->hasVapourSynth() && (!m_sysinfo->getVPSPath().isEmpty()) && QFileInfo(getBinaryPath()).isFile()))
+	if (m_sysinfo->hasVapourSynth())
 	{
-		log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
-		return false;
+		if (m_sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X86) && (!m_sysinfo->getVPS32Path().isEmpty()))
+		{
+			return true;
+		}
+		if (m_sysinfo->getVapourSynth(SysinfoModel::VapourSynth_X64) && (!m_sysinfo->getVPS64Path().isEmpty()))
+		{
+			return true;
+		}
 	}
-	return true;
+
+	log(tr("\nVPY INPUT REQUIRES VAPOURSYNTH, BUT IT IS *NOT* AVAILABLE !!!"));
+	return false;
 }
 
 void VapoursynthSource::checkVersion_init(QList<QRegExp*> &patterns, QStringList &cmdLine)

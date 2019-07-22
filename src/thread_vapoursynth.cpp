@@ -122,19 +122,20 @@ bool VapourSynthCheckThread::detect(SysinfoModel* sysinfo)
 		return false;
 	}
 
-	if (!thread.getSuccess())
+	const int success = thread.getSuccess();
+	if (!success)
 	{
 		qWarning("VapourSynth could not be found -> VapourSynth support disabled!");
-		return false;
+		return true;
 	}
 
-	if (thread.getSuccess() & VAPOURSYNTH_X86)
+	if (success & VAPOURSYNTH_X86)
 	{
 		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X86, true);
 		sysinfo->setVPS32Path(thread.getPath32());
 	}
 
-	if (thread.getSuccess() & VAPOURSYNTH_X64)
+	if (success & VAPOURSYNTH_X64)
 	{
 		sysinfo->setVapourSynth(SysinfoModel::VapourSynth_X64, true);
 		sysinfo->setVPS64Path(thread.getPath64());

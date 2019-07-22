@@ -2,6 +2,11 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.92 [2019-07-22]
+* Updated x264 to revision 2984 (API v158)
+* Fixed detection of VapourSynth R46
+* Note: Minimum supported VapourSynth version is R46 now!
+
 Version 2.91 [2019-07-14]
 * Updated x265 to version 3.1+2
 * Updated build environment to Visual Studio 2019 with Update-1

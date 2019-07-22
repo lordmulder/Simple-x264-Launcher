@@ -35,7 +35,7 @@ The minimum system requirements to run Simple x264/x265 Launcher are as follows:
 * 64-Bit editions of Windows are highly recommended, though 32-Bit editions will work as well
 * The CPU must support at least the MMX and SSE instruction sets
 * Avisynth input only available with [Avisynth](http://avisynth.nl/index.php/Main_Page#Official_builds) **2.6** installed &ndash; Avisynth **2.5.x** is *not* recommended!
-* VapourSynth input only available with [VapourSynth](http://www.vapoursynth.com/) **r24+** installed &ndash; [Python](https://www.python.org/downloads/windows/) is a prerequisite for VapourSynth!
+* VapourSynth input only available with [VapourSynth](http://www.vapoursynth.com/) **R46+** installed &ndash; [Python](https://www.python.org/downloads/windows/) is a prerequisite for VapourSynth!
 * YV16/YV24 color spaces require Avisynth 2.6 (see section 10)
 
 **Note:** Most of these requirements are *not* imposed by Simple x264 Launcher itself, but by the encoders (e.g. x264 and x265) that we use.
@@ -110,22 +110,21 @@ Simple x264/x265 Launcher can be run in a "portable" mode. This may be helpful, 
 
 ## VapourSynth
 
-There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VapourSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of "portable" VapourSynth needs to go to the `extra\VapourSynth\core32` sub-directory and the *64-Bit* version needs to go to the `extra\VapourSynth\core64` sub-directory. Be aware, however, that "portable" VapourSynth requires **embeddable Python** to work! So, you *must* download Python as "embeddable zip file" from the Python web-site and extract that into the same sub-directory as the VapourSynth "portable" binaries. In the end, it should look like this:
+There now is a "portable" edition **VapourSynth** available, which *Simple x264/x265 Launcher* can use. For this purpose, download the "portable" edition VapourSynth an *extract* it into the sub-directory `extra\VapourSynth` inside of the Simple x264/x265 Launcher "main" directory (i.e. where the `x264_launcher.exe` file is located). More specifically, the *32-Bit* version of "portable" VapourSynth needs to go to the `extra\VapourSynth-32` sub-directory and the *64-Bit* version needs to go to the `extra\VapourSynth-64` sub-directory. Be aware, however, that "portable" VapourSynth requires *embeddable Python* to work! So, you ***must*** download Python as "embeddable zip file" from the Python web-site and extract that into the same sub-directory as the VapourSynth "portable" binaries. In the end, it should look like this:
 ```
 InstallPath\
 ├─ x264_launcher_portable.exe
 └─ extra\
-   └─ VapourSynth\
-      ├─ core32\
-      │  ├─ python35.dll     <32-Bit>
-      │  ├─ VapourSynth.dll  <32-Bit>
-      │  ├─ VSPipe.exe       <32-Bit>
-      │  └─ etc…
-      └─ core64\
-         ├─ python35.dll     <64-Bit>
-         ├─ VapourSynth.dll  <64-Bit>
-         ├─ VSPipe.exe       <64-Bit>
-         └─ etc…
+   ├─ VapourSynth-32\
+   │  ├─ VapourSynth.dll  <32-Bit>
+   │  ├─ VSPipe.exe       <32-Bit>
+   │  ├─ python37.dll     <32-Bit>
+   │  └─ etc…
+   └─ VapourSynth-64\
+      ├─ VapourSynth.dll  <64-Bit>
+      ├─ VSPipe.exe       <64-Bit>
+      ├─ python37.dll     <64-Bit>
+      └─ etc…
 ```
 
 ## Avisynth

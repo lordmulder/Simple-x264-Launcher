@@ -46,7 +46,7 @@ QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 
 //Const
 static const char* const VPS_REG_KEYS = "SOFTWARE\\VapourSynth";
-static const char* const VPS_REG_NAME = "Path";
+static const char* const VPS_REG_NAME = "VapourSynthDLL";
 
 //Default VapurSynth architecture
 #if _WIN64 || __x86_64__
@@ -62,21 +62,12 @@ static const char* const VPS_REG_NAME = "Path";
 // Auxilary functions
 //-------------------------------------
 
-#define VALID_DIR(STR) ((!(STR).isEmpty()) && QDir((STR)).exists())
 #define BOOLIFY(X) ((X) ? '1' : '0')
 #define VPS_BITNESS(X) (((X) + 1U) * 32U)
 
-static inline QString& cleanDir(QString& path)
+static inline bool VALID_DIR(const QString &path)
 {
-	if (!path.isEmpty())
-	{
-		path = QDir::fromNativeSeparators(path);
-		while (path.endsWith('/'))
-		{
-			path.chop(1);
-		}
-	}
-	return path;
+	return (!path.isEmpty()) && QDir(path).exists();
 }
 
 //-------------------------------------
@@ -205,13 +196,14 @@ int VapourSynthCheckThread::threadMain(void)
 		{
 			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), REG_SCOPE[i]))
 			{
-				QString vpsInstallPath;
-				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), QString::fromLatin1(VPS_REG_NAME), vpsInstallPath, REG_SCOPE[i]))
+				QString vpsDllPath;
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), QString::fromLatin1(VPS_REG_NAME), vpsDllPath, REG_SCOPE[i]))
 				{
-					if (VALID_DIR(vpsInstallPath))
+					const QFileInfo vpsDllInfo(QDir::fromNativeSeparators(vpsDllPath));
+					if (vpsDllInfo.exists() && vpsDllInfo.isFile())
 					{
-						const QString vpsCorePath = QString("%1/core").arg(cleanDir(vpsInstallPath));
-						if (VALID_DIR(vpsCorePath))
+						const QString vpsCorePath = vpsDllInfo.canonicalPath();
+						if (!vpsCorePath.isEmpty())
 						{
 							const int flag = getVapourSynthType(REG_SCOPE[i]);
 							if (!vapoursynthPath.contains(flag))

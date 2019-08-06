@@ -27,6 +27,7 @@
 #include <QMutex>
 
 class QFile;
+class QFileInfo;
 class SysinfoModel;
 
 class VapourSynthCheckThread : public StarupThread
@@ -65,6 +66,6 @@ private:
 
 	//Internal functions
 	static VapourSynthFlags getVapourSynthType(const int scope);
-	static bool isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile);
+	static bool isVapourSynthComplete(const QFileInfo& vpsDllInfo, const QFileInfo& vpsExeInfo, QFile*& vpsExeFile, QFile*& vpsDllFile);
 	static bool checkVapourSynth(const QString &vspipePath);
 };

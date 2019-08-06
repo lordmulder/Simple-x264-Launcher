@@ -31,6 +31,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QHash>
+#include <QAbstractFileEngine.h>
 
 //Internal
 #include "global.h"
@@ -45,7 +46,9 @@ QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 
 //Const
-static const char* const VPS_REG_KEYS = "SOFTWARE\\VapourSynth";
+static const char* const VPS_DLL_NAME = "vapoursynth.dll";
+static const char* const VPS_EXE_NAME = "vspipe.exe";
+static const char* const VPS_REG_PATH = "SOFTWARE\\VapourSynth";
 static const char* const VPS_REG_NAME = "VapourSynthDLL";
 
 //Default VapurSynth architecture
@@ -64,11 +67,6 @@ static const char* const VPS_REG_NAME = "VapourSynthDLL";
 
 #define BOOLIFY(X) ((X) ? '1' : '0')
 #define VPS_BITNESS(X) (((X) + 1U) * 32U)
-
-static inline bool VALID_DIR(const QString &path)
-{
-	return (!path.isEmpty()) && QDir(path).exists();
-}
 
 //-------------------------------------
 // External API
@@ -172,53 +170,50 @@ int VapourSynthCheckThread::threadMain(void)
 		MUtils::Registry::scope_default
 	};
 
-	QHash<int, QString> vapoursynthPath;
+	QHash<int, QFileInfo> vpsDllInfo, vpsExeInfo;
 	int flags = 0;
 
 	//Look for "portable" VapourSynth version
 	for (size_t i = 0; i < 2U; i++)
 	{
-		const QString vpsPortableDir = QString("%1/extra/VapourSynth-%2").arg(QCoreApplication::applicationDirPath(), QString::number(VPS_BITNESS(i)));
-		if (VALID_DIR(vpsPortableDir))
+		const QDir vpsPortableDir(QString("%1/extra/VapourSynth-%2").arg(QCoreApplication::applicationDirPath(), QString::number(VPS_BITNESS(i))));
+		if (vpsPortableDir.exists())
 		{
-			const QFileInfo vpsPortableFile = QFileInfo(QString("%1/vspipe.exe").arg(vpsPortableDir));
-			if (vpsPortableFile.exists() && vpsPortableFile.isFile())
+			const QFileInfo vpsPortableDll(vpsPortableDir.absoluteFilePath(VPS_DLL_NAME));
+			const QFileInfo vpsPortableExe(vpsPortableDir.absoluteFilePath(VPS_EXE_NAME));
+			if ((vpsPortableDll.exists() && vpsPortableDll.isFile()) || (vpsPortableExe.exists() && vpsPortableExe.isFile()))
 			{
-				vapoursynthPath.insert(VPS_BIT_FLAG[i], vpsPortableDir);
+				vpsDllInfo.insert(VPS_BIT_FLAG[i], vpsPortableDll);
+				vpsExeInfo.insert(VPS_BIT_FLAG[i], vpsPortableExe);
 			}
 		}
 	}
 
-	//Read VapourSynth path from the registry
-	if (vapoursynthPath.isEmpty())
+	//Read VapourSynth path from registry
+	if (vpsDllInfo.isEmpty() && vpsExeInfo.isEmpty())
 	{
 		for (size_t i = 0; i < 3U; i++)
 		{
-			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), REG_SCOPE[i]))
+			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), REG_SCOPE[i]))
 			{
-				QString vpsDllPath;
-				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_KEYS), QString::fromLatin1(VPS_REG_NAME), vpsDllPath, REG_SCOPE[i]))
+				QString vpsRegDllPath;
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath, REG_SCOPE[i]))
 				{
-					const QFileInfo vpsDllInfo(QDir::fromNativeSeparators(vpsDllPath));
-					if (vpsDllInfo.exists() && vpsDllInfo.isFile())
+					QFileInfo vpsRegDllInfo(QDir::fromNativeSeparators(vpsRegDllPath));
+					vpsRegDllInfo.makeAbsolute();
+					if (vpsRegDllInfo.exists() && vpsRegDllInfo.isFile())
 					{
-						const QString vpsCorePath = vpsDllInfo.canonicalPath();
-						if (!vpsCorePath.isEmpty())
-						{
-							const int flag = getVapourSynthType(REG_SCOPE[i]);
-							if (!vapoursynthPath.contains(flag))
-							{
-								vapoursynthPath.insert(flag, vpsCorePath);
-							}
-						}
+						const int flag = getVapourSynthType(REG_SCOPE[i]);
+						vpsDllInfo.insert(flag, vpsRegDllInfo);
+						vpsExeInfo.insert(flag, vpsRegDllInfo.absoluteDir().absoluteFilePath(VPS_EXE_NAME)); /*derive VSPipe.EXE path from VapourSynth.DLL path for now!*/
 					}
 				}
 			}
 		}
 	}
 
-	//Make sure VapourSynth directory does exist
-	if(vapoursynthPath.isEmpty())
+	//Abort, if VapourSynth was *not* found
+	if (vpsDllInfo.isEmpty() || vpsExeInfo.isEmpty())
 	{
 		qWarning("VapourSynth install path not found -> disable VapouSynth support!");
 		return 0;
@@ -227,19 +222,17 @@ int VapourSynthCheckThread::threadMain(void)
 	//Validate the VapourSynth installation now!
 	for (size_t i = 0; i < 2U; i++)
 	{
-		if (vapoursynthPath.contains(VPS_BIT_FLAG[i]))
+		if (vpsDllInfo.contains(VPS_BIT_FLAG[i]) && vpsExeInfo.contains(VPS_BIT_FLAG[i]))
 		{
-			const QString path = vapoursynthPath[VPS_BIT_FLAG[i]];
-			qDebug("VapourSynth %u-Bit \"core\" path: %s", VPS_BITNESS(i), MUTILS_UTF8(path));
 			QFile *vpsExeFile, *vpsDllFile;
-			if (isVapourSynthComplete(path, vpsExeFile, vpsDllFile))
+			if (isVapourSynthComplete(vpsDllInfo[VPS_BIT_FLAG[i]], vpsExeInfo[VPS_BIT_FLAG[i]], vpsExeFile, vpsDllFile))
 			{
-				if (vpsExeFile && checkVapourSynth(vpsExeFile->fileName()))
+				m_vpsExePath[i].reset(vpsExeFile);
+				m_vpsDllPath[i].reset(vpsDllFile);
+				if (checkVapourSynth(m_vpsExePath[i]->fileEngine()->fileName(QAbstractFileEngine::CanonicalName)))
 				{
 					qDebug("VapourSynth %u-Bit edition found!", VPS_BITNESS(i));
-					m_vpsExePath[i].reset(vpsExeFile);
-					m_vpsDllPath[i].reset(vpsDllFile);
-					m_vpsPath[i] = path;
+					m_vpsPath[i] = m_vpsExePath[i]->fileEngine()->fileName(QAbstractFileEngine::CanonicalPathName);
 					flags |= VPS_BIT_FLAG[i];
 				}
 				else
@@ -278,24 +271,21 @@ VapourSynthCheckThread::VapourSynthFlags VapourSynthCheckThread::getVapourSynthT
 	}
 }
 
-bool VapourSynthCheckThread::isVapourSynthComplete(const QString &vsCorePath, QFile *&vpsExeFile, QFile *&vpsDllFile)
+bool VapourSynthCheckThread::isVapourSynthComplete(const QFileInfo& vpsDllInfo, const QFileInfo& vpsExeInfo, QFile*& vpsExeFile, QFile*& vpsDllFile)
 {
 	bool complete = false;
 	vpsExeFile = vpsDllFile = NULL;
-
-	QFileInfo vpsExeInfo(QString("%1/vspipe.exe"     ).arg(vsCorePath));
-	QFileInfo vpsDllInfo(QString("%1/vapoursynth.dll").arg(vsCorePath));
 	
 	qDebug("VapourSynth EXE: %s", vpsExeInfo.absoluteFilePath().toUtf8().constData());
 	qDebug("VapourSynth DLL: %s", vpsDllInfo.absoluteFilePath().toUtf8().constData());
 
-	if(vpsExeInfo.exists() && vpsDllInfo.exists())
+	if (vpsDllInfo.exists() && vpsDllInfo.isFile() && vpsExeInfo.exists() && vpsExeInfo.isFile())
 	{
 		vpsExeFile = new QFile(vpsExeInfo.canonicalFilePath());
 		vpsDllFile = new QFile(vpsDllInfo.canonicalFilePath());
 		if(vpsExeFile->open(QIODevice::ReadOnly) && vpsDllFile->open(QIODevice::ReadOnly))
 		{
-			complete = MUtils::OS::is_executable_file(vpsExeFile->fileName());
+			complete = MUtils::OS::is_executable_file(vpsExeFile->fileEngine()->fileName(QAbstractFileEngine::CanonicalName));
 		}
 	}
 

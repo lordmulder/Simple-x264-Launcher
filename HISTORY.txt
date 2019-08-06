@@ -2,6 +2,11 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.93 [2019-08-06]
+* Fixed a regression in VapourSynth detection code
+* Updated NVEncC to version 4.43
+* Updated build environment to Visual Studio 2019 with Update-2
+
 Version 2.92 [2019-07-22]
 * Updated x264 to revision 2984 (API v158)
 * Updated x265 to version 3.1+8

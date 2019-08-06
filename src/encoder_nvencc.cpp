@@ -159,11 +159,11 @@ public:
 
 	virtual QString getBinaryPath(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const
 	{
-		QString arch;
+		QString arch, ext;
 		switch(encArch)
 		{
-			case 0: arch = "x86"; break;
-			case 1: arch = "x64"; break;
+			case 0: arch = "x86";             break;
+			case 1: arch = "x64"; ext = "64"; break;
 			default: MUTILS_THROW("Unknown encoder arch!");
 		}
 		switch(encVariant)
@@ -172,7 +172,7 @@ public:
 			case 1: break;
 			default: MUTILS_THROW("Unknown encoder variant!");
 		}
-		return QString("%1/toolset/%2/nvencc/nvencc_%2.exe").arg(sysinfo->getAppPath(), arch);
+		return QString("%1/toolset/%2/nvencc/nvencc%3.exe").arg(sysinfo->getAppPath(), arch, ext);
 	}
 
 	virtual QStringList getDependencies(const SysinfoModel *sysinfo, const quint32 &encArch, const quint32 &encVariant) const

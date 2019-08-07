@@ -260,6 +260,11 @@ int VapourSynthCheckThread::threadMain(void)
 
 VapourSynthCheckThread::VapourSynthFlags VapourSynthCheckThread::getVapourSynthType(const int scope)
 {
+	if (MUtils::OS::os_architecture() != MUtils::OS::ARCH_X64)
+	{
+		return VAPOURSYNTH_X86;
+	}
+
 	switch (scope)
 	{
 		case MUtils::Registry::scope_wow_x32:

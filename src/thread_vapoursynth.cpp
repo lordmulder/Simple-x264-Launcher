@@ -61,10 +61,10 @@ static const char* const VPS_REG_NAME = "VapourSynthDLL";
 //Enable detection of "portabel" edition?
 #define ENABLE_PORTABLE_VPS true
 
-//-------------------------------------
-// Auxilary functions
-//-------------------------------------
+//Registry scope EOL flag
+#define REG_SCOPE_EOL (MUtils::Registry::reg_scope_t(-1))
 
+//Auxilary functions
 #define BOOLIFY(X) ((X) ? '1' : '0')
 #define VPS_BITNESS(X) (((X) + 1U) * 32U)
 
@@ -163,11 +163,16 @@ int VapourSynthCheckThread::threadMain(void)
 		VAPOURSYNTH_X64,
 		NULL
 	};
-	static const MUtils::Registry::reg_scope_t REG_SCOPE[3] =
+	static const MUtils::Registry::reg_scope_t REG_SCOPE_X86[] =
+	{
+		MUtils::Registry::scope_default,
+		REG_SCOPE_EOL
+	};
+	static const MUtils::Registry::reg_scope_t REG_SCOPE_X64[] =
 	{
 		MUtils::Registry::scope_wow_x32,
 		MUtils::Registry::scope_wow_x64,
-		MUtils::Registry::scope_default
+		REG_SCOPE_EOL
 	};
 
 	QHash<int, QFileInfo> vpsDllInfo, vpsExeInfo;
@@ -192,20 +197,24 @@ int VapourSynthCheckThread::threadMain(void)
 	//Read VapourSynth path from registry
 	if (vpsDllInfo.isEmpty() && vpsExeInfo.isEmpty())
 	{
-		for (size_t i = 0; i < 3U; i++)
+		const MUtils::Registry::reg_scope_t* const scope = (MUtils::OS::os_architecture() == MUtils::OS::ARCH_X64) ? REG_SCOPE_X64 : REG_SCOPE_X86;
+		for (size_t i = 0; scope[i] != REG_SCOPE_EOL; i++)
 		{
-			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), REG_SCOPE[i]))
+			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), scope[i]))
 			{
 				QString vpsRegDllPath;
-				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath, REG_SCOPE[i]))
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath, scope[i]))
 				{
 					QFileInfo vpsRegDllInfo(QDir::fromNativeSeparators(vpsRegDllPath));
 					vpsRegDllInfo.makeAbsolute();
 					if (vpsRegDllInfo.exists() && vpsRegDllInfo.isFile())
 					{
-						const int flag = getVapourSynthType(REG_SCOPE[i]);
-						vpsDllInfo.insert(flag, vpsRegDllInfo);
-						vpsExeInfo.insert(flag, vpsRegDllInfo.absoluteDir().absoluteFilePath(VPS_EXE_NAME)); /*derive VSPipe.EXE path from VapourSynth.DLL path for now!*/
+						const int flag = getVapourSynthType(scope[i]);
+						if((!vpsDllInfo.contains(flag)) || (!vpsExeInfo.contains(flag)))
+						{
+							vpsDllInfo.insert(flag, vpsRegDllInfo);
+							vpsExeInfo.insert(flag, vpsRegDllInfo.absoluteDir().absoluteFilePath(VPS_EXE_NAME)); /*derive VSPipe.EXE path from VapourSynth.DLL path for now!*/
+						}
 					}
 				}
 			}
@@ -222,6 +231,7 @@ int VapourSynthCheckThread::threadMain(void)
 	//Validate the VapourSynth installation now!
 	for (size_t i = 0; i < 2U; i++)
 	{
+		qDebug("VapourSynth %u-Bit support is being tested.", VPS_BITNESS(i));
 		if (vpsDllInfo.contains(VPS_BIT_FLAG[i]) && vpsExeInfo.contains(VPS_BIT_FLAG[i]))
 		{
 			QFile *vpsExeFile, *vpsDllFile;
@@ -260,19 +270,21 @@ int VapourSynthCheckThread::threadMain(void)
 
 VapourSynthCheckThread::VapourSynthFlags VapourSynthCheckThread::getVapourSynthType(const int scope)
 {
-	if (MUtils::OS::os_architecture() != MUtils::OS::ARCH_X64)
+	if (MUtils::OS::os_architecture() == MUtils::OS::ARCH_X64)
 	{
-		return VAPOURSYNTH_X86;
-	}
-
-	switch (scope)
-	{
+		switch (scope)
+		{
 		case MUtils::Registry::scope_wow_x32:
 			return VAPOURSYNTH_X86;
 		case MUtils::Registry::scope_wow_x64:
 			return VAPOURSYNTH_X64;
 		default:
 			return VAPOURSYNTH_DEF;
+		}
+	}
+	else
+	{
+		return VAPOURSYNTH_X86; /*ignore scope on 32-Bit OS*/
 	}
 }
 

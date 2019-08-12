@@ -48,7 +48,6 @@ QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 //Const
 static const char* const VPS_DLL_NAME = "vapoursynth.dll";
 static const char* const VPS_EXE_NAME = "vspipe.exe";
-static const char* const VPS_REG_PATH = "SOFTWARE\\VapourSynth";
 static const char* const VPS_REG_NAME = "VapourSynthDLL";
 
 //Default VapurSynth architecture
@@ -163,6 +162,12 @@ int VapourSynthCheckThread::threadMain(void)
 		VAPOURSYNTH_X64,
 		NULL
 	};
+	static const char* const VPS_REG_PATH[] =
+	{
+		"SOFTWARE\\VapourSynth",
+		"SOFTWARE\\VapourSynth-32",
+		NULL
+	};
 	static const MUtils::Registry::reg_scope_t REG_SCOPE_X86[] =
 	{
 		MUtils::Registry::scope_default,
@@ -197,20 +202,43 @@ int VapourSynthCheckThread::threadMain(void)
 	//Read VapourSynth path from registry
 	if (vpsDllInfo.isEmpty() && vpsExeInfo.isEmpty())
 	{
+		//Try to detect the path from HKEY_LOCAL_MACHINE first!
 		const MUtils::Registry::reg_scope_t* const scope = (MUtils::OS::os_architecture() == MUtils::OS::ARCH_X64) ? REG_SCOPE_X64 : REG_SCOPE_X86;
 		for (size_t i = 0; scope[i] != REG_SCOPE_EOL; i++)
 		{
-			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), scope[i]))
+			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH[0U]), scope[i]))
 			{
 				QString vpsRegDllPath;
-				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath, scope[i]))
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_machine, QString::fromLatin1(VPS_REG_PATH[0U]), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath, scope[i]))
 				{
 					QFileInfo vpsRegDllInfo(QDir::fromNativeSeparators(vpsRegDllPath));
 					vpsRegDllInfo.makeAbsolute();
 					if (vpsRegDllInfo.exists() && vpsRegDllInfo.isFile())
 					{
 						const int flag = getVapourSynthType(scope[i]);
-						if((!vpsDllInfo.contains(flag)) || (!vpsExeInfo.contains(flag)))
+						if ((!vpsDllInfo.contains(flag)) || (!vpsExeInfo.contains(flag)))
+						{
+							vpsDllInfo.insert(flag, vpsRegDllInfo);
+							vpsExeInfo.insert(flag, vpsRegDllInfo.absoluteDir().absoluteFilePath(VPS_EXE_NAME)); /*derive VSPipe.EXE path from VapourSynth.DLL path for now!*/
+						}
+					}
+				}
+			}
+		}
+		//Fall back to HKEY_CURRENT_USER, if path not found yet
+		for (size_t i = 0; VPS_REG_PATH[i]; i++)
+		{
+			if (MUtils::Registry::reg_key_exists(MUtils::Registry::root_user, QString::fromLatin1(VPS_REG_PATH[i])))
+			{
+				QString vpsRegDllPath;
+				if (MUtils::Registry::reg_value_read(MUtils::Registry::root_user, QString::fromLatin1(VPS_REG_PATH[i]), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath))
+				{
+					QFileInfo vpsRegDllInfo(QDir::fromNativeSeparators(vpsRegDllPath));
+					vpsRegDllInfo.makeAbsolute();
+					if (vpsRegDllInfo.exists() && vpsRegDllInfo.isFile())
+					{
+						const int flag = (i) ? VAPOURSYNTH_X86 : VAPOURSYNTH_X64;
+						if ((!vpsDllInfo.contains(flag)) || (!vpsExeInfo.contains(flag)))
 						{
 							vpsDllInfo.insert(flag, vpsRegDllInfo);
 							vpsExeInfo.insert(flag, vpsRegDllInfo.absoluteDir().absoluteFilePath(VPS_EXE_NAME)); /*derive VSPipe.EXE path from VapourSynth.DLL path for now!*/

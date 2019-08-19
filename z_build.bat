@@ -150,8 +150,11 @@ REM ///////////////////////////////////////////////////////////////////////////
 "%~dp0\..\Prerequisites\Pandoc\pandoc.exe" --from markdown_github+pandoc_title_block+header_attributes+implicit_figures --to html5 --toc -N --standalone -H "%~dp0\etc\css\style.inc" "%~dp0\README.md" | "%JAVA_HOME%\bin\java.exe" -jar "%~dp0\..\Prerequisites\HTMLCompressor\bin\htmlcompressor-1.5.3.jar" --compress-css -o "%PACK_PATH%\README.html"
 
 REM ///////////////////////////////////////////////////////////////////////////
-REM // Compress
+REM // Cleanse binaries
 REM ///////////////////////////////////////////////////////////////////////////
+"..\Prerequisites\RichHeaderEraser\rchhdrrsr.exe" "%PACK_PATH%\*.exe" "%PACK_PATH%\MUtils32*.dll" "%PACK_PATH%\Qt*.dll"
+
+pause
 :: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\x264_launcher.exe"
 :: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\MUtils32-1.dll"
 :: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\Qt*.dll"

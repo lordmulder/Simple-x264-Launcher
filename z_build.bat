@@ -154,7 +154,6 @@ REM // Cleanse binaries
 REM ///////////////////////////////////////////////////////////////////////////
 "..\Prerequisites\RichHeaderEraser\rchhdrrsr.exe" "%PACK_PATH%\*.exe" "%PACK_PATH%\MUtils32*.dll" "%PACK_PATH%\Qt*.dll"
 
-pause
 :: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\x264_launcher.exe"
 :: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\MUtils32-1.dll"
 :: "%~dp0\..\Prerequisites\UPX\upx.exe" --best "%PACK_PATH%\Qt*.dll"

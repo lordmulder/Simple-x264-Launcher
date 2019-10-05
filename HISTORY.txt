@@ -2,8 +2,8 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
-Version 2.93 [2019-10-05]
-* Updated x265 to version 3.2+5 (incl. AQ mode 4 slowdown fix)
+Version 2.94 [2019-10-05]
+* Updated x265 to version 3.2+5, incl. AQ mode 4 slowdown fix
 * Updated NVEncC to version 4.50 (v2)
 * Updated build environment to Visual Studio 2019 with Update-3
 

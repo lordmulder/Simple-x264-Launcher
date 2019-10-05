@@ -66,7 +66,7 @@ static const unsigned int VERSION_NVENCC_MINIMUM_VER = 449;
 } \
 while(0)
 
-#define NVENCC_UPDATE_PROGRESS_NOPROG(X) do \
+#define NVENCC_UPDATE_PROGRESS_OLD(X) do \
 { \
 	bool ok = false; \
 	unsigned int progressFrames = (X)->cap(1).toUInt(&ok); \
@@ -170,7 +170,9 @@ public:
 	{
 		switch(format)
 		{
+		case MediaInfo::FILETYPE_AVISYNTH:
 		case MediaInfo::FILETYPE_YUV4MPEG2:
+		case MediaInfo::FILETYPE_UNKNOWN:
 			return true;
 		default:
 			return false;
@@ -412,7 +414,7 @@ void NVEncEncoder::runEncodingPass_parseLine(const QString &line, const QList<QR
 	}
 	else if ((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		NVENCC_UPDATE_PROGRESS_NOPROG(patterns[1]);
+		NVENCC_UPDATE_PROGRESS_OLD(patterns[1]);
 	}
 	else if ((offset = patterns[2]->lastIndexIn(line)) >= 0)
 	{

@@ -40,8 +40,8 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_X265_MINIMUM_VER = 31;
-static const unsigned int VERSION_X265_MINIMUM_REV =  8;
+static const unsigned int VERSION_X265_MINIMUM_VER = 32;
+static const unsigned int VERSION_X265_MINIMUM_REV =  5;
 
 // ------------------------------------------------------------
 // Helper Macros

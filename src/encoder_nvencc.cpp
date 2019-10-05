@@ -48,6 +48,26 @@ static const unsigned int VERSION_NVENCC_MINIMUM_VER = 449;
 
 #define NVENCC_UPDATE_PROGRESS(X) do \
 { \
+	bool ok[2] = { false, false }; \
+	unsigned int progressInt = (X)->cap(1).toUInt(&ok[0]); \
+	unsigned int progressFrc = (X)->cap(2).toUInt(&ok[1]); \
+	setStatus(JobStatus_Running); \
+	if(ok[0] && ok[1]) \
+	{ \
+		const double progress = (double(progressInt) / 100.0) + (double(progressFrc) / 1000.0); \
+		if(!qFuzzyCompare(progress, last_progress)) \
+		{ \
+			setProgress(floor(progress * 100.0)); \
+			size_estimate = qFuzzyIsNull(size_estimate) ? estimateSize(m_outputFile, progress) : ((0.667 * size_estimate) + (0.333 * estimateSize(m_outputFile, progress))); \
+			last_progress = progress; \
+		} \
+	} \
+	setDetails(line.mid(offset).trimmed()); \
+} \
+while(0)
+
+#define NVENCC_UPDATE_PROGRESS_NOPROG(X) do \
+{ \
 	bool ok = false; \
 	unsigned int progressFrames = (X)->cap(1).toUInt(&ok); \
 	double progress = 0.0; \
@@ -377,7 +397,8 @@ void NVEncEncoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, c
 
 void NVEncEncoder::runEncodingPass_init(QList<QRegExp*> &patterns)
 {
-	patterns << new QRegExp("^(\\d+) frames:");
+	patterns << new QRegExp("\\[(\\d+)\\.(\\d+)%\\].+frames", Qt::CaseInsensitive);
+	patterns << new QRegExp("^(\\d+) frames:", Qt::CaseInsensitive);
 	patterns << new QRegExp("Selected\\s+codec\\s+is\\s+not\\s+supported", Qt::CaseInsensitive);
 	patterns << new QRegExp("nvEncodeAPI.dll\\s+does\\s+not\\s+exists\\s+in\\s+your\\s+system", Qt::CaseInsensitive);
 }
@@ -391,9 +412,13 @@ void NVEncEncoder::runEncodingPass_parseLine(const QString &line, const QList<QR
 	}
 	else if ((offset = patterns[1]->lastIndexIn(line)) >= 0)
 	{
-		log(QString("ERROR: YOUR HARDWARE DOES *NOT* SUPPORT THE '%1' CODEC !!!\n").arg(s_nvencEncoderInfo.variantToString(m_options->encVariant())));
+		NVENCC_UPDATE_PROGRESS_NOPROG(patterns[1]);
 	}
 	else if ((offset = patterns[2]->lastIndexIn(line)) >= 0)
+	{
+		log(QString("ERROR: YOUR HARDWARE DOES *NOT* SUPPORT THE '%1' CODEC !!!\n").arg(s_nvencEncoderInfo.variantToString(m_options->encVariant())));
+	}
+	else if ((offset = patterns[3]->lastIndexIn(line)) >= 0)
 	{
 		log("ERROR: NVIDIA ENCODER API (NVENCODEAPI.DLL) IS *NOT* AVAILABLE !!!\n");
 	}

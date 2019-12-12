@@ -119,7 +119,7 @@ public:
 
 	virtual QStringList getTunings(void) const
 	{
-		return QStringList() << "Grain" << "PSNR" << "SSIM" << "FastDecode" << "ZeroLatency";
+		return QStringList() << "Grain" << "PSNR" << "SSIM" << "FastDecode" << "ZeroLatency" << "Animation";
 	}
 
 	virtual QStringList getPresets(void) const

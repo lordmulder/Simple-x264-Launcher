@@ -30,7 +30,7 @@
 #include <QDir>
 #include <QProcess>
 
-static const unsigned int VER_X264_AVS2YUV_VER = 245;
+static const unsigned int VER_X264_AVS2YUV_VER = 246;
 
 // ------------------------------------------------------------
 // Encoder Info
@@ -157,7 +157,7 @@ bool AvisynthSource::isVersionSupported(const unsigned int &revision, const bool
 
 	if((revision != UINT_MAX) && (build < VER_X264_AVS2YUV_VER))
 	{
-		log(tr("\nERROR: Your version of avs2yuv is unsupported (required version: v0.24 BugMaster's mod 2)"));
+		log(tr("\nERROR: Your version of avs2yuv is unsupported (required version: v0.24 BugMaster's mod 6)"));
 		log(tr("You can find the required version at: http://komisar.gin.by/tools/avs2yuv/"));
 		return false;
 	}

@@ -368,6 +368,7 @@
       <iconset resource="../res/resources.qrc">
        <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
      </property>
+     <addaction name="actionWebX264LigH"/>
      <addaction name="actionWebX264VideoLAN"/>
      <addaction name="actionWebX264Komisar"/>
      <addaction name="separator"/>
@@ -394,8 +395,8 @@
       <iconset resource="../res/resources.qrc">
        <normaloff>:/buttons/setup.png</normaloff>:/buttons/setup.png</iconset>
      </property>
-     <addaction name="actionWebX265Fllear"/>
      <addaction name="actionWebX265LigH"/>
+     <addaction name="actionWebX265Fllear"/>
      <addaction name="actionWebX265Snowfag"/>
      <addaction name="separator"/>
      <addaction name="actionWebX265FreeCodecs"/>
@@ -866,6 +867,15 @@
    </property>
    <property name="text">
     <string>Do Nothing</string>
+   </property>
+  </action>
+  <action name="actionWebX264LigH">
+   <property name="icon">
+    <iconset resource="../res/resources.qrc">
+     <normaloff>:/buttons/world_link.png</normaloff>:/buttons/world_link.png</iconset>
+   </property>
+   <property name="text">
+    <string>x264 builds for Windows by LigH</string>
    </property>
   </action>
  </widget>

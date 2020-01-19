@@ -238,11 +238,12 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	SETUP_WEBLINK(ui->actionWebMulder,          home_url);
 	SETUP_WEBLINK(ui->actionWebX264,            "http://www.videolan.org/developers/x264.html");
 	SETUP_WEBLINK(ui->actionWebX265,            "http://www.videolan.org/developers/x265.html");
+	SETUP_WEBLINK(ui->actionWebX264LigH,        "http://www.mediafire.com/?bxvu1vvld31k1");
+	SETUP_WEBLINK(ui->actionWebX264VideoLAN,    "http://artifacts.videolan.org/x264/");
 	SETUP_WEBLINK(ui->actionWebX264Komisar,     "http://komisar.gin.by/");
-	SETUP_WEBLINK(ui->actionWebX264VideoLAN,    "http://download.videolan.org/pub/x264/binaries/");
+	SETUP_WEBLINK(ui->actionWebX265LigH,        "http://www.mediafire.com/?6lfp2jlygogwa");
 	SETUP_WEBLINK(ui->actionWebX264FreeCodecs,  "http://www.free-codecs.com/x264_video_codec_download.htm");
 	SETUP_WEBLINK(ui->actionWebX265Fllear,      "http://x265.ru/en/builds/");
-	SETUP_WEBLINK(ui->actionWebX265LigH,        "https://www.mediafire.com/?6lfp2jlygogwa");
 	SETUP_WEBLINK(ui->actionWebX265Snowfag,     "http://builds.x265.eu/");
 	SETUP_WEBLINK(ui->actionWebX265FreeCodecs,  "http://www.free-codecs.com/x265_hevc_encoder_download.htm");
 	SETUP_WEBLINK(ui->actionWebAvisynth32,      "https://sourceforge.net/projects/avisynth2/files/AviSynth%202.6/");

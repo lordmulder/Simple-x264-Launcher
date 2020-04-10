@@ -167,8 +167,8 @@ const bool &StringValidator::setStatus(const bool &flag, const QString &toolName
 
 QValidator::State StringValidatorEncoder::validate(QString &input, int &pos) const
 {
-	static const char *const params[] = { "D", "B", "o", "h", "p", "q", /*"fps", "frames",*/ "preset", "tune", "profile",
-		"stdin", "crf", "bitrate", "qp", "pass", "stats", "output", "output-depth", "help", "quiet", "codec", "y4m", NULL };
+	static const char *const params[] = { "D", "B", "o", "h", "p", "q", "u", "preset", "tune", "profile", "stdin",
+		"crf", "bitrate", "qp", "pass", "stats", "output", "output-depth", "help", "quiet", "codec", "y4m", NULL };
 
 	const QString commandLine = input.trimmed();
 	const QStringList tokens =  commandLine.isEmpty() ? QStringList() : MUtils::OS::crack_command_line(commandLine);

@@ -144,7 +144,7 @@ public:
 
 	virtual QStringList getPresets(void) const
 	{
-		return QStringList();
+		return QStringList() << "performance" << "quality";
 	}
 
 	virtual QStringList getProfiles(const quint32 &variant) const
@@ -339,6 +339,15 @@ void NVEncEncoder::buildCommandLine(QStringList &cmdLine, const bool &usePipe, c
 		break;
 	default:
 		MUTILS_THROW("Bad encoder variant !!!");
+	}
+
+	const QString preset = m_options->preset().simplified().toLower();
+	if(!preset.isEmpty())
+	{
+		if(preset.compare(QString::fromLatin1(OptionsModel::SETTING_UNSPECIFIED), Qt::CaseInsensitive) != 0)
+		{
+			cmdLine << "--preset" << preset;
+		}
 	}
 
 	switch(m_options->rcMode())

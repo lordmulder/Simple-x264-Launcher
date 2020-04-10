@@ -50,11 +50,11 @@ REM // Get current date and time (in ISO format)
 REM ///////////////////////////////////////////////////////////////////////////
 set "ISO_DATE="
 set "ISO_TIME="
-if not exist "%~dp0\..\Prerequisites\GnuWin32\date.exe" BuildError
-for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\..\Prerequisites\GnuWin32\date.exe" +ISODATE:%%Y-%%m-%%d') do (
+if not exist "%~dp0\..\Prerequisites\MSYS\1.0\bin\date.exe" goto BuildError
+for /F "tokens=1,2 delims=:" %%a in ('"%~dp0\..\Prerequisites\MSYS\1.0\bin\date.exe" +ISODATE:%%Y-%%m-%%d') do (
 	if "%%a"=="ISODATE" set "ISO_DATE=%%b"
 )
-for /F "tokens=1,2,3,4 delims=:" %%a in ('"%~dp0\..\Prerequisites\GnuWin32\date.exe" +ISOTIME:%%T') do (
+for /F "tokens=1,2,3,4 delims=:" %%a in ('"%~dp0\..\Prerequisites\MSYS\1.0\bin\date.exe" +ISOTIME:%%T') do (
 	if "%%a"=="ISOTIME" set "ISO_TIME=%%b:%%c:%%d"
 )
 if "%ISO_DATE%"=="" goto BuildError
@@ -194,7 +194,7 @@ echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo Build #%BUILD_NO%, created on %ISO_DATE% at %ISO_TIME% >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
-"%~dp0\..\Prerequisites\GnuWin32\cat.exe" "%~dp0\etc\setup\build.nfo" >> "%PACK_PATH%\BUILD_TAG.txt"
+"%~dp0\..\Prerequisites\MSYS\1.0\bin\cat.exe" "%~dp0\etc\setup\build.nfo" >> "%PACK_PATH%\BUILD_TAG.txt"
 
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Build the installer
@@ -223,7 +223,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Build ZIP package
 REM ///////////////////////////////////////////////////////////////////////////
 pushd "%PACK_PATH%"
-"%~dp0\..\Prerequisites\GnuWin32\zip.exe" -r -9 -z "%OUT_PATH%.zip" "*.*" < "%PACK_PATH%\BUILD_TAG.txt"
+"%~dp0\..\Prerequisites\InfoZip\zip.exe" -r -9 -z "%OUT_PATH%.zip" "*.*" < "%PACK_PATH%\BUILD_TAG.txt"
 popd
 
 if not "%ERRORLEVEL%"=="0" goto BuildError

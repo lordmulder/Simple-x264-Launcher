@@ -2,6 +2,11 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.96 [2020-04-17]
+* Updated x264 to revision 3000 (API v160)
+* Updated cURL to version 7.69.1 (2020-03-11)
+* Updated build environment to Visual Studio 2019 with Update-5
+
 Version 2.95 [2020-01-03]
 * Updated x264 to revision 2991 (API v159)
 * Updated Avs2YUV to version 0.24 (BugMaster's mod 6)

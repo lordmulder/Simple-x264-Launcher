@@ -205,7 +205,7 @@ if not "%ERRORLEVEL%"=="0" goto BuildError
 "%~dp0\..\Prerequisites\NSIS\peheader.exe" "%OUT_PATH%.sfx"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
-call "%~dp0\..\Prerequisites\SevenZip\7zSD.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"
+call "%~dp0\..\Prerequisites\SevenZip\7zSDex.cmd" "%OUT_PATH%.sfx" "%OUT_PATH%.exe" "Simple x264/x265 Launcher" "x264_launcher-setup-r%BUILD_NO%"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 set "VERPATCH_PRODUCT=Simple x264/x265 Launcher (Setup)"

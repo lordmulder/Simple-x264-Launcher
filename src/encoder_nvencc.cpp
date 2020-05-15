@@ -40,7 +40,7 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_NVENCC_MINIMUM_VER = 500;
+static const unsigned int VERSION_NVENCC_MINIMUM_VER = 501;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -152,8 +152,8 @@ public:
 		QStringList profiles;
 		switch(variant)
 		{
-			case 0: profiles << "baseline" << "main" << "high"; break;
-			case 1: profiles << "main";                         break;
+			case 0: profiles << "baseline" << "main" << "high" << "high444"; break;
+			case 1: profiles << "main" << "main10" << "main444";             break;
 			default: MUTILS_THROW("Unknown encoder variant!");
 		}
 		return profiles;

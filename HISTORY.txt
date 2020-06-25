@@ -2,6 +2,13 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 2.98 [2020-06-25]
+* Updated x264 to revision 3009 (API v160)
+* Updated x265 to version 3.4+7
+* Updated NVEncC to version 5.06
+* Added experimental "dark mode" (use option '--dark-gui-mode' to enable)
+* Updated build environment to Visual Studio 2019 with Update-6
+
 Version 2.97 [2020-05-15]
 * Updated x265 to version 3.3+27
 * Updated NVEncC to version 5.01

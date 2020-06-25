@@ -37,6 +37,8 @@
 #include <QApplication>
 #include <QDate>
 #include <QPlastiqueStyle>
+#include <QFile>
+#include <QTextStream>
 
 //Windows includes
 #define NOMINMAX
@@ -173,6 +175,15 @@ static int simple_x264_main(int &argc, char **argv)
 	if(!arguments.contains(CLI_PARAM_NO_GUI_STYLE))
 	{
 		qApp->setStyle(new QPlastiqueStyle());
+	}
+	if (arguments.contains(CLI_PARAM_DARK_GUI_MODE))
+	{
+		QFile qss(":qdarkstyle/style.qss");
+		if (qss.open(QFile::ReadOnly | QFile::Text))
+		{
+			QTextStream textStream(&qss);
+			application->setStyleSheet(textStream.readAll());
+		}
 	}
 
 	//Create Main Window

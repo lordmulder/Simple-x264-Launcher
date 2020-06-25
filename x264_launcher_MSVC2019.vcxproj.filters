@@ -295,6 +295,9 @@
     <ClCompile Include="tmp\x264_launcher\MOC_thread_abstract.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="tmp\x264_launcher\QRC_style.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\win_main.h">
@@ -378,6 +381,7 @@
     <CustomBuild Include="src\thread_abstract.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="etc\style\qdarkstyle\style.qrc" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="x264_launcher.rc">

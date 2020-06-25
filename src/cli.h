@@ -36,6 +36,7 @@ static const char *const CLI_PARAM_SKIP_VPS_CHECK     = "skip-vapoursynth-check"
 static const char *const CLI_PARAM_SKIP_VERSION_CHECK = "skip-version-checks";
 static const char *const CLI_PARAM_NO_DEADLOCK        = "no-deadlock-detection";
 static const char *const CLI_PARAM_NO_GUI_STYLE       = "no-style";
+static const char* const CLI_PARAM_DARK_GUI_MODE      = "dark-gui-mode";
 static const char *const CLI_PARAM_FIRST_RUN          = "first-run";
 static const char *const CLI_PARAM_CONSOLE_SHOW       = "console";
 static const char *const CLI_PARAM_CONSOLE_HIDE       = "no-console";

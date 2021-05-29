@@ -23,10 +23,10 @@
 #error Please do *not* inlcude "version.h" directly!
 #endif
 
-#define VER_X264_MAJOR 2
-#define VER_X264_MINOR 9
-#define VER_X264_PATCH 9
-#define VER_X264_BUILD 1210
+#define VER_X264_MAJOR 3
+#define VER_X264_MINOR 0
+#define VER_X264_PATCH 0
+#define VER_X264_BUILD 1212
 
 #define VER_X264_PORTABLE_EDITION (0)
 

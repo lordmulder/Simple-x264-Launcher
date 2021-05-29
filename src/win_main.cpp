@@ -870,7 +870,10 @@ void MainWindow::shutdownComputer(void)
 
 	if(MUtils::OS::shutdown_computer("Simple x264 Launcher: All jobs completed, shutting down!", 10, true, hibernate))
 	{
-		qApp->closeAllWindows();
+		if (!hibernate)
+		{
+			qApp->closeAllWindows();
+		}
 	}
 
 }

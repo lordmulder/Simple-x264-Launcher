@@ -4,9 +4,10 @@ Simple x264/x265 Launcher version history
 
 Version 3.00 [2021-05-29]
 * Updated x265 to version 3.5+2
+* Updated NVEncC to version 5.33
 * Updated cURL to version 7.76.1 (2021-04-14)
 * Updated build environment to Visual Studio 2019 with Update-10
-* Do not close application when hibernating computer
+* Do not close application when hibernating the computer
 
 Version 2.99 [2020-11-18]
 * Updated x264 to revision 3027 (API v161)

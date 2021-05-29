@@ -1208,7 +1208,7 @@ void MainWindow::handleCommand(const int &command, const QStringList &args, cons
 {
 	if(!(m_initialized && (QApplication::activeModalWidget() == NULL)))
 	{
-		qWarning("Cannot accapt commands at this time -> discarding!");
+		qWarning("Cannot accept commands at this time -> discarding!");
 		return;
 	}
 	

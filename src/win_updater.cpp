@@ -52,9 +52,9 @@ static const char *const DIGEST_KEY = "~Dv/bW3/7t>6?RXVwkaZk-hmS0#O4JS/5YQAO>\\8
 
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
-	{ "curl.exe", "16cf6c857df62440b68ff40d44b3870cf503a18f3b6a3ce611812c7d91c55e40afbc0eaae72f702e9a1a37587455899fe7e1b49b571b8ff887dd90cf309a8b7c", 1 },
-	{ "gpgv.exe", "d0869bd858294520c992b66e1c7594176ebfb51bd64c4f50f782a4749118498a29c9fc70da5ed08cda9837ff7099d950428ca9f1968fa69883929bd0dba8c9e5", 1 },
-	{ "gpgv.gpg", "1a2f528e551b9abfb064f08674fdd421d3abe403469ddfee2beafd007775a6c684212a6274dc2b41a0b20dd5c2200021c91320e737f7a90b2ac5a40a6221d93f", 0 },
+	{ "curl.exe", "02f8831c1c93733daf46a4fb183499bc463aa6555214a193937036a1a279e31a65dacef20b4f3b542de5304608688437421a3b4d82cd6b851a245fb5c4f888d1", 1 },
+	{ "curl.crt", "bdb150cb424ed84a59ed2df52a0bc584941b21ccc106f629f2fa20d5d7b52a35048dea7bb97e65b97c3077d9436163f999d357785394a8bc8f65f66db4962fa8", 0 },
+	{ "vrfy.exe", "91dd35a9d223c42c4c39d8b1ef928c1f0354125a4eefff46a5984082990b3505c272e8d1a4d73b9089ec9c27fb055dab2560a5ebb1d15f323be6615ca0e176d0", 1 },
 	{ "wupd.exe", "018a8d0d848407fb0cb530b4540c6f025fd4c280885becd37f83feed8aeb3af6f8e8e0d45066a36549efac7e64706ac1ef09aaa5c75ab8d12c4a70f41518a894", 1 },
 	{ NULL, NULL, 0 }
 };
@@ -257,7 +257,7 @@ void UpdaterDialog::initUpdate(void)
 	//Create and setup thread
 	if(!m_thread)
 	{
-		m_thread.reset(new MUtils::UpdateChecker(getBin(m_binaries, "curl.exe"), getBin(m_binaries, "gpgv.exe"), getBin(m_binaries, "gpgv.gpg"), "Simple x264 Launcher", x264_version_build(), false));
+		m_thread.reset(new MUtils::UpdateChecker(getBin(m_binaries, "curl.exe"), getBin(m_binaries, "vrfy.exe"), "Simple x264 Launcher", x264_version_build(), false));
 		connect(m_thread.data(), SIGNAL(statusChanged(int)), this, SLOT(threadStatusChanged(int)));
 		connect(m_thread.data(), SIGNAL(finished()), this, SLOT(threadFinished()));
 		connect(m_thread.data(), SIGNAL(terminated()), this, SLOT(threadFinished()));

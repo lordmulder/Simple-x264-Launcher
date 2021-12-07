@@ -141,7 +141,7 @@ copy "%PATH_REDIST_QT%\Shared\bin\QtXml4.dll"             "%PACK_PATH%"
 copy "%PATH_REDIST_QT%\Shared\plugins\imageformats\*.dll" "%PACK_PATH%\imageformats"
 del "%PACK_PATH%\imageformats\*d4.dll" 2> NUL
 if %TOOLS_VER% GEQ 140 (
-	copy "%~dp0\..\Prerequisites\MSVC\redist\ucrt\DLLs\x86\*.dll" "%PACK_PATH%"
+	copy "%~dp0\..\Prerequisites\MSVC\redist\ucrt\DLLs\10.0.17763\x86\*.dll" "%PACK_PATH%"
 )
 
 REM ///////////////////////////////////////////////////////////////////////////

@@ -2,9 +2,9 @@
 REM ///////////////////////////////////////////////////////////////////////////
 REM // Set Paths
 REM ///////////////////////////////////////////////////////////////////////////
-set "MSVC_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
-set "TOOLS_VER=142"
-set "SLN_FNAME=x264_launcher_MSVC2019.sln"
+set "MSVC_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build"
+set "TOOLS_VER=143"
+set "SLN_FNAME=x264_launcher_MSVC2022.sln"
 
 REM ###############################################
 REM # DO NOT MODIFY ANY LINES BELOW THIS LINE !!! #
@@ -189,7 +189,7 @@ REM ///////////////////////////////////////////////////////////////////////////
 REM // Create Tag
 REM ///////////////////////////////////////////////////////////////////////////
 echo Simple x264/x265 Launcher - graphical front-end for x264 and x265 > "%PACK_PATH%\BUILD_TAG.txt"
-echo Copyright (C) 2004-2020 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
+echo Copyright (C) 2004-2021 LoRd_MuldeR ^<MuldeR2@GMX.de^> >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
 echo Build #%BUILD_NO%, created on %ISO_DATE% at %ISO_TIME% >> "%PACK_PATH%\BUILD_TAG.txt"
 echo. >> "%PACK_PATH%\BUILD_TAG.txt"
@@ -210,7 +210,7 @@ if not "%ERRORLEVEL%"=="0" goto BuildError
 
 set "VERPATCH_PRODUCT=Simple x264/x265 Launcher (Setup)"
 set "VERPATCH_FILEVER=%ISO_DATE:-=.%.%BUILD_NO%"
-"%~dp0\..\Prerequisites\VerPatch\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2020 LoRd_MuldeR" /s company "Free Software Foundation"
+"%~dp0\..\Prerequisites\VerPatch\verpatch.exe" "%OUT_PATH%.exe" "%VERPATCH_FILEVER%" /pv "%VERPATCH_FILEVER%" /fn /s desc "%VERPATCH_PRODUCT%" /s product "%VERPATCH_PRODUCT%" /s title "x264 Launcher Installer SFX" /s copyright "Copyright (C) 2004-2021 LoRd_MuldeR" /s company "Free Software Foundation"
 if not "%ERRORLEVEL%"=="0" goto BuildError
 
 "%~dp0\..\Prerequisites\NSIS\peheader.exe" "%OUT_PATH%.exe"

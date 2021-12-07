@@ -40,7 +40,7 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_NVENCC_MINIMUM_VER = 533;
+static const unsigned int VERSION_NVENCC_MINIMUM_VER = 541;
 
 // ------------------------------------------------------------
 // Helper Macros

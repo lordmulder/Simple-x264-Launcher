@@ -1068,11 +1068,11 @@ void MainWindow::init(void)
 	// Check for Expiration
 	//---------------------------------------
 
-	if(MUtils::Version::app_build_date().addMonths(6) < MUtils::OS::current_date())
+	if(MUtils::Version::app_build_date().addMonths(12) < MUtils::OS::current_date())
 	{
 		if(QWidget *cornerWidget = ui->menubar->cornerWidget()) cornerWidget->show();
 		QString text;
-		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 6 months old!").replace('-', "&minus;"));
+		text += QString("<nobr><tt>%1</tt></nobr><br><br>").arg(tr("Your version of Simple x264 Launcher is more than 12 months old!").replace('-', "&minus;"));
 		text += QString("<nobr><tt>%1<br><a href=\"%2\">%3</a><br><br>").arg(tr("You can download the most recent version from the official web-site now:").replace('-', "&minus;"), QString::fromLatin1(update_url), QString::fromLatin1(update_url).replace("-", "&minus;"));
 		text += QString("<nobr><tt>%1</tt></nobr><br>").arg(tr("Alternatively, click 'Check for Updates' to run the auto-update utility.").replace('-', "&minus;"));
 		QMessageBox msgBox(this);

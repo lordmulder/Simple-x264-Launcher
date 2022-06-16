@@ -40,7 +40,7 @@
 #include <QPair>
 
 //x265 version info
-static const unsigned int VERSION_NVENCC_MINIMUM_VER = 541;
+static const unsigned int VERSION_NVENCC_MINIMUM_VER = 605;
 
 // ------------------------------------------------------------
 // Helper Macros
@@ -107,6 +107,8 @@ while(0)
 // ------------------------------------------------------------
 // Encoder Info
 // ------------------------------------------------------------
+
+#define NVENCCC_PATH "%1/toolset/%2/nvencc/"
 
 class NVEncEncoderInfo : public AbstractEncoderInfo
 {
@@ -213,12 +215,20 @@ public:
 			default: MUTILS_THROW("Unknown encoder variant!");
 
 		}
-		return QStringList()
-		<< QString("%1/toolset/%2/nvencc/avcodec-58.dll"  ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/nvencc/avfilter-7.dll"  ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/nvencc/avformat-58.dll" ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/nvencc/avutil-56.dll"   ).arg(sysinfo->getAppPath(), arch)
-		<< QString("%1/toolset/%2/nvencc/swresample-3.dll").arg(sysinfo->getAppPath(), arch);
+		QStringList dependencies;
+		dependencies << QString(NVENCCC_PATH "avcodec-59.dll"  ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avfilter-8.dll"  ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avformat-59.dll" ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avutil-57.dll"   ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "libass-9.dll"    ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "swresample-4.dll").arg(sysinfo->getAppPath(), arch);
+		if (encArch)
+		{
+			dependencies << QString(NVENCCC_PATH "libvmaf.dll"             ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "nvrtc64_101_0.dll"       ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "nvrtc-builtins64_101.dll").arg(sysinfo->getAppPath(), arch);
+		}
+		return dependencies;
 	}
 
 	virtual QString getHelpCommand(void) const

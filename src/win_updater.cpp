@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Simple x264 Launcher
-// Copyright (C) 2004-2021 LoRd_MuldeR <MuldeR2@GMX.de>
+// Copyright (C) 2004-2022 LoRd_MuldeR <MuldeR2@GMX.de>
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ static const char *const DIGEST_KEY = "~Dv/bW3/7t>6?RXVwkaZk-hmS0#O4JS/5YQAO>\\8
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
 	{ "curl.exe", "02f8831c1c93733daf46a4fb183499bc463aa6555214a193937036a1a279e31a65dacef20b4f3b542de5304608688437421a3b4d82cd6b851a245fb5c4f888d1", 1 },
-	{ "curl.crt", "838d9f10027227fbb81d1d4b0285033eb2a97116589c774261ab79ed7314b07729e0d23b118a40a71fa593cc433042f63d7cdf51ee713c8a3efdd16f8f7d7b4d", 0 },
+	{ "curl.crt", "e2942301ec0aa5dc82ea8a193ec0537359891ae3eeddf67643cd9c84ce5c4120c58d70c0416208b614e5383b758975091c2e18006251ea5504583b4bff0fbbc6", 0 },
 	{ "vrfy.exe", "91dd35a9d223c42c4c39d8b1ef928c1f0354125a4eefff46a5984082990b3505c272e8d1a4d73b9089ec9c27fb055dab2560a5ebb1d15f323be6615ca0e176d0", 1 },
 	{ "wupd.exe", "018a8d0d848407fb0cb530b4540c6f025fd4c280885becd37f83feed8aeb3af6f8e8e0d45066a36549efac7e64706ac1ef09aaa5c75ab8d12c4a70f41518a894", 1 },
 	{ NULL, NULL, 0 }

@@ -223,7 +223,7 @@ Please check the web−site at &lt;a href=&quot;http://muldersoft.com/&quot;&gt;
               </font>
              </property>
              <property name="text">
-              <string>&lt;nobr&gt;&lt;tt&gt;&lt;b&gt;x264 - the best H.264/AVC encoder. Copyright (C) 2003-2021 x264 project.&lt;/b&gt;&lt;br&gt;
+              <string>&lt;nobr&gt;&lt;tt&gt;&lt;b&gt;x264 - the best H.264/AVC encoder. Copyright (C) 2003-2022 x264 project.&lt;/b&gt;&lt;br&gt;
 Free software library for encoding video streams into the H.264/MPEG-4 AVC format.&lt;br&gt;
 Released under the terms of the GNU General Public License, version 2.&lt;br&gt;
 &lt;br&gt;
@@ -329,7 +329,7 @@ Note: Simple x264 Launcher is &lt;u&gt;not&lt;/u&gt; affiliated with or endorsed
               </font>
              </property>
              <property name="text">
-              <string>&lt;nobr&gt;&lt;tt&gt;&lt;b&gt;x265 - free H.265/HEVC encoder. Copyright (C) 2013-2021 x265 project.&lt;/b&gt;&lt;br&gt;
+              <string>&lt;nobr&gt;&lt;tt&gt;&lt;b&gt;x265 - free H.265/HEVC encoder. Copyright (C) 2013-2022 x265 project.&lt;/b&gt;&lt;br&gt;
 Commercially funded, open source implementation of the HEVC compression standard.&lt;br&gt;
 Released under the terms of the GNU General Public License, version 2.&lt;br&gt;
 &lt;br&gt;
@@ -434,7 +434,7 @@ Note: Simple x264 Launcher is &lt;u&gt;not&lt;/u&gt; affiliated with or endorsed
               </font>
              </property>
              <property name="text">
-              <string>&lt;nobr&gt;&lt;tt&gt;&lt;b&gt;NVEncC - NVIDIA GPU encoding. Copyright (C) 1999-2021 rigaya.&lt;/b&gt;&lt;br&gt;
+              <string>&lt;nobr&gt;&lt;tt&gt;&lt;b&gt;NVEncC - NVIDIA GPU encoding. Copyright (C) 1999-2022 rigaya.&lt;/b&gt;&lt;br&gt;
 NVEnc front-end by rigayaりがや. Check rigaya's &lt;a href=&quot;https://onedrive.live.com/?id=6BDD4375AC8933C6!2293&amp;cid=6BDD4375AC8933C6&quot;&gt;OneDrive&lt;/a&gt; for the latest downloads.&lt;br&gt;
 Released under the terms of the MIT License.&lt;br&gt;
 &lt;br&gt;

@@ -479,6 +479,7 @@ void MainWindow::deleteButtonPressed(void)
 	ENSURE_APP_IS_READY();
 
 	m_jobList->deleteJob(ui->jobsView->currentIndex());
+	m_jobList->saveQueuedJobs();
 	m_label[0]->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
 }
 
@@ -1596,6 +1597,7 @@ bool MainWindow::appendJob(const QString &sourceFileName, const QString &outputF
 	bool okay = false;
 	EncodeThread *thrd = new EncodeThread(sourceFileName, outputFileName, options, m_sysinfo.data(), m_preferences.data());
 	QModelIndex newIndex = m_jobList->insertJob(thrd);
+	m_jobList->saveQueuedJobs();
 
 	if(newIndex.isValid())
 	{

@@ -1120,7 +1120,6 @@ void MainWindow::init(void)
 	if(m_jobList->loadQueuedJobs(m_sysinfo.data()) > 0)
 	{
 		m_label[0]->setVisible(m_jobList->rowCount(QModelIndex()) == 0);
-		m_jobList->clearQueuedJobs();
 	}
 }
 
@@ -1413,6 +1412,10 @@ void MainWindow::closeEvent(QCloseEvent *e)
 					PreferencesModel::savePreferences(m_preferences.data());
 				}
 				m_jobList->saveQueuedJobs();
+			}
+			else
+			{
+				m_jobList->clearQueuedJobs();
 			}
 		}
 		else

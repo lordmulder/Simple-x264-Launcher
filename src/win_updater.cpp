@@ -52,8 +52,8 @@ static const char *const DIGEST_KEY = "~Dv/bW3/7t>6?RXVwkaZk-hmS0#O4JS/5YQAO>\\8
 
 const UpdaterDialog::binary_t UpdaterDialog::BINARIES[] =
 {
-	{ "curl.exe", "64f460f0a572631bd0eab045060530add4cc67e58dc72dcf04df562ebe88d9aaee14727b1cbd41a93161db99f0a955859fa2b36f10eab252638cfa22e5186bfa", 1 },
-	{ "curl.crt", "5317813f1421ed88582235bde004d71992a0ddfd740c1a1b639f8162dfe82f389af9e216b2e33706cff7866106492f499d0c28ba9df884274091dbe526b9db8c", 0 },
+	{ "curl.exe", "79fcb3330507e93ec7dc45727a313921ad1cbc33ad01cc18e802902dcdeeff2fa98a7a2fcb8bdbab5d847a106ce83684ccd7bb72b2f1888cdab14b55cae567d6", 1 },
+	{ "curl.crt", "ef1f08aaf049365b63fde7a2585bcadd5dcc68b2df3302d1240a78d37b479900d4147b7c73877073c12e0f3462fe9757a13f7a2f4291670c5b397b5b484cacfc", 0 },
 	{ "vrfy.exe", "b3a9b7e304869eddd109e1713b3b9d1025f2e60d9b00583d62277a425a1f9b07ff17231c59eecefe9cb4c335daff93bb786e36f318b60a3f047a665a53baf2f4", 1 },
 	{ "wupd.exe", "018a8d0d848407fb0cb530b4540c6f025fd4c280885becd37f83feed8aeb3af6f8e8e0d45066a36549efac7e64706ac1ef09aaa5c75ab8d12c4a70f41518a894", 1 },
 	{ NULL, NULL, 0 }

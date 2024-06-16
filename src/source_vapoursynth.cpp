@@ -30,7 +30,7 @@
 #include <QPair>
 
 static const unsigned int VER_X264_VSPIPE_API =  3;
-static const unsigned int VER_X264_VSPIPE_VER = 46;
+static const unsigned int VER_X264_VSPIPE_VER = 57;
 
 // ------------------------------------------------------------
 // Encoder Info
@@ -230,7 +230,7 @@ void VapoursynthSource::checkSourceProperties_parseLine(const QString &line, con
 
 void VapoursynthSource::buildCommandLine(QStringList &cmdLine)
 {
-	cmdLine << "--y4m";
+	cmdLine << "-c" << "y4m";
 	cmdLine << QDir::toNativeSeparators(x264_path2ansi(m_sourceFile, true));
 	cmdLine << "-";
 }

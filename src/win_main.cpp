@@ -81,7 +81,7 @@ static const char *update_url = "https://github.com/lordmulder/Simple-x264-Launc
 static const char *avs_dl_url = "http://sourceforge.net/projects/avisynth2/files/AviSynth%202.5/";
 static const char *python_url = "https://www.python.org/downloads/";
 static const char *vsynth_url = "http://www.vapoursynth.com/";
-static const int   vsynth_rev = 24;
+static const int   vsynth_rev = 57;
 
 //Macros
 #define SET_FONT_BOLD(WIDGET,BOLD) do { QFont _font = WIDGET->font(); _font.setBold(BOLD); WIDGET->setFont(_font); } while(0)

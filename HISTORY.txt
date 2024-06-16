@@ -2,6 +2,11 @@
 Simple x264/x265 Launcher version history 
 ----------------------------------------- 
 
+Version 3.04 [2024-06-16]
+* Support for latest VapourSynth versions that no longer support the '--y4m' switch
+* Updated cURL to version 8.8.0 (2024-05-22)
+* Updated build environment to Visual Studio 2022 with Update-10
+
 Version 3.03 [2023-06-18]
 * Updated x264 to revision 3106 (API v164)
 * Updated x265 to version 3.5+100

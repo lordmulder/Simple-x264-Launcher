@@ -253,7 +253,7 @@ MainWindow::MainWindow(const MUtils::CPUFetaures::cpu_info_t &cpuFeatures, MUtil
 	SETUP_WEBLINK(ui->actionWebVapourSynthDocs, "http://www.vapoursynth.com/doc/");
 	SETUP_WEBLINK(ui->actionOnlineDocX264,      "http://en.wikibooks.org/wiki/MeGUI/x264_Settings");			//http://mewiki.project357.com/wiki/X264_Settings
 	SETUP_WEBLINK(ui->actionOnlineDocX265,      "http://x265.readthedocs.org/en/default/");
-	SETUP_WEBLINK(ui->actionWebBluRay,          "http://www.x264bluray.com/");
+	SETUP_WEBLINK(ui->actionWebBluRay,          "http://web.archive.org/web/20211020064238/http://www.x264bluray.com/");
 	SETUP_WEBLINK(ui->actionWebAvsWiki,         "http://avisynth.nl/index.php/Main_Page#Usage");
 	SETUP_WEBLINK(ui->actionWebSupport,         "http://forum.doom9.org/showthread.php?t=144140");
 	SETUP_WEBLINK(ui->actionWebSecret,          "http://www.youtube.com/watch_popup?v=AXIeHY-OYNI");

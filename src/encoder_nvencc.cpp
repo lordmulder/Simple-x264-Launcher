@@ -216,15 +216,21 @@ public:
 
 		}
 		QStringList dependencies;
-		dependencies << QString(NVENCCC_PATH "avcodec-59.dll"  ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString(NVENCCC_PATH "avfilter-8.dll"  ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString(NVENCCC_PATH "avformat-59.dll" ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString(NVENCCC_PATH "avutil-57.dll"   ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avcodec-61.dll"  ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avdevice-61.dll" ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avfilter-10.dll" ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avformat-61.dll" ).arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "avutil-59.dll"   ).arg(sysinfo->getAppPath(), arch);
 		dependencies << QString(NVENCCC_PATH "libass-9.dll"    ).arg(sysinfo->getAppPath(), arch);
-		dependencies << QString(NVENCCC_PATH "swresample-4.dll").arg(sysinfo->getAppPath(), arch);
+		dependencies << QString(NVENCCC_PATH "swresample-5.dll").arg(sysinfo->getAppPath(), arch);
 		if (encArch)
 		{
 			dependencies << QString(NVENCCC_PATH "libvmaf.dll"             ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "NVEncNVOFFRUC.dll"       ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "NVEncNVSDKNGX.dll"       ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "nvngx_truehdr.dll"       ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "nvngx_vsr.dll"           ).arg(sysinfo->getAppPath(), arch);
+			dependencies << QString(NVENCCC_PATH "NvOFFRUC.dll"            ).arg(sysinfo->getAppPath(), arch);
 			dependencies << QString(NVENCCC_PATH "nvrtc64_101_0.dll"       ).arg(sysinfo->getAppPath(), arch);
 			dependencies << QString(NVENCCC_PATH "nvrtc-builtins64_101.dll").arg(sysinfo->getAppPath(), arch);
 		}

@@ -47,7 +47,7 @@ private:
 	QString m_failedPath;
 	const SysinfoModel *const m_sysinfo;
 
-	static const size_t MAX_BINARIES = 32;
+	static const size_t MAX_BINARIES = 48;
 	static QMutex m_binLock;
 	static QScopedPointer<QFile> m_binPath[MAX_BINARIES];
 

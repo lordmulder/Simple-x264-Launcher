@@ -116,14 +116,14 @@ InstallPath\
 ├─ x264_launcher_portable.exe
 └─ extra\
    ├─ VapourSynth-32\
-   │  ├─ VapourSynth.dll  <32-Bit>
-   │  ├─ VSPipe.exe       <32-Bit>
-   │  ├─ python37.dll     <32-Bit>
+   │  ├─ VSPipe.exe    <32-Bit>
+   │  ├─ VSScript.dll  <32-Bit>
+   │  ├─ python312.dll <32-Bit>
    │  └─ etc…
    └─ VapourSynth-64\
-      ├─ VapourSynth.dll  <64-Bit>
-      ├─ VSPipe.exe       <64-Bit>
-      ├─ python37.dll     <64-Bit>
+      ├─ VSPipe.exe    <64-Bit>
+      ├─ VSScript.dll  <64-Bit>
+      ├─ python312.dll <64-Bit>
       └─ etc…
 ```
 

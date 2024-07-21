@@ -46,11 +46,11 @@ QScopedPointer<QFile> VapourSynthCheckThread::m_vpsExePath[2];
 QScopedPointer<QFile> VapourSynthCheckThread::m_vpsDllPath[2];
 
 //Const
-static const char* const VPS_DLL_NAME = "vapoursynth.dll";
-static const char* const VPS_EXE_NAME = "vspipe.exe";
+static const char* const VPS_DLL_NAME = "VSScript.dll";
+static const char* const VPS_EXE_NAME = "VSPipe.exe";
 static const char* const VPS_REG_KEY1 = "SOFTWARE\\VapourSynth";
 static const char* const VPS_REG_KEY2 = "SOFTWARE\\VapourSynth-32";
-static const char* const VPS_REG_NAME = "VapourSynthDLL";
+static const char* const VPS_REG_NAME = "VSPipeEXE";
 
 //Default VapurSynth architecture
 #if _WIN64 || __x86_64__
@@ -226,18 +226,18 @@ int VapourSynthCheckThread::threadMain(void)
 				{
 					if (MUtils::Registry::reg_key_exists(REG_ROOTS[i], QString::fromLatin1(paths[j]), scopes[k]))
 					{
-						QString vpsRegDllPath;
-						if (MUtils::Registry::reg_value_read(REG_ROOTS[i], QString::fromLatin1(paths[j]), QString::fromLatin1(VPS_REG_NAME), vpsRegDllPath, scopes[k]))
+						QString vpsRegExePath;
+						if (MUtils::Registry::reg_value_read(REG_ROOTS[i], QString::fromLatin1(paths[j]), QString::fromLatin1(VPS_REG_NAME), vpsRegExePath, scopes[k]))
 						{
-							QFileInfo vpsRegDllInfo(QDir::fromNativeSeparators(vpsRegDllPath));
-							vpsRegDllInfo.makeAbsolute();
-							if (vpsRegDllInfo.exists() && vpsRegDllInfo.isFile())
+							QFileInfo vpsRegExeInfo(QDir::fromNativeSeparators(vpsRegExePath));
+							vpsRegExeInfo.makeAbsolute();
+							if (vpsRegExeInfo.exists() && vpsRegExeInfo.isFile())
 							{
 								const int vpsArch = (REG_ROOTS[i] == MUtils::Registry::root_machine) ? getVapourSynthType(scopes[k]) : ((j > 0U) ? VAPOURSYNTH_X86 : VAPOURSYNTH_X64);
 								if ((!vpsDllInfo.contains(vpsArch)) || (!vpsExeInfo.contains(vpsArch)))
 								{
-									vpsDllInfo.insert(vpsArch, vpsRegDllInfo);
-									vpsExeInfo.insert(vpsArch, vpsRegDllInfo.absoluteDir().absoluteFilePath(VPS_EXE_NAME)); /*derive VSPipe.EXE path from VapourSynth.DLL path!*/
+									vpsExeInfo.insert(vpsArch, vpsRegExeInfo);
+									vpsDllInfo.insert(vpsArch, vpsRegExeInfo.absoluteDir().absoluteFilePath(VPS_DLL_NAME)); /*derive VSScript.dll path from VapourSynth.DLL path!*/
 								}
 							}
 						}
